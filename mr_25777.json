@@ -1,0 +1,405 @@
+{
+  "id": 506955398,
+  "iid": 25777,
+  "project_id": 7898047,
+  "title": "dfilter: fix NULL deref with FT_SCALAR in compatible_ftypes",
+  "description": "## Summary\n\nFixes a NULL pointer dereference in `ftype_can_val_to_uinteger()` when\ncompiling a display filter that multiplies or divides a TIME field by\nthe return value of `min()` or `max()`.\n\n## Reproduction\n\n```\ndftest -- 'frame.time > 2*min(tcp.port, udp.port)'\n```\n\nBefore: SEGV (exit 134) — `FTYPE_LOOKUP` indexes `type_list[]` out of\nbounds for the `FT_SCALAR` pseudo-type and dereferences NULL.\n\nAfter: clean semantic error (exit 4):\n`Arguments to 'min' must be of compatible type (expected Scalar, got\nUnsigned integer (16 bits))`\n\n## Root cause\n\n`check_arithmetic_LHS_TIME()` passes `FT_SCALAR` as the logical type to\n`check_function()` → `ul_semcheck_compare()` → `compatible_ftypes()`.\n`compatible_ftypes()` only guarded `FT_SCALAR` as the first argument;\nwhen received as the second argument it fell through to the integer\ncases and called `ftype_can_val_to_uinteger(FT_SCALAR)`, which indexes\n`type_list[FT_SCALAR]` (NULL) via `FTYPE_LOOKUP`.\n\nA second NULL deref occurred in `ftype_pretty_name(FT_SCALAR)` when\nformatting the error message.\n\n## Changes\n\n- `compatible_ftypes()`: handle `FT_SCALAR` explicitly via\n  `FT_IS_SCALAR()` before the switch\n- `ftype_name()` / `ftype_pretty_name()`: switch on the `ftenum` value\n  directly instead of the `FTYPE_LOOKUP` result, so the existing\n  `FT_SCALAR`/`FT_NUM_TYPES` cases become reachable\n- `FTYPE_LOOKUP`: use `ws_abort_if_fail()` instead of `ws_assert()` so\n  the bounds check is not compiled out in release/fuzzing builds\n- 5 regression tests in `test/suite_dfilter/group_time.py`\n\nFixes #21377.",
+  "state": "merged",
+  "created_at": "2026-07-14T09:55:54.541Z",
+  "updated_at": "2026-07-19T16:42:53.871Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2026-07-19T16:42:53.893Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "21377-ftype-can-val-to-uinteger",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 39744249,
+    "username": "jaxlvl",
+    "public_email": "",
+    "name": "Juan Carlos Valera López",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+    "web_url": "https://gitlab.com/jaxlvl"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83796403,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "71e0aeec050377820da7e60de12f01e7c377d058",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-07-14T09:55:59.184Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25777",
+  "references": {
+    "short": "!25777",
+    "relative": "!25777",
+    "full": "wireshark/wireshark!25777"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25777",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "4",
+  "latest_build_started_at": "2026-07-19T16:21:41.741Z",
+  "latest_build_finished_at": "2026-07-19T16:42:52.638Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2688699797,
+    "iid": 106827,
+    "project_id": 7898047,
+    "sha": "191277ff41facb3e45d8425435048df57428d44b",
+    "ref": "refs/merge-requests/25777/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-19T16:21:40.793Z",
+    "updated_at": "2026-07-19T16:42:52.649Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2688699797"
+  },
+  "head_pipeline": {
+    "id": 2688699797,
+    "iid": 106827,
+    "project_id": 7898047,
+    "sha": "191277ff41facb3e45d8425435048df57428d44b",
+    "ref": "refs/merge-requests/25777/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-19T16:21:40.793Z",
+    "updated_at": "2026-07-19T16:42:52.649Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2688699797",
+    "before_sha": "191277ff41facb3e45d8425435048df57428d44b",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2026-07-19T16:21:41.741Z",
+    "finished_at": "2026-07-19T16:42:52.638Z",
+    "committed_at": null,
+    "duration": 1266,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2688699797",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "51bc41a595ec960b571c986b2a1a8cfaf3032831",
+    "head_sha": "71e0aeec050377820da7e60de12f01e7c377d058",
+    "start_sha": "51bc41a595ec960b571c986b2a1a8cfaf3032831"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "44c36e735e42d3306cded087fd1b63f777c56f83",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3574321501,
+          "type": null,
+          "body": "added 25 commits\n\n<ul><li>e4e4bf59...51bc41a5 - 24 commits from branch <code>wireshark:master</code></li><li>71e0aeec - dfilter: fix NULL deref with FT_SCALAR in compatible_ftypes</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25777/diffs?diff_id=1910490043&start_sha=e4e4bf5927c26a316ab2e0f684dce810c70e5ec0)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-17T22:21:32.308Z",
+          "updated_at": "2026-07-17T22:21:32.309Z",
+          "system": true,
+          "noteable_id": 506955398,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25777,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "10770fac5d2e21673a4c31ed26d88e75898d9a4e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3576646982,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-07-19T16:20:10.023Z",
+          "updated_at": "2026-07-19T16:20:10.024Z",
+          "system": true,
+          "noteable_id": 506955398,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25777,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "05cdf2bf72e6f752a4290a21bfa8b4ee8daddc0c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3576647793,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-07-19T16:21:28.833Z",
+          "updated_at": "2026-07-19T16:21:28.839Z",
+          "system": true,
+          "noteable_id": 506955398,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25777,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7f5704e586694d11243ffbd8705ed5b7ce3f84b9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3576647902,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-07-19T16:21:39.273Z",
+          "updated_at": "2026-07-19T16:21:39.275Z",
+          "system": true,
+          "noteable_id": 506955398,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25777,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -103,6 +103,19 @@ op_is_equality(stnode_op_t op)\n bool\n compatible_ftypes(ftenum_t a, ftenum_t b)\n {\n+\t/* FT_SCALAR is a pseudo-type used internally for TIME arithmetic\n+\t * (multiply/divide). It is not a real field type and has no entry\n+\t * in type_list[], so it must not reach the ftype_can_*() calls\n+\t * below, which index type_list[] via FTYPE_LOOKUP. A type is\n+\t * compatible with FT_SCALAR only if it is itself a scalar type\n+\t * (FT_INT64 or FT_DOUBLE), per FT_IS_SCALAR(). */\n+\tif (b == FT_SCALAR) {\n+\t\treturn FT_IS_SCALAR(a);\n+\t}\n+\tif (b >= FT_NUM_TYPES) {\n+\t\tASSERT_FTYPE_NOT_REACHED(b);\n+\t}\n+\n \tswitch (a) {\n \t\tcase FT_NONE:\n \t\tcase FT_BOOLEAN:\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dfilter/semcheck.c",
+      "old_path": "epan/dfilter/semcheck.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -43,7 +43,7 @@ extern const ftype_t* type_list[FT_ENUM_SIZE + 1];\n /* Given an ftenum number, return an ftype_t* */\n #define FTYPE_LOOKUP(ftype, result)\t\t\\\n \t/* Check input */\t\t\t\\\n-\tws_assert(ftype < FT_NUM_TYPES);\t\\\n+\tws_abort_if_fail(ftype < FT_NUM_TYPES);\t\\\n \tresult = type_list[ftype];\n \n typedef void (*FvalueNewFunc)(fvalue_t*);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/ftypes/ftypes-int.h",
+      "old_path": "epan/ftypes/ftypes-int.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -167,11 +167,9 @@ ftype_similar_types(const enum ftenum ftype_a, const enum ftenum ftype_b)\n const char*\n ftype_name(enum ftenum ftype)\n {\n-\tconst ftype_t\t*ft;\n \tconst char *s = \"(null)\";\n \n-\tFTYPE_LOOKUP(ftype, ft);\n-\tswitch (ft->ftype) {\n+\tswitch (ftype) {\n \t\tcase FT_NONE:\t\ts = \"FT_NONE\"; break;\n \t\tcase FT_PROTOCOL:\ts = \"FT_PROTOCOL\"; break;\n \t\tcase FT_BOOLEAN:\ts = \"FT_BOOLEAN\"; break;\n@@ -227,11 +225,9 @@ ftype_name(enum ftenum ftype)\n const char*\n ftype_pretty_name(enum ftenum ftype)\n {\n-\tconst ftype_t\t*ft;\n \tconst char *s = \"(null)\";\n \n-\tFTYPE_LOOKUP(ftype, ft);\n-\tswitch (ft->ftype) {\n+\tswitch (ftype) {\n \t\tcase FT_NONE:\t\ts = \"Label\"; break;\n \t\tcase FT_PROTOCOL:\ts = \"Protocol\"; break;\n \t\tcase FT_BOOLEAN:\ts = \"Boolean\"; break;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/ftypes/ftypes.c",
+      "old_path": "epan/ftypes/ftypes.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -178,3 +178,40 @@ class TestDfilterTimeArithmetic:\n         dfilter = 'frame.time_relative > ${frame.time_relative} / 2.5'\n         # select frame 440, expect 483 frames out of 562.\n         checkDFilterCountWithSelectedFrame(dfilter, 483, 440)\n+\n+    # Regression tests for #21377: NULL pointer dereference in\n+    # ftype_can_val_to_uinteger when compiling a display filter with\n+    # TIME-field scalar arithmetic using min()/max(). The FT_SCALAR\n+    # pseudo-type reached compatible_ftypes() as the second argument\n+    # and was passed to ftype_can_val_to_uinteger(), which indexed\n+    # type_list[] out of bounds via FTYPE_LOOKUP and dereferenced NULL.\n+    def test_time_math_scalar_min_fail_1(self, checkDFilterFail):\n+        dfilter = 'frame.time > 2*min(tcp.port, udp.port)'\n+        error = \"must be of compatible type\"\n+        checkDFilterFail(dfilter, error)\n+\n+    def test_time_math_scalar_max_fail_1(self, checkDFilterFail):\n+        dfilter = 'frame.time > 2*max(tcp.port, udp.port)'\n+        error = \"must be of compatible type\"\n+        checkDFilterFail(dfilter, error)\n+\n+    def test_time_math_scalar_min_fail_2(self, checkDFilterFail):\n+        dfilter = 'frame.time > 2*min(frame.time_delta, frame.time_delta)'\n+        error = \"must be of compatible type\"\n+        checkDFilterFail(dfilter, error)\n+\n+    def test_time_math_scalar_min_fail_3(self, checkDFilterFail):\n+        # Literal scalars pass compatible_ftypes (FT_IS_SCALAR(FT_INT64)\n+        # is true) but min() returns FT_SCALAR which is not recognized\n+        # by FT_IS_SCALAR in check_arithmetic_LHS_TIME. This was a crash\n+        # before the fix (ftype_pretty_name(FT_SCALAR) via FTYPE_LOOKUP).\n+        dfilter = 'frame.time > 2*min(2, 3)'\n+        error = \"Right hand side must be an integer or float type\"\n+        checkDFilterFail(dfilter, error)\n+\n+    def test_time_math_scalar_min_fail_4(self, checkDFilterFail):\n+        # Mixed scalar literal and non-scalar field: the field fails\n+        # the compatible_ftypes check.\n+        dfilter = 'frame.time > 2*min(2, tcp.port)'\n+        error = \"must be of compatible type\"\n+        checkDFilterFail(dfilter, error)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dfilter/group_time.py",
+      "old_path": "test/suite_dfilter/group_time.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "71e0aeec050377820da7e60de12f01e7c377d058",
+      "short_id": "71e0aeec",
+      "created_at": "2026-07-17T22:21:27.000+00:00",
+      "parent_ids": [
+        "51bc41a595ec960b571c986b2a1a8cfaf3032831"
+      ],
+      "title": "dfilter: fix NULL deref with FT_SCALAR in compatible_ftypes",
+      "message": "dfilter: fix NULL deref with FT_SCALAR in compatible_ftypes\n\nA display filter that multiplies or divides a TIME field by the\nreturn value of min() or max() -- e.g. `frame.time > 2*min(tcp.port,\nudp.port)` -- crashed the filter compiler with a NULL pointer\ndereference in ftype_can_val_to_uinteger().\n\ncheck_arithmetic_LHS_TIME() passes FT_SCALAR as the logical type to\ncheck_function(), which forwards it to compatible_ftypes() as the\nsecond argument. compatible_ftypes() only guarded FT_SCALAR as the\nfirst argument (via ASSERT_FTYPE_NOT_REACHED); when received as the\nsecond argument it fell through to the integer cases and called\nftype_can_val_to_uinteger(FT_SCALAR). Since FT_SCALAR is a pseudo-type\nwith no entry in type_list[], FTYPE_LOOKUP indexed out of bounds and\ndereferenced NULL.\n\nA second NULL deref occurred in ftype_pretty_name(FT_SCALAR) when\nformatting the type-mismatch error, because ftype_pretty_name() and\nftype_name() also called FTYPE_LOOKUP before their switch -- making\nthe existing FT_SCALAR/FT_NUM_TYPES cases unreachable.\n\nHandle FT_SCALAR explicitly in compatible_ftypes() using\nFT_IS_SCALAR(). Switch ftype_name() and ftype_pretty_name() to\nswitch on the ftenum value directly so the pseudo-type cases work.\nHarden FTYPE_LOOKUP with ws_abort_if_fail() so the bounds check is\nnot compiled out in release builds.\n\nFixes #21377.\n\nAssisted-by: Claude\n",
+      "author_name": "Juan Carlos Valera",
+      "author_email": "juancarlosvalera999@gmail.com",
+      "authored_date": "2026-07-14T11:53:31.000+02:00",
+      "committer_name": "Juan Carlos Valera López",
+      "committer_email": "juancarlosvalera999@gmail.com",
+      "committed_date": "2026-07-17T22:21:27.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/71e0aeec050377820da7e60de12f01e7c377d058"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1910490043,
+      "head_commit_sha": "71e0aeec050377820da7e60de12f01e7c377d058",
+      "base_commit_sha": "51bc41a595ec960b571c986b2a1a8cfaf3032831",
+      "start_commit_sha": "51bc41a595ec960b571c986b2a1a8cfaf3032831",
+      "created_at": "2026-07-17T22:21:31.912Z",
+      "merge_request_id": 506955398,
+      "state": "collected",
+      "real_size": "4",
+      "patch_id_sha": "12795488957f3b403664b755ab15687be5d0793d"
+    },
+    {
+      "id": 1902110481,
+      "head_commit_sha": "e4e4bf5927c26a316ab2e0f684dce810c70e5ec0",
+      "base_commit_sha": "3511f89277277b90a426af6a53168f070d394525",
+      "start_commit_sha": "8bc069fe71d36220d6dbf6881e4278246b06cec7",
+      "created_at": "2026-07-14T09:55:57.742Z",
+      "merge_request_id": 506955398,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "12795488957f3b403664b755ab15687be5d0793d"
+    }
+  ]
+}

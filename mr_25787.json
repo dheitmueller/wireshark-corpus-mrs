@@ -1,0 +1,320 @@
+{
+  "id": 507280814,
+  "iid": 25787,
+  "project_id": 7898047,
+  "title": "opcua: Fix heap-buffer-overflow in opcua_secrets_block_callback",
+  "description": "## Summary\n\nFixes a heap-buffer-overflow (1-byte out-of-bounds read) in opcua_secrets_block_callback() in plugins/epan/opcua/opcua.c, found via local ASan/UBSan-instrumented fuzzing.\n\n## Root cause\n\n`char *tmp = g_memdup2(secrets, size + 1);`\n\ng_memdup2() both allocates **and copies** size + 1 bytes. The source buffer secrets only contains size valid bytes, so this reads 1 byte past the end of the source allocation. The extra byte was added purely as space for a manual null terminator.\n\n## Fix\n\nAllocate size + 1 zero-initialized bytes with g_malloc0(), but only copy the valid size bytes in with memcpy(). The zero-fill makes the null terminator implicit, so the manual tmp\\[size\\] = 0; line and the NULL OOM check are also removed (g_malloc0/g_malloc abort on allocation failure rather than returning NULL, per GLib semantics, so the guard was dead code).\n\n## How this was found\n\nBuilt locally with Clang + ASan + UBSan (-DENABLE_ASAN=1 -DENABLE_UBSAN=1), then ran tools/fuzz-test.sh against the existing sample captures in test/captures/. It reproducibly crashed on opcua-encrypted_with_chunking_with_keys.pcapng:\n\n==16457==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x5130000022e4 READ of size 357 at 0x5130000022e4 thread T0 #0 memcpy #1 g_memdup2 #2 opcua_secrets_block_callback plugins/epan/opcua/opcua.c:877 #3 secrets_wtap_callback epan/secrets.c:189 #4 wtapng_process_dsb wiretap/wtap.c:1746 ... 0x5130000022e4 is located 0 bytes after 356-byte region \\[0x513000002180,0x5130000022e4) allocated by thread T0 here: #0 calloc #1 g_malloc0 #2 pcapng_read_block wiretap/pcapng.c:3314 ...\n\nConfirmed deterministic (356 bytes allocated, 357 read, every run). After the fix, the same capture dissects cleanly with no ASan errors.\n\n## Verification\n\n* Rebuilt (ninja) and re-ran tshark -nVxr against the crashing capture, clean output, no ASan abort\n* Re-ran tools/fuzz-test.sh against all test/captures/opcua\\*.pcap\\* samples, no regressions\n* Confirmed with ASAN_OPTIONS=detect_leaks=0\n\nAI-Assisted: Yes (Claude), used to help set up the ASan/UBSan fuzzing environment.",
+  "state": "merged",
+  "created_at": "2026-07-15T02:07:35.058Z",
+  "updated_at": "2026-07-15T05:50:22.546Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-07-15T05:50:22.565Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "opcua-secrets-callback-oob-read",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 37829815,
+    "username": "jonb4323",
+    "public_email": "",
+    "name": "Jon B",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+    "web_url": "https://gitlab.com/jonb4323"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82358672,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "544a0f52fe01852efaef83924db509383f1d6068",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-07-15T02:07:41.302Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25787",
+  "references": {
+    "short": "!25787",
+    "relative": "!25787",
+    "full": "wireshark/wireshark!25787"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25787",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-07-15T05:30:23.042Z",
+  "latest_build_finished_at": "2026-07-15T05:50:17.197Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2677553353,
+    "iid": 106618,
+    "project_id": 7898047,
+    "sha": "4308c957f903135fcee8b0b4d90ff5d6b29ae2a1",
+    "ref": "refs/merge-requests/25787/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-15T05:30:22.016Z",
+    "updated_at": "2026-07-15T05:50:17.210Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2677553353"
+  },
+  "head_pipeline": {
+    "id": 2677553353,
+    "iid": 106618,
+    "project_id": 7898047,
+    "sha": "4308c957f903135fcee8b0b4d90ff5d6b29ae2a1",
+    "ref": "refs/merge-requests/25787/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-15T05:30:22.016Z",
+    "updated_at": "2026-07-15T05:50:17.210Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2677553353",
+    "before_sha": "4308c957f903135fcee8b0b4d90ff5d6b29ae2a1",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-07-15T05:30:23.042Z",
+    "finished_at": "2026-07-15T05:50:17.197Z",
+    "committed_at": null,
+    "duration": 1192,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2677553353",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+    "head_sha": "544a0f52fe01852efaef83924db509383f1d6068",
+    "start_sha": "08827034f78722c3189dc1785f159627a9d73706"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "eb92ef836139cc98e70956a3acf30286b1a26d91",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3559365170,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-15T02:09:44.384Z",
+          "updated_at": "2026-07-15T02:09:44.386Z",
+          "system": true,
+          "noteable_id": 507280814,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25787,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dcc733e542533b058a0d6f5ef61a9d72bb1b51a1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3559767442,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-07-15T05:30:16.469Z",
+          "updated_at": "2026-07-15T05:30:16.475Z",
+          "system": true,
+          "noteable_id": 507280814,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25787,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8d40673a1cc666b6a59523f785eaf4a7d150fd02",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3559767564,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-07-15T05:30:20.591Z",
+          "updated_at": "2026-07-15T05:30:20.592Z",
+          "system": true,
+          "noteable_id": 507280814,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25787,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -874,13 +874,10 @@ void proto_cleanup_opcua(void)\n /** secrets callback called from Wireshark when loading a capture file with OPC UA Keylog File. */\n static void opcua_secrets_block_callback(const void *secrets, unsigned size)\n {\n-    char *tmp = g_memdup2(secrets, size + 1);\n-    if (tmp == NULL) return; /* OOM */\n-\n+    char *tmp = g_malloc0(size + 1);\n+    memcpy(tmp, secrets, size);\n     ws_debug(\"Loading secrets block '%s'...\", (const char*)secrets);\n     ws_debug(\"size = %u\", size);\n-    /* ensure data is zero terminated */\n-    tmp[size] = 0;\n     /* parse data */\n     opcua_keylog_process_lines(tmp);\n     g_free(tmp);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "plugins/epan/opcua/opcua.c",
+      "old_path": "plugins/epan/opcua/opcua.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "544a0f52fe01852efaef83924db509383f1d6068",
+      "short_id": "544a0f52",
+      "created_at": "2026-07-14T22:00:32.000-04:00",
+      "parent_ids": [
+        "abc313430e13673dd64a1f0cecb3014f1f841b9d"
+      ],
+      "title": "opcua: Fix heap-buffer-overflow in opcua_secrets_block_callback",
+      "message": "opcua: Fix heap-buffer-overflow in opcua_secrets_block_callback\n\nAI-Assisted: yes (Claude)\n",
+      "author_name": "Jon B",
+      "author_email": "bjon6224@gmail.com",
+      "authored_date": "2026-07-14T21:57:40.000-04:00",
+      "committer_name": "Jon B",
+      "committer_email": "bjon6224@gmail.com",
+      "committed_date": "2026-07-14T22:00:32.000-04:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/544a0f52fe01852efaef83924db509383f1d6068"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1903795776,
+      "head_commit_sha": "544a0f52fe01852efaef83924db509383f1d6068",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "08827034f78722c3189dc1785f159627a9d73706",
+      "created_at": "2026-07-15T02:07:39.319Z",
+      "merge_request_id": 507280814,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "754a57710778306dff866f349a1fe25e857aa9ae"
+    }
+  ]
+}

@@ -1,0 +1,651 @@
+{
+  "id": 508302634,
+  "iid": 25803,
+  "project_id": 7898047,
+  "title": "opcua: Fix heap-use-after-free and missing padding validation in verify_padding",
+  "description": "## Summary\n\nFixes a heap-use-after-free (out-of-bounds backwards read) in verify_padding() and a pre-existing invalid-padding fallthrough in decrypt_opcua() in plugins/epan/opcua/opcua.c, found via local ASan-instrumented fuzzing.\n\n## Root cause\n\n```c\nstatic int verify_padding(const uint8_t *padding)\n{\n    uint8_t pad_len = *padding;\n    for (uint8_t i = 0; i < pad_len; ++i) {\n        if (padding[-pad_len + i] != pad_len) return -1;\n    }\n    return pad_len;\n}\n```\n\nCalled as verify_padding(&plaintext\\[plaintext_len - \\*sig_len - 1\\]). With i = 0, the first loop access is padding\\[-pad_len\\] = plaintext\\[plaintext_len - sig_len - 1 - pad_len\\]. There is no check that this stays within plaintext\\[0 .. plaintext_len-1\\].\n\nSecondly, decrypt_opcua did not early-return when verify_padding returned -1. It fell through, wrote the attacker-controlled pad_len byte into \\*padding_len, and returned 0.\n\n## Fix\n\nAdd an available parameter to verify_padding carrying the number of bytes that safely precede padding in the buffer (i.e. pad_offset = plaintext_len - sig_len - 1), and reject any pad_len \\> available before the loop. No memory is read if the check fails.\n\nIn decrypt_opcua add a size guard (plaintext_len \\< sig_len + 1) to prevent unsigned underflow in the pad_offset computation, pass pad_offset as available; and add a return -1 on the invalid-padding path so the caller's if (ret == 0) check actually gates the payload_len arithmetic.\n\n## How this was found\n\nBuilt locally with Clang + ASan (-DENABLE_ASAN=1), then ran tools/fuzz-test.sh against the existing samples in test/captures/. Crashed on opcua-encrypted_with_chunking_with_keys.pcapng at pass 9:\n\n==310306==ERROR: AddressSanitizer: heap-use-after-free on address 0x50d0000214f3 READ of size 1 at 0x50d0000214f3 thread T0 #0 verify_padding plugins/epan/opcua/opcua.c:328 #1 decrypt_opcua plugins/epan/opcua/opcua.c:483 #2 dissect_opcua_message plugins/epan/opcua/opcua.c:654 0x50d0000214f3 is located 131 bytes inside of 144-byte region freed by thread T0 here: #0 free #1 g_bytes_unref #2 fvalue_cleanup epan/ftypes/ftypes.c:555 #3 proto_tree_free_node epan/proto.c:921 #4 proto_tree_reset epan/proto.c:931 #5 epan_dissect_reset epan/epan.c:727\n\nConfirmed deterministic every run. After the fix the same capture dissects cleanly with no ASan errors.\n\n## Verification\n\n- Rebuilt with ninja and re-ran tshark -nVxr against the crashing capture, clean output, no ASan abort\n- Re-ran tools/fuzz-test.sh against all test/captures/opcua\\*.pcap\\* samples; no regressions\n- Confirmed with ASAN_OPTIONS=detect_leaks=0\n\nAI-Assisted: Yes (Claude), used to help set up the ASan/UBSan fuzzing environment.",
+  "state": "merged",
+  "created_at": "2026-07-17T03:52:07.817Z",
+  "updated_at": "2026-07-19T04:09:53.972Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-07-19T04:09:53.999Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "opcua-verify-padding-oob-read",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 37829815,
+    "username": "jonb4323",
+    "public_email": "",
+    "name": "Jon B",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+    "web_url": "https://gitlab.com/jonb4323"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82358672,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "1dac84fef8b76ba6d9c18be65b3a6024834c86d8",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-07-17T03:52:14.734Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25803",
+  "references": {
+    "short": "!25803",
+    "relative": "!25803",
+    "full": "wireshark/wireshark!25803"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25803",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-07-19T03:45:47.007Z",
+  "latest_build_finished_at": "2026-07-19T04:09:51.127Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2688005865,
+    "iid": 106776,
+    "project_id": 7898047,
+    "sha": "d24613c4617cc5eb79eb9b26283dbc17a48afd40",
+    "ref": "refs/merge-requests/25803/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-19T03:45:45.781Z",
+    "updated_at": "2026-07-19T04:09:51.140Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2688005865"
+  },
+  "head_pipeline": {
+    "id": 2688005865,
+    "iid": 106776,
+    "project_id": 7898047,
+    "sha": "d24613c4617cc5eb79eb9b26283dbc17a48afd40",
+    "ref": "refs/merge-requests/25803/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-19T03:45:45.781Z",
+    "updated_at": "2026-07-19T04:09:51.140Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2688005865",
+    "before_sha": "d24613c4617cc5eb79eb9b26283dbc17a48afd40",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-07-19T03:45:47.007Z",
+    "finished_at": "2026-07-19T04:09:51.127Z",
+    "committed_at": null,
+    "duration": 1442,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2688005865",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+    "head_sha": "1dac84fef8b76ba6d9c18be65b3a6024834c86d8",
+    "start_sha": "e2789f16ba546ffd5bffc811318597f8de7147f8"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "352934e9c38eda13714492dce5a3a923c433c7e5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3569942317,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>f8c1cc8f - opcua: Fix heap-use-after-free and missing padding validation in verify_padding</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25803/diffs?diff_id=1908633549&start_sha=3584d4dd4874ad9ea6755e189be40755f1981b8e)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-17T03:54:39.396Z",
+          "updated_at": "2026-07-17T03:54:39.398Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "58709f8e5544fbf2c65b69fe368db2c0682e7fda",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3569944155,
+          "type": null,
+          "body": "<p>changed title from <code class=\"idiff\">opcua: Fix heap-<span class=\"idiff left right deletion\">buffer-overflow</span> and missing padding validation in verify_padding</code> to <code class=\"idiff\">opcua: Fix heap-<span class=\"idiff left right addition\">use-after-free</span> and missing padding validation in verify_padding</code></p>",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-17T03:55:35.420Z",
+          "updated_at": "2026-07-17T03:55:35.422Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fef952ceb6fdc4327c8fc9013857f23d3523bdb6",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3570962435,
+          "type": "DiscussionNote",
+          "body": "The pipeline complains. Can you amend the commit, fixing the commit message?\n\n```Checking commit: f8c1cc8f4 opcua: Fix heap-use-after-free and missing padding validation in verify_padding\nERROR: missing blank line after the first subject line.\nPlease rewrite your commit message to our standards, matching this format:\n    component: a very brief summary of the change\n    A commit message should start with a brief summary, followed by a single\n    blank line and an optional longer description. If the change is specific to\n    a single protocol, start the summary line with the abbreviated name of the\n    protocol and a colon.\n    Use paragraphs to improve readability. Limit each line to 80 characters.\n    Finish with a trailer about possible AI involvement, in the form of\n    AI-Assisted: no|yes [tool(s)]```",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-07-17T09:26:20.311Z",
+          "updated_at": "2026-07-19T03:44:00.318Z",
+          "system": false,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-07-19T03:44:00.318Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        },
+        {
+          "id": 3572212214,
+          "type": "DiscussionNote",
+          "body": "Fixed.",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-17T14:13:02.002Z",
+          "updated_at": "2026-07-19T03:44:00.318Z",
+          "system": false,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-07-19T03:44:00.318Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "577d9a00c420e3768fb240c8376647105e1ae414",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3572170927,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-17T14:05:05.482Z",
+          "updated_at": "2026-07-17T14:05:05.485Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1b29c928c816ccc7dc1ff5f228ef164027a412bd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3572200516,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>cb5f6135 - opcua: Fix heap-use-after-free and missing padding validation in verify_padding</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25803/diffs?diff_id=1909698825&start_sha=f8c1cc8f49f098aa5ce09fc7339a59b1f1ce8701)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-17T14:11:15.950Z",
+          "updated_at": "2026-07-17T14:11:15.952Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2a744f453101ba2c225f07cdb68d924a40a6217a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3572212232,
+          "type": null,
+          "body": "left review comments",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-17T14:13:02.211Z",
+          "updated_at": "2026-07-17T14:13:02.212Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "290b6933f135a5d569c5bdb458cae9e48b746d8f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3572616983,
+          "type": null,
+          "body": "added 645 commits\n\n<ul><li>cb5f6135...e2789f16 - 644 commits from branch <code>wireshark:master</code></li><li>1dac84fe - opcua: Fix heap-use-after-free and missing padding validation in verify_padding</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25803/diffs?diff_id=1909842419&start_sha=cb5f6135eb2c2e3edf5a07e404c2ce7e0c6ec9d0)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-17T15:03:20.947Z",
+          "updated_at": "2026-07-17T15:03:20.949Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4a8f6c796ea1d1e1dda315e81f76279ba343a47d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3576081997,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-07-19T03:44:00.359Z",
+          "updated_at": "2026-07-19T03:44:00.363Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8770326637b9d83656c70d6b048a5cb2e2427ccd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3576082977,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-07-19T03:45:40.474Z",
+          "updated_at": "2026-07-19T03:45:40.476Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "61dc20ca6b7cf45908c47a2db01810a8325f8314",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3576083019,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 3",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-07-19T03:45:44.040Z",
+          "updated_at": "2026-07-19T03:45:44.041Z",
+          "system": true,
+          "noteable_id": 508302634,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25803,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -317,13 +317,18 @@ static void opcua_load_keylog_file(const char *filename)\n  * @param padding Pointer to last padding byte.\n  * @return padding length on success, -1 if the padding is invalid.\n  */\n-static int verify_padding(const uint8_t *padding)\n+static int verify_padding(const uint8_t *padding, unsigned available)\n {\n     uint8_t pad_len;\n     uint8_t i;\n \n     pad_len = *padding;\n \n+    if (pad_len > available) {\n+        ws_debug(\"padding length %u exceeds available space %u\", pad_len, available);\n+        return -1;\n+    }\n+\n     for (i = 0; i < pad_len; ++i) {\n         if (padding[-pad_len + i] != pad_len) return -1;\n     }\n@@ -480,13 +485,21 @@ static int decrypt_opcua(\n         return ret;\n     }\n \n-    ret = verify_padding(&plaintext[plaintext_len - *sig_len - 1]);\n+    /* guard: need at least sig_len + 1 bytes for the padding-length byte */\n+    if (plaintext_len < (unsigned)*sig_len + 1) {\n+        ws_debug(\"plaintext too short for signature and padding\");\n+        return -1;\n+    }\n+\n+    unsigned pad_offset = plaintext_len - *sig_len - 1;\n+    ret = verify_padding(&plaintext[pad_offset], pad_offset);\n     if (ret < 0) {\n         ws_debug(\"padding is invalid.\");\n+        return -1;\n     }\n \n     /* return padding length */\n-    *padding_len = plaintext[plaintext_len - *sig_len - 1];\n+    *padding_len = plaintext[pad_offset];\n     ws_debug(\"sig_len=%u\", *sig_len);\n     ws_debug(\"pad_len=%u\", *padding_len);\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "plugins/epan/opcua/opcua.c",
+      "old_path": "plugins/epan/opcua/opcua.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "1dac84fef8b76ba6d9c18be65b3a6024834c86d8",
+      "short_id": "1dac84fe",
+      "created_at": "2026-07-17T15:03:15.000+00:00",
+      "parent_ids": [
+        "e2789f16ba546ffd5bffc811318597f8de7147f8"
+      ],
+      "title": "opcua: Fix heap-use-after-free and missing padding validation in verify_padding",
+      "message": "opcua: Fix heap-use-after-free and missing padding validation in verify_padding\n\nAI-Assisted: yes Claude\n",
+      "author_name": "Jon B",
+      "author_email": "bjon6224@gmail.com",
+      "authored_date": "2026-07-16T23:42:34.000-04:00",
+      "committer_name": "Jon B",
+      "committer_email": "bjon6224@gmail.com",
+      "committed_date": "2026-07-17T15:03:15.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/1dac84fef8b76ba6d9c18be65b3a6024834c86d8"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1909842419,
+      "head_commit_sha": "1dac84fef8b76ba6d9c18be65b3a6024834c86d8",
+      "base_commit_sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+      "start_commit_sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+      "created_at": "2026-07-17T15:03:20.496Z",
+      "merge_request_id": 508302634,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "517dc8deb879ce63b1d978a736f864c7f9fd1fa4"
+    },
+    {
+      "id": 1909698825,
+      "head_commit_sha": "cb5f6135eb2c2e3edf5a07e404c2ce7e0c6ec9d0",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+      "created_at": "2026-07-17T14:11:15.415Z",
+      "merge_request_id": 508302634,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "517dc8deb879ce63b1d978a736f864c7f9fd1fa4"
+    },
+    {
+      "id": 1908633549,
+      "head_commit_sha": "f8c1cc8f49f098aa5ce09fc7339a59b1f1ce8701",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "e699ab947839ac6fa5e6d1740dee4502557f5b6e",
+      "created_at": "2026-07-17T03:54:39.014Z",
+      "merge_request_id": 508302634,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "517dc8deb879ce63b1d978a736f864c7f9fd1fa4"
+    },
+    {
+      "id": 1908631963,
+      "head_commit_sha": "3584d4dd4874ad9ea6755e189be40755f1981b8e",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "e699ab947839ac6fa5e6d1740dee4502557f5b6e",
+      "created_at": "2026-07-17T03:52:11.632Z",
+      "merge_request_id": 508302634,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "517dc8deb879ce63b1d978a736f864c7f9fd1fa4"
+    }
+  ]
+}

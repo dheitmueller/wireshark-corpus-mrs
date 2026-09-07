@@ -1,0 +1,387 @@
+{
+  "id": 510773069,
+  "iid": 25895,
+  "project_id": 7898047,
+  "title": "Draft: nvme: export Admin CQE/security helpers; decode Identify, log pages, HMB",
+  "description": "Four related additions to packet-nvme.c, combined into one commit since\nthey land in the same file and build on each other.\n\nExport the per-opcode completion decode (nvme_dissect_admin_cqe_dw0(),\nnvme_dissect_cqe_status(), nvme_dissect_admin_data_resp()) so NVMe-MI can\nreuse it, and decode Security Send/Receive (81h/82h) command dwords.\n\nAdd the missing Identify response decoders (CNS 03h/04h/12h-17h, plus\n10h/11h routed to the same structures), and harden the windowed-transfer\ndecoders NVMe-MI relies on: bound the NLBAF-driven LBA Format loop, stop\nthe vendor-specific area underflowing its length, and fix an Identify\nController field indexed by structure offset instead of window offset.\n\nName the Log Page Identifier table, decode four more pages\n(00h/12h/13h/14h), and fix an unsigned underflow in the SMART decoder.\nDecode the Host Metadata structure (FID 7Dh/7Eh/7Fh) and Command Dword 11\nfor HMB, I/O Command Set Profile, Spinup Control, Power Loss Signaling,\nFDP/FDP Events, and Boot Partition Write Protection.\n\nAlso fixes windowed Get Log Page / Set Features transfers (several\ndecoders underflowed on a short window, Sanitize Status had its bail-out\ninverted) via a new nvme_field_in_window() helper, and registers a missing\nReserved hf field in Set Features Arbitration\n(hf_nvme_cmd_set_features_dword11_arb[2]), a pre-existing bug on master\nunrelated to NVMe-MI.\n\nA follow-up review of the same windowed-transfer offset math found eight\nmore bugs: a 64-bit LPO+offset addition that could wrap before the\noverflow clamp ran, Telemetry/Predictable-Latency-Aggregate/ANA poff\nmiscomputed at exact block boundaries or against the wrong offset, four\nLog Page array decoders missing a record-alignment check, PLMC/HBS\nmissing their 512-byte Reserved clamp, an FW Slot AFI field dropped on an\nexact 1-byte transfer, and Identify Controller CHECK_STOP_PARSE guards\nundersized or oversized relative to the fields they gate (Reserved1,\nWCTEMP, SANICAP, ANATT, ACWU -- SANICAP was also only decoding 2 of its 4\nbytes). New regression coverage for six of the eight.\n\nAssisted-by: Claude",
+  "state": "closed",
+  "created_at": "2026-07-23T14:36:02.841Z",
+  "updated_at": "2026-07-23T16:55:05.557Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 38291053,
+    "username": "chiub",
+    "public_email": "",
+    "name": "Brandon Chiu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+    "web_url": "https://gitlab.com/chiub"
+  },
+  "closed_at": "2026-07-23T16:52:02.494Z",
+  "target_branch": "master",
+  "source_branch": "feature/nvme-mr06-decode-expansion",
+  "user_notes_count": 1,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 38291053,
+    "username": "chiub",
+    "public_email": "",
+    "name": "Brandon Chiu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+    "web_url": "https://gitlab.com/chiub"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82265243,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": true,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": true,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "91b0835cb797a5ea9eac32130563d6df5d56e003",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-07-23T14:36:08.232Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25895",
+  "references": {
+    "short": "!25895",
+    "relative": "!25895",
+    "full": "wireshark/wireshark!25895"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25895",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "6",
+  "latest_build_started_at": "2026-07-23T15:19:52.459Z",
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2700752474,
+    "iid": 138,
+    "project_id": 82265243,
+    "sha": "91b0835cb797a5ea9eac32130563d6df5d56e003",
+    "ref": "feature/nvme-mr06-decode-expansion",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2026-07-23T15:19:51.227Z",
+    "updated_at": "2026-07-23T16:47:01.826Z",
+    "web_url": "https://gitlab.com/chiub/wireshark/-/pipelines/2700752474"
+  },
+  "head_pipeline": {
+    "id": 2700752474,
+    "iid": 138,
+    "project_id": 82265243,
+    "sha": "91b0835cb797a5ea9eac32130563d6df5d56e003",
+    "ref": "feature/nvme-mr06-decode-expansion",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2026-07-23T15:19:51.227Z",
+    "updated_at": "2026-07-23T16:47:01.826Z",
+    "web_url": "https://gitlab.com/chiub/wireshark/-/pipelines/2700752474",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 38291053,
+      "username": "chiub",
+      "public_email": "",
+      "name": "Brandon Chiu",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+      "web_url": "https://gitlab.com/chiub"
+    },
+    "started_at": "2026-07-23T15:19:52.459Z",
+    "finished_at": "2026-07-23T16:47:01.815Z",
+    "committed_at": null,
+    "duration": 2831,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_failed",
+      "text": "Failed",
+      "label": "failed",
+      "group": "failed",
+      "tooltip": "failed",
+      "has_details": true,
+      "details_path": "/chiub/wireshark/-/pipelines/2700752474",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_failed-41304d7f7e3828808b0c26771f0309e55296819a9beea3ea9fbf6689d9857c12.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "5539f78d49485053291dc9c2095d68d9a82ea800",
+    "head_sha": "91b0835cb797a5ea9eac32130563d6df5d56e003",
+    "start_sha": "ba4e7dfb1020673cca0bb497b68765caf9db0789"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "4643f22ef4303017e352f192f7ea902fad5a434e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3594284660,
+          "type": null,
+          "body": "marked this merge request as **draft**",
+          "author": {
+            "id": 38291053,
+            "username": "chiub",
+            "public_email": "",
+            "name": "Brandon Chiu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chiub"
+          },
+          "created_at": "2026-07-23T15:15:02.997Z",
+          "updated_at": "2026-07-23T15:15:02.999Z",
+          "system": true,
+          "noteable_id": 510773069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25895,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "539fe93186ffb0c938e52a3e5c973f42d8f87f66",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3594307519,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>91b0835c - nvme: export Admin CQE/security helpers; decode Identify, log pages, HMB</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25895/diffs?diff_id=1920505292&start_sha=cd4b0e8ac91ff12f3ac4820c8785193fc82db54c)",
+          "author": {
+            "id": 38291053,
+            "username": "chiub",
+            "public_email": "",
+            "name": "Brandon Chiu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chiub"
+          },
+          "created_at": "2026-07-23T15:19:48.665Z",
+          "updated_at": "2026-07-23T15:19:48.666Z",
+          "system": true,
+          "noteable_id": 510773069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25895,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9944563708a926500ab545b09a3f13e427579a22",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3594669976,
+          "type": null,
+          "body": "failures are in my added tests, which work on my local windows and wsl instances. will open new mr when i figure this out",
+          "author": {
+            "id": 38291053,
+            "username": "chiub",
+            "public_email": "",
+            "name": "Brandon Chiu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chiub"
+          },
+          "created_at": "2026-07-23T16:55:05.532Z",
+          "updated_at": "2026-07-23T16:55:05.532Z",
+          "system": false,
+          "noteable_id": 510773069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25895,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-nvme.c",
+      "old_path": "epan/dissectors/packet-nvme.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -54,6 +54,7 @@\n #define NVME_AQ_OPC_MANAGE_EXP_NVM_SUBSYS  0x2d\n #define NVME_AQ_OPC_MANAGE_EXP_NS          0x31\n #define NVME_AQ_OPC_MANAGE_EXP_PORT        0x35\n+#define NVME_AQ_OPC_DBBUF_CONFIG           0x7c\n #define NVME_AQ_OPC_FORMAT_NVM             0x80\n #define NVME_AQ_OPC_SECURITY_SEND          0x81\n #define NVME_AQ_OPC_SECURITY_RECV          0x82\n@@ -64,6 +65,16 @@\n #define NVME_IDENTIFY_CNS_IDENTIFY_NS      0x0\n #define NVME_IDENTIFY_CNS_IDENTIFY_CTRL    0x1\n #define NVME_IDENTIFY_CNS_IDENTIFY_NSLIST  0x2\n+#define NVME_IDENTIFY_CNS_NSID_DESC_LIST   0x3\n+#define NVME_IDENTIFY_CNS_NVM_SET_LIST     0x4\n+#define NVME_IDENTIFY_CNS_NS_ALLOC_LIST    0x10\n+#define NVME_IDENTIFY_CNS_NS_ALLOC         0x11\n+#define NVME_IDENTIFY_CNS_CTRL_LIST_NS     0x12\n+#define NVME_IDENTIFY_CNS_CTRL_LIST        0x13\n+#define NVME_IDENTIFY_CNS_PRI_CTRL_CAP     0x14\n+#define NVME_IDENTIFY_CNS_SEC_CTRL_LIST    0x15\n+#define NVME_IDENTIFY_CNS_NS_GRAN_LIST     0x16\n+#define NVME_IDENTIFY_CNS_UUID_LIST        0x17\n \n \n struct nvme_q_ctx {\n@@ -243,6 +254,41 @@ void\n nvme_dissect_admin_sqe_cdws(tvbuff_t *sqe_tvb, packet_info *pinfo,\n                             proto_tree *tree, struct nvme_cmd_ctx *cmd_ctx);\n \n+/**\n+ * Decode the opcode-specific Admin completion result (CQE Dword 0) at dw0_off\n+ * into tree.  cmd_ctx->opcode (and, for Get/Set Features, the saved FID) selects\n+ * the per-opcode decoder; 'status' is the 16-bit NVMe status word (the Set\n+ * Features decode distinguishes success from error by its SC field).  Shared by\n+ * the NVMe transports and the NVMe-MI Admin response dissector, whose CQE Dword\n+ * 0 sits at a different offset but is otherwise identical.\n+ */\n+void\n+nvme_dissect_admin_cqe_dw0(tvbuff_t *nvme_tvb, int dw0_off, proto_tree *cqe_tree,\n+                           uint16_t status, struct nvme_cmd_ctx *cmd_ctx);\n+\n+/**\n+ * Decode the NVMe completion Status Field word (Phase Tag, SCT, SC, CRD, More,\n+ * Do-Not-Retry, plus the status-code string) at status_off into tree, without\n+ * the SQHD/SQID/CID fields of a full CQE.  For transports such as NVMe-MI that\n+ * carry the status word but omit the rest of the completion layout.\n+ */\n+void\n+nvme_dissect_cqe_status(tvbuff_t *nvme_tvb, int status_off, proto_tree *cqe_tree);\n+\n+/**\n+ * Decode the data payload returned by a data-returning Admin command (Identify,\n+ * Get Log Page, Get/Set Features) into cmd_tree, honoring a byte offset 'off'\n+ * into the logical structure (the transfer offset for the NVMe transports, or\n+ * the NVMe-MI Admin request Data Offset/DOFST) and a present-byte count 'len'.\n+ * cmd_ctx supplies the opcode and the saved per-opcode request parameters\n+ * (Identify CNS, Get Log Page LID, Set Features FID).  Returns true if the\n+ * opcode was one that carries a decodable data payload; false otherwise so the\n+ * caller can fall back to a raw-bytes rendering.\n+ */\n+bool\n+nvme_dissect_admin_data_resp(tvbuff_t *nvme_tvb, proto_tree *cmd_tree,\n+                             struct nvme_cmd_ctx *cmd_ctx, unsigned off, unsigned len);\n+\n /*\n  * Tells if opcode can be an opcode of io queue.\n  * Used to \"Guess\" queue type for nvme-tcp in case that \"connect\"\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-nvme.h",
+      "old_path": "epan/dissectors/packet-nvme.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/nvme-mi-admin-logpage-windowed.pcapng differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/nvme-mi-admin-logpage-windowed.pcapng",
+      "old_path": "test/captures/nvme-mi-admin-logpage-windowed.pcapng",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/nvme-mi-features-windowed.pcapng differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/nvme-mi-features-windowed.pcapng",
+      "old_path": "test/captures/nvme-mi-features-windowed.pcapng",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "test/suite_dissection_nvme_mi.py",
+      "old_path": "test/suite_dissection_nvme_mi.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "tools/gen-nvme-mi-test-capture.py",
+      "old_path": "tools/gen-nvme-mi-test-capture.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "91b0835cb797a5ea9eac32130563d6df5d56e003",
+      "short_id": "91b0835c",
+      "created_at": "2026-07-23T09:18:33.000-06:00",
+      "parent_ids": [
+        "5539f78d49485053291dc9c2095d68d9a82ea800"
+      ],
+      "title": "nvme: export Admin CQE/security helpers; decode Identify, log pages, HMB",
+      "message": "nvme: export Admin CQE/security helpers; decode Identify, log pages, HMB\n\nFour related additions to packet-nvme.c, combined into one commit since\nthey land in the same file and build on each other.\n\nExport the per-opcode completion decode (nvme_dissect_admin_cqe_dw0(),\nnvme_dissect_cqe_status(), nvme_dissect_admin_data_resp()) so NVMe-MI can\nreuse it, and decode Security Send/Receive (81h/82h) command dwords.\n\nAdd the missing Identify response decoders (CNS 03h/04h/12h-17h, plus\n10h/11h routed to the same structures), and harden the windowed-transfer\ndecoders NVMe-MI relies on: bound the NLBAF-driven LBA Format loop, stop\nthe vendor-specific area underflowing its length, and fix an Identify\nController field indexed by structure offset instead of window offset.\n\nName the Log Page Identifier table, decode four more pages\n(00h/12h/13h/14h), and fix an unsigned underflow in the SMART decoder.\nDecode the Host Metadata structure (FID 7Dh/7Eh/7Fh) and Command Dword 11\nfor HMB, I/O Command Set Profile, Spinup Control, Power Loss Signaling,\nFDP/FDP Events, and Boot Partition Write Protection.\n\nAlso fixes windowed Get Log Page / Set Features transfers (several\ndecoders underflowed on a short window, Sanitize Status had its bail-out\ninverted) via a new nvme_field_in_window() helper, and registers a missing\nReserved hf field in Set Features Arbitration\n(hf_nvme_cmd_set_features_dword11_arb[2]), a pre-existing bug on master\nunrelated to NVMe-MI.\n\nA follow-up review of the same windowed-transfer offset math found eight\nmore bugs: a 64-bit LPO+offset addition that could wrap before the\noverflow clamp ran, Telemetry/Predictable-Latency-Aggregate/ANA poff\nmiscomputed at exact block boundaries or against the wrong offset, four\nLog Page array decoders missing a record-alignment check, PLMC/HBS\nmissing their 512-byte Reserved clamp, an FW Slot AFI field dropped on an\nexact 1-byte transfer, and Identify Controller CHECK_STOP_PARSE guards\nundersized or oversized relative to the fields they gate (Reserved1,\nWCTEMP, SANICAP, ANATT, ACWU -- SANICAP was also only decoding 2 of its 4\nbytes). New regression coverage for six of the eight.\n\nAssisted-by: Claude\n",
+      "author_name": "Brandon Chiu",
+      "author_email": "38291053-chiub@users.noreply.gitlab.com",
+      "authored_date": "2026-07-21T23:21:21.000-06:00",
+      "committer_name": "Brandon Chiu",
+      "committer_email": "38291053-chiub@users.noreply.gitlab.com",
+      "committed_date": "2026-07-23T09:18:33.000-06:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/91b0835cb797a5ea9eac32130563d6df5d56e003"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1920505292,
+      "head_commit_sha": "91b0835cb797a5ea9eac32130563d6df5d56e003",
+      "base_commit_sha": "5539f78d49485053291dc9c2095d68d9a82ea800",
+      "start_commit_sha": "ba4e7dfb1020673cca0bb497b68765caf9db0789",
+      "created_at": "2026-07-23T15:19:48.282Z",
+      "merge_request_id": 510773069,
+      "state": "collected",
+      "real_size": "6",
+      "patch_id_sha": "51692ae3475ecb1d90268613bf57bc643e7c1003"
+    },
+    {
+      "id": 1920370049,
+      "head_commit_sha": "cd4b0e8ac91ff12f3ac4820c8785193fc82db54c",
+      "base_commit_sha": "5539f78d49485053291dc9c2095d68d9a82ea800",
+      "start_commit_sha": "1ada3fc602388e1b8d37cfb008b0ac1278267c58",
+      "created_at": "2026-07-23T14:36:06.894Z",
+      "merge_request_id": 510773069,
+      "state": "collected",
+      "real_size": "6",
+      "patch_id_sha": "c7ddbe02befb95e01802ef0040f653fdc4af2ecc"
+    }
+  ]
+}
