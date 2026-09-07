@@ -1,0 +1,737 @@
+{
+  "id": 525267103,
+  "iid": 26323,
+  "project_id": 7898047,
+  "title": "Draft: HyperDHT: add DHT-RPC dissector",
+  "description": "## Summary\n\n- Add a native UDP HyperDHT / DHT-RPC dissector.\n- Link request and response frames and expose response latency.\n- Correlate PING_NAT responses received on an advertised alternate port.\n- Decode DELAYED_PING, PLUGIN, mutable storage, FIND_PEER, peer handshake/hole-punch, and announce relay-address payloads.\n- Add Expert Info for unknown commands, unknown errors, and trailing data.\n- Harden heuristic recognition by requiring a complete top-level packet structure.\n- Add regression coverage for protocol values, cross-port PING_NAT correlation, command payloads, malformed heuristic near-matches, and truncated command payloads.\n\n## Local validation\n\n- Current Wireshark master at `3ecd8853`.\n- Legacy `tools/checkAPIs.py` and current `tools/check_apis.py`: passed with 0 warnings.\n- `cmake --build build-codex --target epan tshark text2pcap --parallel 4`: passed with no `packet-hyperdht.c` compiler warnings.\n- `pytest test/suite_dissectors/group_hyperdht.py`: 5 passed.\n- `git diff --check`: passed.\n\n## CI note\n\nThe fork pipeline is blocked because GitLab requires account identity verification before CI jobs can run; this is unrelated to the local build/test results above.\n\n## Review status\n\nThis remains a draft pending validation against a broader HyperDHT packet corpus and upstream feedback.\n\nThis continues an earlier DHT-RPC dissector prototype by James Thomas; the source header retains the original copyright attribution.\n\nAI-assisted development disclosure: OpenAI Codex was used for code quality fixes, protocol-decoder implementation, regression-test construction, local validation, and submission preparation.\n\nRelated grant: https://tether.dev/grants/bounties/3122074009/",
+  "state": "opened",
+  "created_at": "2026-08-28T12:49:30.166Z",
+  "updated_at": "2026-09-02T15:41:00.419Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "hyperdht-dht-rpc",
+  "user_notes_count": 1,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 41779828,
+    "username": "tevinchang",
+    "public_email": null,
+    "name": "Future Zhang",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/826d516a69bcb9ddbd2a622f9f208f8daa03f56ecbe823a15fbeb18c4320d25b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/tevinchang"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 85852808,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": true,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": true,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "unchecked",
+  "detailed_merge_status": "unchecked",
+  "merge_after": null,
+  "sha": "48bb66b690c1c32c4bc5d8d0db91ffe257cf694b",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-08-28T12:49:37.402Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26323",
+  "references": {
+    "short": "!26323",
+    "relative": "!26323",
+    "full": "wireshark/wireshark!26323"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26323",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2026-09-02T15:07:14.698Z",
+  "latest_build_finished_at": "2026-09-02T15:27:14.497Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2813780231,
+    "iid": 109198,
+    "project_id": 7898047,
+    "sha": "35b7dcd88b8b7e505e75cf7db02d47d796399e69",
+    "ref": "refs/merge-requests/26323/merge",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-02T15:07:13.404Z",
+    "updated_at": "2026-09-02T15:27:14.519Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2813780231"
+  },
+  "head_pipeline": {
+    "id": 2813780231,
+    "iid": 109198,
+    "project_id": 7898047,
+    "sha": "35b7dcd88b8b7e505e75cf7db02d47d796399e69",
+    "ref": "refs/merge-requests/26323/merge",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-02T15:07:13.404Z",
+    "updated_at": "2026-09-02T15:27:14.519Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2813780231",
+    "before_sha": "35b7dcd88b8b7e505e75cf7db02d47d796399e69",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-09-02T15:07:14.698Z",
+    "finished_at": "2026-09-02T15:27:14.497Z",
+    "committed_at": null,
+    "duration": 1198,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2813780231",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "683ee3badeebecbf4409b76d649ff43bd54e368b",
+    "head_sha": "48bb66b690c1c32c4bc5d8d0db91ffe257cf694b",
+    "start_sha": "683ee3badeebecbf4409b76d649ff43bd54e368b"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "23c103f9e0d3807ebd52b2df575c57c993fa1097",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3752540929,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>d9843a1e - HyperDHT: decode command payloads and harden heuristic</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26323/diffs?diff_id=1990660829&start_sha=1a6cf9f20b7ef59e7878b1c330c6b24a6286f09b)",
+          "author": {
+            "id": 41779828,
+            "username": "tevinchang",
+            "public_email": null,
+            "name": "Future Zhang",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/826d516a69bcb9ddbd2a622f9f208f8daa03f56ecbe823a15fbeb18c4320d25b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/tevinchang"
+          },
+          "created_at": "2026-08-28T13:08:44.435Z",
+          "updated_at": "2026-08-28T13:08:44.438Z",
+          "system": true,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a72fd11644408672e8d4953cc1045eb98cb59a36",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3752545938,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>414ea471 - HyperDHT: expand dissector regression coverage</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26323/diffs?diff_id=1990663440&start_sha=d9843a1e8d7fbd0fbbc0faf6135b631b129357ea)",
+          "author": {
+            "id": 41779828,
+            "username": "tevinchang",
+            "public_email": null,
+            "name": "Future Zhang",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/826d516a69bcb9ddbd2a622f9f208f8daa03f56ecbe823a15fbeb18c4320d25b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/tevinchang"
+          },
+          "created_at": "2026-08-28T13:09:45.533Z",
+          "updated_at": "2026-08-28T13:09:45.534Z",
+          "system": true,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c538c56b895ce7403ccb145508ef65c7fad3da88",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3752552333,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>cc98364e - HyperDHT: remove duplicated legacy source</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26323/diffs?diff_id=1990666310&start_sha=414ea47177ceade34909365487bccbb33a2e4732)",
+          "author": {
+            "id": 41779828,
+            "username": "tevinchang",
+            "public_email": null,
+            "name": "Future Zhang",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/826d516a69bcb9ddbd2a622f9f208f8daa03f56ecbe823a15fbeb18c4320d25b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/tevinchang"
+          },
+          "created_at": "2026-08-28T13:10:52.486Z",
+          "updated_at": "2026-08-28T13:10:52.488Z",
+          "system": true,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "af3ad65e3779c63cb95646323363f04e63e0addc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3752554286,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>639d63be - HyperDHT: remove duplicated legacy tests</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26323/diffs?diff_id=1990667421&start_sha=cc98364e665a362fbac97c5df855fedd5bb589f4)",
+          "author": {
+            "id": 41779828,
+            "username": "tevinchang",
+            "public_email": null,
+            "name": "Future Zhang",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/826d516a69bcb9ddbd2a622f9f208f8daa03f56ecbe823a15fbeb18c4320d25b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/tevinchang"
+          },
+          "created_at": "2026-08-28T13:11:17.309Z",
+          "updated_at": "2026-08-28T13:11:17.311Z",
+          "system": true,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "06164c5c69e15c16e982d55d3d79f3b1615cdfea",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3752561338,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 41779828,
+            "username": "tevinchang",
+            "public_email": null,
+            "name": "Future Zhang",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/826d516a69bcb9ddbd2a622f9f208f8daa03f56ecbe823a15fbeb18c4320d25b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/tevinchang"
+          },
+          "created_at": "2026-08-28T13:12:31.934Z",
+          "updated_at": "2026-08-28T13:12:31.936Z",
+          "system": true,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bca3338274377ab1584345f5c2eb291aeeec5cfb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3752916902,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>da3ad4a4 - hyperdht: harden truncated command payload handling</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26323/diffs?diff_id=1990849172&start_sha=639d63be974c15a7b4cbc1090aa18766479a7f52)",
+          "author": {
+            "id": 41779828,
+            "username": "tevinchang",
+            "public_email": null,
+            "name": "Future Zhang",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/826d516a69bcb9ddbd2a622f9f208f8daa03f56ecbe823a15fbeb18c4320d25b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/tevinchang"
+          },
+          "created_at": "2026-08-28T14:22:19.784Z",
+          "updated_at": "2026-08-28T14:22:19.785Z",
+          "system": true,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b9725b5dd9686860f5152dc142252bcdf1f4caa4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3752923837,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 41779828,
+            "username": "tevinchang",
+            "public_email": null,
+            "name": "Future Zhang",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/826d516a69bcb9ddbd2a622f9f208f8daa03f56ecbe823a15fbeb18c4320d25b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/tevinchang"
+          },
+          "created_at": "2026-08-28T14:23:38.664Z",
+          "updated_at": "2026-08-28T14:23:38.666Z",
+          "system": true,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4e8b733c713b0e231b188f05acf8e606b6f7d4a6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3776294617,
+          "type": null,
+          "body": "added 38 commits\n\n<ul><li>da3ad4a4...683ee3ba - 30 commits from branch <code>wireshark:master</code></li><li>9708695c - HyperDHT: add DHT-RPC dissector implementation</li><li>13807744 - HyperDHT: add dissector regression coverage</li><li>16698522 - HyperDHT: register DHT-RPC dissector</li><li>494bf57a - HyperDHT: decode command payloads and harden heuristic</li><li>8741bbec - HyperDHT: expand dissector regression coverage</li><li>590e8124 - HyperDHT: remove duplicated legacy source</li><li>b8340d30 - HyperDHT: remove duplicated legacy tests</li><li>48bb66b6 - hyperdht: harden truncated command payload handling</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26323/diffs?diff_id=2000085826&start_sha=da3ad4a492a26173a5abd7caceba7dcf24f851a6)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-02T15:07:10.559Z",
+          "updated_at": "2026-09-02T15:07:10.561Z",
+          "system": true,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2e5c2abf4485c7398906e6a69a436a8af9b06b35",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3776509775,
+          "type": null,
+          "body": "Please squash your commits.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-02T15:41:00.379Z",
+          "updated_at": "2026-09-02T15:41:00.379Z",
+          "system": false,
+          "noteable_id": 525267103,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26323,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1007,6 +1007,7 @@ set(DISSECTOR_SRC\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-http2.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-http3.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-http-urlencoded.c\n+\t${CMAKE_CURRENT_SOURCE_DIR}/packet-hyperdht.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-hyperscsi.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-i2c.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-iana-oui.c\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/CMakeLists.txt",
+      "old_path": "epan/dissectors/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-hyperdht.c",
+      "old_path": "epan/dissectors/packet-hyperdht.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,454 @@\n+# HyperDHT dissector tests\n+# SPDX-License-Identifier: GPL-2.0-or-later\n+\n+import subprocess\n+import struct\n+\n+\n+def _make_capture(cmd_text2pcap, text_path, capture_path):\n+    packets = (\n+        bytes.fromhex(\"03 00 34 12 7f 00 00 01 50 c3 63 aa\"),\n+        bytes.fromhex(\"13 08 35 12 7f 00 00 01 50 c3 63\"),\n+    )\n+\n+    with open(text_path, \"w\", encoding=\"utf-8\") as capture_text:\n+        for packet in packets:\n+            capture_text.write(\"000000  {}\\n\".format(\" \".join(f\"{byte:02x}\" for byte in packet)))\n+\n+    subprocess.check_call(\n+        (cmd_text2pcap, \"-q\", \"-u\", \"20000,20001\", text_path, capture_path)\n+    )\n+\n+\n+def _internet_checksum(data):\n+    if len(data) % 2:\n+        data += b\"\\x00\"\n+    words = struct.unpack(f\"!{len(data) // 2}H\", data)\n+    value = sum(words)\n+    value = (value & 0xFFFF) + (value >> 16)\n+    value = (value & 0xFFFF) + (value >> 16)\n+    return (~value) & 0xFFFF\n+\n+\n+def _ipv4_udp_frame(payload, src_ip, dst_ip, src_port, dst_port, identification):\n+    ethernet = bytes.fromhex(\"02 00 00 00 00 02 02 00 00 00 00 01 08 00\")\n+    udp = struct.pack(\"!HHHH\", src_port, dst_port, len(payload) + 8, 0)\n+    ip_without_checksum = struct.pack(\n+        \"!BBHHHBBH4s4s\",\n+        0x45,\n+        0,\n+        20 + len(udp) + len(payload),\n+        identification,\n+        0,\n+        64,\n+        17,\n+        0,\n+        src_ip,\n+        dst_ip,\n+    )\n+    ip_checksum = _internet_checksum(ip_without_checksum)\n+    ip = ip_without_checksum[:10] + struct.pack(\"!H\", ip_checksum) + ip_without_checksum[12:]\n+    return ethernet + ip + udp + payload\n+\n+\n+def _make_ping_nat_capture(cmd_text2pcap, text_path, capture_path):\n+    client = bytes((192, 0, 2, 10))\n+    server = bytes((192, 0, 2, 20))\n+    request = bytes.fromhex(\"03 14 34 12 c0 00 02 14 21 4e 01 02 30 75\")\n+    response = bytes.fromhex(\"13 00 34 12 c0 00 02 0a 30 75\")\n+    frames = (\n+        _ipv4_udp_frame(request, client, server, 40000, 20001, 1),\n+        _ipv4_udp_frame(response, server, client, 20001, 30000, 2),\n+    )\n+\n+    with open(text_path, \"w\", encoding=\"utf-8\") as capture_text:\n+        for frame in frames:\n+            for offset in range(0, len(frame), 16):\n+                chunk = frame[offset : offset + 16]\n+                capture_text.write(\n+                    \"{:06x}  {}\\n\".format(offset, \" \".join(f\"{byte:02x}\" for byte in chunk))\n+                )\n+\n+    subprocess.check_call(\n+        (cmd_text2pcap, \"-q\", \"-l\", \"1\", text_path, capture_path)\n+    )\n+\n+\n+def _make_command_coverage_capture(cmd_text2pcap, text_path, capture_path):\n+    client = bytes((192, 0, 2, 10))\n+    server = bytes((192, 0, 2, 20))\n+    request_to = bytes.fromhex(\"c0 00 02 14 21 4e\")\n+    response_to = bytes.fromhex(\"c0 00 02 0a 20 4e\")\n+\n+    mutable_put = (\n+        bytes((0x11,)) * 32\n+        + bytes((5, 3))\n+        + b\"abc\"\n+        + bytes((0x22,)) * 64\n+    )\n+    mutable_get_response = bytes((7, 3)) + b\"xyz\" + bytes((0x44,)) * 64\n+    find_peer_response = (\n+        bytes((0x66,)) * 32\n+        + bytes((1, 198, 51, 100, 7, 0x49, 0xC2))\n+    )\n+\n+    payloads = (\n+        bytes.fromhex(\"03 14 01 20\") + request_to + bytes.fromhex(\"04 04 88 13 00 00\"),\n+        bytes.fromhex(\"03 10 02 20\")\n+        + request_to\n+        + bytes.fromhex(\"0a 0c 04 64 65 6d 6f 02 07 01 03 61 62 63\"),\n+        bytes.fromhex(\"03 18 03 20\")\n+        + request_to\n+        + bytes((6,))\n+        + bytes((0x33,)) * 32\n+        + bytes((len(mutable_put),))\n+        + mutable_put,\n+        bytes.fromhex(\"03 18 04 20\")\n+        + request_to\n+        + bytes((7,))\n+        + bytes((0x33,)) * 32\n+        + bytes((1, 7)),\n+        bytes.fromhex(\"13 10 04 20\")\n+        + response_to\n+        + bytes((len(mutable_get_response),))\n+        + mutable_get_response,\n+        bytes.fromhex(\"03 08 05 20\")\n+        + request_to\n+        + bytes((2,))\n+        + bytes((0x55,)) * 32,\n+        bytes.fromhex(\"13 10 05 20\")\n+        + response_to\n+        + bytes((len(find_peer_response),))\n+        + find_peer_response,\n+        bytes.fromhex(\"03 18 06 20\")\n+        + request_to\n+        + bytes((0,))\n+        + bytes((0x77,)) * 32\n+        + bytes.fromhex(\"04 00 00 01 aa\"),\n+        bytes.fromhex(\"13 10 06 20\")\n+        + response_to\n+        + bytes.fromhex(\"0b 01 04 02 bb cc cb 00 71 09 39 30\"),\n+    )\n+\n+    frames = []\n+    for index, payload in enumerate(payloads, start=1):\n+        response = payload[0] == 0x13\n+        frames.append(\n+            _ipv4_udp_frame(\n+                payload,\n+                server if response else client,\n+                client if response else server,\n+                20001 if response else 20000,\n+                20000 if response else 20001,\n+                index,\n+            )\n+        )\n+\n+    with open(text_path, \"w\", encoding=\"utf-8\") as capture_text:\n+        for frame in frames:\n+            for offset in range(0, len(frame), 16):\n+                chunk = frame[offset : offset + 16]\n+                capture_text.write(\n+                    \"{:06x}  {}\\n\".format(offset, \" \".join(f\"{byte:02x}\" for byte in chunk))\n+                )\n+\n+    subprocess.check_call((cmd_text2pcap, \"-q\", \"-l\", \"1\", text_path, capture_path))\n+\n+\n+def _make_heuristic_capture(cmd_text2pcap, text_path, capture_path):\n+    client = bytes((192, 0, 2, 10))\n+    server = bytes((192, 0, 2, 20))\n+    to = bytes.fromhex(\"c0 00 02 14 21 4e\")\n+    valid = bytes.fromhex(\"03 14 07 20\") + to + bytes.fromhex(\"04 04 88 13 00 00\")\n+    malformed = bytes.fromhex(\"03 10 08 20\") + to + bytes.fromhex(\"0a 05 aa\")\n+    frames = (\n+        _ipv4_udp_frame(valid, client, server, 31000, 31001, 1),\n+        _ipv4_udp_frame(malformed, client, server, 32000, 32001, 2),\n+    )\n+\n+    with open(text_path, \"w\", encoding=\"utf-8\") as capture_text:\n+        for frame in frames:\n+            for offset in range(0, len(frame), 16):\n+                chunk = frame[offset : offset + 16]\n+                capture_text.write(\n+                    \"{:06x}  {}\\n\".format(offset, \" \".join(f\"{byte:02x}\" for byte in chunk))\n+                )\n+\n+    subprocess.check_call((cmd_text2pcap, \"-q\", \"-l\", \"1\", text_path, capture_path))\n+\n+\n+def _make_truncated_command_capture(cmd_text2pcap, text_path, capture_path):\n+    client = bytes((192, 0, 2, 10))\n+    server = bytes((192, 0, 2, 20))\n+    request_to = bytes.fromhex(\"c0 00 02 14 21 4e\")\n+    response_to = bytes.fromhex(\"c0 00 02 0a 20 4e\")\n+\n+    payloads = (\n+        (bytes.fromhex(\"03 14 01 40\") + request_to + bytes.fromhex(\"01 01 aa\"), False),\n+        (bytes.fromhex(\"03 14 02 40\") + request_to + bytes.fromhex(\"03 05 01 02 03 04 05\"), False),\n+        (bytes.fromhex(\"03 10 03 40\") + request_to + bytes.fromhex(\"00 01 01\"), False),\n+        (bytes.fromhex(\"03 10 04 40\") + request_to + bytes.fromhex(\"01 02 01 02\"), False),\n+        (bytes.fromhex(\"03 10 05 40\") + request_to + bytes.fromhex(\"04 01 01\"), False),\n+        (bytes.fromhex(\"03 10 06 40\") + request_to + bytes.fromhex(\"07 01 fd\"), False),\n+        (\n+            bytes.fromhex(\"03 08 07 40\")\n+            + request_to\n+            + bytes((3,))\n+            + bytes((0x55,)) * 32,\n+            False,\n+        ),\n+        (bytes.fromhex(\"13 10 07 40\") + response_to + bytes.fromhex(\"01 01\"), True),\n+        (bytes.fromhex(\"13 10 03 40\") + response_to + bytes.fromhex(\"01 01\"), True),\n+    )\n+\n+    frames = []\n+    for index, (payload, response) in enumerate(payloads, start=1):\n+        frames.append(\n+            _ipv4_udp_frame(\n+                payload,\n+                server if response else client,\n+                client if response else server,\n+                20001 if response else 20000,\n+                20000 if response else 20001,\n+                index,\n+            )\n+        )\n+\n+    with open(text_path, \"w\", encoding=\"utf-8\") as capture_text:\n+        for frame in frames:\n+            for offset in range(0, len(frame), 16):\n+                chunk = frame[offset : offset + 16]\n+                capture_text.write(\n+                    \"{:06x}  {}\\n\".format(offset, \" \".join(f\"{byte:02x}\" for byte in chunk))\n+                )\n+\n+    subprocess.check_call((cmd_text2pcap, \"-q\", \"-l\", \"1\", text_path, capture_path))\n+\n+\n+def _fields(cmd_tshark, capture_path, display_filter, fields, env):\n+    command = [\n+        cmd_tshark,\n+        \"-2\",\n+        \"-r\",\n+        capture_path,\n+        \"-d\",\n+        \"udp.port==20001,hyperdht\",\n+        \"-Y\",\n+        display_filter,\n+        \"-T\",\n+        \"fields\",\n+    ]\n+    for field in fields:\n+        command.extend((\"-e\", field))\n+\n+    return subprocess.check_output(command, encoding=\"utf-8\", env=env).strip()\n+\n+\n+def _heuristic_fields(cmd_tshark, capture_path, display_filter, fields, env):\n+    command = [\n+        cmd_tshark,\n+        \"-2\",\n+        \"-r\",\n+        capture_path,\n+        \"-Y\",\n+        display_filter,\n+        \"-T\",\n+        \"fields\",\n+    ]\n+    for field in fields:\n+        command.extend((\"-e\", field))\n+\n+    return subprocess.check_output(command, encoding=\"utf-8\", env=env).strip()\n+\n+\n+class TestHyperDHT:\n+    def test_unknown_command_and_trailing_data_experts(\n+        self, cmd_tshark, cmd_text2pcap, result_file, test_env\n+    ):\n+        text_path = result_file(\"txt\")\n+        capture_path = result_file(\"pcapng\")\n+        _make_capture(cmd_text2pcap, text_path, capture_path)\n+\n+        unknown_command = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 1\",\n+            (\"hyperdht.command\", \"_ws.expert.message\", \"hyperdht.trailing\"),\n+            test_env,\n+        )\n+        assert unknown_command == (\n+            \"99\\tUnrecognized HyperDHT command: 99,\"\n+            \"Trailing bytes after end of message\\taa\"\n+        )\n+\n+        unknown_error = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 2\",\n+            (\"hyperdht.error\", \"_ws.expert.message\"),\n+            test_env,\n+        )\n+        assert unknown_error == \"63\\tUnrecognized DHT-RPC error code: 99\"\n+\n+    def test_ping_nat_links_response_on_advertised_port(\n+        self, cmd_tshark, cmd_text2pcap, result_file, test_env\n+    ):\n+        text_path = result_file(\"txt\")\n+        capture_path = result_file(\"pcapng\")\n+        _make_ping_nat_capture(cmd_text2pcap, text_path, capture_path)\n+\n+        response_frame = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 1\",\n+            (\"hyperdht.response_in\",),\n+            test_env,\n+        )\n+        assert response_frame == \"2\"\n+\n+        request_and_latency = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 2\",\n+            (\"hyperdht.request_in\", \"hyperdht.response_time\"),\n+            test_env,\n+        ).split(\"\\t\")\n+        assert request_and_latency[0] == \"1\"\n+        assert request_and_latency[1]\n+\n+    def test_command_payload_decoders(\n+        self, cmd_tshark, cmd_text2pcap, result_file, test_env\n+    ):\n+        text_path = result_file(\"txt\")\n+        capture_path = result_file(\"pcapng\")\n+        _make_command_coverage_capture(cmd_text2pcap, text_path, capture_path)\n+\n+        delayed_ping = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 1\",\n+            (\"hyperdht.command\", \"hyperdht.delayed_ping.delay\"),\n+            test_env,\n+        )\n+        assert delayed_ping == \"4\\t5000\"\n+\n+        plugin = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 2\",\n+            (\n+                \"hyperdht.command\",\n+                \"hyperdht.plugin.name\",\n+                \"hyperdht.plugin.version\",\n+                \"hyperdht.plugin.command\",\n+                \"hyperdht.plugin.flag.value\",\n+                \"hyperdht.plugin.value\",\n+            ),\n+            test_env,\n+        )\n+        assert plugin == \"10\\tdemo\\t2\\t7\\tTrue\\t616263\"\n+\n+        mutable_put_fields = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 3\",\n+            (\n+                \"hyperdht.mutable_put.public_key\",\n+                \"hyperdht.mutable_put.seq\",\n+                \"hyperdht.mutable_put.value\",\n+                \"hyperdht.mutable_put.signature\",\n+            ),\n+            test_env,\n+        ).split(\"\\t\")\n+        assert mutable_put_fields == [\"11\" * 32, \"5\", \"616263\", \"22\" * 64]\n+\n+        mutable_get_fields = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 5\",\n+            (\n+                \"hyperdht.mutable_get.response.seq\",\n+                \"hyperdht.mutable_get.response.value\",\n+                \"hyperdht.mutable_get.response.signature\",\n+            ),\n+            test_env,\n+        ).split(\"\\t\")\n+        assert mutable_get_fields == [\"7\", \"78797a\", \"44\" * 64]\n+\n+        find_peer = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 7\",\n+            (\n+                \"hyperdht.find_peer_reply.peer\",\n+                \"hyperdht.peer.ipv4\",\n+                \"hyperdht.peer.port\",\n+            ),\n+            test_env,\n+        )\n+        assert find_peer == (\n+            f\"{'66' * 32}\\t192.0.2.10,198.51.100.7\\t20000,49737\"\n+        )\n+\n+        handshake_reply = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 9\",\n+            (\n+                \"hyperdht.peer_handshake.mode\",\n+                \"hyperdht.peer_handshake.peer.addr\",\n+                \"hyperdht.peer_handshake.peer.port\",\n+            ),\n+            test_env,\n+        )\n+        assert handshake_reply == \"4\\t203.0.113.9\\t12345\"\n+\n+    def test_heuristic_requires_complete_top_level_structure(\n+        self, cmd_tshark, cmd_text2pcap, result_file, test_env\n+    ):\n+        text_path = result_file(\"txt\")\n+        capture_path = result_file(\"pcapng\")\n+        _make_heuristic_capture(cmd_text2pcap, text_path, capture_path)\n+\n+        valid = _heuristic_fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 1\",\n+            (\"hyperdht.version\", \"hyperdht.delayed_ping.delay\"),\n+            test_env,\n+        )\n+        assert valid == \"3\\t5000\"\n+\n+        malformed = _heuristic_fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"frame.number == 2\",\n+            (\"hyperdht.version\",),\n+            test_env,\n+        )\n+        assert malformed == \"\"\n+\n+    def test_truncated_command_payloads_do_not_raise_malformed_exceptions(\n+        self, cmd_tshark, cmd_text2pcap, result_file, test_env\n+    ):\n+        text_path = result_file(\"txt\")\n+        capture_path = result_file(\"pcapng\")\n+        _make_truncated_command_capture(cmd_text2pcap, text_path, capture_path)\n+\n+        decoded_frames = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"hyperdht\",\n+            (\"frame.number\",),\n+            test_env,\n+        )\n+        assert decoded_frames.splitlines() == [str(frame) for frame in range(1, 10)]\n+\n+        malformed_frames = _fields(\n+            cmd_tshark,\n+            capture_path,\n+            \"_ws.malformed\",\n+            (\"frame.number\",),\n+            test_env,\n+        )\n+        assert malformed_frames == \"\"\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissectors/group_hyperdht.py",
+      "old_path": "test/suite_dissectors/group_hyperdht.py",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "48bb66b690c1c32c4bc5d8d0db91ffe257cf694b",
+      "short_id": "48bb66b6",
+      "created_at": "2026-09-02T17:07:03.000+02:00",
+      "parent_ids": [
+        "b8340d309091e0cb03015aa1ee3138ecc983ad92"
+      ],
+      "title": "hyperdht: harden truncated command payload handling",
+      "message": "hyperdht: harden truncated command payload handling",
+      "author_name": "Future Zhang",
+      "author_email": "tevin.chang@live.com",
+      "authored_date": "2026-08-28T14:22:14.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-09-02T17:07:03.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/48bb66b690c1c32c4bc5d8d0db91ffe257cf694b"
+    },
+    {
+      "id": "b8340d309091e0cb03015aa1ee3138ecc983ad92",
+      "short_id": "b8340d30",
+      "created_at": "2026-09-02T17:07:03.000+02:00",
+      "parent_ids": [
+        "590e8124a423a87cf135fbb5648da544dc066053"
+      ],
+      "title": "HyperDHT: remove duplicated legacy tests",
+      "message": "HyperDHT: remove duplicated legacy tests",
+      "author_name": "Future Zhang",
+      "author_email": "tevin.chang@live.com",
+      "authored_date": "2026-08-28T13:11:12.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-09-02T17:07:03.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/b8340d309091e0cb03015aa1ee3138ecc983ad92"
+    },
+    {
+      "id": "590e8124a423a87cf135fbb5648da544dc066053",
+      "short_id": "590e8124",
+      "created_at": "2026-09-02T17:07:03.000+02:00",
+      "parent_ids": [
+        "8741bbec9112150e108b1514be735621cdcd623c"
+      ],
+      "title": "HyperDHT: remove duplicated legacy source",
+      "message": "HyperDHT: remove duplicated legacy source",
+      "author_name": "Future Zhang",
+      "author_email": "tevin.chang@live.com",
+      "authored_date": "2026-08-28T13:10:47.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-09-02T17:07:03.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/590e8124a423a87cf135fbb5648da544dc066053"
+    },
+    {
+      "id": "8741bbec9112150e108b1514be735621cdcd623c",
+      "short_id": "8741bbec",
+      "created_at": "2026-09-02T17:07:03.000+02:00",
+      "parent_ids": [
+        "494bf57a180e9802001a76625f9e3a4af1929c9d"
+      ],
+      "title": "HyperDHT: expand dissector regression coverage",
+      "message": "HyperDHT: expand dissector regression coverage",
+      "author_name": "Future Zhang",
+      "author_email": "tevin.chang@live.com",
+      "authored_date": "2026-08-28T13:09:40.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-09-02T17:07:03.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8741bbec9112150e108b1514be735621cdcd623c"
+    },
+    {
+      "id": "494bf57a180e9802001a76625f9e3a4af1929c9d",
+      "short_id": "494bf57a",
+      "created_at": "2026-09-02T17:07:03.000+02:00",
+      "parent_ids": [
+        "1669852268f3f4ab97e6472abe02bb33a6c3805f"
+      ],
+      "title": "HyperDHT: decode command payloads and harden heuristic",
+      "message": "HyperDHT: decode command payloads and harden heuristic",
+      "author_name": "Future Zhang",
+      "author_email": "tevin.chang@live.com",
+      "authored_date": "2026-08-28T13:08:38.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-09-02T17:07:03.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/494bf57a180e9802001a76625f9e3a4af1929c9d"
+    },
+    {
+      "id": "1669852268f3f4ab97e6472abe02bb33a6c3805f",
+      "short_id": "16698522",
+      "created_at": "2026-09-02T17:07:03.000+02:00",
+      "parent_ids": [
+        "138077449a26a6bcf007dd1fef3b63663e7040d5"
+      ],
+      "title": "HyperDHT: register DHT-RPC dissector",
+      "message": "HyperDHT: register DHT-RPC dissector",
+      "author_name": "Future Zhang",
+      "author_email": "tevin.chang@live.com",
+      "authored_date": "2026-08-28T12:48:04.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-09-02T17:07:03.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/1669852268f3f4ab97e6472abe02bb33a6c3805f"
+    },
+    {
+      "id": "138077449a26a6bcf007dd1fef3b63663e7040d5",
+      "short_id": "13807744",
+      "created_at": "2026-09-02T17:07:03.000+02:00",
+      "parent_ids": [
+        "9708695cb0cd9dc4ec28a5f6e1f50e4f2960ab6a"
+      ],
+      "title": "HyperDHT: add dissector regression coverage",
+      "message": "HyperDHT: add dissector regression coverage",
+      "author_name": "Future Zhang",
+      "author_email": "tevin.chang@live.com",
+      "authored_date": "2026-08-28T12:44:11.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-09-02T17:07:03.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/138077449a26a6bcf007dd1fef3b63663e7040d5"
+    },
+    {
+      "id": "9708695cb0cd9dc4ec28a5f6e1f50e4f2960ab6a",
+      "short_id": "9708695c",
+      "created_at": "2026-09-02T17:07:03.000+02:00",
+      "parent_ids": [
+        "683ee3badeebecbf4409b76d649ff43bd54e368b"
+      ],
+      "title": "HyperDHT: add DHT-RPC dissector implementation",
+      "message": "HyperDHT: add DHT-RPC dissector implementation",
+      "author_name": "Future Zhang",
+      "author_email": "tevin.chang@live.com",
+      "authored_date": "2026-08-28T12:43:38.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-09-02T17:07:03.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9708695cb0cd9dc4ec28a5f6e1f50e4f2960ab6a"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2000085826,
+      "head_commit_sha": "48bb66b690c1c32c4bc5d8d0db91ffe257cf694b",
+      "base_commit_sha": "683ee3badeebecbf4409b76d649ff43bd54e368b",
+      "start_commit_sha": "683ee3badeebecbf4409b76d649ff43bd54e368b",
+      "created_at": "2026-09-02T15:07:09.987Z",
+      "merge_request_id": 525267103,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "8f4a90742cc6cc00f5232a59fbf02d584a750642"
+    },
+    {
+      "id": 1990849172,
+      "head_commit_sha": "da3ad4a492a26173a5abd7caceba7dcf24f851a6",
+      "base_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "start_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "created_at": "2026-08-28T14:22:19.270Z",
+      "merge_request_id": 525267103,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "8f4a90742cc6cc00f5232a59fbf02d584a750642"
+    },
+    {
+      "id": 1990667421,
+      "head_commit_sha": "639d63be974c15a7b4cbc1090aa18766479a7f52",
+      "base_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "start_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "created_at": "2026-08-28T13:11:16.879Z",
+      "merge_request_id": 525267103,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "e746ddd6e572cd5e9ae57f9b5b242e360c6cd5cf"
+    },
+    {
+      "id": 1990666310,
+      "head_commit_sha": "cc98364e665a362fbac97c5df855fedd5bb589f4",
+      "base_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "start_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "created_at": "2026-08-28T13:10:52.010Z",
+      "merge_request_id": 525267103,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "3028fcccaff3e298cd2724992467a9d4492f7d01"
+    },
+    {
+      "id": 1990663440,
+      "head_commit_sha": "414ea47177ceade34909365487bccbb33a2e4732",
+      "base_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "start_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "created_at": "2026-08-28T13:09:45.083Z",
+      "merge_request_id": 525267103,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "5c6dafa5fe1a65fdc5c09ac8f7b495cf0e679d13"
+    },
+    {
+      "id": 1990660829,
+      "head_commit_sha": "d9843a1e8d7fbd0fbbc0faf6135b631b129357ea",
+      "base_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "start_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "created_at": "2026-08-28T13:08:43.899Z",
+      "merge_request_id": 525267103,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "01f512db79a80456b916a3c5a2caffe420f4e5c8"
+    },
+    {
+      "id": 1990612528,
+      "head_commit_sha": "1a6cf9f20b7ef59e7878b1c330c6b24a6286f09b",
+      "base_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "start_commit_sha": "3ecd8853ce0cafd350da97fca7de9c34b589ec32",
+      "created_at": "2026-08-28T12:49:34.143Z",
+      "merge_request_id": 525267103,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "b3e4a8880fbbc960cfba0b23f8e9a9d7c69be23a"
+    }
+  ]
+}
