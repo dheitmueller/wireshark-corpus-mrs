@@ -1,0 +1,444 @@
+{
+  "id": 520428129,
+  "iid": 26211,
+  "project_id": 7898047,
+  "title": "UDX: correct sequence analysis and reassembly",
+  "description": "Follow-up to !25989, which added the dissector. Six corrections to the sequence analysis: the first three reported by James Thomas of the libudx team, the rest found by comparing the dissector's verdicts against an instrumented build of libudx over its own test suite.Six problems in the stateful analysis. The first three were found in review by James Thomas; the rest came from comparing the dissector's verdicts against an instrumented build of libudx, packet by packet, over its own test suite.\n\nA selective acknowledgement acknowledges a packet just as a cumulative one does, but only the cumulative path retired a segment. A packet named in a SACK block now records the frame that first acknowledged it, whether that was a selective or a cumulative acknowledgement, and leaves the flight at that point rather than staying counted as outstanding until the cumulative acknowledgement caught up. Both paths retire through one place, so a packet that is selectively acknowledged and later covered by a cumulative acknowledgement is not counted twice. The cumulative walk now steps over segments already retired instead of stopping at the first one, which it has to do once selective acknowledgements can retire packets out of order.\n\nA retransmission that arrived after a full timeout was reported as a fast retransmission whenever the peer had selectively acknowledged anything above it. The elapsed time is the stronger signal, so the timeout is now tested first and the selective acknowledgement state only classifies retransmissions that arrive sooner than that.\n\nA tail loss probe does not have to repeat the tail: libudx sends the next new packet as the probe when it has one. Such a packet is now recognised by what it looks like from outside - a fresh sequence number extending the flow after a probe-sized pause, with earlier data still unacknowledged.\n\nPayload held back waiting for a gap ahead of it was never released once a second copy of a held packet reached the delivery point first, which happens whenever a retransmission arrives while an earlier gap is still open. The spent copy stayed at the head of the pending list and stopped everything behind it, so following a stream that had lost anything returned a fraction of the transfer and then stopped. Superseded copies are now discarded rather than left to block the queue. On a 256 KB transfer with induced loss this takes the reassembled payload from 32 KB to the whole of it.\n\nThe first packet seen on a flow is not always the one with the lowest sequence number: if it was lost and resent it arrives after its successors. The lowest sequence seen is now tracked separately from the first, and bounds the cumulative walk, so a packet below the first one seen is still retired instead of being counted as in flight for the rest of the capture.\n\nA round trip time sample was credited to the flow that carried the acknowledgement rather than the flow whose packet it timed, while the retransmission timeout derived from it is judged on the sending flow. On a transfer carrying data in both directions the two samples were merely exchanged, but on a one-way transfer the sending flow never obtained a round trip time at all and every timeout test fell back on its floor.\n\nAdds five captures and six tests covering the cases above.",
+  "state": "merged",
+  "created_at": "2026-08-17T23:18:07.490Z",
+  "updated_at": "2026-08-19T07:02:37.118Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-08-19T07:02:37.229Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "udx-analysis-fixes",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 40756552,
+    "username": "frankolien",
+    "public_email": null,
+    "name": "Frank Olien",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+    "web_url": "https://gitlab.com/frankolien"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 84942639,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "1bc8f03aa8e2e8359434001e96a7c2f54d126c2e",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-08-17T23:18:12.221Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26211",
+  "references": {
+    "short": "!26211",
+    "relative": "!26211",
+    "full": "wireshark/wireshark!26211"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26211",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2026-08-19T06:38:36.147Z",
+  "latest_build_finished_at": "2026-08-19T07:02:26.945Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2771412601,
+    "iid": 108506,
+    "project_id": 7898047,
+    "sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+    "ref": "refs/merge-requests/26211/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-19T06:38:34.310Z",
+    "updated_at": "2026-08-19T07:02:26.960Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2771412601"
+  },
+  "head_pipeline": {
+    "id": 2771412601,
+    "iid": 108506,
+    "project_id": 7898047,
+    "sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+    "ref": "refs/merge-requests/26211/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-19T06:38:34.310Z",
+    "updated_at": "2026-08-19T07:02:26.960Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2771412601",
+    "before_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-08-19T06:38:36.147Z",
+    "finished_at": "2026-08-19T07:02:26.945Z",
+    "committed_at": null,
+    "duration": 1429,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2771412601",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "a97516e9f10a1e25da4683841a1f2115c6f20f17",
+    "head_sha": "1bc8f03aa8e2e8359434001e96a7c2f54d126c2e",
+    "start_sha": "a97516e9f10a1e25da4683841a1f2115c6f20f17"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "4b72a5440ddd6ca09d75b2e0340dd9ed76e441f7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3698219735,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>a97516e9 - 1 commit from branch <code>wireshark:master</code></li><li>1bc8f03a - UDX: correct sequence analysis and reassembly</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26211/diffs?diff_id=1967499620&start_sha=38200aed1bd024c446325d0809dd00b714927a3e)",
+          "author": {
+            "id": 40756552,
+            "username": "frankolien",
+            "public_email": null,
+            "name": "Frank Olien",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+            "web_url": "https://gitlab.com/frankolien"
+          },
+          "created_at": "2026-08-18T07:38:41.451Z",
+          "updated_at": "2026-08-18T07:38:41.453Z",
+          "system": true,
+          "noteable_id": 520428129,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26211,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e2d73302b572d29228e19cf757fa297ad845e3e6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3703490199,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-19T06:38:26.823Z",
+          "updated_at": "2026-08-19T06:38:26.828Z",
+          "system": true,
+          "noteable_id": 520428129,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26211,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e16eaf351a99fdd3a0fb87ca6710eb933d0e7c7e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3703490413,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 3",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-19T06:38:30.830Z",
+          "updated_at": "2026-08-19T06:38:30.833Z",
+          "system": true,
+          "noteable_id": 520428129,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26211,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "00067b5b02d8d123a61685264a0b1fb2fa153316",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3730786524,
+          "type": null,
+          "body": "mentioned in merge request !26281",
+          "author": {
+            "id": 40756552,
+            "username": "frankolien",
+            "public_email": null,
+            "name": "Frank Olien",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+            "web_url": "https://gitlab.com/frankolien"
+          },
+          "created_at": "2026-08-25T09:51:50.984Z",
+          "updated_at": "2026-08-25T09:51:50.986Z",
+          "system": true,
+          "noteable_id": 520428129,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26211,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -127,6 +127,7 @@ typedef struct udx_flow {\n     nstime_t     first_ts;\n     wmem_tree_t *segs;          /* seq -> udx_seg_t */\n     uint32_t     base_seq;      /* first sequence number seen on this flow */\n+    uint32_t     low_seq;       /* lowest sequence number seen on this flow */\n     uint32_t     max_seq;       /* highest sequence number sent */\n     bool         have_seq;\n     uint32_t     outstanding_bytes;\n@@ -137,6 +138,8 @@ typedef struct udx_flow {\n     bool         have_sacked;\n     uint32_t     last_rwnd;\n     bool         rwnd_zero;\n+    nstime_t     last_tx_ts;    /* when this flow last sent stream data */\n+    bool         have_tx;\n     double       srtt;\n     double       rttvar;\n     bool         have_rtt;\n@@ -444,13 +447,36 @@ udx_rto(const udx_flow_t *flow)\n     return (rto < UDX_MIN_RTO) ? UDX_MIN_RTO : rto;\n }\n \n+/*\n+ * Retire one segment. A packet stops being in flight the moment it is\n+ * acknowledged, whether cumulatively or selectively, so both paths come\n+ * through here. Returns true only for the frame that first acknowledged it,\n+ * which keeps a later cumulative acknowledgement of an already selectively\n+ * acknowledged packet from counting it twice.\n+ */\n+static bool\n+udx_retire_seg(packet_info *pinfo, udx_flow_t *flow, udx_seg_t *seg)\n+{\n+    if (seg->acked_in_frame != 0)\n+        return false;\n+\n+    seg->acked_in_frame = pinfo->num;\n+    seg->ack_ts = pinfo->abs_ts;\n+\n+    if (flow->outstanding_pkts > 0) {\n+        flow->outstanding_pkts--;\n+        flow->outstanding_bytes -= seg->len;\n+    }\n+    return true;\n+}\n+\n /*\n  * Retire every segment of the acknowledged flow below \"ack\", link the last\n  * of them to the acknowledging packet, and take an RTT sample from it.\n  */\n static void\n-udx_process_ack(packet_info *pinfo, udx_flow_t *acked_flow, udx_flow_t *acking_flow,\n-                uint32_t ack, udx_ppd_t *ppd)\n+udx_process_ack(packet_info *pinfo, udx_flow_t *acked_flow,\n+                uint32_t ack, uint32_t prev_ack, bool have_prev, udx_ppd_t *ppd)\n {\n     udx_seg_t *newest = NULL;\n     uint32_t   seq = ack - 1;\n@@ -459,23 +485,27 @@ udx_process_ack(packet_info *pinfo, udx_flow_t *acked_flow, udx_flow_t *acking_f\n     if (!acked_flow->have_seq)\n         return;\n \n-    /* Walk back from the acknowledgement over the segments it covers. The\n-     * walk stops at the first segment already retired by an earlier\n-     * acknowledgement; the counter only bounds pathological captures. */\n-    for (guard = 0; guard < 1024; guard++, seq--) {\n-        udx_seg_t *seg = (udx_seg_t *) wmem_tree_lookup32(acked_flow->segs, seq);\n+    /*\n+     * Walk back over the range this acknowledgement newly covers, which\n+     * starts just above the previous cumulative acknowledgement. A segment\n+     * already retired, by an earlier acknowledgement or by a selective one,\n+     * is skipped rather than counted again, and the walk carries on past it\n+     * so that anything older still outstanding is retired too. The counter\n+     * only bounds pathological captures.\n+     */\n+    for (guard = 0; guard < 4096; guard++, seq--) {\n+        udx_seg_t *seg;\n \n-        if (seg == NULL || seg->acked_in_frame != 0)\n+        if (have_prev && UDX_SEQ_LT(seq, prev_ack))\n+            break;\n+        if (UDX_SEQ_LT(seq, acked_flow->low_seq))\n             break;\n \n-        seg->acked_in_frame = pinfo->num;\n-        seg->ack_ts = pinfo->abs_ts;\n+        seg = (udx_seg_t *) wmem_tree_lookup32(acked_flow->segs, seq);\n+        if (seg == NULL)\n+            continue;\n \n-        if (acked_flow->outstanding_pkts > 0) {\n-            acked_flow->outstanding_pkts--;\n-            acked_flow->outstanding_bytes -= seg->len;\n-        }\n-        if (newest == NULL)\n+        if (udx_retire_seg(pinfo, acked_flow, seg) && newest == NULL)\n             newest = seg;\n     }\n \n@@ -487,9 +517,17 @@ udx_process_ack(packet_info *pinfo, udx_flow_t *acked_flow, udx_flow_t *acking_f\n         ppd->ack_rtt = rtt;\n         ppd->have_ack_rtt = true;\n \n-        /* Karn's algorithm: a retransmitted segment yields no usable sample. */\n+        /*\n+         * Karn's algorithm: a retransmitted segment yields no usable sample.\n+         * The sample times a packet this flow sent, so it belongs to the flow\n+         * that sent it and not to the one reporting the acknowledgement. The\n+         * two are only ever the same on a stream carrying data both ways; on\n+         * a one-way transfer the sending flow would otherwise never obtain a\n+         * round trip time at all, and every timeout test would fall back on\n+         * the floor.\n+         */\n         if (newest->retrans == 0)\n-            udx_update_rtt(acking_flow, nstime_to_sec(&rtt));\n+            udx_update_rtt(acked_flow, nstime_to_sec(&rtt));\n     }\n }\n \n@@ -526,6 +564,23 @@ udx_analyze(packet_info *pinfo, udx_conv_t *conv, uint8_t flags, uint8_t data_of\n         seg = (udx_seg_t *) wmem_tree_lookup32(flow->segs, seq);\n \n         if (seg == NULL) {\n+            /*\n+             * A tail loss probe does not have to repeat the tail: libudx can\n+             * send the next new packet as the probe instead. Seen from here\n+             * that is a fresh sequence number extending the flow after a\n+             * probe-sized pause, while earlier data is still unacknowledged,\n+             * which is the sender prodding for an acknowledgement rather than\n+             * an application with more to say.\n+             */\n+            if (payload_len > 0 && flow->have_tx && flow->have_seq &&\n+                flow->outstanding_pkts > 0 && seq == flow->max_seq + 1) {\n+                double idle = nstime_to_sec(&pinfo->abs_ts) -\n+                              nstime_to_sec(&flow->last_tx_ts);\n+\n+                if (idle >= (flow->have_rtt ? 2 * flow->srtt : UDX_MIN_PROBE_DELAY))\n+                    ppd->flags |= UDX_A_TLP;\n+            }\n+\n             if (flow->have_seq && UDX_SEQ_GT(seq, flow->max_seq + 1))\n                 ppd->flags |= UDX_A_LOST_SEGMENT;\n             else if (flow->have_seq && UDX_SEQ_LT(seq, flow->max_seq))\n@@ -539,10 +594,17 @@ udx_analyze(packet_info *pinfo, udx_conv_t *conv, uint8_t flags, uint8_t data_of\n \n             if (!flow->have_seq) {\n                 flow->base_seq = seq;\n+                flow->low_seq = seq;\n                 flow->max_seq = seq;\n                 flow->have_seq = true;\n-            } else if (UDX_SEQ_GT(seq, flow->max_seq)) {\n-                flow->max_seq = seq;\n+            } else {\n+                if (UDX_SEQ_GT(seq, flow->max_seq))\n+                    flow->max_seq = seq;\n+                /* The first packet on the wire need not be the oldest: if it\n+                 * was lost and resent, a lower sequence number turns up later\n+                 * and still has to be accounted for. */\n+                if (UDX_SEQ_LT(seq, flow->low_seq))\n+                    flow->low_seq = seq;\n             }\n             flow->outstanding_pkts++;\n             flow->outstanding_bytes += payload_len;\n@@ -554,17 +616,20 @@ udx_analyze(packet_info *pinfo, udx_conv_t *conv, uint8_t flags, uint8_t data_of\n \n             if (seg->acked_in_frame != 0) {\n                 ppd->flags |= UDX_A_SPURIOUS;\n+            } else if (dt < UDX_DUP_WINDOW) {\n+                /* Too soon to be any sender timer: the datagram was\n+                 * delivered, or captured, twice. */\n+                ppd->flags |= UDX_A_DUPLICATE;\n+            } else if (dt >= udx_rto(flow)) {\n+                /* A whole retransmission timeout has passed. That is a timer\n+                 * firing, whatever the peer has selectively acknowledged in\n+                 * the meantime, so this test comes before the SACK one. */\n+                ppd->flags |= UDX_A_RTO_RETRANS;\n             } else if (flow->have_sacked && UDX_SEQ_GT(flow->max_sacked, seq)) {\n                 /* The peer has selectively acknowledged later packets, so\n                  * this one was resent because it was reported missing rather\n                  * than because a timer expired. */\n                 ppd->flags |= UDX_A_FAST_RETRANS;\n-            } else if (dt >= udx_rto(flow)) {\n-                ppd->flags |= UDX_A_RTO_RETRANS;\n-            } else if (dt < UDX_DUP_WINDOW) {\n-                /* Too soon to be any sender timer: the datagram was\n-                 * delivered, or captured, twice. */\n-                ppd->flags |= UDX_A_DUPLICATE;\n             } else if (seq == flow->max_seq &&\n                        dt >= (flow->have_rtt ? 2 * flow->srtt : UDX_MIN_PROBE_DELAY)) {\n                 /* A repeat of the tail after a probe-sized pause, with\n@@ -573,6 +638,10 @@ udx_analyze(packet_info *pinfo, udx_conv_t *conv, uint8_t flags, uint8_t data_of\n             }\n         }\n \n+        /* Used to spot the pause before a tail loss probe. */\n+        flow->last_tx_ts = pinfo->abs_ts;\n+        flow->have_tx = true;\n+\n         ppd->tracked = true;\n         ppd->bytes_in_flight = flow->outstanding_bytes;\n         ppd->packets_in_flight = flow->outstanding_pkts;\n@@ -601,8 +670,12 @@ udx_analyze(packet_info *pinfo, udx_conv_t *conv, uint8_t flags, uint8_t data_of\n     /* Acknowledgement side: retire the peer's segments, then record the\n      * selective ranges so a later repeat can be recognised as recovery. */\n     if (rflow != NULL) {\n+        udx_seg_t *newest_sack = NULL;\n+        uint32_t   newest_sack_seq = 0;\n+\n         if (!flow->have_ack || UDX_SEQ_GT(ack, flow->max_ack))\n-            udx_process_ack(pinfo, rflow, flow, ack, ppd);\n+            udx_process_ack(pinfo, rflow, ack, flow->max_ack,\n+                            flow->have_ack, ppd);\n \n         for (unsigned i = 0; i < n_sacks; i++) {\n             uint32_t s;\n@@ -612,8 +685,19 @@ udx_analyze(packet_info *pinfo, udx_conv_t *conv, uint8_t flags, uint8_t data_of\n                  s++, guard++) {\n                 udx_seg_t *ss = (udx_seg_t *) wmem_tree_lookup32(rflow->segs, s);\n \n-                if (ss != NULL)\n-                    ss->sacked = true;\n+                if (ss == NULL)\n+                    continue;\n+\n+                ss->sacked = true;\n+\n+                /* A selective acknowledgement acknowledges the packet as\n+                 * surely as a cumulative one: it leaves the flight, and this\n+                 * is the frame that acknowledged it. */\n+                if (udx_retire_seg(pinfo, rflow, ss) &&\n+                    (newest_sack == NULL || UDX_SEQ_GT(s, newest_sack_seq))) {\n+                    newest_sack = ss;\n+                    newest_sack_seq = s;\n+                }\n             }\n \n             /* Remember how far the selective acknowledgements reach: a\n@@ -623,6 +707,23 @@ udx_analyze(packet_info *pinfo, udx_conv_t *conv, uint8_t flags, uint8_t data_of\n                 rflow->have_sacked = true;\n             }\n         }\n+\n+        /* Nothing was newly acknowledged cumulatively, but a selective range\n+         * retired a packet, so report the link and the round trip from that. */\n+        if (newest_sack != NULL && !ppd->have_ack_rtt) {\n+            nstime_t rtt;\n+\n+            nstime_delta(&rtt, &pinfo->abs_ts, &newest_sack->ts);\n+            ppd->acks_frame = newest_sack->frame;\n+            ppd->ack_rtt = rtt;\n+            ppd->have_ack_rtt = true;\n+\n+            /* Karn's algorithm again: never sample a retransmitted packet.\n+             * The round trip measured belongs to the flow that sent the data,\n+             * which is where the retransmission timeout is later judged. */\n+            if (newest_sack->retrans == 0)\n+                udx_update_rtt(rflow, nstime_to_sec(&rtt));\n+        }\n     }\n \n     if (!flow->have_ack || UDX_SEQ_GT(ack, flow->max_ack)) {\n@@ -837,6 +938,22 @@ udx_follow_drain(follow_info_t *follow_info, int dir)\n     while (follow_info->fragments[dir] != NULL) {\n         follow_record_t *held = (follow_record_t *) follow_info->fragments[dir]->data;\n \n+        /*\n+         * A copy of this packet reached the delivery point ahead of the one\n+         * held here, which happens whenever a retransmission arrives while an\n+         * earlier gap is still open. The held copy has nothing left to give,\n+         * and leaving it at the head of the list would stop every packet\n+         * behind it from ever being released.\n+         */\n+        if (held->seq < follow_info->seq[dir]) {\n+            follow_info->fragments[dir] =\n+                g_list_delete_link(follow_info->fragments[dir],\n+                                   follow_info->fragments[dir]);\n+            g_byte_array_free(held->data, true);\n+            g_free(held);\n+            continue;\n+        }\n+\n         if (held->seq != follow_info->seq[dir])\n             break;\n \n@@ -1287,8 +1404,8 @@ proto_register_udx(void)\n         },\n         { &ei_udx_tlp,\n           { \"udx.analysis.tail_loss_probe\", PI_SEQUENCE, PI_NOTE,\n-            \"Tail loss probe: the last packet of a burst was resent to elicit an\"\n-            \" acknowledgement\", EXPFILL }\n+            \"Tail loss probe: sent after a pause to draw an acknowledgement\"\n+            \" out of the peer\", EXPFILL }\n         },\n         { &ei_udx_spurious_retrans,\n           { \"udx.analysis.spurious_retransmission\", PI_SEQUENCE, PI_NOTE,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-udx.c",
+      "old_path": "epan/dissectors/packet-udx.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_followstall.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_followstall.pcap.gz",
+      "old_path": "test/captures/udx_followstall.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_lateseq.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_lateseq.pcap.gz",
+      "old_path": "test/captures/udx_lateseq.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_rto.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_rto.pcap.gz",
+      "old_path": "test/captures/udx_rto.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_rtttlp.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_rtttlp.pcap.gz",
+      "old_path": "test/captures/udx_rtttlp.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_tlpnew.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_tlpnew.pcap.gz",
+      "old_path": "test/captures/udx_tlpnew.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1476,6 +1476,40 @@ class TestDissectUdx:\n         assert sorted(set(stdout.split('\\n')[0].split('\\t'))) == ['', '0']\n         assert grep_output(stdout, r'^0\\t1$')\n \n+    def test_udx_rto_beats_sack(self, cmd_tshark, capture_file, test_env):\n+        '''A full timeout decides a retransmission, even with later SACKs.\n+\n+        Sequence 0 is lost while 1 and 2 arrive and are selectively\n+        acknowledged, so the highest selectively acknowledged sequence sits\n+        above the resent one. The resend still comes a second and a half\n+        later, which makes it a timer retransmission rather than a fast one.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_rto.pcap.gz'),\n+                '-V',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'Retransmission timeout')\n+        assert not grep_output(stdout, 'Fast retransmission')\n+\n+    def test_udx_sack_acknowledges(self, cmd_tshark, capture_file, test_env):\n+        '''A selective acknowledgement acknowledges the packet it names.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_rto.pcap.gz'),\n+                '-Tfields', '-eframe.number', '-eudx.analysis.acked_in',\n+            ), encoding='utf-8', env=test_env)\n+        # Sequences 1 and 2 are acknowledged by the first SACK, in frame 4,\n+        # not by the cumulative acknowledgement that arrives in frame 7.\n+        assert grep_output(stdout, r'^2\\t4$')\n+        assert grep_output(stdout, r'^3\\t4$')\n+\n+    def test_udx_tail_loss_probe_with_new_data(self, cmd_tshark, capture_file, test_env):\n+        '''A probe that carries new data is still a probe.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_tlpnew.pcap.gz'),\n+                '-V',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'Tail loss probe')\n+\n     def test_udx_follow_stream(self, cmd_tshark, capture_file, test_env):\n         '''Following a stream yields the payload in both directions.'''\n         stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n@@ -1501,6 +1535,49 @@ class TestDissectUdx:\n \n         assert payload('udx_clean.pcap.gz')[-20:] == payload('udx_loss.pcap.gz')[-20:]\n \n+    def test_udx_follow_superseded_fragment(self, cmd_tshark, capture_file, test_env):\n+        '''A held packet that is delivered by another copy stops holding up\n+        the ones behind it.\n+\n+        Sequence 2 is held while the gap at 1 is open and arrives a second\n+        time before that gap closes. Filling the gap delivers one copy; the\n+        other has to be discarded rather than left at the head of the pending\n+        list, where it would block every packet after it.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                '-r', capture_file('udx_followstall.pcap.gz'),\n+                '-q', '-z', 'follow,udx,ascii,0',\n+            ), encoding='utf-8', env=test_env)\n+        # All six packets, in sequence order, including the one sent last.\n+        payload = [l for l in stdout.splitlines() if l and set(l) <= set('abcdef')]\n+        assert ''.join(payload) == ''.join(c * 16 for c in 'abcdef')\n+\n+    def test_udx_acknowledges_below_first_seen(self, cmd_tshark, capture_file, test_env):\n+        '''The first packet on the wire need not hold the lowest sequence.\n+\n+        Sequence 0 was lost and resent, so it appears after 1 and 2. The\n+        cumulative acknowledgement covers all three and has to retire it.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_lateseq.pcap.gz'),\n+                '-Tfields', '-eframe.number', '-eudx.analysis.acked_in',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, r'^3\\t4$')\n+\n+    def test_udx_rtt_measured_on_sending_flow(self, cmd_tshark, capture_file, test_env):\n+        '''The round trip time belongs to the flow whose packet was timed.\n+\n+        Only one side sends data here, so if the sample were credited to the\n+        flow carrying the acknowledgements the sending flow would never have\n+        one, and this six millisecond pause would fall under the floor that\n+        applies when no round trip time is known.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_rtttlp.pcap.gz'),\n+                '-V',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'Tail loss probe')\n+\n \n class TestDissectGsmtapUm:\n     def test_gsmtap_um_encap(self, cmd_tshark, capture_file, test_env):\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissection.py",
+      "old_path": "test/suite_dissection.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "1bc8f03aa8e2e8359434001e96a7c2f54d126c2e",
+      "short_id": "1bc8f03a",
+      "created_at": "2026-08-18T07:38:36.000+00:00",
+      "parent_ids": [
+        "a97516e9f10a1e25da4683841a1f2115c6f20f17"
+      ],
+      "title": "UDX: correct sequence analysis and reassembly",
+      "message": "UDX: correct sequence analysis and reassembly\n\nSix problems in the stateful analysis. The first three were found in review\nby James Thomas; the rest came from comparing the dissector's verdicts against\nan instrumented build of libudx, packet by packet, over its own test suite.\n\nA selective acknowledgement acknowledges a packet just as a cumulative one\ndoes, but only the cumulative path retired a segment. A packet named in a\nSACK block now records the frame that first acknowledged it, whether that was\na selective or a cumulative acknowledgement, and leaves the flight at that\npoint rather than staying counted as outstanding until the cumulative\nacknowledgement caught up. Both paths retire through one place, so a packet\nthat is selectively acknowledged and later covered by a cumulative\nacknowledgement is not counted twice. The cumulative walk now steps over\nsegments already retired instead of stopping at the first one, which it has\nto do once selective acknowledgements can retire packets out of order.\n\nA retransmission that arrived after a full timeout was reported as a fast\nretransmission whenever the peer had selectively acknowledged anything above\nit. The elapsed time is the stronger signal, so the timeout is now tested\nfirst and the selective acknowledgement state only classifies retransmissions\nthat arrive sooner than that.\n\nA tail loss probe does not have to repeat the tail: libudx sends the next new\npacket as the probe when it has one. Such a packet is now recognised by what\nit looks like from outside - a fresh sequence number extending the flow after\na probe-sized pause, with earlier data still unacknowledged.\n\nPayload held back waiting for a gap ahead of it was never released once a\nsecond copy of a held packet reached the delivery point first, which happens\nwhenever a retransmission arrives while an earlier gap is still open. The\nspent copy stayed at the head of the pending list and stopped everything\nbehind it, so following a stream that had lost anything returned a fraction\nof the transfer and then stopped. Superseded copies are now discarded rather\nthan left to block the queue. On a 256 KB transfer with induced loss this\ntakes the reassembled payload from 32 KB to the whole of it.\n\nThe first packet seen on a flow is not always the one with the lowest\nsequence number: if it was lost and resent it arrives after its successors.\nThe lowest sequence seen is now tracked separately from the first, and\nbounds the cumulative walk, so a packet below the first one seen is still\nretired instead of being counted as in flight for the rest of the capture.\n\nA round trip time sample was credited to the flow that carried the\nacknowledgement rather than the flow whose packet it timed, while the\nretransmission timeout derived from it is judged on the sending flow. On a\ntransfer carrying data in both directions the two samples were merely\nexchanged, but on a one-way transfer the sending flow never obtained a round\ntrip time at all and every timeout test fell back on its floor.\n\nAdds five captures and six tests covering the cases above.\n\nAssisted-by: Claude\n",
+      "author_name": "Frank Olien",
+      "author_email": "frankolien123@gmail.com",
+      "authored_date": "2026-08-18T00:00:49.000+01:00",
+      "committer_name": "Frank Olien",
+      "committer_email": "frankolien123@gmail.com",
+      "committed_date": "2026-08-18T07:38:36.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/1bc8f03aa8e2e8359434001e96a7c2f54d126c2e"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1967499620,
+      "head_commit_sha": "1bc8f03aa8e2e8359434001e96a7c2f54d126c2e",
+      "base_commit_sha": "a97516e9f10a1e25da4683841a1f2115c6f20f17",
+      "start_commit_sha": "a97516e9f10a1e25da4683841a1f2115c6f20f17",
+      "created_at": "2026-08-18T07:38:41.075Z",
+      "merge_request_id": 520428129,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": "e09976e0b0c2efb825a56425eb0777d4ca218ad4"
+    },
+    {
+      "id": 1966943405,
+      "head_commit_sha": "38200aed1bd024c446325d0809dd00b714927a3e",
+      "base_commit_sha": "a77ba475d41fed5090d0065cb87d667895263a47",
+      "start_commit_sha": "a77ba475d41fed5090d0065cb87d667895263a47",
+      "created_at": "2026-08-17T23:18:10.906Z",
+      "merge_request_id": 520428129,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "e09976e0b0c2efb825a56425eb0777d4ca218ad4"
+    }
+  ]
+}
