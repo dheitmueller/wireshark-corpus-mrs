@@ -1,0 +1,460 @@
+{
+  "id": 440883874,
+  "iid": 22814,
+  "project_id": 7898047,
+  "title": "tpm20: fix CC_NVRead parseing missing authHandle",
+  "description": "# TPM2.0 Dissector: Incorrect Handle Count for TPM2_CC_NV_Read Command\n\n## Summary\nThe TPM 2.0 protocol dissector (`packet-tpm20.c`) incorrectly specifies the number of request handles for the `TPM2_CC_NV_Read` command (0x14e), causing improper dissection of NV_Read command packets.\n\n## Description\nThe current implementation defines `TPM2_CC_NV_Read` with only 1 request handle, when according to the TPM 2.0 specification (Part 3: Commands, Section 31.13) https://trustedcomputinggroup.org/wp-content/uploads/Trusted-Platform-Module-2.0-Library-Part-3-Version-184_pub.pdf , this command requires 2 handles:\n\n1. **authHandle** - Handle indicating the source of the authorisation value\n2. **nvIndex** - The NV Index to be read\n\nThis causes the dissector to fail to properly decode the handle area of NV_Read commands, potentially misinterpreting subsequent fields in the packet.\n\n## Expected Behaviour\nThe dissector should recognise and decode both handles for `TPM2_CC_NV_Read` commands, consistent with:\n- The TPM 2.0 specification\n- Other similar NV commands in the dissector (NV_Increment, NV_SetBits, NV_Extend, NV_Write)\n- The implementation in related projects (e.g., tpmstream: https://github.com/joholl/tpmstream/commit/2597e6d5a88b735a371090cf1f9bc2ddbd8f563c)\n\nThis change:\n- Corrects the handle count from 1 to 2\n- Specifies both required handle fields: `hf_tpmi_rh_nv_auth` and `hf_tpmi_rh_nv_index`\n- Makes the definition consistent with other NV commands that use both auth and index handles\n\n## Reference\n- TPM 2.0 Specification Part 3: Commands, Section 31.13 (TPM2_NV_Read):\nhttps://trustedcomputinggroup.org/wp-content/uploads/Trusted-Platform-Module-2.0-Library-Part-3-Version-184_pub.pdf\n- Similar fix in tpmstream project: https://github.com/joholl/tpmstream/commit/2597e6d5a88b735a371090cf1f9bc2ddbd8f563c\n\n## Additional Context\nThe pattern for 2-handle NV commands is already correctly implemented elsewhere in the dissector:\n- `CC_NV_Increment` (0x134)\n- `CC_NV_SetBits` (0x135) \n- `CC_NV_Extend` (0x136)\n- `CC_NV_Write` (0x137)\n- `CC_NV_ReadLock` (0x14f)\n\nAll use the same handle field types as proposed for the fix.\n\n## Testcase\nThe attached PCAP is from a windows 10 VM in QEMU using SWTPM with bitlocker configured in TPM only mode. Frame 77 is an NV_Read which does not currently decode properly.[win10-swtpm-boot.pcap](/uploads/68719dc923643d8478dfc3c346199c2a/win10-swtpm-boot.pcap)",
+  "state": "merged",
+  "created_at": "2025-12-16T14:03:32.227Z",
+  "updated_at": "2025-12-16T16:41:53.612Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2025-12-16T16:41:53.642Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "TPM_NV_READ_fix",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 22665802,
+    "username": "en4rab",
+    "public_email": "",
+    "name": "Robin Bradshaw",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/9d57d577c1d4ce9107961fffed5204adf87f55955c3ddbf124d0e613b1a0c89d?s=80&d=identicon",
+    "web_url": "https://gitlab.com/en4rab"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 77142911,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "ffdc1c65ea66fe841f439a139a4dbad08e66e3e8",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-12-16T14:03:40.666Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!22814",
+  "references": {
+    "short": "!22814",
+    "relative": "!22814",
+    "full": "wireshark/wireshark!22814"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/22814",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2025-12-16T16:13:31.861Z",
+  "latest_build_finished_at": "2025-12-16T16:41:51.192Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2218206860,
+    "iid": 93319,
+    "project_id": 7898047,
+    "sha": "5a346d94a9b85302db3e61ed4eec40cc0707c1fe",
+    "ref": "refs/merge-requests/22814/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-12-16T16:13:16.926Z",
+    "updated_at": "2025-12-16T16:41:51.215Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2218206860"
+  },
+  "head_pipeline": {
+    "id": 2218206860,
+    "iid": 93319,
+    "project_id": 7898047,
+    "sha": "5a346d94a9b85302db3e61ed4eec40cc0707c1fe",
+    "ref": "refs/merge-requests/22814/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-12-16T16:13:16.926Z",
+    "updated_at": "2025-12-16T16:41:51.215Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2218206860",
+    "before_sha": "5a346d94a9b85302db3e61ed4eec40cc0707c1fe",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2025-12-16T16:13:31.861Z",
+    "finished_at": "2025-12-16T16:41:51.192Z",
+    "committed_at": null,
+    "duration": 1394,
+    "queued_duration": 14,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2218206860",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "e5a796d98bbc60deccbdf3873fce37223ddc50fc",
+    "head_sha": "ffdc1c65ea66fe841f439a139a4dbad08e66e3e8",
+    "start_sha": "e5a796d98bbc60deccbdf3873fce37223ddc50fc"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "6fa6fc5df00da8566f4bf7ff3b1ca3bfab773995",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2957723005,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-16T16:13:11.793Z",
+          "updated_at": "2025-12-16T16:13:11.798Z",
+          "system": true,
+          "noteable_id": 440883874,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22814,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3f537fdaa55563333015bd0ee0e589ce12deff8c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2957723048,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-16T16:13:12.614Z",
+          "updated_at": "2025-12-16T16:13:12.631Z",
+          "system": true,
+          "noteable_id": 440883874,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22814,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "615107abebe8268d753b6ee78f4a705c50aa8519",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2957723061,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 4",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-16T16:13:12.903Z",
+          "updated_at": "2025-12-16T16:13:12.906Z",
+          "system": true,
+          "noteable_id": 440883874,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22814,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bc45ee8f273797cc4e97f1aab60929d739a755e0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122569606,
+          "type": null,
+          "body": "mentioned in issue #21038",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:05:56.822Z",
+          "updated_at": "2026-03-01T15:05:56.900Z",
+          "system": true,
+          "noteable_id": 440883874,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22814,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9909be4de948bf92b7ed8070ab772a0b5ec2b61c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122569854,
+          "type": null,
+          "body": "mentioned in issue #21037",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:06:09.547Z",
+          "updated_at": "2026-03-01T15:06:09.618Z",
+          "system": true,
+          "noteable_id": 440883874,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22814,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "50e32ded3e1d7c221838200f8888368c4625cc07",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122572080,
+          "type": null,
+          "body": "mentioned in issue #21044",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:08:11.673Z",
+          "updated_at": "2026-03-01T15:08:11.746Z",
+          "system": true,
+          "noteable_id": 440883874,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22814,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e77de39b98cd8899f3cb822040ab2949fd6c38be",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122573277,
+          "type": null,
+          "body": "mentioned in issue #21043",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:09:15.506Z",
+          "updated_at": "2026-03-01T15:09:15.513Z",
+          "system": true,
+          "noteable_id": 440883874,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22814,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -186,7 +186,7 @@ static const struct num_handles tpm_handles_map[] = {\n \t{ 0x14b, 2, { &hf_tpmi_dh_object, &hf_tpmi_dh_object, 0 }, 0, { 0, 0, 0 }}, /* CC_Duplicate */\n \t{ 0x14c, 2, { &hf_tpmi_rh_endorsement, &hf_tpmi_dh_object, 0 }, 0, { 0, 0, 0 }}, /* CC_GetTime */\n \t{ 0x14d, 3, { &hf_tpmi_rh_endorsement, &hf_tpmi_dh_object, &hf_tpmi_sh_auth_session }, 0, { 0, 0, 0 }}, /* CC_GetSessionAuditDigest */\n-\t{ 0x14e, 1, { &hf_tpmi_rh_nv_index, 0, 0 }, 0, { 0, 0, 0 }}, /* CC_NV_Read */\n+\t{ 0x14e, 2, { &hf_tpmi_rh_nv_auth, &hf_tpmi_rh_nv_index, 0 }, 0, { 0, 0, 0 }}, /* CC_NV_Read */\n \t{ 0x14f, 2, { &hf_tpmi_rh_nv_auth, &hf_tpmi_rh_nv_index, 0 }, 0, { 0, 0, 0 }}, /* CC_NV_ReadLock */\n \t{ 0x150, 2, { &hf_tpmi_dh_object, &hf_tpmi_dh_object, 0 }, 0, { 0, 0, 0 }}, /* CC_ObjectChangeAuth */\n \t{ 0x151, 2, { &hf_tpmi_dh_entity, &hf_tpmi_sh_auth_session, 0 }, 0, { 0, 0, 0 }}, /* CC_PolicySecret */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tpm20.c",
+      "old_path": "epan/dissectors/packet-tpm20.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "ffdc1c65ea66fe841f439a139a4dbad08e66e3e8",
+      "short_id": "ffdc1c65",
+      "created_at": "2025-12-16T13:38:07.000+00:00",
+      "parent_ids": [
+        "e5a796d98bbc60deccbdf3873fce37223ddc50fc"
+      ],
+      "title": "tpm20: fix CC_NVRead parseing missing authHandle",
+      "message": "tpm20: fix CC_NVRead parseing missing authHandle\n",
+      "author_name": "Robin Bradshaw",
+      "author_email": "en4rab@gmail.com",
+      "authored_date": "2025-12-16T13:38:07.000+00:00",
+      "committer_name": "Robin Bradshaw",
+      "committer_email": "en4rab@gmail.com",
+      "committed_date": "2025-12-16T13:38:07.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ffdc1c65ea66fe841f439a139a4dbad08e66e3e8"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1602088009,
+      "head_commit_sha": "ffdc1c65ea66fe841f439a139a4dbad08e66e3e8",
+      "base_commit_sha": "e5a796d98bbc60deccbdf3873fce37223ddc50fc",
+      "start_commit_sha": "e5a796d98bbc60deccbdf3873fce37223ddc50fc",
+      "created_at": "2025-12-16T14:03:34.501Z",
+      "merge_request_id": 440883874,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "73806c40521f775065a0999d96777621425ac4f2"
+    }
+  ]
+}

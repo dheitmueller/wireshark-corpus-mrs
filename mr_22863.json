@@ -1,0 +1,805 @@
+{
+  "id": 442088647,
+  "iid": 22863,
+  "project_id": 7898047,
+  "title": "btatt: Enable the detection of ATT transaction timeouts",
+  "description": "ATT transaction timeouts (e.g. an ATT request without a response for 30s) are a common failure mode on GATT connections, so being able to detect them would be quite useful. The hard part needed from Wireshark is to scan all the ATT transactions across several bearers potentially and highlight the ones that are incomplete.\n\nSuch detection is basically a specialisation of the general problem of matching requests/indications to their responses/confirmations (\"Request in Frame\" / \"Response in Frame\"). Looking at the ATT dissector history, I think this used to work at some point but got broken several years back. This has now been fixed under this ticket. An expert info item has been added to indicate incomplete ATT transactions to the user.\n\nAdditionally, to avoid ambiguity when the local Host has concurrent GATT connections to multiple remote devices, the ACL connection handle is now used as an extra key to qualify the CID in transaction tracking.\n\n-----\n\nSo, this is what exists before the proposed change -- the selected Write Request doesn't indicate the frame where its response can be found:\n\n![image](/uploads/04e7a7b30ee2a34cd48118bc8602a817/image.png){width=900 height=298}\n\nAfter the proposed changes, the request and its response are now linked in both directions:\n\n![image](/uploads/250c018590899475fe2946c7e1ce5c8e/image.png){width=900 height=312}\n\nThis is the new expert-info item indicating a (different) request with a missing response:\n\n![image](/uploads/0e704f260f436684e3db097c8d2a8195/image.png){width=900 height=254}\n\nUsers may filter for such packets with `btatt.incomplete_transaction`. It will be up to the user to use other context to determine if an incomplete transaction is really an ATT timeout (e.g. checking if the ATT bearer was disconnected ~30s after the start of the transaction) or can be safely ignored for other reasons (e.g. a clipped HCI trace).\n\nHere's the sample capture:[att_timeout_mini.snoop](/uploads/06d97d236630c65a0f0bbcb8740cb871/att_timeout_mini.snoop)",
+  "state": "merged",
+  "created_at": "2025-12-20T11:28:40.910Z",
+  "updated_at": "2025-12-27T17:22:53.067Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2025-12-27T17:22:53.090Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "btatt-transaction-timeout",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 28089072,
+    "username": "brianrho",
+    "public_email": null,
+    "name": "Brian Ejike",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/9a2f58a1762015845d79d5d598e4bd522041162a7ac4589f34ad59a41d95706f?s=80&d=identicon",
+    "web_url": "https://gitlab.com/brianrho"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 70192968,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "358b64dccf01b81a6e05fde0bd2445f270f8a8e0",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-12-20T11:28:47.562Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!22863",
+  "references": {
+    "short": "!22863",
+    "relative": "!22863",
+    "full": "wireshark/wireshark!22863"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/22863",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2025-12-27T17:11:46.386Z",
+  "latest_build_finished_at": "2025-12-27T17:22:51.728Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2234600572,
+    "iid": 94031,
+    "project_id": 7898047,
+    "sha": "1c75b5315e8b9e367901522cf279de89a2931235",
+    "ref": "refs/merge-requests/22863/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-12-27T17:11:45.296Z",
+    "updated_at": "2025-12-27T17:22:51.745Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2234600572"
+  },
+  "head_pipeline": {
+    "id": 2234600572,
+    "iid": 94031,
+    "project_id": 7898047,
+    "sha": "1c75b5315e8b9e367901522cf279de89a2931235",
+    "ref": "refs/merge-requests/22863/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-12-27T17:11:45.296Z",
+    "updated_at": "2025-12-27T17:22:51.745Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2234600572",
+    "before_sha": "1c75b5315e8b9e367901522cf279de89a2931235",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2025-12-27T17:11:46.386Z",
+    "finished_at": "2025-12-27T17:22:51.728Z",
+    "committed_at": null,
+    "duration": 665,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2234600572",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0",
+    "head_sha": "358b64dccf01b81a6e05fde0bd2445f270f8a8e0",
+    "start_sha": "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "09902c354d7bbd525f8a3679c48e327a7640d234",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2967455824,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 28089072,
+            "username": "brianrho",
+            "public_email": null,
+            "name": "Brian Ejike",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9a2f58a1762015845d79d5d598e4bd522041162a7ac4589f34ad59a41d95706f?s=80&d=identicon",
+            "web_url": "https://gitlab.com/brianrho"
+          },
+          "created_at": "2025-12-20T11:31:30.565Z",
+          "updated_at": "2025-12-20T11:31:30.570Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3e9e93545155684d9d9484834f9eca2f4921b1e1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2967456324,
+          "type": null,
+          "body": "added 32 commits\n\n<ul><li>58ab3090...69d54a89 - 30 commits from branch <code>wireshark:master</code></li><li>7dedc74f - btatt: ATT transaction tracking should account for connection handles</li><li>72bb9ee7 - btatt: Enable the detection of ATT transaction timeouts</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22863/diffs?diff_id=1607449018&start_sha=58ab309081ce5c5bb656570126b34f2ebfae4ccc)",
+          "author": {
+            "id": 28089072,
+            "username": "brianrho",
+            "public_email": null,
+            "name": "Brian Ejike",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9a2f58a1762015845d79d5d598e4bd522041162a7ac4589f34ad59a41d95706f?s=80&d=identicon",
+            "web_url": "https://gitlab.com/brianrho"
+          },
+          "created_at": "2025-12-20T11:33:26.290Z",
+          "updated_at": "2025-12-20T11:33:26.297Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b3f656a7fedea783e7c614531dbf8a127d7d6a10",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2968572175,
+          "type": null,
+          "body": "added 16 commits\n\n<ul><li>72bb9ee7...0d1dafa0 - 14 commits from branch <code>wireshark:master</code></li><li>68620745 - btatt: ATT transaction tracking should account for connection handles</li><li>1c0eea2e - btatt: Enable the detection of ATT transaction timeouts</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22863/diffs?diff_id=1607822560&start_sha=72bb9ee7ecd1795806056b53f9ca8596ca09f160)",
+          "author": {
+            "id": 28089072,
+            "username": "brianrho",
+            "public_email": null,
+            "name": "Brian Ejike",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9a2f58a1762015845d79d5d598e4bd522041162a7ac4589f34ad59a41d95706f?s=80&d=identicon",
+            "web_url": "https://gitlab.com/brianrho"
+          },
+          "created_at": "2025-12-22T02:58:06.932Z",
+          "updated_at": "2025-12-22T02:58:06.940Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0b60e391a2321b84b4e860813d8826ee64b54fe6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2968629333,
+          "type": null,
+          "body": "A bit related - the handle-UUID mappings (`save_handle`) are currently stored in a single flat \"list\" for _all_ devices/servers, instead of being stored per-server to reflect each server's GATT database. This will be fixed in a separate merge request after this one gets committed.",
+          "author": {
+            "id": 28089072,
+            "username": "brianrho",
+            "public_email": null,
+            "name": "Brian Ejike",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9a2f58a1762015845d79d5d598e4bd522041162a7ac4589f34ad59a41d95706f?s=80&d=identicon",
+            "web_url": "https://gitlab.com/brianrho"
+          },
+          "created_at": "2025-12-22T04:07:26.053Z",
+          "updated_at": "2025-12-22T04:08:21.355Z",
+          "system": false,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "55fab83b56f3de4045923abfd7c6bb008b7b78c9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2970480371,
+          "type": null,
+          "body": "added 10 commits\n\n<ul><li>1c0eea2e...6b2b2c64 - 8 commits from branch <code>wireshark:master</code></li><li>29d51f2b - btatt: ATT transaction tracking should account for connection handles</li><li>358b64dc - btatt: Enable the detection of ATT transaction timeouts</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22863/diffs?diff_id=1608884126&start_sha=1c0eea2e6d8bcb35eb9fdb69df9e860486cf2118)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-22T23:22:59.615Z",
+          "updated_at": "2025-12-22T23:22:59.619Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9048784e282c059e37535c150c796effabe30e5d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2975065591,
+          "type": null,
+          "body": "[Please let me know if there's anything left to resolve here. I assume the `num_commits` test isn't a problem since neither commit here is trivial.]",
+          "author": {
+            "id": 28089072,
+            "username": "brianrho",
+            "public_email": null,
+            "name": "Brian Ejike",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9a2f58a1762015845d79d5d598e4bd522041162a7ac4589f34ad59a41d95706f?s=80&d=identicon",
+            "web_url": "https://gitlab.com/brianrho"
+          },
+          "created_at": "2025-12-27T04:46:08.997Z",
+          "updated_at": "2025-12-27T04:46:08.997Z",
+          "system": false,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "20ebac130aeaf7ec85a4d319ff336fddb8635eb4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2975226384,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-27T14:06:52.111Z",
+          "updated_at": "2025-12-27T14:06:52.115Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0c493b4824edf715d42aa324734d27b4054ec90e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2975226388,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-27T14:06:53.121Z",
+          "updated_at": "2025-12-27T14:06:53.145Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5f6b1c0bf01f94f82535182c0079655a3f6d7ad1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2975226390,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-27T14:06:53.590Z",
+          "updated_at": "2025-12-27T14:06:53.596Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "46b7a90c119fab9ed852411ad753811c95273cbd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2975252138,
+          "type": null,
+          "body": "removed this merge request from the merge train because the pipeline did not succeed. [Learn more](https://gitlab.com/help/ci/pipelines/merge_trains.md#merge-request-dropped-from-the-merge-train).",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-27T15:36:58.001Z",
+          "updated_at": "2025-12-27T15:36:58.007Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bd4d00fc64043b118f7fb0a59066815a5dec7c1a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2975303881,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-27T17:11:43.631Z",
+          "updated_at": "2025-12-27T17:11:43.636Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fde7457bbeb0a0db032b5005b5ae2cff90db3ba4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122569420,
+          "type": null,
+          "body": "mentioned in issue #21038",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:05:47.559Z",
+          "updated_at": "2026-03-01T15:05:47.565Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "06f129a7029be19cda751957689d31b54f8c921e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122569640,
+          "type": null,
+          "body": "mentioned in issue #21037",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:05:58.742Z",
+          "updated_at": "2026-03-01T15:05:58.754Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "474195eaccf0fe21e2111a776d4101e6c275a650",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122571969,
+          "type": null,
+          "body": "mentioned in issue #21044",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:08:05.515Z",
+          "updated_at": "2026-03-01T15:08:05.525Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "eea2e3c78a5ca7bcd78d1718180b30b17cc9ebe1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122573036,
+          "type": null,
+          "body": "mentioned in issue #21043",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:09:08.236Z",
+          "updated_at": "2026-03-01T15:09:08.246Z",
+          "system": true,
+          "noteable_id": 442088647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22863,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2135,6 +2135,7 @@ static expert_field ei_btatt_bad_data;\n static expert_field ei_btatt_unexpected_data;\n static expert_field ei_btatt_undecoded;\n static expert_field ei_btatt_invalid_length;\n+static expert_field ei_btatt_incomplete_transaction;\n \n static wmem_tree_t *mtus;\n static wmem_tree_t *requests;\n@@ -4157,6 +4158,24 @@ static void *btatt_handle_value(packet_info *pinfo)\n     return NULL;\n }\n \n+/*! Returns True if the opcode represents the start of an ATT transaction i.e. a Request or Indication.\n+    False otherwise. */\n+static bool is_request(uint8_t opcode)\n+{\n+    return (opcode == ATT_OPCODE_EXCHANGE_MTU_REQUEST ||\n+            opcode == ATT_OPCODE_FIND_INFORMATION_REQUEST ||\n+            opcode == ATT_OPCODE_FIND_BY_TYPE_VALUE_REQUEST ||\n+            opcode == ATT_OPCODE_READ_REQUEST ||\n+            opcode == ATT_OPCODE_READ_BLOB_REQUEST ||\n+            opcode == ATT_OPCODE_READ_BY_TYPE_REQUEST ||\n+            opcode == ATT_OPCODE_READ_MULTIPLE_REQUEST ||\n+            opcode == ATT_OPCODE_READ_BY_GROUP_TYPE_REQUEST ||\n+            opcode == ATT_OPCODE_WRITE_REQUEST ||\n+            opcode == ATT_OPCODE_WRITE_PREPARE_REQUEST ||\n+            opcode == ATT_OPCODE_WRITE_EXECUTE_REQUEST ||\n+            opcode == ATT_OPCODE_HANDLE_VALUE_INDICATION);\n+}\n+\n static bool is_readable_request(uint8_t opcode)\n {\n     return (opcode == ATT_OPCODE_READ_REQUEST ||\n@@ -4220,123 +4239,100 @@ get_request(tvbuff_t *tvb, int offset, packet_info *pinfo, uint8_t opcode,\n     request_data_t  *request_data;\n     wmem_tree_key_t  key[6];\n     wmem_tree_t     *sub_wmemtree;\n-    uint32_t         frame_number, curr_layer_num, direction, cid;\n+    uint32_t         frame_number, curr_layer_num, direction, cid, chandle;\n \n     if (!l2cap_data)\n         return NULL;\n \n     curr_layer_num = pinfo->curr_layer_num;\n+    chandle = l2cap_data->chandle;\n \n     /* For dynamic channels, use the channel's local CID. For fixed channels, use the CID from the PDU. */\n     cid = (l2cap_data->cid == BTL2CAP_FIXED_CID_ATT) ? l2cap_data->cid : l2cap_data->local_cid;\n \n-    // Request is always in opposite direction from response\n-    direction = pinfo->p2p_dir == P2P_DIR_SENT ? P2P_DIR_RECV : P2P_DIR_SENT;\n-\n+    /* First, obtain a list of all ATT \"requests\" made on the current bearer */\n     key[0].length = 1;\n     key[0].key    = &l2cap_data->interface_id;\n     key[1].length = 1;\n     key[1].key    = &l2cap_data->adapter_id;\n     key[2].length = 1;\n-    key[2].key    = &curr_layer_num;\n+    key[2].key    = &chandle;\n     key[3].length = 1;\n     key[3].key    = &cid;\n     key[4].length = 1;\n-    key[4].key    = &direction;\n+    key[4].key    = &curr_layer_num;\n     key[5].length = 0;\n     key[5].key    = NULL;\n \n-    frame_number = pinfo->num;\n-\n     sub_wmemtree = (wmem_tree_t *) wmem_tree_lookup32_array(requests, key);\n-    request_data = (sub_wmemtree) ? (request_data_t *) wmem_tree_lookup32_le(sub_wmemtree, frame_number) : NULL;\n-    if (request_data && request_data->request_in_frame == pinfo->num)\n-        return request_data;\n-\n-    if (request_data) do {\n-        frame_number = request_data->request_in_frame - 1;\n-\n-        if (request_data->request_in_frame == pinfo->num)\n-            break;\n-\n-      switch (opcode) {\n-      case 0x01: /* Error Response */\n-          if (tvb_captured_length_remaining(tvb, offset) < 1)\n-              return NULL;\n-          opcode = tvb_get_uint8(tvb, 1) + 1;\n-          /* FALL THROUGH */\n-      case 0x03: /* Exchange MTU Response */\n-      case 0x05: /* Find Information Response */\n-      case 0x07: /* Find By Type Value Response */\n-      case 0x09: /* Read By Type Response */\n-      case 0x0b: /* Read Response */\n-      case 0x0d: /* Read Blob Response */\n-      case 0x0f: /* Read Multiple Response */\n-      case 0x11: /* Read By Group Type Response */\n-      case 0x13: /* Write Response */\n-      case 0x17: /* Prepare Write Response */\n-      case 0x19: /* Execute Write Response */\n-      case 0x21: /* Read Multiple Variable Response */\n-      case 0x1E: /* Handle Value Confirmation */\n-          if (request_data->opcode == opcode - 1)\n-              return request_data;\n-\n-          break;\n-      }\n-    } while(0);\n-\n-    request_data = (sub_wmemtree) ? (request_data_t *) wmem_tree_lookup32_le(sub_wmemtree, frame_number) : NULL;\n-\n-    if (!request_data)\n+    if (!sub_wmemtree) {\n         return NULL;\n+    }\n \n-    if (request_data->request_in_frame == pinfo->num)\n+    /* Determine if the current packet is a \"request\" or a \"response\" */\n+    if (is_request(opcode))\n+    {\n+        /* It's a request, so search the list for an exact match. */\n+        direction = pinfo->p2p_dir;\n+        frame_number = pinfo->num;\n+\n+        key[0].length = 1;\n+        key[0].key    = &direction;\n+        key[1].length = 1;\n+        key[1].key    = &frame_number;\n+        key[2].length = 0;\n+        key[2].key    = NULL;\n+\n+        request_data = (request_data_t *) wmem_tree_lookup32_array(sub_wmemtree, key);\n         return request_data;\n+    }\n+    else\n+    {\n+        /* Assume it's a response. To find the corresponding request,\n+           search backwards starting from the previous packet.\n \n-    switch (opcode) {\n-    case 0x01: /* Error Response */\n-        if (tvb_captured_length_remaining(tvb, offset) < 1)\n-            return NULL;\n-        opcode = tvb_get_uint8(tvb, 1) + 1;\n-        /* FALL THROUGH */\n-    case 0x03: /* Exchange MTU Response */\n-    case 0x05: /* Find Information Response */\n-    case 0x07: /* Find By Type Value Response */\n-    case 0x09: /* Read By Type Response */\n-    case 0x0b: /* Read Response */\n-    case 0x0d: /* Read Blob Response */\n-    case 0x0f: /* Read Multiple Response */\n-    case 0x11: /* Read By Group Type Response */\n-    case 0x13: /* Write Response */\n-    case 0x17: /* Prepare Write Response */\n-    case 0x19: /* Execute Write Response */\n-    case 0x21: /* Read Multiple Variable Response */\n-    case 0x1E: /* Handle Value Confirmation */\n-        if (request_data->opcode == opcode -1)\n-            return request_data;\n+           Said request will naturally be in the opposite direction as this response. */\n+        direction = pinfo->p2p_dir == P2P_DIR_SENT ? P2P_DIR_RECV : P2P_DIR_SENT;\n+        frame_number = pinfo->num - 1;\n \n-        break;\n-    case 0x1B: /* Handle Value Notification */\n-    case 0x52: /* Write Command */\n-    case 0xD2: /* Signed Write Command */\n-        /* There is no response for them */\n-        return NULL;\n-    case 0x02: /* Exchange MTU Request */\n-    case 0x04: /* Find Information Request */\n-    case 0x06: /* Find By Type Value Request */\n-    case 0x08: /* Read By Type Request */\n-    case 0x0a: /* Read Request */\n-    case 0x0c: /* Read Blob Request */\n-    case 0x0e: /* Read Multiple Request */\n-    case 0x10: /* Read By Group Type Request */\n-    case 0x12: /* Write Request */\n-    case 0x16: /* Prepare Write Request */\n-    case 0x18: /* Execute Write Request */\n-    case 0x1D: /* Handle Value Indication */\n-    case 0x20: /* Read Multiple Variable Request */\n-        /* This should never happen */\n-    default:\n-        return NULL;\n+        key[0].length = 1;\n+        key[0].key    = &direction;\n+        key[1].length = 0;\n+        key[1].key    = NULL;\n+\n+        sub_wmemtree = (wmem_tree_t *) wmem_tree_lookup32_array(sub_wmemtree, key);\n+\n+        /* This yields the last request that travelled over this bearer [in the given direction above] */\n+        request_data = (sub_wmemtree) ? (request_data_t *) wmem_tree_lookup32_le(sub_wmemtree, frame_number) : NULL;\n+\n+        switch (opcode) {\n+            case ATT_OPCODE_ERROR_RESPONSE:\n+                if (tvb_captured_length_remaining(tvb, offset) < 1)\n+                    return NULL;\n+                opcode = tvb_get_uint8(tvb, 1) + 1;\n+                /* FALL THROUGH */\n+            case ATT_OPCODE_EXCHANGE_MTU_RESPONSE:\n+            case ATT_OPCODE_FIND_INFORMATION_RESPONSE:\n+            case ATT_OPCODE_FIND_BY_TYPE_VALUE_RESPONSE:\n+            case ATT_OPCODE_READ_BY_TYPE_RESPONSE:\n+            case ATT_OPCODE_READ_RESPONSE:\n+            case ATT_OPCODE_READ_BLOB_RESPONSE:\n+            case ATT_OPCODE_READ_MULTIPLE_RESPONSE:\n+            case ATT_OPCODE_READ_BY_GROUP_TYPE_RESPONSE:\n+            case ATT_OPCODE_WRITE_RESPONSE:\n+            case ATT_OPCODE_WRITE_PREPARE_RESPONSE:\n+            case ATT_OPCODE_WRITE_EXECUTE_RESPONSE:\n+            case ATT_OPCODE_READ_MULTIPLE_VARIABLE_RESPONSE:\n+            case ATT_OPCODE_HANDLE_VALUE_CONFIRMATION:\n+                /* Confirm that the request and response are a matching pair */\n+                if (request_data && request_data->opcode == opcode - 1)\n+                    return request_data;\n+\n+                break;\n+\n+            default:\n+                break;\n+        }\n     }\n \n     return NULL;\n@@ -4346,12 +4342,13 @@ static void\n save_request(packet_info *pinfo, uint8_t opcode, union request_parameters_union parameters,\n         btl2cap_data_t *l2cap_data)\n {\n-    wmem_tree_key_t  key[7];\n-    uint32_t         frame_number, curr_layer_num, direction, cid;\n+    wmem_tree_key_t  key[8];\n+    uint32_t         frame_number, curr_layer_num, direction, cid, chandle;\n     request_data_t  *request_data;\n \n     frame_number = pinfo->num;\n     curr_layer_num = pinfo->curr_layer_num;\n+    chandle = l2cap_data->chandle;\n     cid = (l2cap_data->cid == BTL2CAP_FIXED_CID_ATT) ? l2cap_data->cid : l2cap_data->local_cid;\n     direction = pinfo->p2p_dir;\n \n@@ -4360,15 +4357,17 @@ save_request(packet_info *pinfo, uint8_t opcode, union request_parameters_union\n     key[1].length = 1;\n     key[1].key    = &l2cap_data->adapter_id;\n     key[2].length = 1;\n-    key[2].key    = &curr_layer_num;\n+    key[2].key    = &chandle;\n     key[3].length = 1;\n     key[3].key    = &cid;\n     key[4].length = 1;\n-    key[4].key    = &direction;\n+    key[4].key    = &curr_layer_num;\n     key[5].length = 1;\n-    key[5].key    = &frame_number;\n-    key[6].length = 0;\n-    key[6].key    = NULL;\n+    key[5].key    = &direction;\n+    key[6].length = 1;\n+    key[6].key    = &frame_number;\n+    key[7].length = 0;\n+    key[7].key    = NULL;\n \n     request_data = wmem_new0(wmem_file_scope(), request_data_t);\n     request_data->opcode = opcode;\n@@ -10731,8 +10730,8 @@ is_long_attribute_value(bluetooth_uuid_t uuid)\n static unsigned\n get_mtu(packet_info *pinfo, btl2cap_data_t *l2cap_data)\n {\n-    wmem_tree_key_t  key[5];\n-    uint32_t         frame_number;\n+    wmem_tree_key_t  key[4];\n+    uint32_t         frame_number, chandle;\n     mtu_data_t      *mtu_data;\n     wmem_tree_t     *sub_wmemtree;\n     unsigned         mtu = 23;\n@@ -10756,17 +10755,16 @@ get_mtu(packet_info *pinfo, btl2cap_data_t *l2cap_data)\n          * the dynamic bearers is at least equal to that of the fixed bearer. */\n \n         frame_number = pinfo->num;\n+        chandle = l2cap_data->chandle;\n \n         key[0].length = 1;\n         key[0].key    = &l2cap_data->interface_id;\n         key[1].length = 1;\n         key[1].key    = &l2cap_data->adapter_id;\n         key[2].length = 1;\n-        key[2].key    = &l2cap_data->remote_bd_addr_oui;\n-        key[3].length = 1;\n-        key[3].key    = &l2cap_data->remote_bd_addr_id;\n-        key[4].length = 0;\n-        key[4].key    = NULL;\n+        key[2].key    = &chandle;\n+        key[3].length = 0;\n+        key[3].key    = NULL;\n \n         sub_wmemtree = (wmem_tree_t *) wmem_tree_lookup32_array(mtus, key);\n         mtu_data = (sub_wmemtree) ? (mtu_data_t *) wmem_tree_lookup32_le(sub_wmemtree, frame_number) : NULL;\n@@ -10781,24 +10779,23 @@ get_mtu(packet_info *pinfo, btl2cap_data_t *l2cap_data)\n static void\n save_mtu(packet_info *pinfo, btl2cap_data_t *l2cap_data, unsigned mtu)\n {\n-    wmem_tree_key_t  key[6];\n-    uint32_t         frame_number;\n+    wmem_tree_key_t  key[5];\n+    uint32_t         frame_number, chandle;\n     mtu_data_t      *mtu_data;\n \n     frame_number = pinfo->num;\n+    chandle = l2cap_data->chandle;\n \n     key[0].length = 1;\n     key[0].key    = &l2cap_data->interface_id;\n     key[1].length = 1;\n     key[1].key    = &l2cap_data->adapter_id;\n     key[2].length = 1;\n-    key[2].key    = &l2cap_data->remote_bd_addr_oui;\n+    key[2].key    = &chandle;\n     key[3].length = 1;\n-    key[3].key    = &l2cap_data->remote_bd_addr_id;\n-    key[4].length = 1;\n-    key[4].key    = &frame_number;\n-    key[5].length = 0;\n-    key[5].key    = NULL;\n+    key[3].key    = &frame_number;\n+    key[4].length = 0;\n+    key[4].key    = NULL;\n \n     mtu_data = wmem_new(wmem_file_scope(), mtu_data_t);\n     mtu_data->mtu = mtu;\n@@ -10810,11 +10807,12 @@ static void\n save_value_fragment(packet_info *pinfo, tvbuff_t *tvb, int offset,\n         uint32_t handle, unsigned data_offset, btl2cap_data_t *l2cap_data)\n {\n-    wmem_tree_key_t   key[6];\n-    uint32_t          frame_number, cid;\n+    wmem_tree_key_t   key[7];\n+    uint32_t          frame_number, cid, chandle;\n     fragment_data_t  *fragment_data;\n \n     frame_number = pinfo->num;\n+    chandle = l2cap_data->chandle;\n     cid = (l2cap_data->cid == BTL2CAP_FIXED_CID_ATT) ? l2cap_data->cid : l2cap_data->local_cid;\n \n     key[0].length = 1;\n@@ -10822,13 +10820,15 @@ save_value_fragment(packet_info *pinfo, tvbuff_t *tvb, int offset,\n     key[1].length = 1;\n     key[1].key    = &l2cap_data->adapter_id;\n     key[2].length = 1;\n-    key[2].key    = &cid;\n+    key[2].key    = &chandle;\n     key[3].length = 1;\n-    key[3].key    = &handle;\n+    key[3].key    = &cid;\n     key[4].length = 1;\n-    key[4].key    = &frame_number;\n-    key[5].length = 0;\n-    key[5].key    = NULL;\n+    key[4].key    = &handle;\n+    key[5].length = 1;\n+    key[5].key    = &frame_number;\n+    key[6].length = 0;\n+    key[6].key    = NULL;\n \n     fragment_data = wmem_new(wmem_file_scope(), fragment_data_t);\n     fragment_data->length = tvb_captured_length_remaining(tvb, offset);\n@@ -10842,8 +10842,8 @@ save_value_fragment(packet_info *pinfo, tvbuff_t *tvb, int offset,\n static uint8_t *\n get_value(packet_info *pinfo, uint32_t handle, btl2cap_data_t *l2cap_data, unsigned *length)\n {\n-    wmem_tree_key_t   key[5];\n-    uint32_t          frame_number, cid;\n+    wmem_tree_key_t   key[6];\n+    uint32_t          frame_number, cid, chandle;\n     fragment_data_t  *fragment_data;\n     wmem_tree_t      *sub_wmemtree;\n     unsigned          last_offset = UINT_MAX;\n@@ -10853,6 +10853,7 @@ get_value(packet_info *pinfo, uint32_t handle, btl2cap_data_t *l2cap_data, unsig\n \n     if (l2cap_data) {\n         frame_number = pinfo->num;\n+        chandle = l2cap_data->chandle;\n         cid = (l2cap_data->cid == BTL2CAP_FIXED_CID_ATT) ? l2cap_data->cid : l2cap_data->local_cid;\n \n         key[0].length = 1;\n@@ -10860,11 +10861,13 @@ get_value(packet_info *pinfo, uint32_t handle, btl2cap_data_t *l2cap_data, unsig\n         key[1].length = 1;\n         key[1].key    = &l2cap_data->adapter_id;\n         key[2].length = 1;\n-        key[2].key    = &cid;\n+        key[2].key    = &chandle;\n         key[3].length = 1;\n-        key[3].key    = &handle;\n-        key[4].length = 0;\n-        key[4].key    = NULL;\n+        key[3].key    = &cid;\n+        key[4].length = 1;\n+        key[4].key    = &handle;\n+        key[5].length = 0;\n+        key[5].key    = NULL;\n \n         sub_wmemtree = (wmem_tree_t *) wmem_tree_lookup32_array(fragments, key);\n         while (1) {\n@@ -11663,7 +11666,7 @@ dissect_btatt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n         break;\n     }\n \n-    if (request_data && request_data->opcode == (opcode - 1)) {\n+    if (request_data) {\n         if (request_data->request_in_frame > 0  && request_data->request_in_frame != pinfo->num) {\n             sub_item = proto_tree_add_uint(main_tree, hf_request_in_frame, tvb, 0, 0, request_data->request_in_frame);\n             proto_item_set_generated(sub_item);\n@@ -11675,6 +11678,11 @@ dissect_btatt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n             sub_item = proto_tree_add_uint(main_tree, hf_response_in_frame, tvb, 0, 0, request_data->response_in_frame);\n             proto_item_set_generated(sub_item);\n         }\n+        else if (request_data->response_in_frame == 0 && request_data->request_in_frame == pinfo->num)\n+        {\n+            /* So far, no response has been seen for this request. */\n+            expert_add_info(pinfo, main_item, &ei_btatt_incomplete_transaction);\n+        }\n     }\n \n     return offset;\n@@ -17579,6 +17587,7 @@ proto_register_btatt(void)\n         { &ei_btatt_bad_data,               { \"btatt.bad_data\",                       PI_PROTOCOL,  PI_WARN, \"Bad Data\", EXPFILL }},\n         { &ei_btatt_unexpected_data,        { \"btatt.unexpected_data\",                PI_PROTOCOL,  PI_WARN, \"Unexpected Data\", EXPFILL }},\n         { &ei_btatt_undecoded,              { \"btatt.undecoded\",                      PI_UNDECODED, PI_NOTE, \"Undecoded\", EXPFILL }},\n+        { &ei_btatt_incomplete_transaction, { \"btatt.incomplete_transaction\",         PI_SEQUENCE,  PI_WARN, \"Incomplete ATT transaction\", EXPFILL }},\n     };\n \n     static build_valid_func btatt_handle_da_build_value[1] = {btatt_handle_value};\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-btatt.c",
+      "old_path": "epan/dissectors/packet-btatt.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -42,10 +42,13 @@\n #define ATT_OPCODE_WRITE_PREPARE_RESPONSE       0x17\n #define ATT_OPCODE_WRITE_EXECUTE_REQUEST        0x18\n #define ATT_OPCODE_WRITE_EXECUTE_RESPONSE       0x19\n+#define ATT_OPCODE_READ_MULTIPLE_VARIABLE_REQUEST       0x20\n+#define ATT_OPCODE_READ_MULTIPLE_VARIABLE_RESPONSE      0x21\n #define ATT_OPCODE_WRITE_COMMAND                0x52\n #define ATT_OPCODE_WRITE_SIGNED_COMMAND         0xD2\n \n #define ATT_OPCODE_HANDLE_VALUE_NOTIFICATION    0x1B\n+#define ATT_OPCODE_MULTIPLE_HANDLE_VALUE_NOTIFICATION   0x23\n #define ATT_OPCODE_HANDLE_VALUE_INDICATION      0x1D\n #define ATT_OPCODE_HANDLE_VALUE_CONFIRMATION    0x1E\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-btatt.h",
+      "old_path": "epan/dissectors/packet-btatt.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "358b64dccf01b81a6e05fde0bd2445f270f8a8e0",
+      "short_id": "358b64dc",
+      "created_at": "2025-12-22T23:22:55.000+00:00",
+      "parent_ids": [
+        "29d51f2b27367febb00992ee1ace392aea8a91bc"
+      ],
+      "title": "btatt: Enable the detection of ATT transaction timeouts",
+      "message": "btatt: Enable the detection of ATT transaction timeouts\n\nThis basically fixes / enhances the transaction tracking so that\nrequests/indications point to responses/confirmations and vice-versa.\n\nAn expert info item is attached to a packet if no response/confirmation\nhas been observed for that packet so far, so that users may filter for\n`btatt.incomplete_transaction` to identify possible ATT timeouts.\n",
+      "author_name": "Brian Ejike",
+      "author_email": "bcejike@gmail.com",
+      "authored_date": "2025-12-20T09:36:53.000+00:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2025-12-22T23:22:55.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/358b64dccf01b81a6e05fde0bd2445f270f8a8e0"
+    },
+    {
+      "id": "29d51f2b27367febb00992ee1ace392aea8a91bc",
+      "short_id": "29d51f2b",
+      "created_at": "2025-12-22T23:22:55.000+00:00",
+      "parent_ids": [
+        "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0"
+      ],
+      "title": "btatt: ATT transaction tracking should account for connection handles",
+      "message": "btatt: ATT transaction tracking should account for connection handles\n\nThe core specification allows the use of separate CID number-spaces\nfor each logical link (ACL-U, LE-U). Therefore, to correctly track ATT bearer CIDs,\neach CID must be qualified by the connection handle of the logical link\nthat carries that bearer.\n\nThis ensures that transactions between the Host and multiple separate\nremote devices do not get conflated with each other during dissection.\nThe same goes for transactions between the Host and the same remote device\nbut on separate logical links (e.g. GATT over LE vs GATT over BR/EDR).\n",
+      "author_name": "Brian Ejike",
+      "author_email": "bcejike@gmail.com",
+      "authored_date": "2025-12-20T07:48:16.000+00:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2025-12-22T23:22:55.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/29d51f2b27367febb00992ee1ace392aea8a91bc"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1608884126,
+      "head_commit_sha": "358b64dccf01b81a6e05fde0bd2445f270f8a8e0",
+      "base_commit_sha": "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0",
+      "start_commit_sha": "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0",
+      "created_at": "2025-12-22T23:22:58.854Z",
+      "merge_request_id": 442088647,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "944d70b3b86e15ec81aac989a29a121208b80005"
+    },
+    {
+      "id": 1607822560,
+      "head_commit_sha": "1c0eea2e6d8bcb35eb9fdb69df9e860486cf2118",
+      "base_commit_sha": "0d1dafa01d3745b07eaf97e000d4042f914802d0",
+      "start_commit_sha": "0d1dafa01d3745b07eaf97e000d4042f914802d0",
+      "created_at": "2025-12-22T02:58:06.128Z",
+      "merge_request_id": 442088647,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "944d70b3b86e15ec81aac989a29a121208b80005"
+    },
+    {
+      "id": 1607449018,
+      "head_commit_sha": "72bb9ee7ecd1795806056b53f9ca8596ca09f160",
+      "base_commit_sha": "69d54a8916e0868130d59cc8920c153be8659be6",
+      "start_commit_sha": "69d54a8916e0868130d59cc8920c153be8659be6",
+      "created_at": "2025-12-20T11:33:25.677Z",
+      "merge_request_id": 442088647,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "944d70b3b86e15ec81aac989a29a121208b80005"
+    },
+    {
+      "id": 1607448151,
+      "head_commit_sha": "58ab309081ce5c5bb656570126b34f2ebfae4ccc",
+      "base_commit_sha": "10a068601220fa22b672cb83a60b0c4aac952fc0",
+      "start_commit_sha": "69d54a8916e0868130d59cc8920c153be8659be6",
+      "created_at": "2025-12-20T11:28:42.576Z",
+      "merge_request_id": 442088647,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "944d70b3b86e15ec81aac989a29a121208b80005"
+    }
+  ]
+}

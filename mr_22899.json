@@ -1,0 +1,460 @@
+{
+  "id": 442443843,
+  "iid": 22899,
+  "project_id": 7898047,
+  "title": "dfilter: Convert FT_SCALAR to FT_UINT64 for non Number types",
+  "description": "Character constants, and literals and strings (the latter two if\nthere's a value string) can be converted to FT_INT64 but not\nFT_DOUBLE. So if a FT_SCALAR is requested, try to convert to\nFT_INT64. This prevents some crashes with filters that try to\ndivide a FT_ABSOLUTE_TIME or FT_RELATIVE_TIME by character constants,\nliterals, or strings:\n\nframe.time_relative > ${frame.time_relative} / 0.:5\nframe.time_relative > ${frame.time_relative} / \"foo\"\nframe.time_relative > ${frame.time_relative} / '\\x47'\n\nBefore:\n        [(none) ERROR] epan/ftypes/ftypes.c:503 -- fvalue_new(): assertion failed: ftype < FT_NUM_TYPES\n\n[Compiled in Debug mode; a different error if compiled in Release mode\nwhere asserts are not compiled in]\n\nfor all three.\n\nAfter:\n$ ./run/dftest $(cat bad-filter-crash2)\nFilter:\n frame.time_relative > ${frame.time_relative} / \"foo\"\n\nError: Signed integer (64 bits) cannot be converted from a string (\"foo\").\n  frame.time_relative > ${frame.time_relative} / \"foo\"\n                                                 ^~~~~\n\nfor the first two and success for the third:\n\n./run/dftest $(cat bad-filter-crash3)\nFilter:\n frame.time_relative > ${frame.time_relative} / '\\x47'\n\nInstructions:\n 0000 READ_TREE        frame.time_relative -> R0\n 0001 IF_FALSE_GOTO    6\n 0002 READ_REFERENCE   ${frame.time_relative} -> R1\n 0003 IF_FALSE_GOTO    6\n 0004 DIVIDE           R1 / 71          -> R2\n 0005 ANY_GT           R0 > R2\n 0006 RETURN\n\nThe error messages are perhaps not ideal, but this is better than\ncrashing.",
+  "state": "merged",
+  "created_at": "2025-12-22T23:43:13.391Z",
+  "updated_at": "2025-12-23T14:57:14.666Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2025-12-23T14:57:14.682Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "ftypes_scalar",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "3476933b553018c061dfa363237f99534eb0b8f4",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-12-22T23:43:20.008Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!22899",
+  "references": {
+    "short": "!22899",
+    "relative": "!22899",
+    "full": "wireshark/wireshark!22899"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/22899",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2025-12-23T14:47:43.160Z",
+  "latest_build_finished_at": "2025-12-23T14:57:13.170Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2230127590,
+    "iid": 93714,
+    "project_id": 7898047,
+    "sha": "86e6a478b071b068f718742bdfa57eb72e9d5b4d",
+    "ref": "refs/merge-requests/22899/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-12-23T14:47:41.584Z",
+    "updated_at": "2025-12-23T14:57:13.204Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2230127590"
+  },
+  "head_pipeline": {
+    "id": 2230127590,
+    "iid": 93714,
+    "project_id": 7898047,
+    "sha": "86e6a478b071b068f718742bdfa57eb72e9d5b4d",
+    "ref": "refs/merge-requests/22899/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-12-23T14:47:41.584Z",
+    "updated_at": "2025-12-23T14:57:13.204Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2230127590",
+    "before_sha": "86e6a478b071b068f718742bdfa57eb72e9d5b4d",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2025-12-23T14:47:43.160Z",
+    "finished_at": "2025-12-23T14:57:13.170Z",
+    "committed_at": null,
+    "duration": 569,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2230127590",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0",
+    "head_sha": "3476933b553018c061dfa363237f99534eb0b8f4",
+    "start_sha": "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "accac5fe2cd4ac4d4b9e1cd6dc36421033fd10f7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2971886529,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-23T14:47:38.595Z",
+          "updated_at": "2025-12-23T14:47:38.599Z",
+          "system": true,
+          "noteable_id": 442443843,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22899,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bcfcab3d26bde15efcf002a237b8da90a72da4c6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2971886560,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-23T14:47:39.711Z",
+          "updated_at": "2025-12-23T14:47:39.716Z",
+          "system": true,
+          "noteable_id": 442443843,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22899,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f94862619f227cb20cb017624ab65277cc170bff",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2971886579,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-12-23T14:47:40.071Z",
+          "updated_at": "2025-12-23T14:47:40.075Z",
+          "system": true,
+          "noteable_id": 442443843,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22899,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "481c38d4bac7fd035c6b33933cb072291e445903",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122569295,
+          "type": null,
+          "body": "mentioned in issue #21038",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:05:42.460Z",
+          "updated_at": "2026-03-01T15:05:42.493Z",
+          "system": true,
+          "noteable_id": 442443843,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22899,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d0f9181a51ed1720799d67c3aeb7a55c80891a6d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122569504,
+          "type": null,
+          "body": "mentioned in issue #21037",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:05:51.783Z",
+          "updated_at": "2026-03-01T15:05:51.803Z",
+          "system": true,
+          "noteable_id": 442443843,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22899,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8dd912a7825061bb0ecacf3c44879a9c663a3960",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122571888,
+          "type": null,
+          "body": "mentioned in issue #21044",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:08:00.630Z",
+          "updated_at": "2026-03-01T15:08:00.654Z",
+          "system": true,
+          "noteable_id": 442443843,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22899,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "22f4e0d96a6b52b21c40eeb716dcf7a387bc3fb9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3122572938,
+          "type": null,
+          "body": "mentioned in issue #21043",
+          "author": {
+            "id": 34681634,
+            "username": "ali_0x33",
+            "public_email": "",
+            "name": "ali_0x33",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2fac2dabf9eee71665a61308ac463eaa266eea077ed17b7fa9c870819ef2f6e1?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ali_0x33"
+          },
+          "created_at": "2026-03-01T15:09:03.444Z",
+          "updated_at": "2026-03-01T15:09:03.483Z",
+          "system": true,
+          "noteable_id": 442443843,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22899,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -230,6 +230,10 @@ dfilter_fvalue_from_literal(dfwork_t *dfw, ftenum_t ftype, stnode_t *st,\n \tchar *error_message = NULL;\n \tenum mk_result res;\n \n+\tif (ftype == FT_SCALAR) {\n+\t\tftype = FT_INT64;\n+\t}\n+\n \tfv = fvalue_from_literal(ftype, s, allow_partial_value, &error_message);\n \tif (fv != NULL) {\n \t\tg_free(error_message); // error_message is expected to be null\n@@ -271,6 +275,10 @@ dfilter_fvalue_from_string(dfwork_t *dfw, ftenum_t ftype, stnode_t *st,\n \tchar *error_message = NULL;\n \tenum mk_result res;\n \n+\tif (ftype == FT_SCALAR) {\n+\t\tftype = FT_INT64;\n+\t}\n+\n \tfv = fvalue_from_string(ftype, gs->str, gs->len, &error_message);\n \tif (fv != NULL) {\n \t\tg_free(error_message); // error_message is expected to be null\n@@ -304,6 +312,10 @@ dfilter_fvalue_from_charconst(dfwork_t *dfw, ftenum_t ftype, stnode_t *st)\n \tunsigned long *nump = stnode_data(st);\n \tchar *error_message = NULL;\n \n+\tif (ftype == FT_SCALAR) {\n+\t\tftype = FT_INT64;\n+\t}\n+\n \tfv = fvalue_from_charconst(ftype, *nump, &error_message);\n \tif (fv != NULL) {\n \t\tg_free(error_message); // error_message is expected to be null\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dfilter/semcheck.c",
+      "old_path": "epan/dfilter/semcheck.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "3476933b553018c061dfa363237f99534eb0b8f4",
+      "short_id": "3476933b",
+      "created_at": "2025-12-22T18:42:55.000-05:00",
+      "parent_ids": [
+        "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0"
+      ],
+      "title": "dfilter: Convert FT_SCALAR to FT_UINT64 for non Number types",
+      "message": "dfilter: Convert FT_SCALAR to FT_UINT64 for non Number types\n\nCharacter constants, and literals and strings (the latter two if\nthere's a value string) can be converted to FT_INT64 but not\nFT_DOUBLE. So if a FT_SCALAR is requested, try to convert to\nFT_INT64. This prevents some crashes with filters that try to\ndivide a FT_ABSOLUTE_TIME or FT_RELATIVE_TIME by character constants,\nliterals, or strings:\n\nframe.time_relative > ${frame.time_relative} / 0.:5\nframe.time_relative > ${frame.time_relative} / \"foo\"\nframe.time_relative > ${frame.time_relative} / '\\x47'\n\nBefore:\n        [(none) ERROR] epan/ftypes/ftypes.c:503 -- fvalue_new(): assertion failed: ftype < FT_NUM_TYPES\n\n[Compiled in Debug mode; a different error if compiled in Release mode\nwhere asserts are not compiled in]\n\nfor all three.\n\nAfter:\n$ ./run/dftest $(cat bad-filter-crash2)\nFilter:\n frame.time_relative > ${frame.time_relative} / \"foo\"\n\nError: Signed integer (64 bits) cannot be converted from a string (\"foo\").\n  frame.time_relative > ${frame.time_relative} / \"foo\"\n                                                 ^~~~~\n\nfor the first two and success for the third:\n\n./run/dftest $(cat bad-filter-crash3)\nFilter:\n frame.time_relative > ${frame.time_relative} / '\\x47'\n\nInstructions:\n 0000 READ_TREE        frame.time_relative -> R0\n 0001 IF_FALSE_GOTO    6\n 0002 READ_REFERENCE   ${frame.time_relative} -> R1\n 0003 IF_FALSE_GOTO    6\n 0004 DIVIDE           R1 / 71          -> R2\n 0005 ANY_GT           R0 > R2\n 0006 RETURN\n\nThe error messages are perhaps not ideal, but this is better than\ncrashing.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2025-12-22T11:03:45.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2025-12-22T18:42:55.000-05:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3476933b553018c061dfa363237f99534eb0b8f4"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1608891560,
+      "head_commit_sha": "3476933b553018c061dfa363237f99534eb0b8f4",
+      "base_commit_sha": "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0",
+      "start_commit_sha": "6b2b2c641054e6e441fe9cf36fb2d7a55c8d8db0",
+      "created_at": "2025-12-22T23:43:14.948Z",
+      "merge_request_id": 442443843,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "f70a8c15ab6b8d7de4e6369226039bbb595900bb"
+    }
+  ]
+}

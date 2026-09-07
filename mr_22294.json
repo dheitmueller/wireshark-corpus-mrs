@@ -1,0 +1,2478 @@
+{
+  "id": 432210377,
+  "iid": 22294,
+  "project_id": 7898047,
+  "title": "LUA: Extend Wireshark Lua TreeItem API for Tree Navigation and Field Access",
+  "description": "This pull request extends the Wireshark Lua TreeItem API with comprehensive navigation capabilities, enabling precise traversal and inspection of the dissection tree structure. The new methods address critical limitations in the current field extraction API that prevent understanding tree structure and field positioning within the protocol hierarchy.\n\nThe current Wireshark Lua API provides field extractors for retrieving field values, but lacks the ability to understand the structural context and position of fields within the dissection tree. This creates significant limitations in several scenarios:\n\n1. **No Tree Structure Information**: Field extractors cannot determine the hierarchical relationship between fields and their parent elements\n2. **Multiple Field Instance Problems**: When fields appear multiple times in a packet, there's no way to distinguish which instance belongs to which protocol layer or parent element\n3. **Missing Positional Context**: No ability to determine a field's position relative to siblings or its depth within the tree\n4. **Limited Tree Inspection**: No programmatic way to explore the complete dissection tree structure\n\n**Critical Requirement**: Field extractors must be created for any fields you want to access through tree navigation. Wireshark optimizes dissection by only creating tree items for fields that are explicitly requested through field extractors, display filters, or taps. Without proper field extractors, fields may not exist in the dissection tree and will not be found by navigation methods. The tree navigation API complements but does not replace field extraction - it provides structural context for fields that are already extracted.\n\n| Method | Description | Version |\n|--------|-------------|---------|\n| `get_child_count()` | Returns number of direct child items | 4.7.0 |\n| `get_parent()` | Returns parent TreeItem or nil for root items | 4.7.0 |\n| `get_child(index)` | Returns child at 0-based index | 4.7.0 |\n| `children([filter], [recursive])` | Iterator for child traversal with optional filtering | 4.7.0 |\n| `get_field_info()` | Returns FieldInfo object with field properties | 4.7.0 |\n\n- **Complete Tree Navigation**: Bidirectional traversal (parent ↔ children)\n- **Indexed Access**: Random access to children by position\n- **Filtered Iteration**: Efficient traversal with field name filtering\n- **Recursive Operations**: Deep tree traversal and operations\n- **Field Information Access**: Direct access to underlying field properties\n- **Memory Safe**: Proper cleanup and garbage collection integration\n\n- `epan/wslua/wslua_tree.c`: Core implementation with 5 new WSLUA_METHOD functions\n- Enhanced iterator with stack-based depth-first traversal\n- Integration with existing FieldInfo class from `wslua_field.c`\n- Proper memory management using g_malloc/g_free\n\n1. **0-Based Indexing**: Consistent with Lua conventions for `get_child(index)`\n2. **Optional Parameters**: Flexible filtering and recursion without breaking existing code\n3. **Nil Handling**: Graceful handling of invalid indices and missing parents\n4. **Performance Optimization**: Stack-based recursion to avoid deep call stacks\n\n```lua\n-- Count children and access by index\nlocal count = tree:get_child_count()\nlocal first_child = tree:get_child(0)\nlocal parent = tree:get_parent()\n```\n\n```lua\n-- Find all TCP port fields\nfor child in tree:children(\"tcp.port\") do\n    local field_info = child:get_field_info()\n    print(\"TCP Port:\", field_info.value)\nend\n```\n\n```lua\n-- Find TCP flags anywhere in subtree\nfor item in tree:children(\"tcp.flags\", true) do\n    local field_info = item:get_field_info()\n    print(\"TCP Flags found at depth:\", field_info.value)\nend\n```\n\n```lua\n-- IMPORTANT: Define field extractors first\nlocal ip_extractor = Field.new(\"ip\")\nlocal ip_src_extractor = Field.new(\"ip.src\")\n\n-- Then navigate tree structure\nlocal ip_count = 0\nfor ip_item in root:children(\"ip\", true) do\n    ip_count = ip_count + 1\n    local field_info = ip_item:get_field_info()\n    print(\"IP Layer \" .. ip_count .. \":\")\n\n    -- Find source IP for this specific layer\n    for src_item in ip_item:children(\"ip.src\") do\n        local src_info = src_item:get_field_info()\n        print(\"  Source: \" .. tostring(src_info.value))\n    end\nend\n```\n\n- **Fully Backward Compatible**: All existing TreeItem functionality preserved\n- **Optional Parameters**: New methods use optional parameters to avoid breaking changes\n- **No API Changes**: Existing method signatures unchanged\n- **Performance**: No impact on existing code performance\n\nThis extension provides the missing structural context capabilities that Wireshark's Lua API has needed. It enables precise navigation and analysis of dissection trees while maintaining full backward compatibility. The implementation is robust, well-tested, and follows Wireshark's established patterns for Lua API extensions.\n\nThe addition addresses real-world analysis needs where understanding field relationships and tree structure is critical, particularly in complex protocols with multiple layers or repeated field patterns.",
+  "state": "merged",
+  "created_at": "2025-11-13T17:33:07.036Z",
+  "updated_at": "2026-03-03T20:28:08.416Z",
+  "merged_by": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "merge_user": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "merged_at": "2026-03-03T20:28:08.887Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "lua_tree_api",
+  "user_notes_count": 16,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 13700601,
+    "username": "Dev_AM",
+    "public_email": "",
+    "name": "Dev AM",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Dev_AM"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6020526,
+      "username": "boolean263",
+      "public_email": "",
+      "name": "David Perry",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+      "web_url": "https://gitlab.com/boolean263"
+    }
+  ],
+  "source_project_id": 66254014,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "9b5daf6eeb408d29116dc9f5d61efb3d366ec4bd",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "49c790b4230d065a9ffe9156346cb6054d784aa6",
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-11-13T17:33:15.697Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!22294",
+  "references": {
+    "short": "!22294",
+    "relative": "!22294",
+    "full": "wireshark/wireshark!22294"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/22294",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2026-03-03T20:17:49.346Z",
+  "latest_build_finished_at": "2026-03-03T20:27:59.958Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2361927376,
+    "iid": 97832,
+    "project_id": 7898047,
+    "sha": "49c790b4230d065a9ffe9156346cb6054d784aa6",
+    "ref": "refs/merge-requests/22294/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-03-03T20:17:45.812Z",
+    "updated_at": "2026-03-03T20:27:59.986Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2361927376"
+  },
+  "head_pipeline": {
+    "id": 2361927376,
+    "iid": 97832,
+    "project_id": 7898047,
+    "sha": "49c790b4230d065a9ffe9156346cb6054d784aa6",
+    "ref": "refs/merge-requests/22294/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-03-03T20:17:45.812Z",
+    "updated_at": "2026-03-03T20:27:59.986Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2361927376",
+    "before_sha": "49c790b4230d065a9ffe9156346cb6054d784aa6",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6020526,
+      "username": "boolean263",
+      "public_email": "",
+      "name": "David Perry",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+      "web_url": "https://gitlab.com/boolean263"
+    },
+    "started_at": "2026-03-03T20:17:49.346Z",
+    "finished_at": "2026-03-03T20:27:59.958Z",
+    "committed_at": null,
+    "duration": 612,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2361927376",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+    "head_sha": "9b5daf6eeb408d29116dc9f5d61efb3d366ec4bd",
+    "start_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "e4de03d974003f70ff969ac60196305e43c9fa1a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2887484609,
+          "type": null,
+          "body": "marked this merge request as **draft**",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-13T17:34:55.125Z",
+          "updated_at": "2025-11-13T17:34:55.130Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "09b0a5f4beb85cbdc28d96316afb48d49479cd1f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2887532103,
+          "type": null,
+          "body": "mentioned in commit Dev_AM/wireshark@1ab1e3c49b726c9056793e5a9288adaaa4cee93d",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-13T18:01:32.499Z",
+          "updated_at": "2025-11-13T18:01:32.525Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "93f96caa85e9f003b53bb76f52624b0263e034f0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2887534048,
+          "type": null,
+          "body": "mentioned in merge request !22295",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-13T18:02:32.691Z",
+          "updated_at": "2025-11-13T18:02:33.093Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d8c656968a06b50ae940069132deb25ae79e52bf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2887535537,
+          "type": null,
+          "body": "https://gitlab.com/wireshark/wireshark/-/merge_requests/22295 can become very handy in combination with this one.",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-13T18:03:29.857Z",
+          "updated_at": "2025-11-13T18:03:29.857Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ddcc6d6455475d42dcac62ccfe45e583639268e2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2887548538,
+          "type": null,
+          "body": "mentioned in commit Dev_AM/wireshark@baaf8e1603adbd04db64ea96f0b8e60fb06f4973",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-13T18:10:59.379Z",
+          "updated_at": "2025-11-13T18:10:59.386Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "01b1cdcfc200623b8ac5c5acd1698c1d3496fa86",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2888562970,
+          "type": null,
+          "body": "The description of this MR looks AI generated. Do you have any specific use case where this change can be used?",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2025-11-14T07:46:46.780Z",
+          "updated_at": "2025-11-14T07:46:46.780Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fae2306219fe23e2491f6fbb6ec7a70c22347b85",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2889599641,
+          "type": null,
+          "body": "Yes I do. I use a lua script for a post dissector that performs some additional analysis. This analysis depends on the structure of the dissection tree.\n\nI have a protocol, that can occur multiple times per packet. In this protocol there are fields `parent_field` that has an arbitrary number of children `child_field`, These `child_field`s appear in groups. With the current lua API you have no way to determine the groups.\n\n```\npacket\n|\n--parent\n  |\n  --child\n--parent\n  |\n  --child\n  --child\n  --child\n```\n\nWith the current lua API all you know is that there are 4 `child_field`s and their values. But you do not know to which parent/group they belong. There is no way to figure out that the first group consists only of 1 child while the seconds group consists of 3 elements.",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-14T14:06:51.032Z",
+          "updated_at": "2025-11-14T14:10:40.108Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f12946444b1063e79066cb4bed70afeae4d2c89c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2900630396,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>dd347a66 - LUA: Extend Wireshark Lua TreeItem API for Tree Navigation and Field Access</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1571521728&start_sha=e69d6e511e9ee0c4cab65e338835ca241794be3d)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-19T20:38:06.876Z",
+          "updated_at": "2025-11-19T20:38:06.883Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3af31b7c3897560cf01255d150992a66f7577098",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2900652066,
+          "type": null,
+          "body": "mentioned in commit Dev_AM/wireshark@0dc30b8645207fb9b45a52b38fba568ba8dcc12c",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-19T20:47:25.295Z",
+          "updated_at": "2025-11-19T20:47:25.305Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9d8bd6a8ebd4c1ceeedbb3cd518d9c86f21ea381",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2900660966,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-19T20:51:32.770Z",
+          "updated_at": "2025-11-19T20:51:32.777Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e7737abe183478b9cf26e8a9d5898d1db473e300",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2900737397,
+          "type": null,
+          "body": "mentioned in commit Dev_AM/wireshark@8acf5479a1fea5ce3eef261f8c26023c0f13a75a",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-19T21:21:38.820Z",
+          "updated_at": "2025-11-19T21:21:38.829Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3533f7aa7c29869ded997e7aa78c154cf46a4f46",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2900747770,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>60f5961e - LUA: Extend Wireshark Lua TreeItem API for Tree Navigation and Field Access</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1571569983&start_sha=dd347a660a1351186edda76cc738367f25ea0a00)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-19T21:26:33.104Z",
+          "updated_at": "2025-11-19T21:26:33.108Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "92d2ed5ba24b2c6f0ab3cd8a77fedb4ff1b0f07a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2902932886,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>2ac8633f - LUA: Extend Wireshark Lua TreeItem API for Tree Navigation and Field Access</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1572805495&start_sha=60f5961eb9952c05539fe8f718762d0e6067c273)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-20T15:49:23.802Z",
+          "updated_at": "2025-11-20T15:49:23.810Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "aa5236b557e59b2f8f06c49c275ba9e8e34ab0a2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2922538868,
+          "type": null,
+          "body": "Is there anything I can do to move this merge request forward?",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2025-11-30T12:35:06.828Z",
+          "updated_at": "2025-11-30T12:35:06.828Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ee87fd2f9a4c148cfc93475abae6631d9e8bd20a",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3002202541,
+          "type": "DiffNote",
+          "body": "General: make your code and comment style consistent with the existing style in the file. `wslua_tree.c` has its opening `{` on the same line as the preceding statement, so you should do the same with your added code.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:01.656Z",
+          "updated_at": "2026-02-18T15:41:32.004Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "start_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "head_sha": "9b5daf6eeb408d29116dc9f5d61efb3d366ec4bd",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1130,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1129",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1129
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1131",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1131
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:41:32.004Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "017f00aa94039a60d04b58ec371bb77514728568",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3002202571,
+          "type": "DiffNote",
+          "body": "Our documentation generation uses asciidoc, not javadoc, so you need to use `[source,lua]` instead of `@code`/`@endcode` for code examples. Have a look at `TreeItem_add()` for an example.\n\nThat also means `@since` has no special meaning to our doc framework. I don't know of a better way to indicate this info, so it's probably safe to leave it as it is.\n\nTo learn more about our doc generation, have a look at `doc/CMakeLists.txt`, particularly the stuff marked `wsluarm` (for Wireshark Lua Reference Manual). You can make the `developer_guides` build target to see how your docs look in the finished WSDG. (Caveat: I'm not an expert in it myself, there may be finer points of it I'm missing.)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:01.955Z",
+          "updated_at": "2026-02-18T15:41:36.337Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "start_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "head_sha": "9b5daf6eeb408d29116dc9f5d61efb3d366ec4bd",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1145,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1136",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1136
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1145",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1145
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:41:36.337Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d9bece313b4fcd3908a1f2ca0d71f35a31c7f77b",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3002202582,
+          "type": "DiffNote",
+          "body": "Our doc generation system gets this information from the comment following `WSLUA_RETURN()` so it shouldn't be specified here.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:02.169Z",
+          "updated_at": "2026-02-18T15:41:40.937Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+            "start_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+            "head_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1203,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1194",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1194
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1194",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1194
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:41:40.937Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        },
+        {
+          "id": 3017711957,
+          "type": "DiffNote",
+          "body": "changed this line in [version 5 of the diff](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1631742872&start_sha=2ac8633fb003dedfe4c8410bd349045167fd0832#d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1203_1198)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-01-19T17:08:22.282Z",
+          "updated_at": "2026-01-19T17:08:22.282Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+            "start_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+            "head_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1203,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1194",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1194
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1194",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1194
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9a3f132f36916f8ddf9d1416119fca4780b79788",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3002202593,
+          "type": "DiffNote",
+          "body": "The current standard in other code is to use `luaL_argerror()` when an argument is clearly bad; see for example how `TreeItem_set_len()` handles a negative length.\n\nFor non-negative indices that are simply larger than the number of children of this item, returning `nil` makes more sense.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:02.352Z",
+          "updated_at": "2026-02-18T15:42:14.088Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "start_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "head_sha": "9b5daf6eeb408d29116dc9f5d61efb3d366ec4bd",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1252,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1263",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1263
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1267",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1267
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:42:14.088Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        },
+        {
+          "id": 3002244694,
+          "type": "DiffNote",
+          "body": "Looking further, we seem to be inconsistent about `luaL_argerror()` vs `WSLUA_ERROR()` or even `WSLUA_ARG_ERROR()`. I think this code should use `WSLUA_ARG_ERROR()`, though I'll ask around to confirm.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:33:10.154Z",
+          "updated_at": "2026-02-18T15:42:14.088Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "start_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "head_sha": "9b5daf6eeb408d29116dc9f5d61efb3d366ec4bd",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1252,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1263",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1263
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1267",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1267
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:42:14.088Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "444d94514313c9a93ca80155b87a79ac54d3377d",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3002202606,
+          "type": "DiffNote",
+          "body": "Our doc generation system gets this information from the comment following a `WSLUA_OPTARG_` definition so it shouldn't be specified here.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:02.575Z",
+          "updated_at": "2026-02-18T15:42:19.047Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+            "start_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+            "head_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1570,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1560",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1560
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1561",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1561
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:42:19.047Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        },
+        {
+          "id": 3017711992,
+          "type": "DiffNote",
+          "body": "changed this line in [version 5 of the diff](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1631742872&start_sha=2ac8633fb003dedfe4c8410bd349045167fd0832#d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1570_1526)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-01-19T17:08:23.178Z",
+          "updated_at": "2026-01-19T17:08:23.178Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+            "start_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+            "head_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1570,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1560",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1560
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1561",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1561
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a8442e98c6e86254e6d4f58665f56d765fd77e92",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3002202619,
+          "type": "DiffNote",
+          "body": "Test the arguments for validity near the start of the function, and use `luaL_error()` and abort for non-string values. That discourages invalid use of the function, and also removes the need for this test here, after you've already allocated structures and whatnot.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:02.774Z",
+          "updated_at": "2026-02-18T15:42:29.593Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+            "start_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+            "head_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1652,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1642",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1642
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1643",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1643
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:42:29.593Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        },
+        {
+          "id": 3017712006,
+          "type": "DiffNote",
+          "body": "changed this line in [version 5 of the diff](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1631742872&start_sha=2ac8633fb003dedfe4c8410bd349045167fd0832#d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1652_1623)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-01-19T17:08:23.528Z",
+          "updated_at": "2026-01-19T17:08:23.528Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+            "start_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+            "head_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1652,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1642",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1642
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1643",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1643
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d4327e8ed3e40466929bdbfa5170cc18042f7b73",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3002202626,
+          "type": "DiffNote",
+          "body": "This function is one of the most powerful additions to our Lua API that I can think of, and really shows what can be made possible for Lua developers. Nice work!",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:02.956Z",
+          "updated_at": "2026-02-18T15:42:34.133Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "start_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+            "head_sha": "9b5daf6eeb408d29116dc9f5d61efb3d366ec4bd",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1622,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1653",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1653
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1653",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1653
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:42:34.133Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b7700e4437b8460d4ef0d5a907f32e364a49842f",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3002202632,
+          "type": "DiffNote",
+          "body": "Minor question: would it make more sense for this to be a property of a `TreeItem`, similar to the way e.g. `visible` is, rather than a function call?\n\nI think the C function body would be essentially the same, but the Lua API could look like\n\n```lua\n    for child in tree:children() do\n        if child.field_info then\n            print(\"Field name: \" .. child.field_info.name)\n    -- etc.\n```\n\nThis is a thought, not a requirement.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:03.132Z",
+          "updated_at": "2026-02-18T15:43:34.985Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+            "start_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+            "head_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1667,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1658",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1658
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1658",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1658
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2026-02-18T15:43:34.985Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        },
+        {
+          "id": 3017712029,
+          "type": "DiffNote",
+          "body": "changed this line in [version 5 of the diff](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1631742872&start_sha=2ac8633fb003dedfe4c8410bd349045167fd0832#d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1667_1636)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-01-19T17:08:24.098Z",
+          "updated_at": "2026-01-19T17:08:24.098Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+            "start_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+            "head_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+            "old_path": "epan/wslua/wslua_tree.c",
+            "new_path": "epan/wslua/wslua_tree.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1667,
+            "line_range": {
+              "start": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1658",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1658
+              },
+              "end": {
+                "line_code": "d74e3c38f44494afb6ea8b6e1b65273ba3eaf5a9_1129_1658",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1658
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fe0edddc83bba6bef57045926ea99200af8106e4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3002202663,
+          "type": null,
+          "body": "This will be a very powerful addition to our Lua API! Thank you for contributing it and showing how powerful Lua can be for plugin developers.\n\nThe main blockers right now should be straightforward to fix; just making sure that the coding style and the generated documentation are in line with what's currently present in our code.\n\nYou should also add [test cases](https://gitlab.com/wireshark/wireshark/-/blob/master/test/suite_wslua.py?ref_type=heads) for these new functions, both to demonstrate their use and so we can quickly tell if other changes cause them to break.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:03.678Z",
+          "updated_at": "2026-01-13T13:24:03.678Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4aa622f2db41a50c8cbf73637d1089f58b3e7090",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3002202667,
+          "type": null,
+          "body": "requested changes",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:03.766Z",
+          "updated_at": "2026-01-13T13:24:03.772Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "98a59049bc37838defc3615743f49ef941f49e94",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3002203309,
+          "type": null,
+          "body": "requested review from @boolean263",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-01-13T13:24:14.379Z",
+          "updated_at": "2026-01-13T13:24:14.385Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b3ced8a48dba1ea20aa1676e482a12d8689f6e83",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3017710948,
+          "type": null,
+          "body": "mentioned in commit Dev_AM/wireshark@7366f79a4ade37cbc283a87c49af91800c59e484",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-01-19T17:07:49.746Z",
+          "updated_at": "2026-01-19T17:07:49.756Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "319af1b0bee1a435cebade76b6ceb230379e64ac",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3017712082,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>0713d90d - LUA: Extend Wireshark Lua TreeItem API for Tree Navigation and Field Access</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1631742872&start_sha=2ac8633fb003dedfe4c8410bd349045167fd0832)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-01-19T17:08:24.412Z",
+          "updated_at": "2026-01-19T17:08:24.418Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3982a5d39e2c15856ba2339dbdcc9c3413715d5c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3020818378,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>0de56aad - LUA: Extend Wireshark Lua TreeItem API for Tree Navigation and Field Access</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1633266271&start_sha=0713d90d91e1353625af3cd8a80fa7316ae87919)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-01-20T17:14:57.667Z",
+          "updated_at": "2026-01-20T17:14:57.671Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0799de2334964d9411c1157ce898d551db56f340",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3020819464,
+          "type": null,
+          "body": "mentioned in commit Dev_AM/wireshark@d1c6c0c16fe5b3431061674c386d267f204ef0c4",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-01-20T17:15:12.103Z",
+          "updated_at": "2026-01-20T17:15:12.109Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "59558c966f0bcbaa919a2ac33b5aebf9febcdb94",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3093763545,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-02-18T15:43:35.069Z",
+          "updated_at": "2026-02-18T15:43:35.076Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ebc0864825d469d0c3e8e7ca442c5a60d53f163a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3093787314,
+          "type": null,
+          "body": "The change looks great! Thanks for considering the feedback.\n\n[The pipeline is failing on the Ubuntu GCC build](https://gitlab.com/Dev_AM/wireshark/-/jobs/12786268887) for some reason. The pipeline captured output isn't super helpful in working out why, but it looks like it's in one of the tests you added.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-02-18T15:50:47.547Z",
+          "updated_at": "2026-02-18T15:50:47.547Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e73b571293126a9696ba4bfdb90a093fd7f2a856",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3094083466,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-02-18T17:05:09.102Z",
+          "updated_at": "2026-02-18T17:05:09.109Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "32986ac045338d1d47095112c434571151dbaf1b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3094083488,
+          "type": null,
+          "body": "left review comments",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-02-18T17:05:09.461Z",
+          "updated_at": "2026-02-18T17:05:09.465Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7c3e7c8891d44143114857b30a3cded66ad485fe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3094083738,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-02-18T17:05:14.149Z",
+          "updated_at": "2026-02-18T17:05:14.155Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2f4301d45350cd32e8f3cd9fedba8841d2e9cb8e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3094083950,
+          "type": null,
+          "body": "mentioned in commit Dev_AM/wireshark@1185eb79cd726ebdece5ad6edf7d7c9a97f1d616",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-02-18T17:05:18.141Z",
+          "updated_at": "2026-02-18T17:05:18.146Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4aa9b39213cd1fbb7b9e9a482eef3591a95676b8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3094084110,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-02-18T17:05:19.470Z",
+          "updated_at": "2026-02-18T17:05:20.347Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cdb3a9abd5a4bd41fb65ff68056701583d8cd08c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3095412272,
+          "type": null,
+          "body": "mentioned in commit ec021b4d71c6b7c05323f2ae0212729edbbff358",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-02-18T21:42:52.092Z",
+          "updated_at": "2026-02-18T21:42:52.146Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2db20069b35a7cfaa00113f5d55897c22526cf67",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3110153829,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>3b9acc68 - LUA: Extend Wireshark Lua TreeItem API for Tree Navigation and Field Access</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1679822659&start_sha=0de56aad4f4f2ec4e40e649b3fae7854b0a4eac4)",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-02-24T20:00:52.673Z",
+          "updated_at": "2026-02-24T20:00:52.679Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b62d8e7d5b5c6a9d6b137195e68f24a1a2743f59",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3110156262,
+          "type": null,
+          "body": "reset approvals from @boolean263 by pushing to the branch",
+          "author": {
+            "id": 13700601,
+            "username": "Dev_AM",
+            "public_email": "",
+            "name": "Dev AM",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3e8e4e952d0cb35dfa8e9bcc37e9bb1ff4a2c73d6897f0adc064d379dd40ac48?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dev_AM"
+          },
+          "created_at": "2026-02-24T20:01:06.590Z",
+          "updated_at": "2026-02-24T20:01:06.595Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "677d4ffd5e75b59a4433918580514ee7baca44a3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3128675435,
+          "type": null,
+          "body": "added 1222 commits\n\n<ul><li>3b9acc68...6a11f0e2 - 1221 commits from branch <code>wireshark:master</code></li><li>9b5daf6e - LUA: Extend Wireshark Lua TreeItem API for Tree Navigation and Field Access</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/22294/diffs?diff_id=1689214478&start_sha=3b9acc68788d74d0c56e11da8ed32ec50f4a6eb3)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-03-03T18:05:14.204Z",
+          "updated_at": "2026-03-03T18:05:14.208Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "34ab78f59cd1bd4b38db9cd4db81a7ba25150cc1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3128699943,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-03-03T18:13:16.948Z",
+          "updated_at": "2026-03-03T18:13:16.953Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cd4e92ae9ab34ceffc56321eea14809948ff804e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3129014821,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-03-03T20:17:41.357Z",
+          "updated_at": "2026-03-03T20:17:41.363Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "961454193926f5df2f8a2d321cd3e438818cc130",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3129014846,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-03-03T20:17:41.907Z",
+          "updated_at": "2026-03-03T20:17:41.921Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "adc1ccbcc93b277319b773627c88d4727617342c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3129014858,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788778584",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2026-03-03T20:17:42.355Z",
+          "updated_at": "2026-03-03T20:17:42.377Z",
+          "system": true,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "72f14d6d0c16daff8d701629f1dc06c0245473df",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3129034202,
+          "type": null,
+          "body": "Do you need the full documentation in the commit message? I think it can be shorter.",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2026-03-03T20:26:59.690Z",
+          "updated_at": "2026-03-03T20:26:59.690Z",
+          "system": false,
+          "noteable_id": 432210377,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 22294,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/wslua/wslua_tree.c",
+      "old_path": "epan/wslua/wslua_tree.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,75 @@\n+-- test script for TreeItem traversal APIs\n+-- use with dns_port.pcap in test/captures directory\n+local testlib = require(\"testlib\")\n+\n+local TREE = \"tree\"\n+\n+local ip_src = Field.new(\"ip.src\")\n+local ip_dst = Field.new(\"ip.dst\")\n+\n+testlib.init({\n+    [TREE] = 12,\n+})\n+\n+local tree_proto = Proto(\"tree_api\", \"Tree API Tests\")\n+local numinits = 0\n+local ran_tests = false\n+\n+local function count_children(iter)\n+    local count = 0\n+    for _ in iter do\n+        count = count + 1\n+    end\n+    return count\n+end\n+\n+function tree_proto.init()\n+    numinits = numinits + 1\n+    if numinits == 2 then\n+        testlib.getResults()\n+    end\n+end\n+\n+function tree_proto.dissector(tvb, pinfo, tree)\n+    if ran_tests then\n+        return\n+    end\n+\n+    ran_tests = true\n+    testlib.testing(TREE, \"TreeItem traversal\")\n+\n+    local child_count = tree:get_child_count()\n+    testlib.test(TREE, \"root_has_children\", child_count > 0)\n+\n+    local first_child = child_count > 0 and tree:get_child(0) or nil\n+    testlib.test(TREE, \"first_child_not_nil\", first_child ~= nil)\n+\n+    local parent = first_child and first_child:get_parent() or nil\n+    testlib.test(TREE, \"parent_not_nil\", parent ~= nil)\n+\n+    testlib.test(TREE, \"get_child_negative_index\", not pcall(function() tree:get_child(-1) end))\n+    testlib.test(TREE, \"get_child_out_of_range\", tree:get_child(child_count) == nil)\n+\n+    local direct_count = count_children(tree:children())\n+    testlib.test(TREE, \"children_direct_count\", direct_count == child_count)\n+\n+    local recursive_count = count_children(tree:children(nil, true))\n+    testlib.test(TREE, \"children_recursive_count\", recursive_count >= child_count)\n+\n+    testlib.test(TREE, \"children_bad_filter_type\", not pcall(function() tree:children(123) end))\n+    testlib.test(TREE, \"children_bad_filter_entry\", not pcall(function() tree:children({\"ip.src\", 1}) end))\n+    testlib.test(TREE, \"children_bad_recursive_type\", not pcall(function() tree:children(\"ip.src\", \"nope\") end))\n+\n+    local ip_src_count = count_children(tree:children(\"ip.src\", true))\n+    testlib.test(TREE, \"children_ip_src_count\", ip_src_count > 0)\n+\n+    local ip_src_item = nil\n+    for child in tree:children(\"ip.src\", true) do\n+        ip_src_item = child\n+        break\n+    end\n+    local finfo = ip_src_item and ip_src_item:get_field_info() or nil\n+    testlib.test(TREE, \"field_info_ip_src\", finfo and finfo.name == \"ip.src\")\n+end\n+\n+register_postdissector(tree_proto)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/lua/tree_api.lua",
+      "old_path": "test/lua/tree_api.lua",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -319,6 +319,10 @@ class TestWslua:\n         '''wslua tvb without a tree'''\n         check_lua_script('tvb.lua', dns_port_pcap, True, '-c1')\n \n+    def test_wslua_tree_api(self, check_lua_script):\n+        '''wslua tree api'''\n+        check_lua_script('tree_api.lua', dns_port_pcap, True, '-V', '-c1')\n+\n     def test_wslua_try_heuristics(self, check_lua_script):\n         '''wslua try_heuristics'''\n         check_lua_script('try_heuristics.lua', dns_port_pcap, True)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_wslua.py",
+      "old_path": "test/suite_wslua.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1689214478,
+      "head_commit_sha": "9b5daf6eeb408d29116dc9f5d61efb3d366ec4bd",
+      "base_commit_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+      "start_commit_sha": "6a11f0e20633edc150f988a2145b1f5b6ceb07e6",
+      "created_at": "2026-03-03T18:05:07.915Z",
+      "merge_request_id": 432210377,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "81e196ed29556ba78a77a528fa6a0e9b2a96b85d"
+    },
+    {
+      "id": 1679822659,
+      "head_commit_sha": "3b9acc68788d74d0c56e11da8ed32ec50f4a6eb3",
+      "base_commit_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+      "start_commit_sha": "b05551fe3a2733adddb00259bb44d23f9e86bb46",
+      "created_at": "2026-02-24T20:00:45.657Z",
+      "merge_request_id": 432210377,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "81e196ed29556ba78a77a528fa6a0e9b2a96b85d"
+    },
+    {
+      "id": 1633266271,
+      "head_commit_sha": "0de56aad4f4f2ec4e40e649b3fae7854b0a4eac4",
+      "base_commit_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+      "start_commit_sha": "60ca009c0ca58de3cfb8fe3fe6d5e7e21bafaadb",
+      "created_at": "2026-01-20T17:14:56.020Z",
+      "merge_request_id": 432210377,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "5291755d5b052ebf27f2c6eab08e7ec74d28421a"
+    },
+    {
+      "id": 1631742872,
+      "head_commit_sha": "0713d90d91e1353625af3cd8a80fa7316ae87919",
+      "base_commit_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+      "start_commit_sha": "d11bf0ba8d2e7dbc83fb7f781a845d49a0c13e59",
+      "created_at": "2026-01-19T17:08:20.396Z",
+      "merge_request_id": 432210377,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "a1fd15ddc0a7af056d2f98125af8f69d083b480d"
+    },
+    {
+      "id": 1572805495,
+      "head_commit_sha": "2ac8633fb003dedfe4c8410bd349045167fd0832",
+      "base_commit_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+      "start_commit_sha": "6f90eab735f5268b814b35076086fae2f5f1eed9",
+      "created_at": "2025-11-20T15:49:22.949Z",
+      "merge_request_id": 432210377,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "21225275c70e85d943699d1ddf91477cb2a54561"
+    },
+    {
+      "id": 1571569983,
+      "head_commit_sha": "60f5961eb9952c05539fe8f718762d0e6067c273",
+      "base_commit_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+      "start_commit_sha": "aa77350783869700c6cae1c86560d002cd7781f8",
+      "created_at": "2025-11-19T21:26:32.092Z",
+      "merge_request_id": 432210377,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "dcaaee28f544807e5115b6e45f53de29f1df8fb3"
+    },
+    {
+      "id": 1571521728,
+      "head_commit_sha": "dd347a660a1351186edda76cc738367f25ea0a00",
+      "base_commit_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+      "start_commit_sha": "aa77350783869700c6cae1c86560d002cd7781f8",
+      "created_at": "2025-11-19T20:38:06.064Z",
+      "merge_request_id": 432210377,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "846f06024a0ad5dd9e67b74bc9c5107f6b6b1498"
+    },
+    {
+      "id": 1564126353,
+      "head_commit_sha": "e69d6e511e9ee0c4cab65e338835ca241794be3d",
+      "base_commit_sha": "51e6c3bcb7cc72a5df7b14361f9c020b360065e9",
+      "start_commit_sha": "685e9a4e86880a963ba6455d1baf0b4a772cb622",
+      "created_at": "2025-11-13T17:33:09.690Z",
+      "merge_request_id": 432210377,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "00da5dd2e774a33733f56a1fc0f61dae7e0840a1"
+    }
+  ]
+}
