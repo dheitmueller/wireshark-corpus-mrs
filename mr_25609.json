@@ -1,0 +1,984 @@
+{
+  "id": 501770715,
+  "iid": 25609,
+  "project_id": 7898047,
+  "title": "CoAP-EAP: Add dissector for RFC 9820",
+  "description": "## CoAP-EAP: Add dissector for RFC 9820\n\n### Protocol Overview\n\nCoAP-EAP (RFC 9820) enables EAP (Extensible Authentication Protocol)\nauthentication over CoAP (Constrained Application Protocol) for IoT\nand constrained devices.\n\n### Protocol Flow\n\n1. **Step 0 (Trigger)**: Peer sends POST to `/.well-known/coap-eap`\n2. **Steps 1-6 (EAP Exchange)**: EAP packets encapsulated in CoAP\n   with Content-Format 269 (`application/coap-eap`)\n3. **Steps 7-8 (OSCORE)**: Protected by OSCORE (RFC 8613). Not\n   detected by this dissector.\n\n### Dissector Details\n\n- **Detection**: Content-Format 269 via the `media_type` dissector\n  table. Step 0 trigger is detected by payload content (plain-text URI\n  whose first byte falls outside EAP codes 1-6 per RFC 3748 §4.2).\n- **EAP**: Delegates to Wireshark's built-in `eap` dissector.\n- **CBOR**: Uses Wireshark's wscbor library (same as packet-cbor.c,\n  packet-edhoc.c, packet-cose.c) for the `CoAP-EAP_Info` map\n  (RFC 9820 §5). Indefinite-length maps and arrays are rejected per\n  RFC 9820:\n  - Key 1: Cipher Suites (definite array of unsigned int)\n  - Key 2: RID-C (byte string)\n  - Key 3: RID-I (byte string)\n  - Key 4: Session-Lifetime (uint, seconds)\n- **Block-wise Transfer**: Handled by parent CoAP dissector.\n- **UDP Port**: Configurable via `coap_eap.udp_port` preference.\n- **Logging**: Defines `WS_LOG_DOMAIN \"packet-coap-eap\"`.\n\n### Field Reference\n\n| Field | Type | Description |\n|---|---|---|\n| `coap_eap.trigger_uri` | FT_STRING | Next Resource URI (Step 0) |\n| `coap_eap.eap` | FT_BYTES | EAP packet bytes |\n| `coap_eap.cbor_info` | FT_BYTES | CBOR CoAP-EAP_Info map |\n| `coap_eap.cipher_suites` | FT_STRING | Negotiated cipher suites |\n| `coap_eap.rid_c` | FT_BYTES | Recipient ID of Authenticator |\n| `coap_eap.rid_i` | FT_BYTES | Recipient ID of Peer |\n| `coap_eap.lifetime` | FT_UINT64 | Session-Lifetime (seconds) |\n| `coap_eap.cbormap_key` | FT_UINT8 | CBOR map key identifier |\n\n### Prerequisites\n\nThis MR includes a one-line change in `packet-coap.c`:\n\n```c\n{ 269, \"application/coap-eap\" },\n```\n\nin the `vals_ctype` array. Without it, CF 269 resolves to\n`\"Unknown Type 269\"` and the `media_type` dispatch fails.\n\n### Testing\n\nTested with captures in `test/captures/`:\n\n- `coap-eap-cbor-negotiation.pcap` — 15 frames (7 CoAP-EAP): cipher\n  suite negotiation (0,1→0), RID-C/RID-I, EAP-PSK method\n- `coap-eap-failure.pcap` — 15 frames (8 CoAP-EAP): EAP-Failure flow\n  with 4.01 Unauthorized\n\nTest script: `test/suite_dissectors_coap_eap.py` (20 tests, all passing)\n\n### Known Limitations\n\n1. **OSCORE Steps 7-8**: Not detected. Would require session state\n   tracking correlating RID-C/RID-I with OSCORE kid/kid-context.\n2. **Error responses (4.01)**: Not attributed to CoAP-EAP sessions.\n3. **Block-wise manual fallback**: If the CoAP dissector is\n   unavailable, the fallback parser does not handle reassembly.\n\n### AI Assistance\n\nThis dissector was developed with AI assistance (Claude).\nDevelopment included architecture design, C implementation,\nCBOR parser migration to wscbor, and pytest suite creation.\nAll code was human-reviewed and tested against real CoAP-EAP captures.\n\nAssisted-by: Claude\n\n### Maintenance\n\nI will maintain this dissector. Contact: juancarlosvalera999@gmail.com",
+  "state": "merged",
+  "created_at": "2026-06-30T16:36:30.727Z",
+  "updated_at": "2026-07-12T08:23:06.764Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-07-12T08:23:06.804Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "coap-eap-dissector",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 39744249,
+    "username": "jaxlvl",
+    "public_email": "",
+    "name": "Juan Carlos Valera López",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+    "web_url": "https://gitlab.com/jaxlvl"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83796403,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0a765d788a3d7ff69fd2aa6015e14552144bfba1",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": false,
+  "force_remove_source_branch": false,
+  "prepared_at": "2026-06-30T16:36:39.025Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25609",
+  "references": {
+    "short": "!25609",
+    "relative": "!25609",
+    "full": "wireshark/wireshark!25609"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25609",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "6",
+  "latest_build_started_at": "2026-07-12T07:37:50.200Z",
+  "latest_build_finished_at": "2026-07-12T08:23:03.854Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2670469323,
+    "iid": 106470,
+    "project_id": 7898047,
+    "sha": "70231fc0fab0776c8c85e177820c92e13cdb567d",
+    "ref": "refs/merge-requests/25609/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-12T07:37:49.004Z",
+    "updated_at": "2026-07-12T08:23:03.877Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2670469323"
+  },
+  "head_pipeline": {
+    "id": 2670469323,
+    "iid": 106470,
+    "project_id": 7898047,
+    "sha": "70231fc0fab0776c8c85e177820c92e13cdb567d",
+    "ref": "refs/merge-requests/25609/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-12T07:37:49.004Z",
+    "updated_at": "2026-07-12T08:23:03.877Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2670469323",
+    "before_sha": "70231fc0fab0776c8c85e177820c92e13cdb567d",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-07-12T07:37:50.200Z",
+    "finished_at": "2026-07-12T08:23:03.854Z",
+    "committed_at": null,
+    "duration": 2712,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2670469323",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "ca57c2ad7b2767c0fab3f1098edb0a0936932047",
+    "head_sha": "0a765d788a3d7ff69fd2aa6015e14552144bfba1",
+    "start_sha": "ca57c2ad7b2767c0fab3f1098edb0a0936932047"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "d3e9fed5e56e70f6d530e74fcd59f225d462e1b6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3509329799,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>459ce787 - CoAP-EAP: Add dissector for RFC 9820</li><li>c2591009 - CoAP-EAP: Add test suite and captures</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25609/diffs?diff_id=1878963735&start_sha=35f0c6fd6facd0e6f46714616b8050e8e52ecc89)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-06-30T17:18:11.689Z",
+          "updated_at": "2026-06-30T17:18:11.691Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fe0760352ea17b98df5f2484aed47bf40ec20315",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3509634982,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>31d5a700 - CoAP-EAP: Add test suite and captures</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25609/diffs?diff_id=1879110116&start_sha=c25910094931b6f56a92c132e56eb86451703fa1)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-06-30T18:45:42.449Z",
+          "updated_at": "2026-06-30T18:45:42.451Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "45280091795f3c0ac8f70b514dbd736f0922c292",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3509825677,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>b2fbeb3f - 1 commit from branch <code>wireshark:master</code></li><li>7766323d - CoAP-EAP: Add dissector for RFC 9820</li><li>3764110b - CoAP-EAP: Add test suite and captures</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25609/diffs?diff_id=1879210932&start_sha=31d5a700f494d3d31f723254e9cca0dab8ae5062)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-06-30T19:46:20.163Z",
+          "updated_at": "2026-06-30T19:46:20.165Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8ad3d31b05a6b90e48db08ef6a2df55a394449a6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3510071218,
+          "type": null,
+          "body": "added 4 commits\n\n<ul><li>3764110b...f1b16ee5 - 2 commits from branch <code>wireshark:master</code></li><li>c1552691 - CoAP-EAP: Add dissector for RFC 9820</li><li>b716439e - CoAP-EAP: Add test suite and captures</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25609/diffs?diff_id=1879339751&start_sha=3764110b188c01466c5dd42217ca4a3a584da715)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-06-30T21:14:14.609Z",
+          "updated_at": "2026-06-30T21:14:14.611Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2dfb7324739c3a3987e3f391c208ca14a47be680",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3511135522,
+          "type": "DiffNote",
+          "body": "Using `proto_reg_handoff_coap_eap` here causes the dissector registration to repeated over and over when preferences are changed. Separate these two parts out.",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-07-01T06:17:31.289Z",
+          "updated_at": "2026-07-03T15:49:46.215Z",
+          "system": false,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "f1b16ee59f6374de595b3182c16107509babe44c",
+            "start_sha": "f1b16ee59f6374de595b3182c16107509babe44c",
+            "head_sha": "b716439e763dc27c3c83ffac5e6da6ec414c1bf0",
+            "old_path": "epan/dissectors/packet-coap-eap.c",
+            "new_path": "epan/dissectors/packet-coap-eap.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 646,
+            "line_range": {
+              "start": {
+                "old_line": null,
+                "new_line": 646,
+                "type": null
+              },
+              "end": {
+                "old_line": null,
+                "new_line": 646,
+                "type": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "resolved_at": "2026-07-03T15:49:46.215Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        },
+        {
+          "id": 3512504397,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/25609/diffs?diff_id=1880575798&start_sha=b716439e763dc27c3c83ffac5e6da6ec414c1bf0#9c0ebba1e1ebc2c87444872318faa7c2c98404ab_646_647)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-01T12:34:24.850Z",
+          "updated_at": "2026-07-01T12:34:24.850Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "f1b16ee59f6374de595b3182c16107509babe44c",
+            "start_sha": "f1b16ee59f6374de595b3182c16107509babe44c",
+            "head_sha": "b716439e763dc27c3c83ffac5e6da6ec414c1bf0",
+            "old_path": "epan/dissectors/packet-coap-eap.c",
+            "new_path": "epan/dissectors/packet-coap-eap.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 646,
+            "line_range": {
+              "start": {
+                "old_line": null,
+                "new_line": 646,
+                "type": null
+              },
+              "end": {
+                "old_line": null,
+                "new_line": 646,
+                "type": null
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        },
+        {
+          "id": 3512527335,
+          "type": "DiffNote",
+          "body": "Thanks for catching this. You're right, passing proto_reg_handoff_coap_eap as the prefs callback caused the static registrations (dissector handles, media_type table entry, register_dissector) to be repeated on every preference change.\n\nFixed by separating the two concerns:\n\n- proto_reg_handoff_coap_eap now does the one-time static registration (handles, dissector_add_string, register_dissector) and calls coap_eap_prefs_apply() for the initial port value.\n- coap_eap_prefs_apply is a dedicated callback passed to prefs_register_protocol that handles only the UDP port add/delete logic.",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-01T12:40:31.320Z",
+          "updated_at": "2026-07-03T15:49:46.215Z",
+          "system": false,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "f1b16ee59f6374de595b3182c16107509babe44c",
+            "start_sha": "f1b16ee59f6374de595b3182c16107509babe44c",
+            "head_sha": "b716439e763dc27c3c83ffac5e6da6ec414c1bf0",
+            "old_path": "epan/dissectors/packet-coap-eap.c",
+            "new_path": "epan/dissectors/packet-coap-eap.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 646,
+            "line_range": {
+              "start": {
+                "old_line": null,
+                "new_line": 646,
+                "type": null
+              },
+              "end": {
+                "old_line": null,
+                "new_line": 646,
+                "type": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "resolved_at": "2026-07-03T15:49:46.215Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6fdef6aa8d24ebee52cd59be6782fcd72702c39f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3512504419,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>3e3b80a2 - CoAP-EAP: Add dissector for RFC 9820</li><li>7ac97c0d - CoAP-EAP: Add test suite and captures</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25609/diffs?diff_id=1880575798&start_sha=b716439e763dc27c3c83ffac5e6da6ec414c1bf0)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-01T12:34:25.053Z",
+          "updated_at": "2026-07-01T12:34:25.054Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ba13bc393dd5e603e8e3bdec6129fa43af31fb13",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3521978951,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-03T15:49:46.278Z",
+          "updated_at": "2026-07-03T15:49:46.279Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1316b8290af17cf444ef8ceec90bfcdf547b262b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3528746192,
+          "type": null,
+          "body": "added 59 commits\n\n<ul><li>7ac97c0d...e98b151a - 57 commits from branch <code>wireshark:master</code></li><li>d14a8e53 - CoAP-EAP: Add dissector for RFC 9820</li><li>1820c3ab - CoAP-EAP: Add test suite and captures</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25609/diffs?diff_id=1888472849&start_sha=7ac97c0d7f075c49167d48bc1fab1c77978e83e0)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-06T18:01:37.479Z",
+          "updated_at": "2026-07-06T18:01:37.481Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "49f692e1c9ff8b35f40df2cc7aa733649f3c223a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3541395579,
+          "type": null,
+          "body": "added 26 commits\n\n<ul><li>1820c3ab...ca57c2ad - 24 commits from branch <code>wireshark:master</code></li><li>5fbca787 - CoAP-EAP: Add dissector for RFC 9820</li><li>0a765d78 - CoAP-EAP: Add test suite and captures</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25609/diffs?diff_id=1894938507&start_sha=1820c3ab84598f6685707089269c16ecd9b2af69)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-09T12:22:45.388Z",
+          "updated_at": "2026-07-09T12:22:45.392Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b721db84a3074901b890f7041da77fdb8c349270",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3549342376,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-07-12T07:37:43.655Z",
+          "updated_at": "2026-07-12T07:37:43.657Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0e29a71bb1463fafc882ce145c9af761192d0eab",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3549342397,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 4",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-07-12T07:37:47.299Z",
+          "updated_at": "2026-07-12T07:37:47.300Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f67231d8957ad7f1c15a793548502949d6a17abf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3549604260,
+          "type": null,
+          "body": "mentioned in merge request !25753",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-12T13:55:19.145Z",
+          "updated_at": "2026-07-12T13:55:19.147Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "191daff4d0167333d4b86aad23eef1721814912d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3555213059,
+          "type": null,
+          "body": "mentioned in commit 3511f89277277b90a426af6a53168f070d394525",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-14T06:28:50.982Z",
+          "updated_at": "2026-07-14T06:28:50.983Z",
+          "system": true,
+          "noteable_id": 501770715,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25609,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -617,6 +617,7 @@ set(DISSECTOR_SRC\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-clnp.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-cmpp.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-cnip.c\n+\t${CMAKE_CURRENT_SOURCE_DIR}/packet-coap-eap.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-coap.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-cola.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-collectd.c\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/CMakeLists.txt",
+      "old_path": "epan/dissectors/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-coap-eap.c",
+      "old_path": "epan/dissectors/packet-coap-eap.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -342,6 +342,7 @@ static const value_string vals_ctype[] = {\n \t{ 256, \"application/coap-group+json\" },\n \t{ 257, \"application/concise-problem-details+cbor\" },\n \t{ 258, \"application/swid+cbor\" },\n+\t{ 269, \"application/coap-eap\" },\n \t{ 271, \"application/dots+cbor\" },\n \t{ 272, \"application/missing-blocks+cbor-seq\" },\n \t{ 280, \"application/pkcs7-mime; smime-type=server-generated-key\" },\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-coap.c",
+      "old_path": "epan/dissectors/packet-coap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/coap-eap-cbor-negotiation.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/coap-eap-cbor-negotiation.pcap",
+      "old_path": "test/captures/coap-eap-cbor-negotiation.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/coap-eap-failure.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/coap-eap-failure.pcap",
+      "old_path": "test/captures/coap-eap-failure.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,200 @@\n+# Wireshark tests\n+#\n+# SPDX-License-Identifier: GPL-2.0-or-later\n+#\n+\"\"\"CoAP-EAP (RFC 9820) dissector tests.\n+\n+These tests require a Wireshark build tree with the CoAP-EAP dissector\n+integrated.  Copy this file to wireshark/test/ and the capture files\n+to wireshark/test/captures/ before running pytest.\n+\"\"\"\n+\n+import subprocess\n+\n+\n+class TestCoapEapDissector:\n+    \"\"\"Tests for the CoAP-EAP dissector (RFC 9820).\"\"\"\n+\n+    # -- frame-count tests --------------------------------------------------\n+\n+    def test_cbor_negotiation_capture(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Cipher suite negotiation + EAP-PSK is decoded correctly.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"coap_eap\",\n+            \"-Tfields\", \"-e\", \"frame.number\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert len(stdout.splitlines()) == 7\n+\n+    def test_failure_capture(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"EAP-Failure flow is decoded correctly.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-failure.pcap\"),\n+            \"-Y\", \"coap_eap\",\n+            \"-Tfields\", \"-e\", \"frame.number\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert len(stdout.splitlines()) == 8\n+\n+    # -- EAP field visibility -----------------------------------------------\n+\n+    def test_eap_request_visibility(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"EAP-Request/Identity is visible in CoAP-EAP frames.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"eap.code == 1\",\n+            \"-Tfields\", \"-e\", \"eap.type\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"1\" in stdout  # Identity type\n+\n+    def test_eap_response_visibility(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"EAP-Response is visible in CoAP-EAP frames.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"eap.code == 2\",\n+            \"-Tfields\", \"-e\", \"eap.type\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert stdout != \"\"\n+\n+    def test_eap_success_global(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"EAP-Success (code=3) is present in RADIUS relay frames.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"eap.code == 3\",\n+            \"-Tfields\", \"-e\", \"frame.number\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert stdout != \"\"\n+\n+    def test_eap_failure_global(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"EAP-Failure (code=4) is decoded in CoAP-EAP frames.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-failure.pcap\"),\n+            \"-Y\", \"coap_eap && eap.code == 4\",\n+            \"-Tfields\", \"-e\", \"frame.number\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert stdout != \"\"\n+\n+    # -- display filters / columns ------------------------------------------\n+\n+    def test_protocol_column(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Protocol column shows coap_eap for matching frames.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"coap_eap\",\n+            \"-Tfields\", \"-e\", \"frame.protocols\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        for line in stdout.splitlines():\n+            assert \"coap_eap\" in line\n+\n+    def test_eap_field_filter(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Frames with an EAP payload are filterable via coap_eap.eap.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"coap_eap.eap\",\n+            \"-Tfields\", \"-e\", \"coap_eap.eap\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        lines = stdout.splitlines()\n+        assert len(lines) >= 1\n+        for line in lines:\n+            assert line != \"\"\n+\n+    # -- false positives ----------------------------------------------------\n+\n+    def test_no_false_positives(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"RADIUS port traffic is not parsed as CoAP-EAP.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"coap_eap && udp.port == 1812\",\n+            \"-Tfields\", \"-e\", \"frame.number\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert stdout == \"\"\n+\n+    # -- CBOR field value tests ---------------------------------------------\n+\n+    def test_cipher_suites_negotiation(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Step 1 advertises suites 0 and 1; Step 2 selects suite 0.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"coap_eap.cipher_suites\",\n+            \"-Tfields\", \"-e\", \"coap_eap.cipher_suites\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"AES-CCM-16-64-128, SHA-256 (0)\" in stdout\n+        assert \"A128GCM, SHA-256 (1)\" in stdout\n+\n+    def test_session_lifetime_registered(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Session-Lifetime field is registered (value is inside OSCORE).\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.lifetime\" in stdout\n+\n+    def test_cbor_info_field_present(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"CoAP-EAP_Info CBOR map field is populated.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-r\", capture_file(\"coap-eap-cbor-negotiation.pcap\"),\n+            \"-Y\", \"coap_eap.cbor_info\",\n+            \"-Tfields\", \"-e\", \"coap_eap.cbor_info\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert stdout != \"\"\n+\n+    # -- field registration (verify tshark knows the field names) -----------\n+\n+    def test_field_rid_c_registered(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"RID-C field is recognized by tshark.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.rid_c\" in stdout\n+\n+    def test_field_rid_i_registered(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"RID-I field is recognized by tshark.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.rid_i\" in stdout\n+\n+    def test_field_cbormap_key_registered(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"CBOR Map Key field is recognized by tshark.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.cbormap_key\" in stdout\n+\n+\n+class TestCoapEapExpertInfo:\n+    \"\"\"Tests for CoAP-EAP expert info fields (registered, even if no frame\n+       triggers them in the test captures).\"\"\"\n+\n+    def test_expert_payload_too_short_defined(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Expert info coap_eap.payload_too_short is registered.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.payload_too_short\" in stdout\n+\n+    def test_expert_eap_length_invalid_defined(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Expert info coap_eap.eap_length_invalid is registered.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.eap_length_invalid\" in stdout\n+\n+    def test_expert_eap_length_exceeds_defined(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Expert info coap_eap.eap_length_exceeds is registered.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.eap_length_exceeds\" in stdout\n+\n+    def test_expert_cbor_malformed_defined(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Expert info coap_eap.cbor_malformed is registered.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.cbor_malformed\" in stdout\n+\n+    def test_expert_cbor_not_map_defined(self, cmd_tshark, capture_file, test_env):\n+        \"\"\"Expert info coap_eap.cbor_not_map is registered.\"\"\"\n+        stdout = subprocess.check_output((cmd_tshark,\n+            \"-G\", \"fields\",\n+        ), encoding=\"utf-8\", env=test_env).strip()\n+        assert \"coap_eap.cbor_not_map\" in stdout\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissectors_coap_eap.py",
+      "old_path": "test/suite_dissectors_coap_eap.py",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "0a765d788a3d7ff69fd2aa6015e14552144bfba1",
+      "short_id": "0a765d78",
+      "created_at": "2026-07-09T12:22:38.000+00:00",
+      "parent_ids": [
+        "5fbca78707b573b9e7a6bf40ba3b38d75413a820"
+      ],
+      "title": "CoAP-EAP: Add test suite and captures",
+      "message": "CoAP-EAP: Add test suite and captures\n\nAdd pytest suite (20 tests) and two test captures for the CoAP-EAP\ndissector:\n\n- test/suite_dissectors_coap_eap.py: 15 dissector tests (frame counts,\n  EAP visibility, protocol column, display filters, false positives,\n  cipher suite negotiation values, CBOR field presence, field\n  registration) and 5 expert info tests.\n\n- test/captures/coap-eap-cbor-negotiation.pcap: 15 frames (7 CoAP-EAP)\n  with cipher suite negotiation (0,1→0), RID-C/RID-I, EAP-PSK method.\n\n- test/captures/coap-eap-failure.pcap: 15 frames (8 CoAP-EAP) with\n  EAP-Failure flow and 4.01 Unauthorized response.\n\nAssisted-by: Claude\n",
+      "author_name": "Juan Carlos Valera",
+      "author_email": "juancarlosvalera999@gmail.com",
+      "authored_date": "2026-07-01T14:34:07.000+02:00",
+      "committer_name": "Juan Carlos Valera López",
+      "committer_email": "juancarlosvalera999@gmail.com",
+      "committed_date": "2026-07-09T12:22:38.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0a765d788a3d7ff69fd2aa6015e14552144bfba1"
+    },
+    {
+      "id": "5fbca78707b573b9e7a6bf40ba3b38d75413a820",
+      "short_id": "5fbca787",
+      "created_at": "2026-07-09T12:22:38.000+00:00",
+      "parent_ids": [
+        "ca57c2ad7b2767c0fab3f1098edb0a0936932047"
+      ],
+      "title": "CoAP-EAP: Add dissector for RFC 9820",
+      "message": "CoAP-EAP: Add dissector for RFC 9820\n\nAdd a new built-in dissector for CoAP-EAP (RFC 9820), which enables\nEAP authentication over CoAP for IoT and constrained devices.\n\nThe dissector registers on the media_type table for Content-Format 269\n(application/coap-eap) as a sub-dissector of the CoAP dissector. It:\n\n- Detects Step 0 trigger vs Steps 1-6 EAP by payload inspection\n  (RFC 3748 §4.2 EAP codes 1-6 vs plain-text trigger URI)\n- Delegates EAP payload parsing to the built-in EAP dissector\n- Parses the optional CoAP-EAP_Info CBOR map using Wireshark's\n  wscbor library (same as packet-cbor.c, packet-edhoc.c, packet-cose.c),\n  rejecting indefinite-length maps and arrays per RFC 9820\n- Supports a configurable UDP port for non-standard deployments\n- Handles Block-wise transfer transparently via the parent CoAP\n  dissector's reassembly\n- Defines WS_LOG_DOMAIN \"packet-coap-eap\" per current conventions\n\nThis commit also adds the { 269, \"application/coap-eap\" } entry to the\nvals_ctype array in packet-coap.c, which is required for the CoAP\ndissector to resolve Content-Format 269 to the media type string.\n\nReferences:\n  - RFC 9820: CoAP-EAP\n  - RFC 7252: CoAP\n  - RFC 3748: EAP\n  - RFC 8949: CBOR\n\nAssisted-by: Claude\nDevelopment involved AI assistance for: architecture design based on\ninspection of Wireshark source (packet-coap.c, packet-edhoc.c,\npacket-cbor.c), C implementation following Wireshark conventions,\nCBOR parser migration to wscbor, and pytest suite creation.\nAll code was human-reviewed and tested against real CoAP-EAP captures.\n",
+      "author_name": "Juan Carlos Valera",
+      "author_email": "juancarlosvalera999@gmail.com",
+      "authored_date": "2026-07-01T14:34:07.000+02:00",
+      "committer_name": "Juan Carlos Valera López",
+      "committer_email": "juancarlosvalera999@gmail.com",
+      "committed_date": "2026-07-09T12:22:38.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/5fbca78707b573b9e7a6bf40ba3b38d75413a820"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1894938507,
+      "head_commit_sha": "0a765d788a3d7ff69fd2aa6015e14552144bfba1",
+      "base_commit_sha": "ca57c2ad7b2767c0fab3f1098edb0a0936932047",
+      "start_commit_sha": "ca57c2ad7b2767c0fab3f1098edb0a0936932047",
+      "created_at": "2026-07-09T12:22:44.595Z",
+      "merge_request_id": 501770715,
+      "state": "collected",
+      "real_size": "6",
+      "patch_id_sha": "2cc01491b45b0e25ebd0485c1700b166b30cd5ef"
+    },
+    {
+      "id": 1888472849,
+      "head_commit_sha": "1820c3ab84598f6685707089269c16ecd9b2af69",
+      "base_commit_sha": "e98b151a8971ac9e6fb7fb9f3bfb8cec06825c01",
+      "start_commit_sha": "e98b151a8971ac9e6fb7fb9f3bfb8cec06825c01",
+      "created_at": "2026-07-06T18:01:36.932Z",
+      "merge_request_id": 501770715,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "2cc01491b45b0e25ebd0485c1700b166b30cd5ef"
+    },
+    {
+      "id": 1880575798,
+      "head_commit_sha": "7ac97c0d7f075c49167d48bc1fab1c77978e83e0",
+      "base_commit_sha": "458e6c94484d849866f6d5303f770f756e765df7",
+      "start_commit_sha": "04600a3b381a481ebfd2ee88b43b8c0e38523a78",
+      "created_at": "2026-07-01T12:34:23.975Z",
+      "merge_request_id": 501770715,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "2cc01491b45b0e25ebd0485c1700b166b30cd5ef"
+    },
+    {
+      "id": 1879339751,
+      "head_commit_sha": "b716439e763dc27c3c83ffac5e6da6ec414c1bf0",
+      "base_commit_sha": "f1b16ee59f6374de595b3182c16107509babe44c",
+      "start_commit_sha": "f1b16ee59f6374de595b3182c16107509babe44c",
+      "created_at": "2026-06-30T21:14:14.148Z",
+      "merge_request_id": 501770715,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "68fc2a9fab617cd0f6fa059bf28b1f1917fea6c7"
+    },
+    {
+      "id": 1879210932,
+      "head_commit_sha": "3764110b188c01466c5dd42217ca4a3a584da715",
+      "base_commit_sha": "b2fbeb3f38e7f3f436907c151da34a13550d5e7d",
+      "start_commit_sha": "b2fbeb3f38e7f3f436907c151da34a13550d5e7d",
+      "created_at": "2026-06-30T19:46:19.744Z",
+      "merge_request_id": 501770715,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "68fc2a9fab617cd0f6fa059bf28b1f1917fea6c7"
+    },
+    {
+      "id": 1879110116,
+      "head_commit_sha": "31d5a700f494d3d31f723254e9cca0dab8ae5062",
+      "base_commit_sha": "458e6c94484d849866f6d5303f770f756e765df7",
+      "start_commit_sha": "b2fbeb3f38e7f3f436907c151da34a13550d5e7d",
+      "created_at": "2026-06-30T18:45:41.881Z",
+      "merge_request_id": 501770715,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "68fc2a9fab617cd0f6fa059bf28b1f1917fea6c7"
+    },
+    {
+      "id": 1878963735,
+      "head_commit_sha": "c25910094931b6f56a92c132e56eb86451703fa1",
+      "base_commit_sha": "458e6c94484d849866f6d5303f770f756e765df7",
+      "start_commit_sha": "458e6c94484d849866f6d5303f770f756e765df7",
+      "created_at": "2026-06-30T17:18:11.106Z",
+      "merge_request_id": 501770715,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "a5c36b0ac38e882b38a0b3c106d3db08cf221d32"
+    },
+    {
+      "id": 1878897859,
+      "head_commit_sha": "35f0c6fd6facd0e6f46714616b8050e8e52ecc89",
+      "base_commit_sha": "458e6c94484d849866f6d5303f770f756e765df7",
+      "start_commit_sha": "458e6c94484d849866f6d5303f770f756e765df7",
+      "created_at": "2026-06-30T16:36:34.479Z",
+      "merge_request_id": 501770715,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "de6108d78e710605e533e123102db12927948dff"
+    }
+  ]
+}

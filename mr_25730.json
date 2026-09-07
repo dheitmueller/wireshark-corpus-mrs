@@ -1,0 +1,707 @@
+{
+  "id": 505305673,
+  "iid": 25730,
+  "project_id": 7898047,
+  "title": "DVB-S2-BB: Fix CNI field encoding in Mode Adaptation Header",
+  "description": "**Summary**\n\nThe CNI (Carrier to Noise plus Interference) field in the DVB-S2 Mode Adaptation Header is decoded in `epan/dissectors/packet-dvb-s2-bb.c` using a `value_string` table (`modeadapt_esno`) whose values were derived from the SatLabs document rather than from the normative ETSI standard. Its encoding does not match ETSI EN 302 307-1, which is already listed as this dissector's normative reference.\n\n**Bug: CNI value mapping does not match ETSI EN 302 307-1**\n\nIn `epan/dissectors/packet-dvb-s2-bb.c`:\n\n`static const value_string modeadapt_esno[] = {\n    {  0, \"modem unlocked, SNR not available\"},\n    {  1, \"-1.000\"},\n    {  2, \"-0.875\"},\n    ...\n    {  9, \"0.000\"},\n    ...\n    {255, \">30.750\"},\n    {  0, NULL}\n};`\n\n**Fix**\n\n`static const value_string modeadapt_esno[] = {\n    {  0, \"-2.0\"},\n    {  1, \"-1.9\"},\n    {  2, \"-1.8\"},\n    ...\n    { 20, \"0.0\"},\n    ...\n    {255, \">23.5\"},\n    {  0, NULL}\n};`\n\nETSI EN 302 307-1 specifies:\n\n> CNI format shall be:\n> CNI = 20 + 10 {10 Log_10[C / (N + I)]} (positive integer, 8 bits, in the range 0 to 255).\n> In fact for DVB-S2 10 Log_10[C / (N + I)] may be in the range -2 dB to +23,5 dB.\n\n\n**Standard reference**\n\nETSI EN 302 307-1 - Digital Video Broadcasting (DVB); Second generation framing structure, channel coding and modulation systems for Broadcasting, Interactive Services, News Gathering and other broadband satellite applications (DVB-S2) - Annex D.5 Signalling of reception quality via return channel (Normative for ACM).\n\n**Impact**\n\n* CNI values are now decoded per the normative ETSI EN 302 307-1 formula instead of the SatLabs reference.\n* Removed the stale comment pointing to the SatLabs PDF link.\n\nFixes: #21385",
+  "state": "merged",
+  "created_at": "2026-07-09T07:56:54.636Z",
+  "updated_at": "2026-07-17T10:35:14.597Z",
+  "merged_by": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merge_user": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merged_at": "2026-07-17T10:35:14.614Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "dvb-s2-cni-fix",
+  "user_notes_count": 3,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 39400678,
+    "username": "dbatalov02",
+    "public_email": "",
+    "name": "Daniil Batalov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dbatalov02"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83569096,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-07-09T07:56:59.765Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25730",
+  "references": {
+    "short": "!25730",
+    "relative": "!25730",
+    "full": "wireshark/wireshark!25730"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25730",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-07-17T10:14:17.879Z",
+  "latest_build_finished_at": "2026-07-17T10:35:10.669Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2684456684,
+    "iid": 106693,
+    "project_id": 7898047,
+    "sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+    "ref": "refs/merge-requests/25730/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-17T10:14:16.194Z",
+    "updated_at": "2026-07-17T10:35:10.692Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2684456684"
+  },
+  "head_pipeline": {
+    "id": 2684456684,
+    "iid": 106693,
+    "project_id": 7898047,
+    "sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+    "ref": "refs/merge-requests/25730/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-17T10:14:16.194Z",
+    "updated_at": "2026-07-17T10:35:10.692Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2684456684",
+    "before_sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 279822,
+      "username": "alagoutte",
+      "public_email": "",
+      "name": "Alexis La Goutte",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+      "web_url": "https://gitlab.com/alagoutte"
+    },
+    "started_at": "2026-07-17T10:14:17.879Z",
+    "finished_at": "2026-07-17T10:35:10.669Z",
+    "committed_at": null,
+    "duration": 1251,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2684456684",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "e699ab947839ac6fa5e6d1740dee4502557f5b6e",
+    "head_sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+    "start_sha": "e699ab947839ac6fa5e6d1740dee4502557f5b6e"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "6306185ecd33933c32ffce7015e61fb8b547415d",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3541090752,
+          "type": "DiffNote",
+          "body": "i think it is always nice to have a link to old spec if needed...",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-09T10:56:27.587Z",
+          "updated_at": "2026-07-17T09:55:42.422Z",
+          "system": false,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+            "start_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+            "head_sha": "5addb53ae04d418bd08c3ffc1c9ca719f46e97f6",
+            "old_path": "epan/dissectors/packet-dvb-s2-bb.c",
+            "new_path": "epan/dissectors/packet-dvb-s2-bb.c",
+            "position_type": "text",
+            "old_line": 4,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4",
+                "type": "old",
+                "old_line": 4,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4",
+                "type": "old",
+                "old_line": 4,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2026-07-17T09:55:42.422Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        },
+        {
+          "id": 3570969538,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/25730/diffs?diff_id=1909091923&start_sha=5addb53ae04d418bd08c3ffc1c9ca719f46e97f6#33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4)",
+          "author": {
+            "id": 39400678,
+            "username": "dbatalov02",
+            "public_email": "",
+            "name": "Daniil Batalov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dbatalov02"
+          },
+          "created_at": "2026-07-17T09:27:57.434Z",
+          "updated_at": "2026-07-17T09:27:57.434Z",
+          "system": true,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+            "start_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+            "head_sha": "5addb53ae04d418bd08c3ffc1c9ca719f46e97f6",
+            "old_path": "epan/dissectors/packet-dvb-s2-bb.c",
+            "new_path": "epan/dissectors/packet-dvb-s2-bb.c",
+            "position_type": "text",
+            "old_line": 4,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4",
+                "type": "old",
+                "old_line": 4,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4",
+                "type": "old",
+                "old_line": 4,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        },
+        {
+          "id": 3570971688,
+          "type": "DiffNote",
+          "body": "Seems reasonable, I've returned it the way it was.",
+          "author": {
+            "id": 39400678,
+            "username": "dbatalov02",
+            "public_email": "",
+            "name": "Daniil Batalov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dbatalov02"
+          },
+          "created_at": "2026-07-17T09:28:37.454Z",
+          "updated_at": "2026-07-17T09:55:42.422Z",
+          "system": false,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+            "start_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+            "head_sha": "5addb53ae04d418bd08c3ffc1c9ca719f46e97f6",
+            "old_path": "epan/dissectors/packet-dvb-s2-bb.c",
+            "new_path": "epan/dissectors/packet-dvb-s2-bb.c",
+            "position_type": "text",
+            "old_line": 4,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4",
+                "type": "old",
+                "old_line": 4,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4",
+                "type": "old",
+                "old_line": 4,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2026-07-17T09:55:42.422Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        },
+        {
+          "id": 3571084432,
+          "type": "DiffNote",
+          "body": "Thanks",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-17T09:55:40.295Z",
+          "updated_at": "2026-07-17T09:55:42.422Z",
+          "system": false,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+            "start_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+            "head_sha": "5addb53ae04d418bd08c3ffc1c9ca719f46e97f6",
+            "old_path": "epan/dissectors/packet-dvb-s2-bb.c",
+            "new_path": "epan/dissectors/packet-dvb-s2-bb.c",
+            "position_type": "text",
+            "old_line": 4,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4",
+                "type": "old",
+                "old_line": 4,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "33d911a3a83a538e4614f859c4c5faddd6527d1b_4_4",
+                "type": "old",
+                "old_line": 4,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2026-07-17T09:55:42.422Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6be1396ebe7e05ea764f5afc3438242651feea1e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3570969553,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>a2c54eb3 - DVB-S2-BB: Fix CNI field encoding in Mode Adaptation Header</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25730/diffs?diff_id=1909091923&start_sha=5addb53ae04d418bd08c3ffc1c9ca719f46e97f6)",
+          "author": {
+            "id": 39400678,
+            "username": "dbatalov02",
+            "public_email": "",
+            "name": "Daniil Batalov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dbatalov02"
+          },
+          "created_at": "2026-07-17T09:27:57.651Z",
+          "updated_at": "2026-07-17T09:27:57.653Z",
+          "system": true,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b07f9589320754b97ca1611743a871ab5b25b0d3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3570973614,
+          "type": null,
+          "body": "added 58 commits\n\n<ul><li>a2c54eb3...e699ab94 - 57 commits from branch <code>wireshark:master</code></li><li>e2789f16 - DVB-S2-BB: Fix CNI field encoding in Mode Adaptation Header</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25730/diffs?diff_id=1909094316&start_sha=a2c54eb340bc7012bc3f62c88e653519cb2cc241)",
+          "author": {
+            "id": 39400678,
+            "username": "dbatalov02",
+            "public_email": "",
+            "name": "Daniil Batalov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dbatalov02"
+          },
+          "created_at": "2026-07-17T09:29:08.584Z",
+          "updated_at": "2026-07-17T09:29:08.586Z",
+          "system": true,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "34e03c7ce85fe0224ea30612f68c8444de61fcda",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3571083738,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-17T09:55:28.842Z",
+          "updated_at": "2026-07-17T09:55:28.848Z",
+          "system": true,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5623ad0022130ae6fd10b7cb3aa07e5be74eba94",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3571083803,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-17T09:55:30.130Z",
+          "updated_at": "2026-07-17T09:55:30.131Z",
+          "system": true,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8fa83c6909e959ad589e2c741eb6a76bff667512",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3571084563,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-17T09:55:42.464Z",
+          "updated_at": "2026-07-17T09:55:42.468Z",
+          "system": true,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9bf02e325b0ec6c396ed2091eea05781bd142336",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3571155676,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-17T10:14:12.896Z",
+          "updated_at": "2026-07-17T10:14:12.900Z",
+          "system": true,
+          "noteable_id": 505305673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25730,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -593,262 +593,262 @@ static const true_false_string tfs_modeadapt_fecframe = {\n /* third byte */\n #define DVB_S2_MODEADAPT_OFFS_CNI             2\n static const value_string modeadapt_esno[] = {\n-    {  0, \"modem unlocked, SNR not available\"},\n-    {  1, \"-1.000\"},\n-    {  2, \"-0.875\"},\n-    {  3, \"-0.750\"},\n-    {  4, \"-0.625\"},\n-    {  5, \"-0.500\"},\n-    {  6, \"-0.375\"},\n-    {  7, \"-0.250\"},\n-    {  8, \"-0.125\"},\n-    {  9, \"0.000\"},\n-    { 10, \"0.125\"},\n-    { 11, \"0.250\"},\n-    { 12, \"0.375\"},\n-    { 13, \"0.500\"},\n-    { 14, \"0.625\"},\n-    { 15, \"0.750\"},\n-    { 16, \"0.875\"},\n-    { 17, \"1.000\"},\n-    { 18, \"1.125\"},\n-    { 19, \"1.250\"},\n-    { 20, \"1.375\"},\n-    { 21, \"1.500\"},\n-    { 22, \"1.625\"},\n-    { 23, \"1.750\"},\n-    { 24, \"1.875\"},\n-    { 25, \"2.000\"},\n-    { 26, \"2.125\"},\n-    { 27, \"2.250\"},\n-    { 28, \"2.375\"},\n-    { 29, \"2.500\"},\n-    { 30, \"2.625\"},\n-    { 31, \"2.750\"},\n-    { 32, \"2.875\"},\n-    { 33, \"3.000\"},\n-    { 34, \"3.125\"},\n-    { 35, \"3.250\"},\n-    { 36, \"3.375\"},\n-    { 37, \"3.500\"},\n-    { 38, \"3.625\"},\n-    { 39, \"3.750\"},\n-    { 40, \"3.875\"},\n-    { 41, \"4.000\"},\n-    { 42, \"4.125\"},\n-    { 43, \"4.250\"},\n-    { 44, \"4.375\"},\n-    { 45, \"4.500\"},\n-    { 46, \"4.625\"},\n-    { 47, \"4.750\"},\n-    { 48, \"4.875\"},\n-    { 49, \"5.000\"},\n-    { 50, \"5.125\"},\n-    { 51, \"5.250\"},\n-    { 52, \"5.375\"},\n-    { 53, \"5.500\"},\n-    { 54, \"5.625\"},\n-    { 55, \"5.750\"},\n-    { 56, \"5.875\"},\n-    { 57, \"6.000\"},\n-    { 58, \"6.125\"},\n-    { 59, \"6.250\"},\n-    { 60, \"6.375\"},\n-    { 61, \"6.500\"},\n-    { 62, \"6.625\"},\n-    { 63, \"6.750\"},\n-    { 64, \"6.875\"},\n-    { 65, \"7.000\"},\n-    { 66, \"7.125\"},\n-    { 67, \"7.250\"},\n-    { 68, \"7.375\"},\n-    { 69, \"7.500\"},\n-    { 70, \"7.625\"},\n-    { 71, \"7.750\"},\n-    { 72, \"7.875\"},\n-    { 73, \"8.000\"},\n-    { 74, \"8.125\"},\n-    { 75, \"8.250\"},\n-    { 76, \"8.375\"},\n-    { 77, \"8.500\"},\n-    { 78, \"8.625\"},\n-    { 79, \"8.750\"},\n-    { 80, \"8.875\"},\n-    { 81, \"9.000\"},\n-    { 82, \"9.125\"},\n-    { 83, \"9.250\"},\n-    { 84, \"9.375\"},\n-    { 85, \"9.500\"},\n-    { 86, \"9.625\"},\n-    { 87, \"9.750\"},\n-    { 88, \"9.875\"},\n-    { 89, \"10.000\"},\n-    { 90, \"10.125\"},\n-    { 91, \"10.250\"},\n-    { 92, \"10.375\"},\n-    { 93, \"10.500\"},\n-    { 94, \"10.625\"},\n-    { 95, \"10.750\"},\n-    { 96, \"10.875\"},\n-    { 97, \"11.000\"},\n-    { 98, \"11.125\"},\n-    { 99, \"11.250\"},\n-    {100, \"11.375\"},\n-    {101, \"11.500\"},\n-    {102, \"11.625\"},\n-    {103, \"11.750\"},\n-    {104, \"11.875\"},\n-    {105, \"12.000\"},\n-    {106, \"12.125\"},\n-    {107, \"12.250\"},\n-    {108, \"12.375\"},\n-    {109, \"12.500\"},\n-    {110, \"12.625\"},\n-    {111, \"12.750\"},\n-    {112, \"12.875\"},\n-    {113, \"13.000\"},\n-    {114, \"13.125\"},\n-    {115, \"13.250\"},\n-    {116, \"13.375\"},\n-    {117, \"13.500\"},\n-    {118, \"13.625\"},\n-    {119, \"13.750\"},\n-    {120, \"13.875\"},\n-    {121, \"14.000\"},\n-    {122, \"14.125\"},\n-    {123, \"14.250\"},\n-    {124, \"14.375\"},\n-    {125, \"14.500\"},\n-    {126, \"14.625\"},\n-    {127, \"14.750\"},\n-    {128, \"14.875\"},\n-    {129, \"15.000\"},\n-    {130, \"15.125\"},\n-    {131, \"15.250\"},\n-    {132, \"15.375\"},\n-    {133, \"15.500\"},\n-    {134, \"15.625\"},\n-    {135, \"15.750\"},\n-    {136, \"15.875\"},\n-    {137, \"16.000\"},\n-    {138, \"16.125\"},\n-    {139, \"16.250\"},\n-    {140, \"16.375\"},\n-    {141, \"16.500\"},\n-    {142, \"16.625\"},\n-    {143, \"16.750\"},\n-    {144, \"16.875\"},\n-    {145, \"17.000\"},\n-    {146, \"17.125\"},\n-    {147, \"17.250\"},\n-    {148, \"17.375\"},\n-    {149, \"17.500\"},\n-    {150, \"17.625\"},\n-    {151, \"17.750\"},\n-    {152, \"17.875\"},\n-    {153, \"18.000\"},\n-    {154, \"18.125\"},\n-    {155, \"18.250\"},\n-    {156, \"18.375\"},\n-    {157, \"18.500\"},\n-    {158, \"18.625\"},\n-    {159, \"18.750\"},\n-    {160, \"18.875\"},\n-    {161, \"19.000\"},\n-    {162, \"19.125\"},\n-    {163, \"19.250\"},\n-    {164, \"19.375\"},\n-    {165, \"19.500\"},\n-    {166, \"19.625\"},\n-    {167, \"19.750\"},\n-    {168, \"19.875\"},\n-    {169, \"20.000\"},\n-    {170, \"20.125\"},\n-    {171, \"20.250\"},\n-    {172, \"20.375\"},\n-    {173, \"20.500\"},\n-    {174, \"20.625\"},\n-    {175, \"20.750\"},\n-    {176, \"20.875\"},\n-    {177, \"21.000\"},\n-    {178, \"21.125\"},\n-    {179, \"21.250\"},\n-    {180, \"21.375\"},\n-    {181, \"21.500\"},\n-    {182, \"21.625\"},\n-    {183, \"21.750\"},\n-    {184, \"21.875\"},\n-    {185, \"22.000\"},\n-    {186, \"22.125\"},\n-    {187, \"22.250\"},\n-    {188, \"22.375\"},\n-    {189, \"22.500\"},\n-    {190, \"22.625\"},\n-    {191, \"22.750\"},\n-    {192, \"22.875\"},\n-    {193, \"23.000\"},\n-    {194, \"23.125\"},\n-    {195, \"23.250\"},\n-    {196, \"23.375\"},\n-    {197, \"23.500\"},\n-    {198, \"23.625\"},\n-    {199, \"23.750\"},\n-    {200, \"23.875\"},\n-    {201, \"24.000\"},\n-    {202, \"24.125\"},\n-    {203, \"24.250\"},\n-    {204, \"24.375\"},\n-    {205, \"24.500\"},\n-    {206, \"24.625\"},\n-    {207, \"24.750\"},\n-    {208, \"24.875\"},\n-    {209, \"25.000\"},\n-    {210, \"25.125\"},\n-    {211, \"25.250\"},\n-    {212, \"25.375\"},\n-    {213, \"25.500\"},\n-    {214, \"25.625\"},\n-    {215, \"25.750\"},\n-    {216, \"25.875\"},\n-    {217, \"26.000\"},\n-    {218, \"26.125\"},\n-    {219, \"26.250\"},\n-    {220, \"26.375\"},\n-    {221, \"26.500\"},\n-    {222, \"26.625\"},\n-    {223, \"26.750\"},\n-    {224, \"26.875\"},\n-    {225, \"27.000\"},\n-    {226, \"27.125\"},\n-    {227, \"27.250\"},\n-    {228, \"27.375\"},\n-    {229, \"27.500\"},\n-    {230, \"27.625\"},\n-    {231, \"27.750\"},\n-    {232, \"27.875\"},\n-    {233, \"28.000\"},\n-    {234, \"28.125\"},\n-    {235, \"28.250\"},\n-    {236, \"28.375\"},\n-    {237, \"28.500\"},\n-    {238, \"28.625\"},\n-    {239, \"28.750\"},\n-    {240, \"28.875\"},\n-    {241, \"29.000\"},\n-    {242, \"29.125\"},\n-    {243, \"29.250\"},\n-    {244, \"29.375\"},\n-    {245, \"29.500\"},\n-    {246, \"29.625\"},\n-    {247, \"29.750\"},\n-    {248, \"29.875\"},\n-    {249, \"30.000\"},\n-    {250, \"30.125\"},\n-    {251, \"30.250\"},\n-    {252, \"30.375\"},\n-    {253, \"30.500\"},\n-    {254, \"30.625\"},\n-    {255, \">30.750\"},\n+    {  0, \"-2.0\"},\n+    {  1, \"-1.9\"},\n+    {  2, \"-1.8\"},\n+    {  3, \"-1.7\"},\n+    {  4, \"-1.6\"},\n+    {  5, \"-1.5\"},\n+    {  6, \"-1.4\"},\n+    {  7, \"-1.3\"},\n+    {  8, \"-1.2\"},\n+    {  9, \"-1.1\"},\n+    { 10, \"-1.0\"},\n+    { 11, \"-0.9\"},\n+    { 12, \"-0.8\"},\n+    { 13, \"-0.7\"},\n+    { 14, \"-0.6\"},\n+    { 15, \"-0.5\"},\n+    { 16, \"-0.4\"},\n+    { 17, \"-0.3\"},\n+    { 18, \"-0.2\"},\n+    { 19, \"-0.1\"},\n+    { 20, \"0.0\"},\n+    { 21, \"0.1\"},\n+    { 22, \"0.2\"},\n+    { 23, \"0.3\"},\n+    { 24, \"0.4\"},\n+    { 25, \"0.5\"},\n+    { 26, \"0.6\"},\n+    { 27, \"0.7\"},\n+    { 28, \"0.8\"},\n+    { 29, \"0.9\"},\n+    { 30, \"1.0\"},\n+    { 31, \"1.1\"},\n+    { 32, \"1.2\"},\n+    { 33, \"1.3\"},\n+    { 34, \"1.4\"},\n+    { 35, \"1.5\"},\n+    { 36, \"1.6\"},\n+    { 37, \"1.7\"},\n+    { 38, \"1.8\"},\n+    { 39, \"1.9\"},\n+    { 40, \"2.0\"},\n+    { 41, \"2.1\"},\n+    { 42, \"2.2\"},\n+    { 43, \"2.3\"},\n+    { 44, \"2.4\"},\n+    { 45, \"2.5\"},\n+    { 46, \"2.6\"},\n+    { 47, \"2.7\"},\n+    { 48, \"2.8\"},\n+    { 49, \"2.9\"},\n+    { 50, \"3.0\"},\n+    { 51, \"3.1\"},\n+    { 52, \"3.2\"},\n+    { 53, \"3.3\"},\n+    { 54, \"3.4\"},\n+    { 55, \"3.5\"},\n+    { 56, \"3.6\"},\n+    { 57, \"3.7\"},\n+    { 58, \"3.8\"},\n+    { 59, \"3.9\"},\n+    { 60, \"4.0\"},\n+    { 61, \"4.1\"},\n+    { 62, \"4.2\"},\n+    { 63, \"4.3\"},\n+    { 64, \"4.4\"},\n+    { 65, \"4.5\"},\n+    { 66, \"4.6\"},\n+    { 67, \"4.7\"},\n+    { 68, \"4.8\"},\n+    { 69, \"4.9\"},\n+    { 70, \"5.0\"},\n+    { 71, \"5.1\"},\n+    { 72, \"5.2\"},\n+    { 73, \"5.3\"},\n+    { 74, \"5.4\"},\n+    { 75, \"5.5\"},\n+    { 76, \"5.6\"},\n+    { 77, \"5.7\"},\n+    { 78, \"5.8\"},\n+    { 79, \"5.9\"},\n+    { 80, \"6.0\"},\n+    { 81, \"6.1\"},\n+    { 82, \"6.2\"},\n+    { 83, \"6.3\"},\n+    { 84, \"6.4\"},\n+    { 85, \"6.5\"},\n+    { 86, \"6.6\"},\n+    { 87, \"6.7\"},\n+    { 88, \"6.8\"},\n+    { 89, \"6.9\"},\n+    { 90, \"7.0\"},\n+    { 91, \"7.1\"},\n+    { 92, \"7.2\"},\n+    { 93, \"7.3\"},\n+    { 94, \"7.4\"},\n+    { 95, \"7.5\"},\n+    { 96, \"7.6\"},\n+    { 97, \"7.7\"},\n+    { 98, \"7.8\"},\n+    { 99, \"7.9\"},\n+    {100, \"8.0\"},\n+    {101, \"8.1\"},\n+    {102, \"8.2\"},\n+    {103, \"8.3\"},\n+    {104, \"8.4\"},\n+    {105, \"8.5\"},\n+    {106, \"8.6\"},\n+    {107, \"8.7\"},\n+    {108, \"8.8\"},\n+    {109, \"8.9\"},\n+    {110, \"9.0\"},\n+    {111, \"9.1\"},\n+    {112, \"9.2\"},\n+    {113, \"9.3\"},\n+    {114, \"9.4\"},\n+    {115, \"9.5\"},\n+    {116, \"9.6\"},\n+    {117, \"9.7\"},\n+    {118, \"9.8\"},\n+    {119, \"9.9\"},\n+    {120, \"10.0\"},\n+    {121, \"10.1\"},\n+    {122, \"10.2\"},\n+    {123, \"10.3\"},\n+    {124, \"10.4\"},\n+    {125, \"10.5\"},\n+    {126, \"10.6\"},\n+    {127, \"10.7\"},\n+    {128, \"10.8\"},\n+    {129, \"10.9\"},\n+    {130, \"11.0\"},\n+    {131, \"11.1\"},\n+    {132, \"11.2\"},\n+    {133, \"11.3\"},\n+    {134, \"11.4\"},\n+    {135, \"11.5\"},\n+    {136, \"11.6\"},\n+    {137, \"11.7\"},\n+    {138, \"11.8\"},\n+    {139, \"11.9\"},\n+    {140, \"12.0\"},\n+    {141, \"12.1\"},\n+    {142, \"12.2\"},\n+    {143, \"12.3\"},\n+    {144, \"12.4\"},\n+    {145, \"12.5\"},\n+    {146, \"12.6\"},\n+    {147, \"12.7\"},\n+    {148, \"12.8\"},\n+    {149, \"12.9\"},\n+    {150, \"13.0\"},\n+    {151, \"13.1\"},\n+    {152, \"13.2\"},\n+    {153, \"13.3\"},\n+    {154, \"13.4\"},\n+    {155, \"13.5\"},\n+    {156, \"13.6\"},\n+    {157, \"13.7\"},\n+    {158, \"13.8\"},\n+    {159, \"13.9\"},\n+    {160, \"14.0\"},\n+    {161, \"14.1\"},\n+    {162, \"14.2\"},\n+    {163, \"14.3\"},\n+    {164, \"14.4\"},\n+    {165, \"14.5\"},\n+    {166, \"14.6\"},\n+    {167, \"14.7\"},\n+    {168, \"14.8\"},\n+    {169, \"14.9\"},\n+    {170, \"15.0\"},\n+    {171, \"15.1\"},\n+    {172, \"15.2\"},\n+    {173, \"15.3\"},\n+    {174, \"15.4\"},\n+    {175, \"15.5\"},\n+    {176, \"15.6\"},\n+    {177, \"15.7\"},\n+    {178, \"15.8\"},\n+    {179, \"15.9\"},\n+    {180, \"16.0\"},\n+    {181, \"16.1\"},\n+    {182, \"16.2\"},\n+    {183, \"16.3\"},\n+    {184, \"16.4\"},\n+    {185, \"16.5\"},\n+    {186, \"16.6\"},\n+    {187, \"16.7\"},\n+    {188, \"16.8\"},\n+    {189, \"16.9\"},\n+    {190, \"17.0\"},\n+    {191, \"17.1\"},\n+    {192, \"17.2\"},\n+    {193, \"17.3\"},\n+    {194, \"17.4\"},\n+    {195, \"17.5\"},\n+    {196, \"17.6\"},\n+    {197, \"17.7\"},\n+    {198, \"17.8\"},\n+    {199, \"17.9\"},\n+    {200, \"18.0\"},\n+    {201, \"18.1\"},\n+    {202, \"18.2\"},\n+    {203, \"18.3\"},\n+    {204, \"18.4\"},\n+    {205, \"18.5\"},\n+    {206, \"18.6\"},\n+    {207, \"18.7\"},\n+    {208, \"18.8\"},\n+    {209, \"18.9\"},\n+    {210, \"19.0\"},\n+    {211, \"19.1\"},\n+    {212, \"19.2\"},\n+    {213, \"19.3\"},\n+    {214, \"19.4\"},\n+    {215, \"19.5\"},\n+    {216, \"19.6\"},\n+    {217, \"19.7\"},\n+    {218, \"19.8\"},\n+    {219, \"19.9\"},\n+    {220, \"20.0\"},\n+    {221, \"20.1\"},\n+    {222, \"20.2\"},\n+    {223, \"20.3\"},\n+    {224, \"20.4\"},\n+    {225, \"20.5\"},\n+    {226, \"20.6\"},\n+    {227, \"20.7\"},\n+    {228, \"20.8\"},\n+    {229, \"20.9\"},\n+    {230, \"21.0\"},\n+    {231, \"21.1\"},\n+    {232, \"21.2\"},\n+    {233, \"21.3\"},\n+    {234, \"21.4\"},\n+    {235, \"21.5\"},\n+    {236, \"21.6\"},\n+    {237, \"21.7\"},\n+    {238, \"21.8\"},\n+    {239, \"21.9\"},\n+    {240, \"22.0\"},\n+    {241, \"22.1\"},\n+    {242, \"22.2\"},\n+    {243, \"22.3\"},\n+    {244, \"22.4\"},\n+    {245, \"22.5\"},\n+    {246, \"22.6\"},\n+    {247, \"22.7\"},\n+    {248, \"22.8\"},\n+    {249, \"22.9\"},\n+    {250, \"23.0\"},\n+    {251, \"23.1\"},\n+    {252, \"23.2\"},\n+    {253, \"23.3\"},\n+    {254, \"23.4\"},\n+    {255, \">23.5\"},\n     {  0, NULL}\n };\n static value_string_ext modeadapt_esno_ext = VALUE_STRING_EXT_INIT(modeadapt_esno);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-dvb-s2-bb.c",
+      "old_path": "epan/dissectors/packet-dvb-s2-bb.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+      "short_id": "e2789f16",
+      "created_at": "2026-07-17T16:29:03.000+07:00",
+      "parent_ids": [
+        "e699ab947839ac6fa5e6d1740dee4502557f5b6e"
+      ],
+      "title": "DVB-S2-BB: Fix CNI field encoding in Mode Adaptation Header",
+      "message": "DVB-S2-BB: Fix CNI field encoding in Mode Adaptation Header\n\nThe CNI (Carrier to Noise plus Interference) field in the DVB-S2 Mode\nAdaptation Header was previously decoded according to SatLabs documentation.\nHowever, the official ETSI EN 302 307-1 standard specifies a different\nencoding for this field.\n\nThis commit updates the CNI decoding logic to align with the normative\nETSI EN 302 307-1 standard instead of the SatLabs research document.\n\nFixes: #21385\n\nAI-Assisted: No\n",
+      "author_name": "Andrey Miadelets",
+      "author_email": "andreymydelec@gmail.com",
+      "authored_date": "2026-07-07T11:42:28.000+07:00",
+      "committer_name": "Daniil Batalov",
+      "committer_email": "dbatalov@deltard.ru",
+      "committed_date": "2026-07-17T16:29:03.000+07:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e2789f16ba546ffd5bffc811318597f8de7147f8"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1909094316,
+      "head_commit_sha": "e2789f16ba546ffd5bffc811318597f8de7147f8",
+      "base_commit_sha": "e699ab947839ac6fa5e6d1740dee4502557f5b6e",
+      "start_commit_sha": "e699ab947839ac6fa5e6d1740dee4502557f5b6e",
+      "created_at": "2026-07-17T09:29:08.207Z",
+      "merge_request_id": 505305673,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "e4e5ce62ab6a632a2ee83ff28e7b2121f1013c41"
+    },
+    {
+      "id": 1909091923,
+      "head_commit_sha": "a2c54eb340bc7012bc3f62c88e653519cb2cc241",
+      "base_commit_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+      "start_commit_sha": "e699ab947839ac6fa5e6d1740dee4502557f5b6e",
+      "created_at": "2026-07-17T09:27:56.778Z",
+      "merge_request_id": 505305673,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "e4e5ce62ab6a632a2ee83ff28e7b2121f1013c41"
+    },
+    {
+      "id": 1894305970,
+      "head_commit_sha": "5addb53ae04d418bd08c3ffc1c9ca719f46e97f6",
+      "base_commit_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+      "start_commit_sha": "405dae5d221db7427347eeb56d49ff08b76d3dc8",
+      "created_at": "2026-07-09T07:56:57.828Z",
+      "merge_request_id": 505305673,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "860faa7c6a6bbb746ea303d859eb2acde9c64f12"
+    }
+  ]
+}
