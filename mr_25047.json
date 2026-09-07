@@ -1,0 +1,339 @@
+{
+  "id": 488252169,
+  "iid": 25047,
+  "project_id": 7898047,
+  "title": "wiretap: guard wtap_file_size/wtap_fstat/wtap_get_compression_type against NULL file handles",
+  "description": "These public accessors all use the pattern (wth-\\>fh == NULL) ? wth-\\>random_fh : wth-\\>fh to pick a usable file handle, but they don't check the result. After wtap_sequential_close() sets wth-\\>fh = NULL on a non-seekable source (pipe/stdin), wth-\\>random_fh is also NULL because random access can't be opened on a pipe (see file_access.c WTAP_ERR_RANDOM_OPEN_PIPE), so both ends of the ternary are NULL.\n\nwtap_file_size and wtap_fstat then call file_fstat(NULL, ...) which dereferences stream-\\>fd. wtap_get_compression_type calls file_get_compression_type(NULL) which dereferences stream-\\>is_compressed.\n\nNo existing in-tree caller hits this — they all call these functions while a handle is still open — but external plugins and language bindings that query a wtap after sequential close are exposed. The issue was found while testing a candidate WSLua feature (get_capture_file_info()), where the new entry point is reachable from a Lua tap draw() callback after sequential close on a pipe capture; the underlying bug pre-dates that feature and is fixed independently here.\n\nReturn -1 with errno=EBADF from the fstat-based functions and WS_FILE_UNKNOWN_COMPRESSION from the compression query when both handles are NULL. All existing callers already treat -1 as an error return, so no caller changes are required.\n\nAI-Assisted: yes (Claude)",
+  "state": "closed",
+  "created_at": "2026-05-23T06:53:51.306Z",
+  "updated_at": "2026-05-24T12:23:24.772Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 38135429,
+    "username": "cherepanov74",
+    "public_email": "",
+    "name": "Anton Cherepanov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/c90f60fee54161fe03b65ddb52e8934d4b6148656bab477390d3ce10a7f80615?s=80&d=identicon",
+    "web_url": "https://gitlab.com/cherepanov74"
+  },
+  "closed_at": "2026-05-24T04:39:35.112Z",
+  "target_branch": "master",
+  "source_branch": "wiretap-null-fh-guard",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 38135429,
+    "username": "cherepanov74",
+    "public_email": "",
+    "name": "Anton Cherepanov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/c90f60fee54161fe03b65ddb52e8934d4b6148656bab477390d3ce10a7f80615?s=80&d=identicon",
+    "web_url": "https://gitlab.com/cherepanov74"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82205650,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "73265be292bdbafba91d8c136d8780a8519c09f5",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-23T06:54:00.096Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25047",
+  "references": {
+    "short": "!25047",
+    "relative": "!25047",
+    "full": "wireshark/wireshark!25047"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25047",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2026-05-23T06:53:58.352Z",
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2547852923,
+    "iid": 11,
+    "project_id": 82205650,
+    "sha": "73265be292bdbafba91d8c136d8780a8519c09f5",
+    "ref": "wiretap-null-fh-guard",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2026-05-23T06:53:57.364Z",
+    "updated_at": "2026-05-23T07:09:03.725Z",
+    "web_url": "https://gitlab.com/cherepanov74/wireshark/-/pipelines/2547852923"
+  },
+  "head_pipeline": {
+    "id": 2547852923,
+    "iid": 11,
+    "project_id": 82205650,
+    "sha": "73265be292bdbafba91d8c136d8780a8519c09f5",
+    "ref": "wiretap-null-fh-guard",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2026-05-23T06:53:57.364Z",
+    "updated_at": "2026-05-23T07:09:03.725Z",
+    "web_url": "https://gitlab.com/cherepanov74/wireshark/-/pipelines/2547852923",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 38135429,
+      "username": "cherepanov74",
+      "public_email": "",
+      "name": "Anton Cherepanov",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/c90f60fee54161fe03b65ddb52e8934d4b6148656bab477390d3ce10a7f80615?s=80&d=identicon",
+      "web_url": "https://gitlab.com/cherepanov74"
+    },
+    "started_at": "2026-05-23T06:53:58.352Z",
+    "finished_at": "2026-05-23T07:09:03.713Z",
+    "committed_at": null,
+    "duration": 905,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_failed",
+      "text": "Failed",
+      "label": "failed",
+      "group": "failed",
+      "tooltip": "failed",
+      "has_details": true,
+      "details_path": "/cherepanov74/wireshark/-/pipelines/2547852923",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_failed-41304d7f7e3828808b0c26771f0309e55296819a9beea3ea9fbf6689d9857c12.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "ad931913ea380cc4ad80f0b01c40449f994b6a53",
+    "head_sha": "73265be292bdbafba91d8c136d8780a8519c09f5",
+    "start_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "e0565b5c73b515625c80c1312cd4f06bde1036cd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379182349,
+          "type": null,
+          "body": "> The issue was found while testing a candidate WSLua feature (get_capture_file_info()), where the new entry point is reachable from a Lua tap draw() callback after sequential close on a pipe capture\n\nSo are there cases where some code really needs to know how large the file is when 1) it's a pipe and 2) it's been closed?",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-05-23T16:34:26.498Z",
+          "updated_at": "2026-05-23T16:34:26.498Z",
+          "system": false,
+          "noteable_id": 488252169,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25047,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d2c5e451bba1c7078da64960e258161fae8057a2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379624688,
+          "type": null,
+          "body": "Yes, code isn't currently reachable.",
+          "author": {
+            "id": 38135429,
+            "username": "cherepanov74",
+            "public_email": "",
+            "name": "Anton Cherepanov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c90f60fee54161fe03b65ddb52e8934d4b6148656bab477390d3ce10a7f80615?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cherepanov74"
+          },
+          "created_at": "2026-05-24T04:39:34.590Z",
+          "updated_at": "2026-05-24T04:39:34.590Z",
+          "system": false,
+          "noteable_id": 488252169,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25047,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "34b0594f0779e9a539484fce8ffda9d7372cc38c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379713543,
+          "type": null,
+          "body": "> Yes, code isn't currently reachable.\n\nI think the only way you can have a still-valid `wtap` with neither `fh` nor `random_fh` being non-null is if `wtap_fdclose()` has been called.\n\n(And `wtap_fdclose()` should set the closed handle members to `NULL`.)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-05-24T07:51:41.920Z",
+          "updated_at": "2026-05-24T07:51:41.920Z",
+          "system": false,
+          "noteable_id": 488252169,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25047,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0254eb117b464030e60f61cf9b51fdc968c3ab5e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379863539,
+          "type": null,
+          "body": "> And `wtap_fdclose()` should set the closed handle members to `NULL`.\n\nNo, because `wtap_fdclose()` is a ***VERY*** specialized hack for a ***VERY*** specialized problem, namely that Windows doesn't - or, at the time, didn't - allow renaming of open files. The idea is that the code *temporarily* closes the file descriptor, does the rename, and then reopens the file with its new name and puts the new descriptor back into the `wtap`.\n\nIt may be that the only versions of Windows that we currently support (and maybe Windows 10 too, if we only support Windows 11), allow renaming of open files if you ask Windows nicely, in which case we may be able to nuke that hack.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-05-24T12:23:24.744Z",
+          "updated_at": "2026-05-24T12:23:24.744Z",
+          "system": false,
+          "noteable_id": 488252169,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25047,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -45,7 +45,11 @@ static ws_compression_type file_get_compression_type(FILE_T stream);\n ws_compression_type\n wtap_get_compression_type(wtap *wth)\n {\n-\treturn file_get_compression_type((wth->fh == NULL) ? wth->random_fh : wth->fh);\n+\tFILE_T fh = (wth->fh == NULL) ? wth->random_fh : wth->fh;\n+\n+\tif (fh == NULL)\n+\t\treturn WS_FILE_UNKNOWN_COMPRESSION;\n+\treturn file_get_compression_type(fh);\n }\n \n /* #define GZBUFSIZE 8192 */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/file_wrappers.c",
+      "old_path": "wiretap/file_wrappers.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -12,6 +12,7 @@\n #include \"wtap.h\"\n #include \"wtap-int.h\"\n \n+#include <errno.h>\n #include <string.h>\n \n #include <sys/types.h>\n@@ -81,9 +82,14 @@ int64_t\n wtap_file_size(wtap *wth, int *err)\n {\n \tws_statb64 statb;\n+\tFILE_T fh = (wth->fh == NULL) ? wth->random_fh : wth->fh;\n \n-\tif (file_fstat((wth->fh == NULL) ? wth->random_fh : wth->fh,\n-\t    &statb, err) == -1)\n+\tif (fh == NULL) {\n+\t\tif (err != NULL)\n+\t\t\t*err = EBADF;\n+\t\treturn -1;\n+\t}\n+\tif (file_fstat(fh, &statb, err) == -1)\n \t\treturn -1;\n \treturn statb.st_size;\n }\n@@ -94,8 +100,14 @@ wtap_file_size(wtap *wth, int *err)\n int\n wtap_fstat(wtap *wth, ws_statb64 *statb, int *err)\n {\n-\tif (file_fstat((wth->fh == NULL) ? wth->random_fh : wth->fh,\n-\t    statb, err) == -1)\n+\tFILE_T fh = (wth->fh == NULL) ? wth->random_fh : wth->fh;\n+\n+\tif (fh == NULL) {\n+\t\tif (err != NULL)\n+\t\t\t*err = EBADF;\n+\t\treturn -1;\n+\t}\n+\tif (file_fstat(fh, statb, err) == -1)\n \t\treturn -1;\n \treturn 0;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap.c",
+      "old_path": "wiretap/wtap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1815235275,
+      "head_commit_sha": "73265be292bdbafba91d8c136d8780a8519c09f5",
+      "base_commit_sha": "ad931913ea380cc4ad80f0b01c40449f994b6a53",
+      "start_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "created_at": "2026-05-23T06:53:55.110Z",
+      "merge_request_id": 488252169,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "f552e349dab635aa57341a5bf2b1ffc8674e407c"
+    }
+  ]
+}

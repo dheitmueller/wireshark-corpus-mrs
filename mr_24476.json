@@ -1,0 +1,278 @@
+{
+  "id": 475412407,
+  "iid": 24476,
+  "project_id": 7898047,
+  "title": "conversation: Don't use X.25 conversation after dissecting IP on X.25",
+  "description": "The conversation API has several functions that find \"the conversation\"\nfor a frame using what is currently in the packet_info struct. This is\noften used by dissectors that did not create that conversation, in order\nto, e.g., have the TCP dissector call a particular subdissector after\nheuristics succeed.\n\nMost of the time, the current source and destination addresses, and\nports if set, are used to find this conversation. Conversations using\nthis are generally bidirectional, and there's special support for\nwildcarding.[1]\n\nThere are some dissectors whose idea of a conversation does not fit\ninto this scheme, and which use \"exact\" conversation matching. Some\nof these, such as with circuit-based protocols, also need to set the\ndefault conversation so that subdissectors find their conversation\ninstead of the port-and-address based one.[2]\n\nX.25 is such a dissector. It has a heuristic subdissector list,\nbecause X.25 over TCP (TOP) exists, X.25 needs to set its circuit\nconversation to be the one retrieved by its heuristic subdissectors\nso that they can set themselves to its converstation, and not the\nunderlying TCP conversation that carries X.25.\n\nA complication with X.25 is that X.25 can itself carry IP, and it is\nthus possible to have IP over X.25 over TCP over IP. (See #2341.)[3]\nIn such cases, for the same reason as members of the X.25 heuristic\nsubdissector list want to retrieve the X.25 conversation and not\nthe addresses-and-ports conversation, members of heuristic subdissector\nlists over IP[4] want to find the addresses-and-ports conversation,\nnot the conversation element based X.25 conversation, so as to set\nthemselves to the proper conversation and not mess up dissection by\nattempting to skip layers.\n\nThe conv_elements added to pinfo are allocated via pinfo->pool, so\nas a workaround we can simply set them to NULL once dissecting IP.\nThis fixes #21185 at least temporarily, although it is not the ideal\nlong term solution.[5]\n\n1 - There are additional conversations with the recently introduced\n\"deinterlacing\" conversation functions.\n\n2 - There's also another category of dissectors that have address-and-ports\nused for conversations that for some reason do not want to set the source\nand destination port of the frame itself. Most of these are proxy protocols.\nThey are not further discussed here, but present their own issues. For\nnow, note that once those are set, they prevent the conversation\nelements based converssation from being found as well.\n\n3 - This includes IPv6, see https://www.iana.org/assignments/nlpids/nlpids.xhtml\n\n4 - Including those in further protocol layers often found over IP, such as\nthe TCP, UDP, or SCTP heuristic subdissector lists.\n\n5 - This ideal long term solution has been pending circa a decade.\nCf. 800b26edbe34e135cc9be1d4395db2c13ae1213f\n\nAI-Assisted: no",
+  "state": "merged",
+  "created_at": "2026-04-19T15:31:31.406Z",
+  "updated_at": "2026-04-20T06:26:50.627Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-04-20T06:26:50.651Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "conv_elements_hack",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "347f27b9c19af5fa5bfe66253b7a992a6379630f",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-04-19T15:31:40.201Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!24476",
+  "references": {
+    "short": "!24476",
+    "relative": "!24476",
+    "full": "wireshark/wireshark!24476"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/24476",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2026-04-20T06:15:13.605Z",
+  "latest_build_finished_at": "2026-04-20T06:26:49.413Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2464514208,
+    "iid": 100972,
+    "project_id": 7898047,
+    "sha": "f361a7c8f9f9b3133f5ce72009c79b239831cc2d",
+    "ref": "refs/merge-requests/24476/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-04-20T06:15:06.376Z",
+    "updated_at": "2026-04-20T06:26:49.427Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2464514208"
+  },
+  "head_pipeline": {
+    "id": 2464514208,
+    "iid": 100972,
+    "project_id": 7898047,
+    "sha": "f361a7c8f9f9b3133f5ce72009c79b239831cc2d",
+    "ref": "refs/merge-requests/24476/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-04-20T06:15:06.376Z",
+    "updated_at": "2026-04-20T06:26:49.427Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2464514208",
+    "before_sha": "f361a7c8f9f9b3133f5ce72009c79b239831cc2d",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-04-20T06:15:13.605Z",
+    "finished_at": "2026-04-20T06:26:49.413Z",
+    "committed_at": null,
+    "duration": 701,
+    "queued_duration": 7,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2464514208",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "a8f60a2a35623166212100ecbd5d63bcfa36c63a",
+    "head_sha": "347f27b9c19af5fa5bfe66253b7a992a6379630f",
+    "start_sha": "a8f60a2a35623166212100ecbd5d63bcfa36c63a"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "36092bc2c545dd1a2b5c0f895f552b59deae0d70",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3265255329,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-04-20T06:14:57.453Z",
+          "updated_at": "2026-04-20T06:14:57.532Z",
+          "system": true,
+          "noteable_id": 475412407,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24476,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c4f16d95cf78a5b3efb0961630158c121730da1a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3265255500,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-04-20T06:15:03.184Z",
+          "updated_at": "2026-04-20T06:15:03.187Z",
+          "system": true,
+          "noteable_id": 475412407,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24476,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2276,6 +2276,12 @@ dissect_ip_v4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void*\n   copy_address_shallow(&pinfo->dst, &pinfo->net_dst);\n   copy_address_shallow(&iph->ip_dst, &pinfo->net_dst);\n \n+  /* XXX - We do not want pinfo->conv_elements, if set, to be used to find the\n+   * default conversation after this, or else subdissectors will set the\n+   * wrong dissector. This is a bit of a hack, it should be solved more\n+   * generally. */\n+  pinfo->conv_elements = NULL;\n+\n   /* If an IP is destined for an IP address in the Local Network Control Block\n    * (e.g. 224.0.0.0/24), the packet should never be routed and the TTL would\n    * be expected to be 1.  (see RFC 3171)  Flag a TTL greater than 1.\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ip.c",
+      "old_path": "epan/dissectors/packet-ip.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -3716,6 +3716,9 @@ dissect_ipv6(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_\n     alloc_address_wmem_ipv6(pinfo->pool, &pinfo->net_dst, ip6_dst);\n     copy_address_shallow(&pinfo->dst, &pinfo->net_dst);\n \n+    /* XXX - See comment in the IPv4 disector. */\n+    pinfo->conv_elements = NULL;\n+\n     if (tree) {\n         if (ipv6_summary_in_tree) {\n             proto_item_append_text(ipv6_item, \", Src: %s, Dst: %s\",\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ipv6.c",
+      "old_path": "epan/dissectors/packet-ipv6.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1757664117,
+      "head_commit_sha": "347f27b9c19af5fa5bfe66253b7a992a6379630f",
+      "base_commit_sha": "a8f60a2a35623166212100ecbd5d63bcfa36c63a",
+      "start_commit_sha": "a8f60a2a35623166212100ecbd5d63bcfa36c63a",
+      "created_at": "2026-04-19T15:31:34.801Z",
+      "merge_request_id": 475412407,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "453e6ee5ead097992c47f6d621da8dcb0bddbe67"
+    }
+  ]
+}

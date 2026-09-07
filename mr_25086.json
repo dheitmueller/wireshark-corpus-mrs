@@ -1,0 +1,132 @@
+{
+  "id": 488510289,
+  "iid": 25086,
+  "project_id": 7898047,
+  "title": "packet-epl: Fix Use-After-Free in profile loading error path",
+  "description": "A Use-After-Free (UAF) vulnerability exists in the Ethernet POWERLINK (packet-epl.c) dissector. The vulnerability is triggered during the error-handling path of loading an EPL profile (.eds, .xdd, or .xdc files). When the profile parsing fails, the associated memory pool is destroyed, but the local pointer is not nullified. This dangling pointer is subsequently returned to the caller (nodeid_profile_parse_uat), bypassing safety checks and leading to a UAF when the dissector attempts to duplicate address data into the destroyed memory allocator.\n\nfix issue #21267",
+  "state": "closed",
+  "created_at": "2026-05-25T03:14:12.987Z",
+  "updated_at": "2026-05-25T20:57:14.804Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 7996275,
+    "username": "RigelYoung",
+    "public_email": "",
+    "name": "RigelYoung",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/21598798068d25bda77e6047cc2fcaf6e151e8b5f61b660be2107e2389287082?s=80&d=identicon",
+    "web_url": "https://gitlab.com/RigelYoung"
+  },
+  "closed_at": "2026-05-25T20:57:14.623Z",
+  "target_branch": "master",
+  "source_branch": "master",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7996275,
+    "username": "RigelYoung",
+    "public_email": "",
+    "name": "RigelYoung",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/21598798068d25bda77e6047cc2fcaf6e151e8b5f61b660be2107e2389287082?s=80&d=identicon",
+    "web_url": "https://gitlab.com/RigelYoung"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "8c7bd6f5a4f8043d15d5d4cca7254e230c77d0dc",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-25T03:14:28.802Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!25086",
+  "references": {
+    "short": "!25086",
+    "relative": "!25086",
+    "full": "wireshark/wireshark!25086"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25086",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "895058f1636902ff5b21364fa827c0448dfb064d",
+    "head_sha": "8c7bd6f5a4f8043d15d5d4cca7254e230c77d0dc",
+    "start_sha": "895058f1636902ff5b21364fa827c0448dfb064d"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [],
+  "changes_data": [
+    {
+      "diff": "@@ -5228,14 +5228,20 @@ static struct profile *profile_load(wmem_allocator_t *allocator, const char *pat\n \t{\n \t\tprofile = profile_new(allocator);\n \t\tif (!epl_eds_load(profile, path))\n+\t\t{\n \t\t\tprofile_del(profile);\n+\t\t\tprofile = NULL;\n+\t\t}\t\n \t}\n \n \telse if (g_str_has_suffix(path, \".xdd\") || g_str_has_suffix(path, \".xdc\"))\n \t{\n \t\tprofile = profile_new(allocator);\n \t\tif (!epl_xdd_load(profile, path))\n+\t\t{\n \t\t\tprofile_del(profile);\n+\t\t\tprofile = NULL;\n+\t\t}\t\n \t}\n \n \tif (!profile)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-epl.c",
+      "old_path": "epan/dissectors/packet-epl.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1816069126,
+      "head_commit_sha": "8c7bd6f5a4f8043d15d5d4cca7254e230c77d0dc",
+      "base_commit_sha": "895058f1636902ff5b21364fa827c0448dfb064d",
+      "start_commit_sha": "895058f1636902ff5b21364fa827c0448dfb064d",
+      "created_at": "2026-05-25T03:14:17.526Z",
+      "merge_request_id": 488510289,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "4ea837001c71f44fdbc0c4db4affafd2f1a1e472"
+    }
+  ]
+}

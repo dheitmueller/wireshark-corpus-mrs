@@ -1,0 +1,320 @@
+{
+  "id": 498890558,
+  "iid": 25497,
+  "project_id": 7898047,
+  "title": "GlusterFS: decode the v4.0 procedures shown as dissect_rpc_unknown",
+  "description": "# GlusterFS: decode the v4.0 procedures previously shown as `dissect_rpc_unknown`\n\nCloses #21366.\n\n## What\n\nThe GlusterFS 4.0 dissector (`glusterfs4_0_fop`, RPC program 1298437 version 400) labelled 10\nprocedures correctly (after #21359 / !25487) but left them with no field decoder — registered as\n`{ GFS3_OP_X, \"X\", dissect_rpc_unknown, dissect_rpc_unknown }`, so the request/reply body showed as one\nopaque blob. This adds per-field decoders for **9** of them, mirroring the existing\n`glusterfs_gfs4_0_op_*` style and the `rpc/xdr/src/glusterfs4-xdr.x` wire schema. **COMPOUND (49) is\nintentionally left undecoded** — it was removed from GlusterFS and has no struct in `glusterfs4-xdr.x`.\n\n| proc | name | request | reply | new code |\n|------|------|---------|-------|----------|\n| 37 | RCHECKSUM | `gfx_rchecksum_req` | `gfx_rchecksum_rsp` | call + reply |\n| 47 | IPC | `gfx_ipc_req` | `gfx_common_rsp` | call (reuses common reply) |\n| 50 | LEASE | `gfx_lease_req` | `gfx_lease_rsp` | call + reply + `gf_proto_lease` helper |\n| 51 | GETACTIVELK | `gfx_getactivelk_req` | `gfx_getactivelk_rsp` | call + reply + locklist entry |\n| 52 | SETACTIVELK | `gfx_setactivelk_req` | `gfx_common_rsp` | call (reuses common reply + locklist entry) |\n| 53 | ICREATE | `gfx_icreate_req` | `gfx_common_iatt_rsp` | call (reuses common_iatt reply) |\n| 54 | NAMELINK | `gfx_namelink_req` | `gfx_common_2iatt_rsp` | call (reuses common_2iatt reply) |\n| 55 | PUT | `gfx_put_req` | `gfx_common_3iatt_rsp` | call (reuses common_3iatt reply) |\n| 56 | COPY_FILE_RANGE | `gfx_copy_file_range_req` | `gfx_common_3iatt_rsp` | call (reuses common_3iatt reply) |\n\nNew shared helpers: `glusterfs_rpc_dissect_gf_proto_lease` (the 28-byte `gf_proto_lease`) and\n`glusterfs_gfs4_0_locklist_entry` (one `gfs3_locklist` node), the latter walked by the existing\n`dissect_rpc_list` for the `*nextentry` linked list (same pattern as `readdirp_reply`). Adds 11 `hf_`\nfields and 2 `ett_` subtrees.\n\n## How the reply structs were determined\n\n`glusterfs4-xdr.x` defines the structs but does not bind a procedure to its reply struct; that binding is\nin the GlusterFS client/server code. Each was taken from\n`xlators/protocol/client/src/client-rpc-fops_v2.c` (`client4*_<op>_cbk` →\n`xdr_to_generic(..., xdr_gfx_<TYPE>_rsp)`) and cross-checked against `server-rpc-fops_v2.c`\n(`server4_<op>_cbk` encode side). Two cases differ from naïve expectation and are worth noting for\nreviewers:\n\n- **COPY_FILE_RANGE reply is `gfx_common_3iatt_rsp`** (stat + 2 parent iatts), not a 2-iatt reply.\n- **NAMELINK reply is `gfx_common_2iatt_rsp`.**\n\n## Verification\n\n- **All request/reply field layouts** are `.x`-verified field-by-field (widths + XDR `opaque<>`/`string<>`\n  4-byte-padding rules) and the reply-struct bindings are source-verified on both the client decode and\n  server encode side.\n- **Live-decoded on a GlusterFS 11.2 capture** (loopback traffic on throwaway test volumes — random GFIDs,\n  no user data):\n  - **COPY_FILE_RANGE (56)** — call and reply, byte-exact against issued values: `glfs_copy_file_range`\n    of a known 0x100000-byte range decodes Size=1048576, off_in/off_out=0, both gfids and both fds; the\n    reply's **three** IATTs (stat=source, pre/post-parent=destination) decode cleanly — empirically\n    confirming the `gfx_common_3iatt_rsp` binding (not 2iatt).\n  - **LEASE (50)** — call and reply: a `glfs_lease(SET, RD)` with lease_id `0x11`×16 decodes\n    Command=2/Type=1/ID=`11…11`/Flags=0 (byte-exact), and the reply (ENOSYS for the anonymous gfapi\n    client) exercises the new `gf_proto_lease` helper on the echoed lease. No malformed/expert items.\n- **`.x`-verified only (not observed on the wire in this session):** RCHECKSUM (37), IPC (47), PUT (55),\n  GETACTIVELK (51), SETACTIVELK (52), ICREATE (53), NAMELINK (54). Reasons: PUT/ICREATE/NAMELINK have no\n  gfapi entry point and are internal; GET/SETACTIVELK need lock-recovery traffic; RCHECKSUM is only\n  emitted by AFR data self-heal under the `diff` algorithm and did not surface in the heal-capture window;\n  IPC (`glfs_ipc`) is a private API with no public opcode contract. Their structs are simple and the\n  layouts are `.x`-verified; the GET/SETACTIVELK locklist walk reuses the bounded, fuzz-safe\n  `dissect_rpc_list`, so the residual risk there is the per-node field layout, which is `.x`-verified.\n  Flagged explicitly per the project's discipline of not claiming live verification for unobserved cases.\n\n## Build information\n\n```\nTShark (Wireshark) 4.7.2 (v4.7.2rc0-119-gde8c7bf4fdec).\n\nCopyright 1998-2026 Gerald Combs <gerald@wireshark.org> and contributors.\nLicensed under the terms of the GNU General Public License (version 2 or later).\nThis is free software; see the file named COPYING in the distribution. There is\nNO WARRANTY; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\nCompile-time info:\n Bit width: 64-bit\n  Compiler: GCC 16.1.1 20260430\n      GLib: 2.88.1\n With:\n  +brotli                      +nghttp2 1.69.0\n  +Gcrypt 1.12.2               +nghttp3 1.16.0\n  +GnuTLS 3.8.13 and PKCS#11   +PCRE2 10.47 2025-10-21\n  +Kerberos (MIT)              +POSIX capabilities (Linux)\n  +libnl 3                     +Snappy 1.2.2\n  +libpcap                     +xxhash 0.8.3\n  +libxml2 2.15.3              +zlib 1.3.2\n  +Lua 5.5.0                   +zlib-ng 2.3.3\n  +LZ4 1.10.0                  +Zstandard 1.5.7\n  +MaxMind\n Without:\n  -libsmi\n\nRuntime info:\n      OS: Linux 7.0.12-arch1-1\n     CPU: Intel(R) Core(TM) Ultra 7 258V (with SSE4.2)\n  Memory: 31556 MB of physical memory\n    GLib: 2.88.1\n Plugins: supported, 0 loaded\n```\n\n(Built from this branch: `v4.7.2rc0-119-gde8c7bf4fdec` = the commit under review.)\n\n---\nAI-Assisted: yes (decoder drafting + .x cross-check; all bindings verified against GlusterFS source and,\nwhere noted, live wire bytes).",
+  "state": "merged",
+  "created_at": "2026-06-22T22:33:56.900Z",
+  "updated_at": "2026-06-23T07:46:42.968Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-06-23T07:46:42.987Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "glusterfs-v4-undecoded-procs",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 12467294,
+    "username": "thalesadv1984",
+    "public_email": "thalesadv1984@gmail.com",
+    "name": "Thales Antunes de Oliveira Barretto",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/12467294/avatar.png?v=1784819933",
+    "web_url": "https://gitlab.com/thalesadv1984"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83613606,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "de8c7bf4fdeca196d884327be9b2cfcd1d54fe5b",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-06-22T22:34:05.206Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25497",
+  "references": {
+    "short": "!25497",
+    "relative": "!25497",
+    "full": "wireshark/wireshark!25497"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25497",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-06-23T07:23:34.608Z",
+  "latest_build_finished_at": "2026-06-23T07:46:40.501Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2622095204,
+    "iid": 105415,
+    "project_id": 7898047,
+    "sha": "f852aaa75338b1875cead82963ec74d85ea6c51a",
+    "ref": "refs/merge-requests/25497/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-23T07:23:33.648Z",
+    "updated_at": "2026-06-23T07:46:40.517Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2622095204"
+  },
+  "head_pipeline": {
+    "id": 2622095204,
+    "iid": 105415,
+    "project_id": 7898047,
+    "sha": "f852aaa75338b1875cead82963ec74d85ea6c51a",
+    "ref": "refs/merge-requests/25497/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-23T07:23:33.648Z",
+    "updated_at": "2026-06-23T07:46:40.517Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2622095204",
+    "before_sha": "f852aaa75338b1875cead82963ec74d85ea6c51a",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-06-23T07:23:34.608Z",
+    "finished_at": "2026-06-23T07:46:40.501Z",
+    "committed_at": null,
+    "duration": 1385,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2622095204",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "08cb7a103d5e2673b973b44ec3c92497f92d15a5",
+    "head_sha": "de8c7bf4fdeca196d884327be9b2cfcd1d54fe5b",
+    "start_sha": "08cb7a103d5e2673b973b44ec3c92497f92d15a5"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "ccaa4af2f81c0c7b5893d49120aee08c0e33d0c6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3481875882,
+          "type": null,
+          "body": "mentioned in merge request thalesadv1984/wireshark!1",
+          "author": {
+            "id": 12467294,
+            "username": "thalesadv1984",
+            "public_email": "thalesadv1984@gmail.com",
+            "name": "Thales Antunes de Oliveira Barretto",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/12467294/avatar.png?v=1784819933",
+            "web_url": "https://gitlab.com/thalesadv1984"
+          },
+          "created_at": "2026-06-22T22:36:09.619Z",
+          "updated_at": "2026-06-22T22:36:09.621Z",
+          "system": true,
+          "noteable_id": 498890558,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25497,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "44e7a6d271b7e8fe45a0917482bee65b78b27909",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3482696083,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-23T07:23:29.340Z",
+          "updated_at": "2026-06-23T07:23:29.345Z",
+          "system": true,
+          "noteable_id": 498890558,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25497,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a9806ef7f4f7a1c0fa7737f61a6b451af0d7daca",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3482696223,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-23T07:23:32.426Z",
+          "updated_at": "2026-06-23T07:23:32.427Z",
+          "system": true,
+          "noteable_id": 498890558,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25497,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -155,6 +155,33 @@ static int hf_glusterfs_flock_len;\n static int hf_glusterfs_flock_pid;\n static int hf_glusterfs_flock_owner;\n \n+/* rchecksum */\n+static int hf_glusterfs_rchecksum_len;\n+static int hf_glusterfs_rchecksum_flags;\n+static int hf_glusterfs_weak_checksum;\n+static int hf_glusterfs_strong_checksum;\n+\n+/* ipc */\n+static int hf_glusterfs_ipc_op;\n+\n+/* gf_proto_lease */\n+static int hf_glusterfs_lease_cmd;\n+static int hf_glusterfs_lease_type;\n+static int hf_glusterfs_lease_id;\n+static int hf_glusterfs_lease_flags;\n+\n+/* gfs3_locklist */\n+static int hf_glusterfs_client_uid;\n+static int hf_glusterfs_lk_flags;\n+\n+/* copy_file_range (source/destination pairs) */\n+static int hf_glusterfs_copy_gfid1;\n+static int hf_glusterfs_copy_gfid2;\n+static int hf_glusterfs_copy_fd_in;\n+static int hf_glusterfs_copy_fd_out;\n+static int hf_glusterfs_copy_off_in;\n+static int hf_glusterfs_copy_off_out;\n+\n /* statfs */\n static int hf_glusterfs_bsize;\n static int hf_glusterfs_frsize;\n@@ -221,6 +248,8 @@ static int ett_glusterfs_iatt;\n static int ett_glusterfs_entry;\n static int ett_glusterfs_flock;\n static int ett_glusterfs_fsync_flags;\n+static int ett_glusterfs_lease;\n+static int ett_glusterfs_locklist;\n static int ett_gluster_dict;\n static int ett_gluster_dict_items;\n \n@@ -3200,6 +3229,229 @@ glusterfs_gfs4_0_op_common_reply(tvbuff_t *tvb, packet_info *pinfo,\n }\n \n \n+/* gf_proto_lease: cmd, lease_type, lease_id[16], lease_flags (glusterfs4-xdr.x) */\n+static int\n+glusterfs_rpc_dissect_gf_proto_lease(proto_tree *tree, tvbuff_t *tvb, unsigned offset)\n+{\n+\tproto_item *lease_item;\n+\tproto_tree *lease_tree;\n+\tint start_offset = offset;\n+\n+\tlease_tree = proto_tree_add_subtree(tree, tvb, offset, -1, ett_glusterfs_lease, &lease_item, \"Lease\");\n+\n+\toffset = dissect_rpc_uint32(tvb, lease_tree, hf_glusterfs_lease_cmd, offset);\n+\toffset = dissect_rpc_uint32(tvb, lease_tree, hf_glusterfs_lease_type, offset);\n+\tproto_tree_add_item(lease_tree, hf_glusterfs_lease_id, tvb, offset, 16, ENC_NA);\n+\toffset += 16;\n+\toffset = dissect_rpc_uint32(tvb, lease_tree, hf_glusterfs_lease_flags, offset);\n+\n+\tproto_item_set_len(lease_item, offset - start_offset);\n+\n+\treturn offset;\n+}\n+\n+/* one gfs3_locklist node: flock, client_uid<>, lk_flags (glusterfs4-xdr.x).\n+ * The leading \"value follows\" boolean of the *nextentry list is consumed by\n+ * dissect_rpc_list(); this reads a single element body. */\n+static int\n+glusterfs_gfs4_0_locklist_entry(tvbuff_t *tvb, unsigned offset,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tproto_item *lock_item;\n+\tproto_tree *lock_tree;\n+\tunsigned start_offset = offset;\n+\n+\tlock_tree = proto_tree_add_subtree(tree, tvb, offset, -1, ett_glusterfs_locklist, &lock_item, \"Lock\");\n+\n+\toffset = glusterfs_rpc_dissect_gf_2_flock(lock_tree, tvb, offset);\n+\toffset = dissect_rpc_string(tvb, pinfo, lock_tree, hf_glusterfs_client_uid, offset, NULL);\n+\toffset = dissect_rpc_uint32(tvb, lock_tree, hf_glusterfs_lk_flags, offset);\n+\n+\tproto_item_set_len(lock_item, offset - start_offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_rchecksum_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_gfid, offset);\n+\toffset = dissect_rpc_uint64(tvb, tree, hf_glusterfs_fd, offset);\n+\toffset = dissect_rpc_uint64(tvb, tree, hf_glusterfs_offset, offset);\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_rchecksum_len, offset);\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_rchecksum_flags, offset);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_rchecksum_reply(tvbuff_t *tvb, packet_info *pinfo,\n+\t\t\t\tproto_tree *tree, void* data)\n+{\n+\tunsigned offset = 0;\n+\tint len;\n+\n+\toffset = gluster_dissect_common_reply(tvb, offset, pinfo, tree, data);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_rchecksum_flags, offset);\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_weak_checksum, offset);\n+\n+\tlen = tvb_get_ntohl(tvb, offset);\n+\toffset += 4;\n+\tproto_tree_add_item(tree, hf_glusterfs_strong_checksum, tvb, offset, len, ENC_NA);\n+\toffset += rpc_roundup(len); /* opaque<> padded to the XDR 4-byte boundary */\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_ipc_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_ipc_op, offset);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_lease_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_gfid, offset);\n+\toffset = glusterfs_rpc_dissect_gf_proto_lease(tree, tvb, offset);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_lease_reply(tvbuff_t *tvb, packet_info *pinfo,\n+\t\t\t\tproto_tree *tree, void* data)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = gluster_dissect_common_reply(tvb, offset, pinfo, tree, data);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\toffset = glusterfs_rpc_dissect_gf_proto_lease(tree, tvb, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_getactivelk_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_gfid, offset);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_getactivelk_reply(tvbuff_t *tvb, packet_info *pinfo,\n+\t\t\t\tproto_tree *tree, void* data)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = gluster_dissect_common_reply(tvb, offset, pinfo, tree, data);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\toffset = dissect_rpc_list(tvb, pinfo, tree, offset,\n+\t\t\t\t  glusterfs_gfs4_0_locklist_entry, NULL);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_setactivelk_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_gfid, offset);\n+\toffset = dissect_rpc_list(tvb, pinfo, tree, offset,\n+\t\t\t\t  glusterfs_gfs4_0_locklist_entry, NULL);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_icreate_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_gfid, offset);\n+\toffset = glusterfs_rpc_dissect_mode(tree, tvb, hf_glusterfs_mode, offset);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_namelink_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_pargfid, offset);\n+\toffset = dissect_rpc_string(tvb, pinfo, tree, hf_glusterfs_bname, offset, NULL);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_put_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_pargfid, offset);\n+\toffset = dissect_rpc_string(tvb, pinfo, tree, hf_glusterfs_bname, offset, NULL);\n+\toffset = glusterfs_rpc_dissect_mode(tree, tvb, hf_glusterfs_mode, offset);\n+\toffset = glusterfs_rpc_dissect_mode(tree, tvb, hf_glusterfs_umask, offset);\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_flags, offset);\n+\toffset = dissect_rpc_uint64(tvb, tree, hf_glusterfs_offset, offset);\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_size, offset);\n+\t/* gfx_put_req carries two dicts: xattr then xdata */\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+static int\n+glusterfs_gfs4_0_op_copy_file_range_call(tvbuff_t *tvb,\n+\t\t\t\tpacket_info *pinfo, proto_tree *tree, void* data _U_)\n+{\n+\tunsigned offset = 0;\n+\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_copy_gfid1, offset);\n+\toffset = glusterfs_rpc_dissect_gfid(tree, tvb, hf_glusterfs_copy_gfid2, offset);\n+\toffset = dissect_rpc_uint64(tvb, tree, hf_glusterfs_copy_fd_in, offset);\n+\toffset = dissect_rpc_uint64(tvb, tree, hf_glusterfs_copy_fd_out, offset);\n+\toffset = dissect_rpc_uint64(tvb, tree, hf_glusterfs_copy_off_in, offset);\n+\toffset = dissect_rpc_uint64(tvb, tree, hf_glusterfs_copy_off_out, offset);\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_size, offset);\n+\toffset = dissect_rpc_uint32(tvb, tree, hf_glusterfs_flags, offset);\n+\toffset = gluster_rpc4_0_dissect_dict(tree, pinfo, tvb, hf_glusterfs_dict, offset);\n+\n+\treturn offset;\n+}\n+\n+\n /*\n  * GLUSTER3_1_FOP_PROGRAM\n  * - xlators/protocol/client/src/client3_1-fops.c\n@@ -3646,7 +3898,10 @@ static const vsff glusterfs4_0_fop_proc[] = {\n \t\tGFS3_OP_FSETXATTR, \"FSETXATTR\",\n \t\tgluter_gfs4_0_op_fsetxattr_call, glusterfs_gfs4_0_op_common_reply\n \t},\n-\t{ GFS3_OP_RCHECKSUM, \"RCHECKSUM\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{\n+\t\tGFS3_OP_RCHECKSUM, \"RCHECKSUM\",\n+\t\tglusterfs_gfs4_0_op_rchecksum_call, glusterfs_gfs4_0_op_rchecksum_reply\n+\t},\n \t{\n \t\tGFS3_OP_SETATTR, \"SETATTR\",\n \t\tglusterfs_gfs4_0_op_setattr_call, glusterfs_gfs4_0_op_common_2iatt_reply\n@@ -3685,19 +3940,44 @@ static const vsff glusterfs4_0_fop_proc[] = {\n \t\tGFS3_OP_ZEROFILL, \"ZEROFILL\",\n \t\tglusterfs_gfs4_0_op_zerofill_call, glusterfs_gfs4_0_op_common_2iatt_reply\n \t},\n-\t{ GFS3_OP_IPC, \"IPC\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{\n+\t\tGFS3_OP_IPC, \"IPC\",\n+\t\tglusterfs_gfs4_0_op_ipc_call, glusterfs_gfs4_0_op_common_reply\n+\t},\n \t{\n \t\tGFS3_OP_SEEK, \"SEEK\",\n \t\tglusterfs_gfs4_0_op_seek_call, glusterfs_gfs4_0_op_seek_reply\n \t},\n+\t/* COMPOUND was removed from GlusterFS; no wire struct in glusterfs4-xdr.x */\n \t{ GFS3_OP_COMPOUND, \"COMPOUND\", dissect_rpc_unknown, dissect_rpc_unknown },\n-\t{ GFS3_OP_LEASE, \"LEASE\", dissect_rpc_unknown, dissect_rpc_unknown },\n-\t{ GFS3_OP_GETACTIVELK, \"GETACTIVELK\", dissect_rpc_unknown, dissect_rpc_unknown },\n-\t{ GFS3_OP_SETACTIVELK, \"SETACTIVELK\", dissect_rpc_unknown, dissect_rpc_unknown },\n-\t{ GFS3_OP_ICREATE, \"ICREATE\", dissect_rpc_unknown, dissect_rpc_unknown },\n-\t{ GFS3_OP_NAMELINK, \"NAMELINK\", dissect_rpc_unknown, dissect_rpc_unknown },\n-\t{ GFS3_OP_PUT, \"PUT\", dissect_rpc_unknown, dissect_rpc_unknown },\n-\t{ GFS3_OP_COPY_FILE_RANGE, \"COPY_FILE_RANGE\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{\n+\t\tGFS3_OP_LEASE, \"LEASE\",\n+\t\tglusterfs_gfs4_0_op_lease_call, glusterfs_gfs4_0_op_lease_reply\n+\t},\n+\t{\n+\t\tGFS3_OP_GETACTIVELK, \"GETACTIVELK\",\n+\t\tglusterfs_gfs4_0_op_getactivelk_call, glusterfs_gfs4_0_op_getactivelk_reply\n+\t},\n+\t{\n+\t\tGFS3_OP_SETACTIVELK, \"SETACTIVELK\",\n+\t\tglusterfs_gfs4_0_op_setactivelk_call, glusterfs_gfs4_0_op_common_reply\n+\t},\n+\t{\n+\t\tGFS3_OP_ICREATE, \"ICREATE\",\n+\t\tglusterfs_gfs4_0_op_icreate_call, glusterfs_gfs4_0_op_common_iatt_reply\n+\t},\n+\t{\n+\t\tGFS3_OP_NAMELINK, \"NAMELINK\",\n+\t\tglusterfs_gfs4_0_op_namelink_call, glusterfs_gfs4_0_op_common_2iatt_reply\n+\t},\n+\t{\n+\t\tGFS3_OP_PUT, \"PUT\",\n+\t\tglusterfs_gfs4_0_op_put_call, glusterfs_gfs4_0_op_common_3iatt_reply\n+\t},\n+\t{\n+\t\tGFS3_OP_COPY_FILE_RANGE, \"COPY_FILE_RANGE\",\n+\t\tglusterfs_gfs4_0_op_copy_file_range_call, glusterfs_gfs4_0_op_common_3iatt_reply\n+\t},\n \t{ 0, NULL, NULL, NULL }\n };\n \n@@ -4267,6 +4547,84 @@ proto_register_glusterfs(void)\n \t\t\t\tBASE_NONE, NULL, 0, NULL, HFILL }\n \t\t},\n \n+\t\t/* rchecksum */\n+\t\t{ &hf_glusterfs_rchecksum_len,\n+\t\t\t{ \"Checksum Length\", \"glusterfs.rchecksum.len\", FT_UINT32,\n+\t\t\t\tBASE_DEC, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_rchecksum_flags,\n+\t\t\t{ \"Checksum Flags\", \"glusterfs.rchecksum.flags\", FT_UINT32,\n+\t\t\t\tBASE_HEX, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_weak_checksum,\n+\t\t\t{ \"Weak Checksum\", \"glusterfs.rchecksum.weak\", FT_UINT32,\n+\t\t\t\tBASE_HEX, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_strong_checksum,\n+\t\t\t{ \"Strong Checksum\", \"glusterfs.rchecksum.strong\", FT_BYTES,\n+\t\t\t\tBASE_NONE, NULL, 0, NULL, HFILL }\n+\t\t},\n+\n+\t\t/* ipc */\n+\t\t{ &hf_glusterfs_ipc_op,\n+\t\t\t{ \"Op\", \"glusterfs.ipc.op\", FT_INT32,\n+\t\t\t\tBASE_DEC, NULL, 0, NULL, HFILL }\n+\t\t},\n+\n+\t\t/* gf_proto_lease */\n+\t\t{ &hf_glusterfs_lease_cmd,\n+\t\t\t{ \"Lease Command\", \"glusterfs.lease.cmd\", FT_UINT32,\n+\t\t\t\tBASE_DEC, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_lease_type,\n+\t\t\t{ \"Lease Type\", \"glusterfs.lease.type\", FT_UINT32,\n+\t\t\t\tBASE_DEC, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_lease_id,\n+\t\t\t{ \"Lease ID\", \"glusterfs.lease.id\", FT_BYTES,\n+\t\t\t\tBASE_NONE, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_lease_flags,\n+\t\t\t{ \"Lease Flags\", \"glusterfs.lease.flags\", FT_UINT32,\n+\t\t\t\tBASE_HEX, NULL, 0, NULL, HFILL }\n+\t\t},\n+\n+\t\t/* gfs3_locklist */\n+\t\t{ &hf_glusterfs_client_uid,\n+\t\t\t{ \"Client UID\", \"glusterfs.client_uid\", FT_STRING,\n+\t\t\t\tBASE_NONE, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_lk_flags,\n+\t\t\t{ \"Lock Flags\", \"glusterfs.lk_flags\", FT_UINT32,\n+\t\t\t\tBASE_HEX, NULL, 0, NULL, HFILL }\n+\t\t},\n+\n+\t\t/* copy_file_range (source/destination pairs) */\n+\t\t{ &hf_glusterfs_copy_gfid1,\n+\t\t\t{ \"Source GFID\", \"glusterfs.copy.gfid1\", FT_GUID,\n+\t\t\t\tBASE_NONE, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_copy_gfid2,\n+\t\t\t{ \"Destination GFID\", \"glusterfs.copy.gfid2\", FT_GUID,\n+\t\t\t\tBASE_NONE, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_copy_fd_in,\n+\t\t\t{ \"Source FD\", \"glusterfs.copy.fd_in\", FT_UINT64,\n+\t\t\t\tBASE_DEC, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_copy_fd_out,\n+\t\t\t{ \"Destination FD\", \"glusterfs.copy.fd_out\", FT_UINT64,\n+\t\t\t\tBASE_DEC, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_copy_off_in,\n+\t\t\t{ \"Source Offset\", \"glusterfs.copy.off_in\", FT_UINT64,\n+\t\t\t\tBASE_DEC, NULL, 0, NULL, HFILL }\n+\t\t},\n+\t\t{ &hf_glusterfs_copy_off_out,\n+\t\t\t{ \"Destination Offset\", \"glusterfs.copy.off_out\", FT_UINT64,\n+\t\t\t\tBASE_DEC, NULL, 0, NULL, HFILL }\n+\t\t},\n+\n \t\t/* statvfs descriptions from 'man 2 statvfs' on Linix */\n \t\t{ &hf_glusterfs_bsize,\n \t\t\t{ \"File system block size\", \"glusterfs.statfs.bsize\",\n@@ -4491,6 +4849,8 @@ proto_register_glusterfs(void)\n \t\t&ett_glusterfs_iatt,\n \t\t&ett_glusterfs_flock,\n \t\t&ett_glusterfs_fsync_flags,\n+\t\t&ett_glusterfs_lease,\n+\t\t&ett_glusterfs_locklist,\n \t\t&ett_gluster_dict,\n \t\t&ett_gluster_dict_items\n \t};\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-glusterfs.c",
+      "old_path": "epan/dissectors/packet-glusterfs.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "de8c7bf4fdeca196d884327be9b2cfcd1d54fe5b",
+      "short_id": "de8c7bf4",
+      "created_at": "2026-06-22T19:14:30.000-03:00",
+      "parent_ids": [
+        "08cb7a103d5e2673b973b44ec3c92497f92d15a5"
+      ],
+      "title": "GlusterFS: decode the v4.0 procedures shown as dissect_rpc_unknown",
+      "message": "GlusterFS: decode the v4.0 procedures shown as dissect_rpc_unknown\n\nThe GlusterFS 4.0 dissector (program 1298437 version 400) labelled 10\nprocedures but left them with no field decoder (dissect_rpc_unknown),\nso the request/reply body was shown as one opaque blob.\n\nAdd per-field decoders for 9 of them, mirroring the existing\nglusterfs_gfs4_0_op_* style and the rpc/xdr/src/glusterfs4-xdr.x schema:\nRCHECKSUM, IPC, LEASE, GETACTIVELK, SETACTIVELK, ICREATE, NAMELINK, PUT\nand COPY_FILE_RANGE. COMPOUND is left undecoded -- it was removed from\nGlusterFS and has no struct in glusterfs4-xdr.x.\n\nNew shared helpers: glusterfs_rpc_dissect_gf_proto_lease (the 28-byte\ngf_proto_lease) and glusterfs_gfs4_0_locklist_entry (one gfs3_locklist\nnode, walked by the existing dissect_rpc_list, as readdirp does). Adds\n11 hf_ fields and 2 ett_ subtrees.\n\nThe reply struct for each procedure was taken from\nxlators/protocol/client/src/client-rpc-fops_v2.c (client4*_<op>_cbk ->\nxdr_to_generic(..., xdr_gfx_<TYPE>_rsp)) and cross-checked against the\nserver encode side. Notably COPY_FILE_RANGE replies with\ngfx_common_3iatt_rsp and NAMELINK with gfx_common_2iatt_rsp.\n\nCloses #21366.\n\nAI-Assisted: yes (decoder drafting and .x cross-check; all reply-struct\nbindings verified against GlusterFS source).\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\n",
+      "author_name": "Thales Antunes de Oliveira Barretto",
+      "author_email": "thales.barretto.git@gmail.com",
+      "authored_date": "2026-06-22T16:07:41.000-03:00",
+      "committer_name": "Thales Antunes de Oliveira Barretto",
+      "committer_email": "thales.barretto.git@gmail.com",
+      "committed_date": "2026-06-22T19:14:30.000-03:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/de8c7bf4fdeca196d884327be9b2cfcd1d54fe5b"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1865116338,
+      "head_commit_sha": "de8c7bf4fdeca196d884327be9b2cfcd1d54fe5b",
+      "base_commit_sha": "08cb7a103d5e2673b973b44ec3c92497f92d15a5",
+      "start_commit_sha": "08cb7a103d5e2673b973b44ec3c92497f92d15a5",
+      "created_at": "2026-06-22T22:34:00.573Z",
+      "merge_request_id": 498890558,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "9c57dd3ac5e0105431de167c840f991c64d46b49"
+    }
+  ]
+}

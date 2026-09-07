@@ -1,0 +1,282 @@
+{
+  "id": 488272055,
+  "iid": 25053,
+  "project_id": 7898047,
+  "title": "WSLua: fix Listener:remove() use-after-free in own callback",
+  "description": "A Lua tap that calls my_tap:remove() from inside its own packet(), draw(), or reset() callback crashes Wireshark/tshark with SIGSEGV.\n\nCause:\n\nListener_remove() calls deregister_Listener() which g_free()s the tap, but the C dispatcher (lua_tap_packet, lua_tap_draw, lua_tap_reset in wslua_listener.c) still dereferences tap-\\>L after lua_pcall returns.\n\nReproducer:\n\n```\n  local tap = Listener.new(\"frame\")\n  local removed = false\n  function tap.packet(pinfo, tvb, tapinfo)\n      if not removed then\n          removed = true\n          tap:remove()\n      end\n  end\n  function tap.draw() end\n```\n\ntshark -r dhcp.pcap -X lua_script:above.lua -\\> SIGSEGV (exit 139) before the fix; clean exit after\n\nFix:\n\nTrack which tap is currently being dispatched in a static pointer (current_tap), set around each lua_pcall and cleared after. Listener_remove() refuses to free current_tap with a Lua error:\n\n```\na Listener cannot be removed from within its own callback\n```\n\nRemoving OTHER listeners from inside a callback is still allowed. The existing test/lua/listener.lua relies on this and continues to pass. A blanket in_routine flag (the FileHandler approach) would have broken that test.\n\nAI-Assisted: yes (DeepSeek, Claude)",
+  "state": "opened",
+  "created_at": "2026-05-23T11:56:53.512Z",
+  "updated_at": "2026-05-24T16:10:57.060Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "wslua-listener-remove-uaf",
+  "user_notes_count": 3,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 38135429,
+    "username": "cherepanov74",
+    "public_email": "",
+    "name": "Anton Cherepanov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/c90f60fee54161fe03b65ddb52e8934d4b6148656bab477390d3ce10a7f80615?s=80&d=identicon",
+    "web_url": "https://gitlab.com/cherepanov74"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82205650,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged_recheck",
+  "detailed_merge_status": "not_approved",
+  "merge_after": null,
+  "sha": "69b830cf14e84cc149eb64a78be0fe319e7186f2",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-23T11:57:01.751Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25053",
+  "references": {
+    "short": "!25053",
+    "relative": "!25053",
+    "full": "wireshark/wireshark!25053"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25053",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-05-23T11:57:01.447Z",
+  "latest_build_finished_at": "2026-05-23T12:13:55.992Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2548068689,
+    "iid": 15,
+    "project_id": 82205650,
+    "sha": "69b830cf14e84cc149eb64a78be0fe319e7186f2",
+    "ref": "wslua-listener-remove-uaf",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-23T11:57:00.400Z",
+    "updated_at": "2026-05-23T12:13:56.009Z",
+    "web_url": "https://gitlab.com/cherepanov74/wireshark/-/pipelines/2548068689"
+  },
+  "head_pipeline": {
+    "id": 2548068689,
+    "iid": 15,
+    "project_id": 82205650,
+    "sha": "69b830cf14e84cc149eb64a78be0fe319e7186f2",
+    "ref": "wslua-listener-remove-uaf",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-23T11:57:00.400Z",
+    "updated_at": "2026-05-23T12:13:56.009Z",
+    "web_url": "https://gitlab.com/cherepanov74/wireshark/-/pipelines/2548068689",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 38135429,
+      "username": "cherepanov74",
+      "public_email": "",
+      "name": "Anton Cherepanov",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/c90f60fee54161fe03b65ddb52e8934d4b6148656bab477390d3ce10a7f80615?s=80&d=identicon",
+      "web_url": "https://gitlab.com/cherepanov74"
+    },
+    "started_at": "2026-05-23T11:57:01.447Z",
+    "finished_at": "2026-05-23T12:13:55.992Z",
+    "committed_at": null,
+    "duration": 1014,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/cherepanov74/wireshark/-/pipelines/2548068689",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "5b864da7af2cc9ef58b360e807f94ff06ecc1f5c",
+    "head_sha": "69b830cf14e84cc149eb64a78be0fe319e7186f2",
+    "start_sha": "a439ea1105e76176a8af6bf7b050f8aeaee45b35"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "4e368297193dbcb5a79c6db27179dc075ddc49b3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3378991396,
+          "type": null,
+          "body": "What about adding support for this use case instead of preventing it?\nQueue the remove until the Lua call is completed.",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2026-05-23T12:11:59.214Z",
+          "updated_at": "2026-05-23T12:11:59.214Z",
+          "system": false,
+          "noteable_id": 488272055,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25053,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bb7d4639f24bc5433969c53bcf5c22f336dec588",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379015215,
+          "type": null,
+          "body": "Yes, I can try to do that a bit later. However, then `epan/tap.c` should be fixed too, because it has the same fragility and should be hardened separately.\n\nThe iteration loops in `tap_push_tapped_queue`, `reset_tap_listeners`, and `draw_tap_listeners` all hold a `tap_listener_t *` while calling user callbacks. If any callback removes its own tap, the node is freed underneath the loop and the next step crashes - same root cause, just reached from C instead of Lua.",
+          "author": {
+            "id": 38135429,
+            "username": "cherepanov74",
+            "public_email": "",
+            "name": "Anton Cherepanov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c90f60fee54161fe03b65ddb52e8934d4b6148656bab477390d3ce10a7f80615?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cherepanov74"
+          },
+          "created_at": "2026-05-23T12:52:32.196Z",
+          "updated_at": "2026-05-23T12:52:32.196Z",
+          "system": false,
+          "noteable_id": 488272055,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25053,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8225e3e8b27458c83f5e17b10186c37f805091b8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379990596,
+          "type": null,
+          "body": "Unfortunately, queue approach requires changes to `epan/tap.c` infrastructure that I don't yet fully understand. It's possible that I will push it as a separate MR later.",
+          "author": {
+            "id": 38135429,
+            "username": "cherepanov74",
+            "public_email": "",
+            "name": "Anton Cherepanov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c90f60fee54161fe03b65ddb52e8934d4b6148656bab477390d3ce10a7f80615?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cherepanov74"
+          },
+          "created_at": "2026-05-24T16:10:57.034Z",
+          "updated_at": "2026-05-24T16:10:57.034Z",
+          "system": false,
+          "noteable_id": 488272055,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25053,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -23,6 +23,11 @@\n #include \"wslua_debugger.h\"\n \n WSLUA_CLASS_DEFINE(Listener,FAIL_ON_NULL(\"Listener\"));\n+\n+/* The tap whose packet/draw/reset callback is currently on the C stack,\n+ * or NULL when no callback is running. Used to detect self-removal,\n+ * which would free the tap while it is still being dispatched (UAF). */\n+static Listener current_tap;\n /*\n     A `Listener` is called once for every packet that matches a certain filter or has a certain tap.\n     It can read the tree, the packet's <<lua_class_Tvb,`Tvb`>> buffer as well as the tapped data, but it cannot add elements to the tree.\n@@ -100,7 +105,9 @@ static tap_packet_status lua_tap_packet(void *tapdata, packet_info *pinfo, epan_\n     lua_tree_tap = create_TreeItem(edt->tree, NULL);\n     lua_tree = lua_tree_tap;\n \n+    current_tap = tap;\n     status = lua_pcall(tap->L, 3, 1, 1);\n+    current_tap = NULL;\n     if (status == LUA_OK) {\n         /* XXX - treat 2 as TAP_PACKET_FAILED? */\n         retval = luaL_optinteger(tap->L,-1,1) == 0 ? TAP_PACKET_DONT_REDRAW : TAP_PACKET_REDRAW;\n@@ -153,7 +160,9 @@ static void lua_tap_reset(void *tapdata) {\n     lua_pushcfunction(tap->L,tap_reset_cb_error_handler);\n     lua_rawgeti(tap->L, LUA_REGISTRYINDEX, tap->reset_ref);\n \n+    current_tap = tap;\n     status = lua_pcall(tap->L, 0, 0, lua_gettop(tap->L)-1);\n+    current_tap = NULL;\n     if (status != LUA_OK) {\n         wslua_debugger_after_pcall_failure(tap->L);\n         switch (status) {\n@@ -197,7 +206,9 @@ static void lua_tap_draw(void *tapdata) {\n     lua_pushcfunction(tap->L,tap_draw_cb_error_handler);\n     lua_rawgeti(tap->L, LUA_REGISTRYINDEX, tap->draw_ref);\n \n+    current_tap = tap;\n     status = lua_pcall(tap->L, 0, 0, lua_gettop(tap->L)-1);\n+    current_tap = NULL;\n     if (status != LUA_OK) {\n         wslua_debugger_after_pcall_failure(tap->L);\n         switch (status) {\n@@ -335,9 +346,15 @@ WSLUA_CONSTRUCTOR Listener_list (lua_State *L) { /*\n }\n \n WSLUA_METHOD Listener_remove(lua_State* L) {\n-    /* Removes a tap `Listener`. */\n+    /* Removes a tap `Listener`.\n+       This function cannot be called from inside the tap's packet(),\n+       draw(), or reset() callbacks; doing so would free the tap while\n+       Wireshark is still using it. */\n     Listener tap = checkListener(L,1);\n \n+    if (tap == current_tap)\n+        return luaL_error(L, \"a Listener cannot be removed from within its own callback\");\n+\n     if (listeners && g_ptr_array_remove(listeners, tap)) {\n         deregister_Listener(L, tap);\n     }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/wslua_listener.c",
+      "old_path": "epan/wslua/wslua_listener.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1815322954,
+      "head_commit_sha": "69b830cf14e84cc149eb64a78be0fe319e7186f2",
+      "base_commit_sha": "5b864da7af2cc9ef58b360e807f94ff06ecc1f5c",
+      "start_commit_sha": "a439ea1105e76176a8af6bf7b050f8aeaee45b35",
+      "created_at": "2026-05-23T11:56:58.135Z",
+      "merge_request_id": 488272055,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "e11bf5eb67d32cab967085b931976a947d6d11b7"
+    }
+  ]
+}

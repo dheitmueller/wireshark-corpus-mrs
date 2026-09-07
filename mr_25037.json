@@ -1,0 +1,300 @@
+{
+  "id": 488194439,
+  "iid": 25037,
+  "project_id": 7898047,
+  "title": "wiretap: netlog: reject files missing the events array",
+  "description": "netlog_parse_entirety() calls json_get_array(filebuf, root, \"events\")\nat line 777 and passes the return directly to parse_json_events() at\nline 779 without checking for NULL. json_get_array() returns NULL when\nthe named key is absent (return-value contract at wsutil/wsjson.h:87,\nfull doc block at wsutil/wsjson.h:82-89). The first use inside\nparse_json_events() is json_get_array_len(json_events) at\nwiretap/netlog.c:526, which reads array->type at offset 0 of the null\npointer and faults.\n\nA Chrome NetLog file that satisfies parse_log_event_constants() (a\nconstants object with timeTickOffset plus the ten logEventTypes\nentries) but omits the events key reliably crashes tshark, editcap,\ncapinfos, mergecap, and the Wireshark GUI on open. The NetLog reader\nis registered as OPEN_INFO_HEURISTIC at wiretap/file_access.c:371, so\nany file the user opens reaches the probe regardless of extension.\n\nAdd a NULL check between the json_get_array call and the\nparse_json_events call. When the events key is absent, return false\n(WTAP_OPEN_NOT_MINE) after freeing json_tokens and filebuf. This\nmirrors the cleanup shape of the json_parse_len < 0 branch already in\nthe same function, and causes libwiretap to fall through to the next\nheuristic reader (or the generic JSON reader), which is the correct\nbehavior for an OPEN_INFO_HEURISTIC reader that rejects malformed\ninput.\n\nThree earlier null-deref fixes in netlog.c (942b111d6aa9, c35362bcffe1,\nfacef9a3399a) each addressed different sites. Commit b96777df4377\n(2026-04-30) rejects empty or whitespace-only input upstream of the\nevents read but does not cover the missing-events-key path.\n\nFixes: 2fc6da852e70 (\"wiretap:Add support for Chrome NetLog\")\nAssisted-by: Claude:claude-opus-4-7\nSigned-off-by: Michael Bommarito <michael.bommarito@gmail.com>",
+  "state": "merged",
+  "created_at": "2026-05-22T19:42:22.714Z",
+  "updated_at": "2026-05-22T20:18:50.101Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2026-05-22T20:18:50.135Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "netlog_no_events_array",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "b98723c359bbcd5bb8c531f719e999ece9be15c7",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-22T19:44:24.275Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25037",
+  "references": {
+    "short": "!25037",
+    "relative": "!25037",
+    "full": "wireshark/wireshark!25037"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25037",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-05-22T20:02:30.066Z",
+  "latest_build_finished_at": "2026-05-22T20:18:46.481Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2547195625,
+    "iid": 103440,
+    "project_id": 7898047,
+    "sha": "b98723c359bbcd5bb8c531f719e999ece9be15c7",
+    "ref": "refs/merge-requests/25037/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-22T20:02:29.106Z",
+    "updated_at": "2026-05-22T20:18:46.503Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2547195625"
+  },
+  "head_pipeline": {
+    "id": 2547195625,
+    "iid": 103440,
+    "project_id": 7898047,
+    "sha": "b98723c359bbcd5bb8c531f719e999ece9be15c7",
+    "ref": "refs/merge-requests/25037/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-22T20:02:29.106Z",
+    "updated_at": "2026-05-22T20:18:46.503Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2547195625",
+    "before_sha": "b98723c359bbcd5bb8c531f719e999ece9be15c7",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2026-05-22T20:02:30.066Z",
+    "finished_at": "2026-05-22T20:18:46.481Z",
+    "committed_at": null,
+    "duration": 976,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2547195625",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "ec24a45c3c5636f7bf77e82de084fd972329d62d",
+    "head_sha": "b98723c359bbcd5bb8c531f719e999ece9be15c7",
+    "start_sha": "ec24a45c3c5636f7bf77e82de084fd972329d62d"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "0164d91a1f821124c997665b1e57563fcfaa5303",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3378156359,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-22T19:57:29.659Z",
+          "updated_at": "2026-05-22T19:57:29.662Z",
+          "system": true,
+          "noteable_id": 488194439,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25037,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3d49e29843048ad8c33bf7f6cb72282e601e2e57",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3378156371,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-22T19:57:30.382Z",
+          "updated_at": "2026-05-22T19:57:30.402Z",
+          "system": true,
+          "noteable_id": 488194439,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25037,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dfa09f0f1957c7da4305ff935bcded336f1defba",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3378165603,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-22T20:02:26.900Z",
+          "updated_at": "2026-05-22T20:02:26.907Z",
+          "system": true,
+          "noteable_id": 488194439,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25037,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -776,6 +776,13 @@ static bool netlog_parse_entirety(wtap *wth, FILE_T fh, int *err, char **err_inf\n     */\n     jsmntok_t* json_events = json_get_array((const char*)filebuf, root_json_token, \"events\");\n \n+    if (json_events == NULL) {\n+        ws_debug(\"NetLog file lacks 'events' array\");\n+        g_free(json_tokens);\n+        g_free(filebuf);\n+        return false;\n+    }\n+\n     if (!parse_json_events((char*)filebuf, netlog_event_constants, json_events, json_packets_ht)){\n         g_free(json_tokens);\n         g_free(filebuf);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/netlog.c",
+      "old_path": "wiretap/netlog.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1814904015,
+      "head_commit_sha": "b98723c359bbcd5bb8c531f719e999ece9be15c7",
+      "base_commit_sha": "ec24a45c3c5636f7bf77e82de084fd972329d62d",
+      "start_commit_sha": "ec24a45c3c5636f7bf77e82de084fd972329d62d",
+      "created_at": "2026-05-22T19:42:37.348Z",
+      "merge_request_id": 488194439,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "49ba92c197ffe514b119bd73d8e44ed417616b2b"
+    }
+  ]
+}

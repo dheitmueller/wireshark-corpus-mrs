@@ -1,0 +1,961 @@
+{
+  "id": 500810827,
+  "iid": 25565,
+  "project_id": 7898047,
+  "title": "Add IETF QMux dissector (draft-ietf-quic-qmux-01)",
+  "description": "Add a dissector for the IETF QMux protocol defined in\nhttps://datatracker.ietf.org/doc/draft-ietf-quic-qmux/, formally\nadopted to the QUIC Workng Group. Qmux multiplexes QUIC-style\nstreams over TLS. It  reuses QUIC v1 frame formats but doesn't\nuse packets. Encryption is delegated to TLS.\n\nQMux provides a substrate for application protocols to use. QMux\nrequires that appliction protocols are negotiated using ALPN.\nThis change bases protocol detection on values in ALPN.\n\nTo provide a working example, this change uses HTTP/3 over QMux,\nwhich has an I-D but is not adopted by any IETF WG; see\nhttps://datatracker.ietf.org/doc/draft-kazuho-httpbis-http3-over-qmux/.\nThis protocl choice helps demonstrate that wireshark can be modified\nto support an existing application protocol dissector over QUIC with\nminimal changes.\n\nDetection: ALPN-based via tls.alpn (h3qx-01 direct, h3qx-* prefix).\n\nQMux-specific dissection:\n- QMux Record framing (varint Size + QUIC frames)\n- QX_TRANSPORT_PARAMETERS frame with individual TP parsing\n- QX_PING request/response frames\n- Prohibited frame and transport parameter detection with expert info\n- TLS desegmentation for records spanning TLS record boundaries\n\nQUIC frame reuse:\n- All permitted QUIC frames are parsed by the existing QUIC dissector\n  via dissect_quic_frame_type_for_qmux(), a thin wrapper that hides\n  internal types. Frames display with quic.* filter names.\n- STREAM reassembly and subdissector handoff handled by the shared\n  QUIC code path.\n\nApplication protocol support:\n- ALPN is mapped to its base protocol (h3qx-01 -> h3) and looked up\n  in quic.proto / quic.proto.datagram tables. HTTP/3 works over QMux\n  with zero changes to packet-http3.c, including DATAGRAM frames.\n- Direction detection via pinfo->match_uint (TLS server port).\n\nFollow QMux Stream:\n- Per-connection numbering (qmux.connection.number) and per-stream\n  tracking with follow tap. Works via tshark -z follow,qmux.\n\nChanges to existing code:\n- packet-quic.c: quic_info_data_create_for_qmux() creates a minimal\n  quic_info_data_t; dissect_quic_frame_type_for_qmux() wraps the\n  frame parser (+34 lines)\n- packet-quic.h: declarations (+15 lines)\n- packet-tls-utils.c: ALPN prefix match for h3qx- (+2 lines)\n- CMakeLists.txt: add packet-qmux.c/h (+2 lines)\n\nTest captures and 7 pytest tests covering transport parameters,\nHTTP/3 decode, CONNECTION_CLOSE, DATAGRAMs, desegmentation, Follow\nStream, and expert info validation.\n\nTest captures generated from a fork of quiche that has WIP QMux\nsupport; see https://github.com/LPardue/quiche/tree/qmux-support/qmux-demo\n\nAI-Assisted: yes (Claude)",
+  "state": "opened",
+  "created_at": "2026-06-28T03:49:25.257Z",
+  "updated_at": "2026-08-19T06:45:08.701Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "qmux-dissector",
+  "user_notes_count": 7,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 10640582,
+    "username": "LPardue",
+    "public_email": null,
+    "name": "Lucas Pardue",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/5265cb4caf4fe35c5c47f4a778d491b33506d86f6475c99b4aa5df0d1c4571fd?s=80&d=identicon",
+    "web_url": "https://gitlab.com/LPardue"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 2415432,
+      "username": "Lekensteyn",
+      "public_email": "",
+      "name": "Peter Wu",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+      "web_url": "https://gitlab.com/Lekensteyn"
+    },
+    {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    }
+  ],
+  "source_project_id": 32863020,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged_recheck",
+  "detailed_merge_status": "not_approved",
+  "merge_after": null,
+  "sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-06-28T03:49:31.255Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25565",
+  "references": {
+    "short": "!25565",
+    "relative": "!25565",
+    "full": "wireshark/wireshark!25565"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25565",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "12",
+  "latest_build_started_at": "2026-07-07T19:00:28.921Z",
+  "latest_build_finished_at": "2026-07-07T19:36:19.749Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2659597479,
+    "iid": 46,
+    "project_id": 32863020,
+    "sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+    "ref": "qmux-dissector",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-07T19:00:27.891Z",
+    "updated_at": "2026-07-07T19:36:19.763Z",
+    "web_url": "https://gitlab.com/LPardue/wireshark/-/pipelines/2659597479"
+  },
+  "head_pipeline": {
+    "id": 2659597479,
+    "iid": 46,
+    "project_id": 32863020,
+    "sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+    "ref": "qmux-dissector",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-07-07T19:00:27.891Z",
+    "updated_at": "2026-07-07T19:36:19.763Z",
+    "web_url": "https://gitlab.com/LPardue/wireshark/-/pipelines/2659597479",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 10640582,
+      "username": "LPardue",
+      "public_email": null,
+      "name": "Lucas Pardue",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/5265cb4caf4fe35c5c47f4a778d491b33506d86f6475c99b4aa5df0d1c4571fd?s=80&d=identicon",
+      "web_url": "https://gitlab.com/LPardue"
+    },
+    "started_at": "2026-07-07T19:00:28.921Z",
+    "finished_at": "2026-07-07T19:36:19.749Z",
+    "committed_at": null,
+    "duration": 2149,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/LPardue/wireshark/-/pipelines/2659597479",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "e46c6b6a9912f6fb16a73e63c544d83aaade1e58",
+    "head_sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+    "start_sha": "1880735dda2493d65d516a6a22143fce28d433a1"
+  },
+  "merge_error": "Rebase failed: Rebase locally, resolve all conflicts, then push the branch.",
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "5ab8cb2dad64d71bd2353f5cede616f982ace8f0",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3502237325,
+          "type": "DiscussionNote",
+          "body": "Fold the `packet-qmux.h` header file into `packet-qmux.c`, it adds nothing of an interface.",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-06-29T06:28:44.135Z",
+          "updated_at": "2026-08-13T07:54:46.872Z",
+          "system": false,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2026-08-13T07:54:46.872Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        },
+        {
+          "id": 3527240678,
+          "type": "DiscussionNote",
+          "body": "@LPardue can you update your change ?\n\nLGTM for the rest",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-06T12:23:21.910Z",
+          "updated_at": "2026-08-13T07:54:46.872Z",
+          "system": false,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2026-08-13T07:54:46.872Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a21bd4a1c728fcb98e44caa8a298772f44ae566f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3503089358,
+          "type": null,
+          "body": "requested review from @Lekensteyn",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-06-29T10:37:28.095Z",
+          "updated_at": "2026-06-29T10:37:28.096Z",
+          "system": true,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ae9ceee9de9919fc60909388011c61c5f2a483f1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3503089957,
+          "type": null,
+          "body": "requested review from @johnthacker",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-06-29T10:37:34.477Z",
+          "updated_at": "2026-06-29T10:37:34.479Z",
+          "system": true,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8324231153601f7e1665d4e05dbc95c4237bfd47",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3533819846,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>6ecc6ad9 - delete packet-qmux.h</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25565/diffs?diff_id=1890948412&start_sha=7545f73b30ebfc008bff35ac778b8f867d372eae)",
+          "author": {
+            "id": 10640582,
+            "username": "LPardue",
+            "public_email": null,
+            "name": "Lucas Pardue",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5265cb4caf4fe35c5c47f4a778d491b33506d86f6475c99b4aa5df0d1c4571fd?s=80&d=identicon",
+            "web_url": "https://gitlab.com/LPardue"
+          },
+          "created_at": "2026-07-07T19:00:25.234Z",
+          "updated_at": "2026-07-07T19:00:25.236Z",
+          "system": true,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "26eaa641659cc62a3e84ee03c4d6fa8a9f7f0753",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3537729075,
+          "type": "DiffNote",
+          "body": "Is the offset guaranteed to advance here?",
+          "author": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1788740758",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "created_at": "2026-07-08T15:45:29.895Z",
+          "updated_at": "2026-08-13T07:55:05.923Z",
+          "system": false,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e46c6b6a9912f6fb16a73e63c544d83aaade1e58",
+            "start_sha": "1880735dda2493d65d516a6a22143fce28d433a1",
+            "head_sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+            "old_path": "epan/dissectors/packet-qmux.c",
+            "new_path": "epan/dissectors/packet-qmux.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 308,
+            "line_range": {
+              "start": {
+                "old_line": null,
+                "new_line": 308,
+                "type": "new"
+              },
+              "end": {
+                "old_line": null,
+                "new_line": 308,
+                "type": "new"
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2026-08-13T07:55:05.923Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        },
+        {
+          "id": 3542863562,
+          "type": "DiffNote",
+          "body": "It might make sense to throw an exception in `proto_tree_add_item_ret_varint` if we have malformed data. Proposed fix in !25734.",
+          "author": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1788740758",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "created_at": "2026-07-09T17:13:33.283Z",
+          "updated_at": "2026-08-13T07:55:05.923Z",
+          "system": false,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e46c6b6a9912f6fb16a73e63c544d83aaade1e58",
+            "start_sha": "1880735dda2493d65d516a6a22143fce28d433a1",
+            "head_sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+            "old_path": "epan/dissectors/packet-qmux.c",
+            "new_path": "epan/dissectors/packet-qmux.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 308,
+            "line_range": {
+              "start": {
+                "old_line": null,
+                "new_line": 308,
+                "type": "new"
+              },
+              "end": {
+                "old_line": null,
+                "new_line": 308,
+                "type": "new"
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2026-08-13T07:55:05.923Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        },
+        {
+          "id": 3583793808,
+          "type": "DiffNote",
+          "body": "Thanks for the review Gerald. I see the thread is resolved but wanted to double-check that the now-merged proposed fix does fully resolve the review comment and that I don't have any open action items to do",
+          "author": {
+            "id": 10640582,
+            "username": "LPardue",
+            "public_email": null,
+            "name": "Lucas Pardue",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5265cb4caf4fe35c5c47f4a778d491b33506d86f6475c99b4aa5df0d1c4571fd?s=80&d=identicon",
+            "web_url": "https://gitlab.com/LPardue"
+          },
+          "created_at": "2026-07-21T12:37:02.602Z",
+          "updated_at": "2026-08-13T07:55:05.923Z",
+          "system": false,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e46c6b6a9912f6fb16a73e63c544d83aaade1e58",
+            "start_sha": "1880735dda2493d65d516a6a22143fce28d433a1",
+            "head_sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+            "old_path": "epan/dissectors/packet-qmux.c",
+            "new_path": "epan/dissectors/packet-qmux.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 308,
+            "line_range": {
+              "start": {
+                "old_line": null,
+                "new_line": 308,
+                "type": "new"
+              },
+              "end": {
+                "old_line": null,
+                "new_line": 308,
+                "type": "new"
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2026-08-13T07:55:05.923Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d79ff739b336a927d6611d693572a633ab037561",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3537739566,
+          "type": "DiffNote",
+          "body": "Is this guaranteed to be greater than offset?",
+          "author": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1788740758",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "created_at": "2026-07-08T15:47:46.761Z",
+          "updated_at": "2026-07-09T18:24:27.064Z",
+          "system": false,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e46c6b6a9912f6fb16a73e63c544d83aaade1e58",
+            "start_sha": "1880735dda2493d65d516a6a22143fce28d433a1",
+            "head_sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+            "old_path": "epan/dissectors/packet-qmux.c",
+            "new_path": "epan/dissectors/packet-qmux.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 610,
+            "line_range": {
+              "start": {
+                "old_line": null,
+                "new_line": 610,
+                "type": "new"
+              },
+              "end": {
+                "old_line": null,
+                "new_line": 610,
+                "type": "new"
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1788740758",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "resolved_at": "2026-07-09T18:24:27.064Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "017ada2a1f1852855328486402ebefb94e4df11b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3681193364,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-08-13T07:54:32.512Z",
+          "updated_at": "2026-08-13T07:54:32.513Z",
+          "system": true,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9d35846a1d5415c018a45c95ca700c3f3652fada",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3681195228,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-08-13T07:55:05.957Z",
+          "updated_at": "2026-08-13T07:55:05.961Z",
+          "system": true,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7e1c14198a241119325ea48fc377b60b1e0a4d75",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3703520837,
+          "type": null,
+          "body": "Please rebase",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-19T06:45:08.668Z",
+          "updated_at": "2026-08-19T06:45:08.668Z",
+          "system": false,
+          "noteable_id": 500810827,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25565,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1494,6 +1494,7 @@ set(DISSECTOR_SRC\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-quake2.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-quake3.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-quakeworld.c\n+\t${CMAKE_CURRENT_SOURCE_DIR}/packet-qmux.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-quic.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-r09.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-radius.c\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/CMakeLists.txt",
+      "old_path": "epan/dissectors/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-qmux.c",
+      "old_path": "epan/dissectors/packet-qmux.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -5613,6 +5613,31 @@ uint32_t get_quic_connections_count(void)\n }\n /* Follow QUIC Stream functionality }}} */\n \n+/* QMux support {{{ */\n+\n+quic_info_data_t *\n+quic_info_data_create_for_qmux(dissector_handle_t app_handle, dissector_handle_t app_datagram_handle)\n+{\n+    quic_info_data_t *conn = wmem_new0(wmem_file_scope(), quic_info_data_t);\n+    conn->app_handle = app_handle;\n+    conn->app_datagram_handle = app_datagram_handle;\n+    conn->skip_decryption = true; /* No QUIC-layer crypto for QMux */\n+    return conn;\n+}\n+\n+int\n+dissect_quic_frame_type_for_qmux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n+                                 unsigned offset, quic_info_data_t *quic_info, bool from_server)\n+{\n+    /* Dummy packet info; packet_type != QUIC_LPT_0RTT so app_handle is used. */\n+    quic_packet_info_t dummy_packet = { 0 };\n+    dummy_packet.packet_type = QUIC_LPT_HANDSHAKE; /* anything != 0-RTT */\n+\n+    return dissect_quic_frame_type(tvb, pinfo, tree, offset, quic_info, &dummy_packet, from_server);\n+}\n+\n+/* QMux support }}} */\n+\n void\n proto_register_quic(void)\n {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-quic.c",
+      "old_path": "epan/dissectors/packet-quic.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -77,6 +77,14 @@ typedef struct quic_cid {\n void    quic_stream_add_proto_data(struct _packet_info *pinfo, quic_stream_info *stream_info, void *proto_data);\n void   *quic_stream_get_proto_data(struct _packet_info *pinfo, quic_stream_info *stream_info);\n \n+/* QMux support: create a minimal quic_info_data with only stream maps and\n+ * app handles initialized (no crypto/packet/CID state). */\n+struct quic_info_data *quic_info_data_create_for_qmux(dissector_handle_t app_handle, dissector_handle_t app_datagram_handle);\n+\n+/* Dissect a single QUIC frame for QMux. Returns offset after the frame. */\n+int dissect_quic_frame_type_for_qmux(tvbuff_t *tvb, struct _packet_info *pinfo, proto_tree *tree,\n+                                     unsigned offset, struct quic_info_data *quic_info, bool from_server);\n+\n /** Returns the number of items for quic.connection.number. */\n WS_DLL_PUBLIC uint32_t get_quic_connections_count(void);\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-quic.h",
+      "old_path": "epan/dissectors/packet-quic.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -2747,6 +2747,8 @@ static const ssl_alpn_prefix_match_protocol_t ssl_alpn_prefix_match_protocols[]\n     { \"spdy/\",              \"spdy\" },\n     /* draft-ietf-httpbis-http2-16 */\n     { \"h2-\",                \"http2\" }, /* draft versions */\n+    /* draft-ietf-quic-qmux: HTTP/3 over QMux draft versions */\n+    { \"h3qx-\",             \"qmux\" },\n };\n \n const value_string compress_certificate_algorithm_vals[] = {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tls-utils.c",
+      "old_path": "epan/dissectors/packet-tls-utils.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/qmux-deseg.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/qmux-deseg.pcap",
+      "old_path": "test/captures/qmux-deseg.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/qmux-dgram.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/qmux-dgram.pcap",
+      "old_path": "test/captures/qmux-dgram.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/qmux.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/qmux.pcap",
+      "old_path": "test/captures/qmux.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,10 @@\n+CLIENT_HANDSHAKE_TRAFFIC_SECRET 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b 546e50df1fbdede6740c94f7b77ef1f93acf6e5031fca3a3191ecddf1dc6b2ab\n+SERVER_HANDSHAKE_TRAFFIC_SECRET 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b 537b1624b3b159d9b9c9c05f0fdb856330dd3009f903e12d6bb2ed8925f08169\n+CLIENT_TRAFFIC_SECRET_0 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b cccf057b4a49aaf8c810c5ede7eea1636628ec1c557129951b77ee4ccdc2eb9b\n+SERVER_TRAFFIC_SECRET_0 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b 35dfa3e7de6c64a391b76759d41aacce4292b56757c1f1e924c10cd16fa96e27\n+EXPORTER_SECRET 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b 70c2db9aaa19583caad3cf1a504ab5d927f98df761c07f9e82af6a09855032f6\n+CLIENT_HANDSHAKE_TRAFFIC_SECRET 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b 546e50df1fbdede6740c94f7b77ef1f93acf6e5031fca3a3191ecddf1dc6b2ab\n+SERVER_HANDSHAKE_TRAFFIC_SECRET 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b 537b1624b3b159d9b9c9c05f0fdb856330dd3009f903e12d6bb2ed8925f08169\n+CLIENT_TRAFFIC_SECRET_0 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b cccf057b4a49aaf8c810c5ede7eea1636628ec1c557129951b77ee4ccdc2eb9b\n+SERVER_TRAFFIC_SECRET_0 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b 35dfa3e7de6c64a391b76759d41aacce4292b56757c1f1e924c10cd16fa96e27\n+EXPORTER_SECRET 0bf1e6a1c11f9ebb48f9dd0c1b52514c0f53a41262e339ea66c145dcb0ccb71b 70c2db9aaa19583caad3cf1a504ab5d927f98df761c07f9e82af6a09855032f6\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/keys/qmux-deseg.keys",
+      "old_path": "test/keys/qmux-deseg.keys",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,10 @@\n+CLIENT_HANDSHAKE_TRAFFIC_SECRET ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 5b2690c9d0f14cee9e78b22ffb2d8b425ea2404d947b5126087ee969f539936d\n+SERVER_HANDSHAKE_TRAFFIC_SECRET ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 8c1dbe1d8a96aceef2b91f76ebe9258e04356abb2f69ee74afb36ee503c82316\n+CLIENT_TRAFFIC_SECRET_0 ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 be69c0175eca8d31b6bef716f2b7852e93d2651e0f29f505f466825680594442\n+SERVER_TRAFFIC_SECRET_0 ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 b052aa2543b77981ae50899d4916d5c0c11c216d6427a93d1c6f780d51600bd2\n+EXPORTER_SECRET ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 5c0b54610bbe0c91fc5a03c3491701bf540a93cf0ee201920e7be892ef6085fc\n+CLIENT_HANDSHAKE_TRAFFIC_SECRET ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 5b2690c9d0f14cee9e78b22ffb2d8b425ea2404d947b5126087ee969f539936d\n+SERVER_HANDSHAKE_TRAFFIC_SECRET ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 8c1dbe1d8a96aceef2b91f76ebe9258e04356abb2f69ee74afb36ee503c82316\n+CLIENT_TRAFFIC_SECRET_0 ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 be69c0175eca8d31b6bef716f2b7852e93d2651e0f29f505f466825680594442\n+SERVER_TRAFFIC_SECRET_0 ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 b052aa2543b77981ae50899d4916d5c0c11c216d6427a93d1c6f780d51600bd2\n+EXPORTER_SECRET ae868441a425ee11171788015983cb8d98ff4102ebc796e7e3c9510f3a7dedc8 5c0b54610bbe0c91fc5a03c3491701bf540a93cf0ee201920e7be892ef6085fc\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/keys/qmux-dgram.keys",
+      "old_path": "test/keys/qmux-dgram.keys",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,10 @@\n+CLIENT_HANDSHAKE_TRAFFIC_SECRET 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 8797212d01f77b552e196879cbd2897ce4c5c99914dc6b2fca7bfda348a2f6ea\n+SERVER_HANDSHAKE_TRAFFIC_SECRET 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 ee5a46675200278f66dc023c218a441fa3b70b122b8ce1633f698f2084133228\n+CLIENT_TRAFFIC_SECRET_0 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 00cba4bc813f3e322473bdeb21de610fae69198973b00689ae6989d3276ec460\n+SERVER_TRAFFIC_SECRET_0 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 8055a21a9e9665b67861cfad281798d73a8fe376c61cb057ea5bf5e2af0b1b0b\n+EXPORTER_SECRET 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 1da7cfc6aab39c19beb6a80fd5a07aa3d1770bb224503057bac10ec8183fdca7\n+CLIENT_HANDSHAKE_TRAFFIC_SECRET 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 8797212d01f77b552e196879cbd2897ce4c5c99914dc6b2fca7bfda348a2f6ea\n+SERVER_HANDSHAKE_TRAFFIC_SECRET 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 ee5a46675200278f66dc023c218a441fa3b70b122b8ce1633f698f2084133228\n+CLIENT_TRAFFIC_SECRET_0 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 00cba4bc813f3e322473bdeb21de610fae69198973b00689ae6989d3276ec460\n+SERVER_TRAFFIC_SECRET_0 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 8055a21a9e9665b67861cfad281798d73a8fe376c61cb057ea5bf5e2af0b1b0b\n+EXPORTER_SECRET 8a53c96eb067ba66be61376a782404cd73726bf46f9741cd2523c074868e3535 1da7cfc6aab39c19beb6a80fd5a07aa3d1770bb224503057bac10ec8183fdca7\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/keys/qmux.keys",
+      "old_path": "test/keys/qmux.keys",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1201,3 +1201,91 @@ class TestDissectUsbHid:\n                 '-Tfields', '-eusbhid.data.padding',\n             ), encoding='utf-8', env=test_env)\n         assert stdout.strip() == '03,ff07\\n01,b907\\n00,0000'\n+\n+class TestDissectQmux:\n+    def test_qmux_transport_parameters(self, cmd_tshark, dirs, capture_file, test_env):\n+        '''Verify QMux transport parameter dissection.'''\n+        key_file = os.path.join(dirs.key_dir, 'qmux.keys')\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('qmux.pcap'),\n+                '-o', 'tls.keylog_file: {}'.format(key_file),\n+                '-Y', 'qmux.tp.parameter.type',\n+                '-Tfields',\n+                '-e', 'qmux.tp.max_idle_timeout',\n+                '-e', 'qmux.tp.initial_max_data',\n+                '-e', 'qmux.tp.max_record_size',\n+            ), encoding='utf-8', env=test_env)\n+        # Both sides send transport params; check values are present\n+        assert '30000' in stdout\n+        assert '10000000' in stdout\n+        assert '16382' in stdout\n+\n+    def test_qmux_http3_decode(self, cmd_tshark, dirs, capture_file, test_env):\n+        '''Verify HTTP/3 decodes over QMux.'''\n+        key_file = os.path.join(dirs.key_dir, 'qmux.keys')\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('qmux.pcap'),\n+                '-o', 'tls.keylog_file: {}'.format(key_file),\n+                '-Y', 'http3',\n+                '-Tfields', '-e', 'http3.headers.method', '-e', 'http3.headers.path',\n+                '-e', 'http3.headers.status',\n+            ), encoding='utf-8', env=test_env)\n+        assert 'GET' in stdout\n+        assert '/index.html' in stdout\n+        assert '404' in stdout\n+\n+    def test_qmux_connection_close(self, cmd_tshark, dirs, capture_file, test_env):\n+        '''Verify CONNECTION_CLOSE frame dissection.'''\n+        key_file = os.path.join(dirs.key_dir, 'qmux.keys')\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('qmux.pcap'),\n+                '-o', 'tls.keylog_file: {}'.format(key_file),\n+                '-Y', 'quic.cc.reason_phrase',\n+                '-Tfields', '-e', 'quic.cc.reason_phrase',\n+            ), encoding='utf-8', env=test_env)\n+        assert 'done' in stdout\n+\n+    def test_qmux_datagram(self, cmd_tshark, dirs, capture_file, test_env):\n+        '''Verify DATAGRAM frame dissection over QMux.'''\n+        key_file = os.path.join(dirs.key_dir, 'qmux-dgram.keys')\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('qmux-dgram.pcap'),\n+                '-o', 'tls.keylog_file: {}'.format(key_file),\n+                '-Y', 'quic.dg',\n+                '-Tfields', '-e', 'frame.number',\n+            ), encoding='utf-8', env=test_env)\n+        # Client sends 3 datagrams, server echoes 3 back\n+        assert count_output(stdout, r'\\d+') >= 2\n+\n+    def test_qmux_desegmentation(self, cmd_tshark, dirs, capture_file, test_env):\n+        '''Verify QMux records spanning TLS records are reassembled.'''\n+        key_file = os.path.join(dirs.key_dir, 'qmux-deseg.keys')\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('qmux-deseg.pcap'),\n+                '-o', 'tls.keylog_file: {}'.format(key_file),\n+                '-Y', 'http3',\n+            ), encoding='utf-8', env=test_env)\n+        # HTTP/3 should decode despite TLS record fragmentation\n+        assert grep_output(stdout, 'HEADERS')\n+\n+    def test_qmux_follow_stream(self, cmd_tshark, dirs, capture_file, test_env):\n+        '''Verify Follow QMux Stream works.'''\n+        key_file = os.path.join(dirs.key_dir, 'qmux.keys')\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('qmux.pcap'),\n+                '-o', 'tls.keylog_file: {}'.format(key_file),\n+                '-qz', 'follow,qmux,ascii,0,0',\n+            ), encoding='utf-8', env=test_env)\n+        assert 'Follow: qmux,ascii' in stdout\n+        assert 'GREASE is the word' in stdout\n+\n+    def test_qmux_prohibited_frame(self, cmd_tshark, dirs, capture_file, test_env):\n+        '''Verify no warnings or errors in normal QMux traffic.'''\n+        key_file = os.path.join(dirs.key_dir, 'qmux.keys')\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('qmux.pcap'),\n+                '-o', 'tls.keylog_file: {}'.format(key_file),\n+                '-zexpert,warn',\n+            ), encoding='utf-8', env=test_env)\n+        assert not grep_output(stdout, 'Warns')\n+        assert not grep_output(stdout, 'Errors')\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissection.py",
+      "old_path": "test/suite_dissection.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "6ecc6ad918d235daacde880369b3ada359b914ae",
+      "short_id": "6ecc6ad9",
+      "created_at": "2026-07-07T20:00:15.000+01:00",
+      "parent_ids": [
+        "7545f73b30ebfc008bff35ac778b8f867d372eae"
+      ],
+      "title": "delete packet-qmux.h",
+      "message": "delete packet-qmux.h\n",
+      "author_name": "Lucas Pardue",
+      "author_email": "lucas@cloudflare.com",
+      "authored_date": "2026-07-07T20:00:15.000+01:00",
+      "committer_name": "Lucas Pardue",
+      "committer_email": "lucas@cloudflare.com",
+      "committed_date": "2026-07-07T20:00:15.000+01:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/6ecc6ad918d235daacde880369b3ada359b914ae"
+    },
+    {
+      "id": "7545f73b30ebfc008bff35ac778b8f867d372eae",
+      "short_id": "7545f73b",
+      "created_at": "2026-06-28T04:45:39.000+01:00",
+      "parent_ids": [
+        "e46c6b6a9912f6fb16a73e63c544d83aaade1e58"
+      ],
+      "title": "Add IETF QMux dissector (draft-ietf-quic-qmux-01)",
+      "message": "Add IETF QMux dissector (draft-ietf-quic-qmux-01)\n\nAdd a dissector for the IETF QMux protocol defined in\nhttps://datatracker.ietf.org/doc/draft-ietf-quic-qmux/, formally\nadopted to the QUIC Workng Group. Qmux multiplexes QUIC-style\nstreams over TLS. It  reuses QUIC v1 frame formats but doesn't\nuse packets. Encryption is delegated to TLS.\n\nQMux provides a substrate for application protocols to use. QMux\nrequires that appliction protocols are negotiated using ALPN.\nThis change bases protocol detection on values in ALPN.\n\nTo provide a working example, this change uses HTTP/3 over QMux,\nwhich has an I-D but is not adopted by any IETF WG; see\nhttps://datatracker.ietf.org/doc/draft-kazuho-httpbis-http3-over-qmux/.\nThis protocl choice helps demonstrate that wireshark can be modified\nto support an existing application protocol dissector over QUIC with\nminimal changes.\n\nDetection: ALPN-based via tls.alpn (h3qx-01 direct, h3qx-* prefix).\n\nQMux-specific dissection:\n- QMux Record framing (varint Size + QUIC frames)\n- QX_TRANSPORT_PARAMETERS frame with individual TP parsing\n- QX_PING request/response frames\n- Prohibited frame and transport parameter detection with expert info\n- TLS desegmentation for records spanning TLS record boundaries\n\nQUIC frame reuse:\n- All permitted QUIC frames are parsed by the existing QUIC dissector\n  via dissect_quic_frame_type_for_qmux(), a thin wrapper that hides\n  internal types. Frames display with quic.* filter names.\n- STREAM reassembly and subdissector handoff handled by the shared\n  QUIC code path.\n\nApplication protocol support:\n- ALPN is mapped to its base protocol (h3qx-01 -> h3) and looked up\n  in quic.proto / quic.proto.datagram tables. HTTP/3 works over QMux\n  with zero changes to packet-http3.c, including DATAGRAM frames.\n- Direction detection via pinfo->match_uint (TLS server port).\n\nFollow QMux Stream:\n- Per-connection numbering (qmux.connection.number) and per-stream\n  tracking with follow tap. Works via tshark -z follow,qmux.\n\nChanges to existing code:\n- packet-quic.c: quic_info_data_create_for_qmux() creates a minimal\n  quic_info_data_t; dissect_quic_frame_type_for_qmux() wraps the\n  frame parser (+34 lines)\n- packet-quic.h: declarations (+15 lines)\n- packet-tls-utils.c: ALPN prefix match for h3qx- (+2 lines)\n- CMakeLists.txt: add packet-qmux.c/h (+2 lines)\n\nTest captures and 7 pytest tests covering transport parameters,\nHTTP/3 decode, CONNECTION_CLOSE, DATAGRAMs, desegmentation, Follow\nStream, and expert info validation.\n\nTest captures generated from a fork of quiche that has WIP QMux\nsupport; see https://github.com/LPardue/quiche/tree/qmux-support/qmux-demo\n\nAI-Assisted: yes (Claude)\n",
+      "author_name": "Lucas Pardue",
+      "author_email": "lucas@lucaspardue.com",
+      "authored_date": "2026-06-28T04:12:22.000+01:00",
+      "committer_name": "Lucas Pardue",
+      "committer_email": "lucas@cloudflare.com",
+      "committed_date": "2026-06-28T04:45:39.000+01:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/7545f73b30ebfc008bff35ac778b8f867d372eae"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1890948412,
+      "head_commit_sha": "6ecc6ad918d235daacde880369b3ada359b914ae",
+      "base_commit_sha": "e46c6b6a9912f6fb16a73e63c544d83aaade1e58",
+      "start_commit_sha": "1880735dda2493d65d516a6a22143fce28d433a1",
+      "created_at": "2026-07-07T19:00:24.420Z",
+      "merge_request_id": 500810827,
+      "state": "collected",
+      "real_size": "12",
+      "patch_id_sha": "2ed7e3fee779d9a8e7b431f595e5751b3bbb3b8b"
+    },
+    {
+      "id": 1874592060,
+      "head_commit_sha": "7545f73b30ebfc008bff35ac778b8f867d372eae",
+      "base_commit_sha": "e46c6b6a9912f6fb16a73e63c544d83aaade1e58",
+      "start_commit_sha": "22253bcaac5e0a81ef923f3381e8a738499b52b1",
+      "created_at": "2026-06-28T03:49:28.607Z",
+      "merge_request_id": 500810827,
+      "state": "collected",
+      "real_size": "13",
+      "patch_id_sha": "edf5920c095580eadc09f0dbeb08aa39e7da9df6"
+    }
+  ]
+}

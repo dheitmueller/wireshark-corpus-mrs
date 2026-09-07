@@ -1,0 +1,368 @@
+{
+  "id": 498374986,
+  "iid": 25487,
+  "project_id": 7898047,
+  "title": "GlusterFS: Sync FOP procedure enum with current GlusterFS",
+  "description": "## What\n\nSync the GlusterFS dissector's FOP procedure enum with current GlusterFS, fixing the mislabeling and\nnon-decoding of all FOP procedures with number ≥ 41.\n\nCloses #21359.\n\n## Why\n\nThe dissector's `gf_fop_procnum` enum (`epan/dissectors/packet-gluster.h`) carried a phantom\n`GFS3_OP_FORGET` between `READDIRP` and `RELEASE`. `FORGET` is an internal GlusterFS fop that is never\nsent over RPC and is absent from GlusterFS's wire enum (`rpc/rpc-lib/src/protocol-common.h`). The\nextra entry shifted every procedure constant from `RELEASE` (41) onward by one, so on current\nGlusterFS (4.x+) the dissector mislabeled `RELEASEDIR` as `RELEASE`, `FALLOCATE` as `FREMOVEXATTR`,\netc., and left `RELEASE` and `SEEK` unnamed. The enum also stopped at `SEEK`, and\n`glusterfs4_0_fop_proc[]` lacked an `IPC` entry, so ops added since (COMPOUND…COPY_FILE_RANGE) were\nundecoded. Same RELEASE/RELEASEDIR class as #12614, regressed as GlusterFS added FOPs over time.\n\n## What changed\n\n- `epan/dissectors/packet-gluster.h` — remove `GFS3_OP_FORGET`; append `COMPOUND, LEASE, GETACTIVELK,\n  SETACTIVELK, ICREATE, NAMELINK, PUT, COPY_FILE_RANGE` before `GFS3_OP_MAXVALUE`.\n- `epan/dissectors/packet-glusterfs.c` — add `IPC` plus those ops to `glusterfs4_0_fop_proc[]`\n  (→ `dissect_rpc_unknown`); drop `FORGET` and append the ops to the `glusterfs3_1_fop_proc_vals[]`\n  value_string.\n\nPayload dissection for the newly-named ops is left as `dissect_rpc_unknown` — this is a naming-only\nfix; field-level decoders for IPC/LEASE/etc. are a separate enhancement.\n\n## Verification\n\nVerified against the GlusterFS 11.2 capture attached to #21359. Built tshark from this branch and\nre-decoded: procedures 41/42/44/48 now decode as `RELEASE` / `RELEASEDIR` / `FALLOCATE` / `SEEK`\n(previously `proc-41` / `RELEASE` / `FREMOVEXATTR` / `proc-48`). The procedure numbering was\ncross-checked against GlusterFS `rpc/rpc-lib/src/protocol-common.h` (`enum gf_fop_procnum`).\n\nAI-Assisted: yes (Claude, via Claude Code); all steps human-verified.",
+  "state": "merged",
+  "created_at": "2026-06-21T21:42:29.212Z",
+  "updated_at": "2026-06-22T05:16:52.198Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-06-22T05:16:52.238Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "glusterfs-fop-procnum-sync",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 12467294,
+    "username": "thalesadv1984",
+    "public_email": "thalesadv1984@gmail.com",
+    "name": "Thales Antunes de Oliveira Barretto",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/12467294/avatar.png?v=1784819933",
+    "web_url": "https://gitlab.com/thalesadv1984"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83613606,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "d20aeb800a70519db4b0a9038366d274bbb114de",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-06-21T21:42:37.545Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25487",
+  "references": {
+    "short": "!25487",
+    "relative": "!25487",
+    "full": "wireshark/wireshark!25487"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25487",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2026-06-22T04:53:12.883Z",
+  "latest_build_finished_at": "2026-06-22T05:16:50.580Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2618514375,
+    "iid": 105372,
+    "project_id": 7898047,
+    "sha": "799160722d6d02adeaa845adc6ab46c76728e576",
+    "ref": "refs/merge-requests/25487/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-22T04:53:12.005Z",
+    "updated_at": "2026-06-22T05:16:50.592Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2618514375"
+  },
+  "head_pipeline": {
+    "id": 2618514375,
+    "iid": 105372,
+    "project_id": 7898047,
+    "sha": "799160722d6d02adeaa845adc6ab46c76728e576",
+    "ref": "refs/merge-requests/25487/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-22T04:53:12.005Z",
+    "updated_at": "2026-06-22T05:16:50.592Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2618514375",
+    "before_sha": "799160722d6d02adeaa845adc6ab46c76728e576",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-06-22T04:53:12.883Z",
+    "finished_at": "2026-06-22T05:16:50.580Z",
+    "committed_at": null,
+    "duration": 1417,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2618514375",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "139328ce90fb8e403f846b3c66be671d0adf130e",
+    "head_sha": "d20aeb800a70519db4b0a9038366d274bbb114de",
+    "start_sha": "56ea4ac47f6ea96ca39443ee7230231b43a71cec"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "59994f7f85e636098895817f5d792e9e43da0f4e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3477680869,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-22T04:53:06.874Z",
+          "updated_at": "2026-06-22T04:53:06.879Z",
+          "system": true,
+          "noteable_id": 498374986,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25487,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4e3cc356699a051590d9273e18a25f6474c030a4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3477680929,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-22T04:53:10.698Z",
+          "updated_at": "2026-06-22T04:53:10.700Z",
+          "system": true,
+          "noteable_id": 498374986,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25487,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "faec56d5e9f8f5ba0553fb75b06ac1c8601599e6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3480303112,
+          "type": null,
+          "body": "mentioned in issue #21366",
+          "author": {
+            "id": 12467294,
+            "username": "thalesadv1984",
+            "public_email": "thalesadv1984@gmail.com",
+            "name": "Thales Antunes de Oliveira Barretto",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/12467294/avatar.png?v=1784819933",
+            "web_url": "https://gitlab.com/thalesadv1984"
+          },
+          "created_at": "2026-06-22T15:12:35.959Z",
+          "updated_at": "2026-06-22T15:12:35.962Z",
+          "system": true,
+          "noteable_id": 498374986,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25487,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e499509020e70a9fa58138a87253538df953d2de",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3481872974,
+          "type": null,
+          "body": "mentioned in merge request !25497",
+          "author": {
+            "id": 12467294,
+            "username": "thalesadv1984",
+            "public_email": "thalesadv1984@gmail.com",
+            "name": "Thales Antunes de Oliveira Barretto",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/12467294/avatar.png?v=1784819933",
+            "web_url": "https://gitlab.com/thalesadv1984"
+          },
+          "created_at": "2026-06-22T22:34:05.038Z",
+          "updated_at": "2026-06-22T22:34:05.040Z",
+          "system": true,
+          "noteable_id": 498374986,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25487,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -350,7 +350,6 @@ enum gf_fop_procnum {\n \tGFS3_OP_SETATTR,\n \tGFS3_OP_FSETATTR,\n \tGFS3_OP_READDIRP,\n-\tGFS3_OP_FORGET,\n \tGFS3_OP_RELEASE,\n \tGFS3_OP_RELEASEDIR,\n \tGFS3_OP_FREMOVEXATTR,\n@@ -359,6 +358,14 @@ enum gf_fop_procnum {\n \tGFS3_OP_ZEROFILL,\n \tGFS3_OP_IPC,\n \tGFS3_OP_SEEK,\n+\tGFS3_OP_COMPOUND,\n+\tGFS3_OP_LEASE,\n+\tGFS3_OP_GETACTIVELK,\n+\tGFS3_OP_SETACTIVELK,\n+\tGFS3_OP_ICREATE,\n+\tGFS3_OP_NAMELINK,\n+\tGFS3_OP_PUT,\n+\tGFS3_OP_COPY_FILE_RANGE,\n \tGFS3_OP_MAXVALUE\n };\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-gluster.h",
+      "old_path": "epan/dissectors/packet-gluster.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -3680,10 +3680,19 @@ static const vsff glusterfs4_0_fop_proc[] = {\n \t\tGFS3_OP_ZEROFILL, \"ZEROFILL\",\n \t\tglusterfs_gfs4_0_op_zerofill_call, glusterfs_gfs4_0_op_common_2iatt_reply\n \t},\n+\t{ GFS3_OP_IPC, \"IPC\", dissect_rpc_unknown, dissect_rpc_unknown },\n \t{\n \t\tGFS3_OP_SEEK, \"SEEK\",\n \t\tglusterfs_gfs4_0_op_seek_call, glusterfs_gfs4_0_op_seek_reply\n \t},\n+\t{ GFS3_OP_COMPOUND, \"COMPOUND\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{ GFS3_OP_LEASE, \"LEASE\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{ GFS3_OP_GETACTIVELK, \"GETACTIVELK\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{ GFS3_OP_SETACTIVELK, \"SETACTIVELK\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{ GFS3_OP_ICREATE, \"ICREATE\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{ GFS3_OP_NAMELINK, \"NAMELINK\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{ GFS3_OP_PUT, \"PUT\", dissect_rpc_unknown, dissect_rpc_unknown },\n+\t{ GFS3_OP_COPY_FILE_RANGE, \"COPY_FILE_RANGE\", dissect_rpc_unknown, dissect_rpc_unknown },\n \t{ 0, NULL, NULL, NULL }\n };\n \n@@ -3737,7 +3746,6 @@ static const value_string glusterfs3_1_fop_proc_vals[] = {\n \t{ GFS3_OP_SETATTR,      \"SETATTR\" },\n \t{ GFS3_OP_FSETATTR,     \"FSETATTR\" },\n \t{ GFS3_OP_READDIRP,     \"READDIRP\" },\n-\t{ GFS3_OP_FORGET,       \"FORGET\" },\n \t{ GFS3_OP_RELEASE,      \"RELEASE\" },\n \t{ GFS3_OP_RELEASEDIR,   \"RELEASEDIR\" },\n \t{ GFS3_OP_FREMOVEXATTR, \"FREMOVEXATTR\" },\n@@ -3746,6 +3754,14 @@ static const value_string glusterfs3_1_fop_proc_vals[] = {\n \t{ GFS3_OP_ZEROFILL,     \"ZEROFILL\" },\n \t{ GFS3_OP_IPC,\t  \"IPC\" },\n \t{ GFS3_OP_SEEK,\t \"SEEK\" },\n+\t{ GFS3_OP_COMPOUND, \"COMPOUND\" },\n+\t{ GFS3_OP_LEASE, \"LEASE\" },\n+\t{ GFS3_OP_GETACTIVELK, \"GETACTIVELK\" },\n+\t{ GFS3_OP_SETACTIVELK, \"SETACTIVELK\" },\n+\t{ GFS3_OP_ICREATE, \"ICREATE\" },\n+\t{ GFS3_OP_NAMELINK, \"NAMELINK\" },\n+\t{ GFS3_OP_PUT, \"PUT\" },\n+\t{ GFS3_OP_COPY_FILE_RANGE, \"COPY_FILE_RANGE\" },\n \t{ 0, NULL }\n };\n static value_string_ext glusterfs3_1_fop_proc_vals_ext = VALUE_STRING_EXT_INIT(glusterfs3_1_fop_proc_vals);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-glusterfs.c",
+      "old_path": "epan/dissectors/packet-glusterfs.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "d20aeb800a70519db4b0a9038366d274bbb114de",
+      "short_id": "d20aeb80",
+      "created_at": "2026-06-21T17:49:25.000-03:00",
+      "parent_ids": [
+        "139328ce90fb8e403f846b3c66be671d0adf130e"
+      ],
+      "title": "GlusterFS: Sync FOP procedure enum with current GlusterFS",
+      "message": "GlusterFS: Sync FOP procedure enum with current GlusterFS\n\nThe dissector's gf_fop_procnum enum (epan/dissectors/packet-gluster.h)\nincluded a phantom GFS3_OP_FORGET between READDIRP and RELEASE. FORGET\nis an internal GlusterFS fop that is never sent over RPC and is absent\nfrom GlusterFS's wire enum (rpc/rpc-lib/src/protocol-common.h). The\nextra entry shifted every procedure constant from RELEASE (41) onward\nby one, so against current GlusterFS (4.x and later) the dissector\nmislabeled RELEASEDIR as RELEASE, FALLOCATE as FREMOVEXATTR, and so on,\nand left RELEASE and SEEK unnamed.\n\nThe enum also stopped at SEEK, and glusterfs4_0_fop_proc[] lacked\nentries for IPC and the FOPs added since, so procedures 49 and up\nrendered as \"proc-N\".\n\nRemove the phantom FORGET; extend the enum and the\nglusterfs3_1_fop_proc_vals[] value_string with COMPOUND, LEASE,\nGETACTIVELK, SETACTIVELK, ICREATE, NAMELINK, PUT and COPY_FILE_RANGE;\nand add IPC plus those ops to glusterfs4_0_fop_proc[]. Payload\ndissection for the added ops uses dissect_rpc_unknown; this change\ncorrects procedure naming only.\n\nVerified against a GlusterFS 11.2 capture: procedures 41/42/44/48 now\ndecode as RELEASE / RELEASEDIR / FALLOCATE / SEEK (previously proc-41 /\nRELEASE / FREMOVEXATTR / proc-48).\n\nSame RELEASE/RELEASEDIR class as #12614, which regressed as GlusterFS\nadded FOPs over time.\n\nAI-Assisted: yes (Anthropic Claude Opus 4.8, via Claude Code)\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\n",
+      "author_name": "Thales Antunes de Oliveira Barretto",
+      "author_email": "thales.barretto.git@gmail.com",
+      "authored_date": "2026-06-21T13:22:34.000-03:00",
+      "committer_name": "Thales Antunes de Oliveira Barretto",
+      "committer_email": "thales.barretto.git@gmail.com",
+      "committed_date": "2026-06-21T17:49:25.000-03:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/d20aeb800a70519db4b0a9038366d274bbb114de"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1862878885,
+      "head_commit_sha": "d20aeb800a70519db4b0a9038366d274bbb114de",
+      "base_commit_sha": "139328ce90fb8e403f846b3c66be671d0adf130e",
+      "start_commit_sha": "56ea4ac47f6ea96ca39443ee7230231b43a71cec",
+      "created_at": "2026-06-21T21:42:33.618Z",
+      "merge_request_id": 498374986,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "0cb25647fcd3ee4a34c3ea37c8449548f9639967"
+    }
+  ]
+}

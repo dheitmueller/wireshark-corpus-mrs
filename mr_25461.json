@@ -1,0 +1,458 @@
+{
+  "id": 497978257,
+  "iid": 25461,
+  "project_id": 7898047,
+  "title": "DVB-S2-TABLE: Fix FCT2 frame_type_section_fix_acc_method bitmask",
+  "description": "## Fix incorrect bitmask for FCT2 `frame_type_section_fix_acc_method` field in DVB-RCS2 dissector\n\n### Summary\n\nThe bitmask for the `section_fixed_access_method` field in the FCT2 dissector is incorrect. The current mask `0x0C` selects only 2 bits (bits 3:2), whereas the standard defines the field as a 4-bit value occupying the lower nibble of the byte.\n\n### Standard reference\n\n**ETSI EN 301 545-2 V1.4.1** \"Digital Video Broadcasting (DVB); Second Generation DVB Interactive Satellite System (DVB-RCS2)\" Part 2: Lower Layers for Satellite standard, page 58, FCT2 `fixed_access_method` descriptor:\n\n```\nfixed_access_method: This 4 bit field indicates the access method to be used for the timeslots in frame section\nwhen default_tx_type > 0.\n```\n\nThe field occupies the full lower nibble, i.e. bitmask must be `0x0F`.\n\n### Bug\n\nIn `epan/dissectors/packet-dvb-s2-table.c`, line 576:\n\n```c\n// WRONG — selects only bits 3:2 (2-bit field)\n\n#define DVB_S2_TABLE_FRAME_TYPE_SECTION_FAM_MASK  0xC\n```\n\n`0x0C` = `0000 1100` — this captures only bits 3 and 2, misinterpreting any value where bits 1 or 0 are set.\n\n### Fix\n\n```c\n// CORRECT — selects bits 3:0 (4-bit field per ETSI EN 301 545-2 Table p.57)\n\n#define DVB_S2_TABLE_FRAME_TYPE_SECTION_FAM_MASK  0xF\n```\n\n### Impact\n\n- Wireshark currently displays `.... 00.. = Section fixed access method: 0x0` for packets where bits 1:0 of the field are non-zero, silently dropping part of the value.\n- Any implementation that uses `fixed_access_method` values `0x1`, `0x2`, `0x3` (where only bits 1:0 are set) will be decoded as `0x0`, causing incorrect protocol interpretation.\n- The reserved upper nibble is unaffected.\n\n### Testing\n\nVerify with a FCT2 capture where `fixed_access_method != 0`. Alternatively, craft a synthetic frame with byte value `0x01` at the relevant offset - current code decodes as `0x0`, fixed code decodes as `0x1`.\n\n### References\n\n- ETSI EN 301 545-2 V1.4.1, p. 58: https://www.etsi.org/deliver/etsi_en/301500_301599/30154502/01.04.01_60/en_30154502v010401p.pdf\n- Affected line: `epan/dissectors/packet-dvb-s2-table.c:576`, definition of `DVB_S2_TABLE_FRAME_TYPE_SECTION_FAM_MASK`",
+  "state": "merged",
+  "created_at": "2026-06-20T05:01:36.639Z",
+  "updated_at": "2026-06-20T17:21:49.862Z",
+  "merged_by": {
+    "id": 2398962,
+    "username": "JaapKeuter",
+    "public_email": "",
+    "name": "Jaap Keuter",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/JaapKeuter"
+  },
+  "merge_user": {
+    "id": 2398962,
+    "username": "JaapKeuter",
+    "public_email": "",
+    "name": "Jaap Keuter",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/JaapKeuter"
+  },
+  "merged_at": "2026-06-20T17:21:49.891Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix_dvb_s2_table_fct2_dissection",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 39400678,
+    "username": "dbatalov02",
+    "public_email": "",
+    "name": "Daniil Batalov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dbatalov02"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83569096,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "53c56d494de1d6db0ba0e980b27430191bccfae9",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-06-20T05:01:45.784Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25461",
+  "references": {
+    "short": "!25461",
+    "relative": "!25461",
+    "full": "wireshark/wireshark!25461"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25461",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-06-20T17:08:25.714Z",
+  "latest_build_finished_at": "2026-06-20T17:21:48.422Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2616333220,
+    "iid": 105290,
+    "project_id": 7898047,
+    "sha": "38ac0ca19f1034b84fd9921aad006d81da7ad7fe",
+    "ref": "refs/merge-requests/25461/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-20T17:08:14.906Z",
+    "updated_at": "2026-06-20T17:21:48.437Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2616333220"
+  },
+  "head_pipeline": {
+    "id": 2616333220,
+    "iid": 105290,
+    "project_id": 7898047,
+    "sha": "38ac0ca19f1034b84fd9921aad006d81da7ad7fe",
+    "ref": "refs/merge-requests/25461/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-20T17:08:14.906Z",
+    "updated_at": "2026-06-20T17:21:48.437Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2616333220",
+    "before_sha": "38ac0ca19f1034b84fd9921aad006d81da7ad7fe",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 2398962,
+      "username": "JaapKeuter",
+      "public_email": "",
+      "name": "Jaap Keuter",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+      "web_url": "https://gitlab.com/JaapKeuter"
+    },
+    "started_at": "2026-06-20T17:08:25.714Z",
+    "finished_at": "2026-06-20T17:21:48.422Z",
+    "committed_at": null,
+    "duration": 802,
+    "queued_duration": 10,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2616333220",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "e1cb516a978beda1e263792a792abd47a3b81b75",
+    "head_sha": "53c56d494de1d6db0ba0e980b27430191bccfae9",
+    "start_sha": "e1cb516a978beda1e263792a792abd47a3b81b75"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b90b28df4847767dca1e77fdaf54d528d323d05e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3475399205,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-20T05:19:12.149Z",
+          "updated_at": "2026-06-20T05:19:12.155Z",
+          "system": true,
+          "noteable_id": 497978257,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25461,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "edbd384319adf7a0b602513816c0199a065b0bc9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3475399391,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-20T05:19:16.126Z",
+          "updated_at": "2026-06-20T05:19:16.127Z",
+          "system": true,
+          "noteable_id": 497978257,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25461,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "19f5a7d2ba32ff5279e75ec7adeace94871d7057",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3475400467,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>a0e868c8 - 1 commit from branch <code>wireshark:master</code></li><li>84516bdf - DVB-S2-TABLE: Fix FCT2 section_fixed_access_method bitmask</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25461/diffs?diff_id=1862004043&start_sha=cdb55f51e0d66213105883ba4b16c048200b2e18)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-20T05:20:16.133Z",
+          "updated_at": "2026-06-20T05:20:16.135Z",
+          "system": true,
+          "noteable_id": 497978257,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25461,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "29cad0879c852987b00301781651f118254419cc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3475416141,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>22001325 - 1 commit from branch <code>wireshark:master</code></li><li>b9cec8e2 - DVB-S2-TABLE: Fix FCT2 section_fixed_access_method bitmask</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25461/diffs?diff_id=1862013652&start_sha=84516bdf70cc481c8cc80cdbdf29f21a7feaf9f5)",
+          "author": {
+            "id": 39400678,
+            "username": "dbatalov02",
+            "public_email": "",
+            "name": "Daniil Batalov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dbatalov02"
+          },
+          "created_at": "2026-06-20T05:59:37.515Z",
+          "updated_at": "2026-06-20T05:59:37.516Z",
+          "system": true,
+          "noteable_id": 497978257,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25461,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "25dd5db694d07c526e373c7247415cb4cbac469d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3475734991,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>b9cec8e2...e1cb516a - 2 commits from branch <code>wireshark:master</code></li><li>53c56d49 - DVB-S2-TABLE: Fix FCT2 section_fixed_access_method bitmask</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25461/diffs?diff_id=1862158986&start_sha=b9cec8e2116083f2c09b874666eb4612753e2913)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-20T13:37:36.620Z",
+          "updated_at": "2026-06-20T13:37:36.621Z",
+          "system": true,
+          "noteable_id": 497978257,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25461,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c03b2a72fcfa6391c4381ef6b90f52c01024a0f4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3475897189,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-06-20T17:07:46.672Z",
+          "updated_at": "2026-06-20T17:07:46.674Z",
+          "system": true,
+          "noteable_id": 497978257,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25461,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -573,7 +573,7 @@ static const value_string table_modcods[] = {\n #define DVB_S2_TABLE_TBTP_VBDC_FLAG_MASK 0x10\n #define DVB_S2_TABLE_TBTP_START_SLOT_MASK 0x07FF\n \n-#define DVB_S2_TABLE_FRAME_TYPE_SECTION_FAM_MASK 0xC\n+#define DVB_S2_TABLE_FRAME_TYPE_SECTION_FAM_MASK 0xF\n #define DVB_S2_TABLE_FRAME_ID_TOT_TIME_COUNT_MASK 0x07FF\n #define DVB_S2_TABLE_NETWORK_DESC_LENGTH_MASK 0x0FFF\n #define DVB_S2_TABLE_MULTIPLEX_STREAMS_LENGTH_MASK 0x0FFF\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-dvb-s2-table.c",
+      "old_path": "epan/dissectors/packet-dvb-s2-table.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "53c56d494de1d6db0ba0e980b27430191bccfae9",
+      "short_id": "53c56d49",
+      "created_at": "2026-06-20T15:37:31.000+02:00",
+      "parent_ids": [
+        "e1cb516a978beda1e263792a792abd47a3b81b75"
+      ],
+      "title": "DVB-S2-TABLE: Fix FCT2 section_fixed_access_method bitmask",
+      "message": "DVB-S2-TABLE: Fix FCT2 section_fixed_access_method bitmask\n\n- DVB_S2_TABLE_FRAME_TYPE_SECTION_FAM_MASK was 0x0C (bits 3:2, 2-bit\n  field) instead of 0x0F (bits 3:0, 4-bit field)\n- Per ETSI EN 301 545-2 V1.4.1 p.57: upper nibble is reserved,\n  lower nibble carries fixed_access_method\n\nAI-Assisted: no\n",
+      "author_name": "Daniil Batalov",
+      "author_email": "dbatalov@deltard.ru",
+      "authored_date": "2026-06-20T11:48:46.000+07:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2026-06-20T15:37:31.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/53c56d494de1d6db0ba0e980b27430191bccfae9"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1862158986,
+      "head_commit_sha": "53c56d494de1d6db0ba0e980b27430191bccfae9",
+      "base_commit_sha": "e1cb516a978beda1e263792a792abd47a3b81b75",
+      "start_commit_sha": "e1cb516a978beda1e263792a792abd47a3b81b75",
+      "created_at": "2026-06-20T13:37:36.074Z",
+      "merge_request_id": 497978257,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "038c695a9e5722c5cc5a15f6fa92fd89c9d4565b"
+    },
+    {
+      "id": 1862013652,
+      "head_commit_sha": "b9cec8e2116083f2c09b874666eb4612753e2913",
+      "base_commit_sha": "22001325f20c4ee8e7beb00910329709c648a2e8",
+      "start_commit_sha": "22001325f20c4ee8e7beb00910329709c648a2e8",
+      "created_at": "2026-06-20T05:59:37.114Z",
+      "merge_request_id": 497978257,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "038c695a9e5722c5cc5a15f6fa92fd89c9d4565b"
+    },
+    {
+      "id": 1862004043,
+      "head_commit_sha": "84516bdf70cc481c8cc80cdbdf29f21a7feaf9f5",
+      "base_commit_sha": "a0e868c875d2aa40701c1bd00a8afb24adb192e8",
+      "start_commit_sha": "a0e868c875d2aa40701c1bd00a8afb24adb192e8",
+      "created_at": "2026-06-20T05:20:13.597Z",
+      "merge_request_id": 497978257,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "038c695a9e5722c5cc5a15f6fa92fd89c9d4565b"
+    },
+    {
+      "id": 1861998510,
+      "head_commit_sha": "cdb55f51e0d66213105883ba4b16c048200b2e18",
+      "base_commit_sha": "c8fa5b19b8fc4bccf7e2ec9671eb94bf1a8e67d4",
+      "start_commit_sha": "c8fa5b19b8fc4bccf7e2ec9671eb94bf1a8e67d4",
+      "created_at": "2026-06-20T05:01:39.979Z",
+      "merge_request_id": 497978257,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "038c695a9e5722c5cc5a15f6fa92fd89c9d4565b"
+    }
+  ]
+}

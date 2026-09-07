@@ -1,0 +1,346 @@
+{
+  "id": 490024995,
+  "iid": 25142,
+  "project_id": 7898047,
+  "title": "fix(cflow): restore port context for data link frames",
+  "description": "When dissecting IPFIX dataLinkFrameSection fields, the cflow dissector\npasses the embedded frame to the Ethernet dissector. That nested\ndissection can update pinfo->ptype, pinfo->srcport, and pinfo->destport\nto describe the embedded packet.\n\nCflow template lookup keys include the exporter and collector ports. The\ndissector already restored the packet addresses after dissecting an\nembedded frame, but it did not restore the port context. As a result, a\nlater data set in the same IPFIX message could fail to find a template\nthat was already cached.\n\nSave and restore the packet port context around the embedded Ethernet\ndissection, matching the existing address restoration.\n\nTested with a sample pcap containing an IPFIX template packet followed\nby data packets using template IDs 256 and 257.\n\n[ipfix_samples_udp.pcap](/uploads/c04048eef60329c90f090ec339d0cc00/ipfix_samples_udp.pcap)\n\nInstalled tshark version:\n\n```\n/Applications/Wireshark.app/Contents/MacOS/tshark --version | head -n 1\nTShark (Wireshark) 4.6.6 (v4.6.6-0-g3a22c3ef473d).\n```\n\nInstalled tshark result:\n\n```\n/Applications/Wireshark.app/Contents/MacOS/tshark -r /private/tmp/ipfix_samples_udp.pcapng -Y cflow -T fields -e frame.number -e _ws.col.Info -e cflow.flowset_id -e cflow.template_frame -e _ws.expert.message\n1\tIPFIX flow ( 204 bytes) Obs-Domain-ID=    0 [Data-Template:256,257]\t2\n2\tIPFIX flow ( 448 bytes) Obs-Domain-ID=    0 [Data:256] [Data:257]\t256,257\t1,1\t[...]\n3\tIPFIX flow (1056 bytes) Obs-Domain-ID=    0 [Data:257] [Data:256]\t257,256\t1\t[...]Data (596 bytes), no template found\n```\n\nFixed tshark version:\n\n```\nbuild/run/tshark --version | head -n 1\nTShark (Wireshark) 4.7.0 (v4.7.0rc0-3104-ga9f2c651f1a0).\n```\n\nFixed tshark result:\n\n```\nbuild/run/tshark -r /private/tmp/ipfix_samples_udp.pcapng -Y cflow -T fields -e frame.number -e _ws.col.Info -e cflow.flowset_id -e cflow.template_frame -e _ws.expert.message\n1\tIPFIX flow ( 204 bytes) Obs-Domain-ID=    0 [Data-Template:256,257]\t2\n2\tIPFIX flow ( 448 bytes) Obs-Domain-ID=    0 [Data:256] [Data:257]\t256,257\t1,1\t[...]\n3\tIPFIX flow (1056 bytes) Obs-Domain-ID=    0 [Data:257] [Data:256]\t257,256\t1,1\t[...]\n```\n\nAI-Assisted: yes",
+  "state": "merged",
+  "created_at": "2026-05-28T19:57:57.709Z",
+  "updated_at": "2026-06-03T08:20:22.317Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-06-03T08:20:22.394Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix-cflow-data-link-port-context",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7456159,
+    "username": "lspgn",
+    "public_email": "",
+    "name": "Louis",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/be05e10fffe1baf86e093dd34f0836aa254483189e29fa2d50c358c6e1eb3949?s=80&d=identicon",
+    "web_url": "https://gitlab.com/lspgn"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82657203,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "1fb69c3e5221ad5b7f5a10f04de6b1ee08933ca5",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-28T19:58:13.752Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25142",
+  "references": {
+    "short": "!25142",
+    "relative": "!25142",
+    "full": "wireshark/wireshark!25142"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25142",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-06-03T08:09:09.907Z",
+  "latest_build_finished_at": "2026-06-03T08:20:16.529Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2572684337,
+    "iid": 104214,
+    "project_id": 7898047,
+    "sha": "41abc4c2139320d306f002861523352132c454c6",
+    "ref": "refs/merge-requests/25142/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-03T08:09:08.802Z",
+    "updated_at": "2026-06-03T08:20:16.544Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2572684337"
+  },
+  "head_pipeline": {
+    "id": 2572684337,
+    "iid": 104214,
+    "project_id": 7898047,
+    "sha": "41abc4c2139320d306f002861523352132c454c6",
+    "ref": "refs/merge-requests/25142/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-03T08:09:08.802Z",
+    "updated_at": "2026-06-03T08:20:16.544Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2572684337",
+    "before_sha": "41abc4c2139320d306f002861523352132c454c6",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-06-03T08:09:09.907Z",
+    "finished_at": "2026-06-03T08:20:16.529Z",
+    "committed_at": null,
+    "duration": 666,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2572684337",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "a9f2c651f1a077d6691a67949f49d8cb5011a20a",
+    "head_sha": "1fb69c3e5221ad5b7f5a10f04de6b1ee08933ca5",
+    "start_sha": "a9f2c651f1a077d6691a67949f49d8cb5011a20a"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "02f080917b4814f75ef9008a54f67fa1aadcf6bb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3396533606,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>1fb69c3e - fix(cflow): restore port context for data link frames</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25142/diffs?diff_id=1823674759&start_sha=f904bcd7f959900fcbcc834a1414669dedcf5f9e)",
+          "author": {
+            "id": 7456159,
+            "username": "lspgn",
+            "public_email": "",
+            "name": "Louis",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be05e10fffe1baf86e093dd34f0836aa254483189e29fa2d50c358c6e1eb3949?s=80&d=identicon",
+            "web_url": "https://gitlab.com/lspgn"
+          },
+          "created_at": "2026-05-28T20:09:40.160Z",
+          "updated_at": "2026-05-28T20:09:40.165Z",
+          "system": true,
+          "noteable_id": 490024995,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25142,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "68e474bb8828690202f1e84d36f2d1f7dea1ea20",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3415031168,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-03T08:08:52.010Z",
+          "updated_at": "2026-06-03T08:08:52.018Z",
+          "system": true,
+          "noteable_id": 490024995,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25142,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "32a411982569ec97a160f7599bd771052ce88769",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3415031441,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-03T08:08:55.887Z",
+          "updated_at": "2026-06-03T08:08:55.890Z",
+          "system": true,
+          "noteable_id": 490024995,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25142,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c99474b91e69e106391d8f45a631413376d5a36c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3415031476,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-03T08:08:56.394Z",
+          "updated_at": "2026-06-03T08:08:56.397Z",
+          "system": true,
+          "noteable_id": 490024995,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25142,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -7112,6 +7112,8 @@ dissect_v9_v10_pdu_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pdutree,\n         case 315: /* Data Link Frame Section */\n             {\n                 bool save_writable;\n+                port_type save_ptype;\n+                uint32_t save_srcport, save_destport;\n                 address save_dl_src, save_dl_dst, save_net_src, save_net_dst, save_src, save_dst;\n                 ti = proto_tree_add_item(pdutree, hf_cflow_data_link_frame_section,\n                         tvb, offset, length, ENC_NA);\n@@ -7133,13 +7135,16 @@ dissect_v9_v10_pdu_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pdutree,\n \n                 /* Disable overwriting of the info column by the sub dissectors*/\n                 col_set_writable (pinfo->cinfo, -1, false);\n-                /* Save the source and destination addresses */\n+                /* Save the source and destination addresses and ports */\n                 copy_address_shallow(&save_dl_src, &pinfo->dl_src);\n                 copy_address_shallow(&save_dl_dst, &pinfo->dl_dst);\n                 copy_address_shallow(&save_net_src, &pinfo->net_src);\n                 copy_address_shallow(&save_net_dst, &pinfo->net_dst);\n                 copy_address_shallow(&save_src, &pinfo->src);\n                 copy_address_shallow(&save_dst, &pinfo->dst);\n+                save_ptype = pinfo->ptype;\n+                save_srcport = pinfo->srcport;\n+                save_destport = pinfo->destport;\n \n                 /* Call the L2 dissector */\n                 call_dissector(eth_handle, tvb_new, pinfo, dl_frame_sec_tree);\n@@ -7153,6 +7158,9 @@ dissect_v9_v10_pdu_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pdutree,\n                 copy_address_shallow(&pinfo->net_dst, &save_net_dst);\n                 copy_address_shallow(&pinfo->src, &save_src);\n                 copy_address_shallow(&pinfo->dst, &save_dst);\n+                pinfo->ptype = save_ptype;\n+                pinfo->srcport = save_srcport;\n+                pinfo->destport = save_destport;\n             }\n             break;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-netflow.c",
+      "old_path": "epan/dissectors/packet-netflow.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1823674759,
+      "head_commit_sha": "1fb69c3e5221ad5b7f5a10f04de6b1ee08933ca5",
+      "base_commit_sha": "a9f2c651f1a077d6691a67949f49d8cb5011a20a",
+      "start_commit_sha": "a9f2c651f1a077d6691a67949f49d8cb5011a20a",
+      "created_at": "2026-05-28T20:09:39.382Z",
+      "merge_request_id": 490024995,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "6439e70f22a63e257a9d8912e0866433fab52416"
+    },
+    {
+      "id": 1823658085,
+      "head_commit_sha": "f904bcd7f959900fcbcc834a1414669dedcf5f9e",
+      "base_commit_sha": "a9f2c651f1a077d6691a67949f49d8cb5011a20a",
+      "start_commit_sha": "a9f2c651f1a077d6691a67949f49d8cb5011a20a",
+      "created_at": "2026-05-28T19:58:00.956Z",
+      "merge_request_id": 490024995,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "6439e70f22a63e257a9d8912e0866433fab52416"
+    }
+  ]
+}

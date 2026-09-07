@@ -1,0 +1,1068 @@
+{
+  "id": 490170154,
+  "iid": 25151,
+  "project_id": 7898047,
+  "title": "NAS-5GS: Add missing URSP type registrations and parsers",
+  "description": "## Summary\n\nRegister previously unknown URSP type identifiers and add parsers for PIN ID and Connectivity group ID traffic descriptors.\n\n## Problem\n\nThree type identifiers are missing from the value_string tables, causing them to display as \"Unknown\":\n\n- RSD 0x84: Displayed as `Unknown (132)` — type name not registered\n- TD 0xA2: Displayed as `Unknown (162)` + `IE not dissected yet` — type name not registered and no parser\n- TD 0xA3: Displayed as `Unknown (163)` + `IE not dissected yet` — type name not registered and no parser\n\n## Changes\n\nRoute selection descriptor (`nas_5gs_ursp_r_sel_desc_comp_type_values`):\n- Added `{ 0x84, \"5G ProSe multi-path preference type\" }` (zero-length value, no parser needed)\n\nTraffic descriptor (`nas_5gs_ursp_traff_desc_component_type_values`):\n- Added `{ 0xa2, \"PIN ID type\" }`\n- Added `{ 0xa3, \"Connectivity group ID type\" }`\n\nTraffic descriptor parser (`de_nas_5gs_ursp_traff_desc`):\n- Added `case 0xa2`: 1-byte length + UTF-8 string\n- Added `case 0xa3`: 1-byte length + UTF-8 string\n\nAlso added 4 new `hf` field declarations and registrations.\n\n## Specification Reference\n\n3GPP TS 24.526 Section 5.2:\n\n> For \"PIN ID type\", the traffic descriptor component value field shall be encoded as a sequence of a one octet length field and a PIN ID value field.\n\n> For \"connectivity group ID type\", the traffic descriptor component value field shall be encoded as a sequence of a one octet length field and a connectivity group ID value field.\n\n> For \"5G ProSe multi-path preference type\", the route selection descriptor component shall not include the route selection descriptor component value field.\n\n## Testing\n\nVerified with pcap files:\n\n- **5G ProSe multi-path (RSD 0x84)**\n  - Before: `Unknown (132)`\n  - After: `5G ProSe multi-path preference type (132)`\n\n- **PIN ID (TD 0xA2)**\n  - Before: `Unknown (162)` + `IE not dissected yet`\n  - After: `PIN ID type (162)` / `PIN ID length: 7` / `PIN ID: pin-001`\n\n- **Connectivity group ID (TD 0xA3)**\n  - Before: `Unknown (163)` + `IE not dissected yet`\n  - After: `Connectivity group ID type (163)` / `Connectivity group ID length: 8` / `Connectivity group ID: group-01`\n\nReproduction pcaps:\n- [RSD_0x84_ProSe_multipath.pcap](https://gitlab.com/-/project/82634231/uploads/496d8e67375d763f0979591b773eb4b1/RSD_0x84_ProSe_multipath.pcap)\n- [TD_0xA2_PIN_ID.pcap](https://gitlab.com/-/project/82634231/uploads/72108d6288076477bb16e41cb78a8698/TD_0xA2_PIN_ID.pcap)\n- [TD_0xA3_connectivity_group_ID.pcap](https://gitlab.com/-/project/82634231/uploads/4df9748b4fd208b61a8d615c391fb4a5/TD_0xA3_connectivity_group_ID.pcap)",
+  "state": "merged",
+  "created_at": "2026-05-29T08:38:02.932Z",
+  "updated_at": "2026-06-04T04:52:41.979Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-06-04T04:52:42.007Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "nas-5gs-ursp-missing-types",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 38615586,
+    "username": "joostone-ahn",
+    "public_email": "",
+    "name": "Juseok Ahn",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+    "web_url": "https://gitlab.com/joostone-ahn"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82634231,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0204878b392e69ed3f90fa482a426cbdec611376",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-29T08:38:11.013Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25151",
+  "references": {
+    "short": "!25151",
+    "relative": "!25151",
+    "full": "wireshark/wireshark!25151"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25151",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-06-04T04:29:07.087Z",
+  "latest_build_finished_at": "2026-06-04T04:51:29.615Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2575577732,
+    "iid": 104269,
+    "project_id": 7898047,
+    "sha": "a062fcb8e2bbefa6be16a17b5220ea8eee1a2f57",
+    "ref": "refs/merge-requests/25151/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-04T04:29:06.258Z",
+    "updated_at": "2026-06-04T04:51:29.626Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2575577732"
+  },
+  "head_pipeline": {
+    "id": 2575577732,
+    "iid": 104269,
+    "project_id": 7898047,
+    "sha": "a062fcb8e2bbefa6be16a17b5220ea8eee1a2f57",
+    "ref": "refs/merge-requests/25151/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-04T04:29:06.258Z",
+    "updated_at": "2026-06-04T04:51:29.626Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2575577732",
+    "before_sha": "a062fcb8e2bbefa6be16a17b5220ea8eee1a2f57",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-06-04T04:29:07.087Z",
+    "finished_at": "2026-06-04T04:51:29.615Z",
+    "committed_at": null,
+    "duration": 1342,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2575577732",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "d76102fac2f23ad928a5219a9b46c15271710692",
+    "head_sha": "0204878b392e69ed3f90fa482a426cbdec611376",
+    "start_sha": "d76102fac2f23ad928a5219a9b46c15271710692"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "169813b3df8d82c37b7e85a1e1bc4c2242b13634",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3403307205,
+          "type": null,
+          "body": "added 19 commits\n\n<ul><li>931a794e...38685448 - 18 commits from branch <code>wireshark:master</code></li><li>c9ca6871 - NAS-5GS: Add missing URSP type registrations and parsers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25151/diffs?diff_id=1826531739&start_sha=931a794e41250eae4678a366c805bd418d432cd5)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-05-31T14:04:46.043Z",
+          "updated_at": "2026-05-31T14:04:46.047Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dba8bc56e2784f1e8de8dca904cf1ceffb931f57",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3409730090,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6524193,
+            "username": "oakimk",
+            "public_email": "",
+            "name": "Joakim Karlsson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6524193/avatar.png?v=1787702414",
+            "web_url": "https://gitlab.com/oakimk"
+          },
+          "created_at": "2026-06-02T08:25:50.351Z",
+          "updated_at": "2026-06-02T08:25:50.369Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6b04c4be99a7e09287661f00e94c42257221aad3",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3409939796,
+          "type": "DiffNote",
+          "body": "could add case 0x84 with comments about zero length and just break, since otherwise we will get \"IE not dissected yet\"",
+          "author": {
+            "id": 6524193,
+            "username": "oakimk",
+            "public_email": "",
+            "name": "Joakim Karlsson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6524193/avatar.png?v=1787702414",
+            "web_url": "https://gitlab.com/oakimk"
+          },
+          "created_at": "2026-06-02T09:15:23.215Z",
+          "updated_at": "2026-06-03T07:54:12.032Z",
+          "system": false,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "start_sha": "4dcf948bdb06e7fa9c91fb4727a790f15d122972",
+            "head_sha": "ea2fda96bf3dcc501017cf5b1816c3e4c4160c55",
+            "old_path": "epan/dissectors/packet-nas_5gs.c",
+            "new_path": "epan/dissectors/packet-nas_5gs.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 10639,
+            "line_range": {
+              "start": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_10616_10639",
+                "type": "new",
+                "old_line": null,
+                "new_line": 10639
+              },
+              "end": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_10616_10639",
+                "type": "new",
+                "old_line": null,
+                "new_line": 10639
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-06-03T07:54:12.032Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        },
+        {
+          "id": 3411586086,
+          "type": "DiffNote",
+          "body": "Fixed. Added `case 0x84: break;` as suggested.\n\nAlso added empty cases for the other zero-length RSD types (0x11, 0x20, 0x81) that have the same issue — registered in `value_string` but missing from the switch statement.",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-02T14:51:19.489Z",
+          "updated_at": "2026-06-03T07:54:12.032Z",
+          "system": false,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "start_sha": "4dcf948bdb06e7fa9c91fb4727a790f15d122972",
+            "head_sha": "ea2fda96bf3dcc501017cf5b1816c3e4c4160c55",
+            "old_path": "epan/dissectors/packet-nas_5gs.c",
+            "new_path": "epan/dissectors/packet-nas_5gs.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 10639,
+            "line_range": {
+              "start": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_10616_10639",
+                "type": "new",
+                "old_line": null,
+                "new_line": 10639
+              },
+              "end": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_10616_10639",
+                "type": "new",
+                "old_line": null,
+                "new_line": 10639
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-06-03T07:54:12.032Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        },
+        {
+          "id": 3411831090,
+          "type": "DiffNote",
+          "body": "Removed duplicate cases for 0x11 and 0x20 (already present in master after recent merges). Kept 0x81 and 0x84.",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-02T15:42:43.607Z",
+          "updated_at": "2026-06-03T07:54:12.032Z",
+          "system": false,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "start_sha": "4dcf948bdb06e7fa9c91fb4727a790f15d122972",
+            "head_sha": "ea2fda96bf3dcc501017cf5b1816c3e4c4160c55",
+            "old_path": "epan/dissectors/packet-nas_5gs.c",
+            "new_path": "epan/dissectors/packet-nas_5gs.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 10639,
+            "line_range": {
+              "start": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_10616_10639",
+                "type": "new",
+                "old_line": null,
+                "new_line": 10639
+              },
+              "end": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_10616_10639",
+                "type": "new",
+                "old_line": null,
+                "new_line": 10639
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-06-03T07:54:12.032Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        },
+        {
+          "id": 3416940647,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/25151/diffs?diff_id=1832618425&start_sha=ea2fda96bf3dcc501017cf5b1816c3e4c4160c55#43e3f477f992367871c22b1456eca55763d47a47_10639_10635)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T14:29:02.234Z",
+          "updated_at": "2026-06-03T14:29:02.234Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "start_sha": "4dcf948bdb06e7fa9c91fb4727a790f15d122972",
+            "head_sha": "ea2fda96bf3dcc501017cf5b1816c3e4c4160c55",
+            "old_path": "epan/dissectors/packet-nas_5gs.c",
+            "new_path": "epan/dissectors/packet-nas_5gs.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 10639,
+            "line_range": {
+              "start": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_10616_10639",
+                "type": "new",
+                "old_line": null,
+                "new_line": 10639
+              },
+              "end": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_10616_10639",
+                "type": "new",
+                "old_line": null,
+                "new_line": 10639
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c28c186f0dd318b1419adad1c9e529054950540d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3409941528,
+          "type": null,
+          "body": "unapproved this merge request",
+          "author": {
+            "id": 6524193,
+            "username": "oakimk",
+            "public_email": "",
+            "name": "Joakim Karlsson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6524193/avatar.png?v=1787702414",
+            "web_url": "https://gitlab.com/oakimk"
+          },
+          "created_at": "2026-06-02T09:15:46.163Z",
+          "updated_at": "2026-06-02T09:15:46.166Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "02a90beb947b66b0d0abf0c7ee1a99e89295585c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3411586735,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>ab5ec5d9 - NAS-5GS: Add empty cases for zero-length RSD types</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25151/diffs?diff_id=1830392566&start_sha=c9ca6871be7ea1e6c99644d08c4141091263f8d6)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-02T14:51:27.733Z",
+          "updated_at": "2026-06-02T14:51:27.737Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bd166391a8bda70c9425856acf8e0f71e01e85c8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3411831372,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>ea2fda96 - Remove duplicate cases 0x11/0x20 (already in master after recent merges)</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25151/diffs?diff_id=1830516653&start_sha=ab5ec5d9a71c68a1b78f92549fccefd5db706444)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-02T15:42:47.562Z",
+          "updated_at": "2026-06-02T15:42:47.568Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dfb024c5bda27e870c9c97066cd06f6090442bed",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3414969230,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-03T07:54:12.095Z",
+          "updated_at": "2026-06-03T07:54:12.098Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "60d9faf575fbd08dbec34e9fe87f52ee016c2f08",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3414975475,
+          "type": null,
+          "body": "You need to rebase locally.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-03T07:55:53.411Z",
+          "updated_at": "2026-06-03T07:55:53.411Z",
+          "system": false,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7df8ceb085c6db9f7dacec77b442dc5abf318dfb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3415147579,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6524193,
+            "username": "oakimk",
+            "public_email": "",
+            "name": "Joakim Karlsson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6524193/avatar.png?v=1787702414",
+            "web_url": "https://gitlab.com/oakimk"
+          },
+          "created_at": "2026-06-03T08:32:38.556Z",
+          "updated_at": "2026-06-03T08:32:38.563Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6bc5f12afa201f13fceab22ac1be87b728e44a39",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3416941679,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>3e8825c6 - Rebase: re-apply missing type changes on current master</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25151/diffs?diff_id=1832618425&start_sha=ea2fda96bf3dcc501017cf5b1816c3e4c4160c55)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T14:29:07.480Z",
+          "updated_at": "2026-06-03T14:29:07.489Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a28167d66c3fb1d3ee1c96e9808f37093ffff7f6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3416945061,
+          "type": null,
+          "body": "reset approvals from @oakimk by pushing to the branch",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T14:29:37.040Z",
+          "updated_at": "2026-06-03T14:29:37.067Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c923fb88e2e755a550d50b754b6569c45c969c90",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3416954767,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>fee220ef - Add missing hf static declarations</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25151/diffs?diff_id=1832622615&start_sha=3e8825c61c7bdbd8219e2943eeae3a843215f309)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T14:30:24.533Z",
+          "updated_at": "2026-06-03T14:30:24.538Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "25088ecc459e91f0b2897aae6b3148e740e41685",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3417357825,
+          "type": null,
+          "body": "added 50 commits\n\n<ul><li>fee220ef...390d00de - 49 commits from branch <code>wireshark:master</code></li><li>bea241df - NAS-5GS: Add missing URSP type registrations and parsers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25151/diffs?diff_id=1832785283&start_sha=fee220eff15226f1d1d5e27aa954299a8f2b08be)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T15:28:56.631Z",
+          "updated_at": "2026-06-03T15:28:56.638Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5cdaf9712fedbff0584a8798b1518e5937248e10",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3417489898,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>bea241df...d76102fa - 2 commits from branch <code>wireshark:master</code></li><li>0204878b - NAS-5GS: Add missing URSP type registrations and parsers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25151/diffs?diff_id=1832847442&start_sha=bea241df856ab787249c9f270f890854886e0f6c)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T15:55:20.971Z",
+          "updated_at": "2026-06-03T15:55:20.976Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a19079ac3228923997b9814f95cfef66eae9fb81",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3420581572,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-04T04:28:59.527Z",
+          "updated_at": "2026-06-04T04:28:59.543Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6179ba56fedba111d876849db7a5741c6647f358",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3420581736,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 3",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-04T04:29:04.707Z",
+          "updated_at": "2026-06-04T04:29:04.710Z",
+          "system": true,
+          "noteable_id": 490170154,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25151,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -853,6 +853,10 @@ static int hf_nas_5gs_ursp_traff_desc_dest_fqdn_len;\n static int hf_nas_5gs_ursp_traff_desc_dest_fqdn;\n static int hf_nas_5gs_ursp_traff_desc_regex_len;\n static int hf_nas_5gs_ursp_traff_desc_regex;\n+static int hf_nas_5gs_ursp_traff_desc_pin_id_len;\n+static int hf_nas_5gs_ursp_traff_desc_pin_id;\n+static int hf_nas_5gs_ursp_traff_desc_conn_group_id_len;\n+static int hf_nas_5gs_ursp_traff_desc_conn_group_id;\n static int hf_nas_5gs_ursp_traff_desc_dest_mac_addr_range_low;\n static int hf_nas_5gs_ursp_traff_desc_dest_mac_addr_range_high;\n static int hf_nas_5gs_ursp_traff_desc_len;\n@@ -10341,6 +10345,8 @@ static const value_string nas_5gs_ursp_traff_desc_component_type_values[] = {\n     { 0x92, \"Regular expression\" },\n     { 0xa0, \"OS App Id type\" },\n     { 0xa1, \"Destination MAC address range type\"},\n+    { 0xa2, \"PIN ID type\" },\n+    { 0xa3, \"Connectivity group ID type\" },\n     { 0, NULL }\n };\n \n@@ -10630,6 +10636,24 @@ de_nas_5gs_ursp_traff_desc(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)\n             proto_tree_add_item(tree, hf_nas_5gs_ursp_traff_desc_dest_mac_addr_range_high, tvb, offset, 6, ENC_NA);\n             offset += 6;\n             break;\n+        case 0xa2: /* PIN ID */\n+            /* For \"PIN ID type\", the traffic descriptor component value field shall be\n+               encoded as a sequence of a one octet length field and a PIN ID value field\n+               containing a UTF-8 string. TS 24.526 Section 5.2 */\n+            proto_tree_add_item_ret_uint(tree, hf_nas_5gs_ursp_traff_desc_pin_id_len, tvb, offset, 1, ENC_NA, &length);\n+            offset += 1;\n+            proto_tree_add_item(tree, hf_nas_5gs_ursp_traff_desc_pin_id, tvb, offset, length, ENC_UTF_8);\n+            offset += length;\n+            break;\n+        case 0xa3: /* Connectivity group ID */\n+            /* For \"connectivity group ID type\", the traffic descriptor component value field\n+               shall be encoded as a sequence of a one octet length field and a connectivity\n+               group ID value field containing a UTF-8 string. TS 24.526 Section 5.2 */\n+            proto_tree_add_item_ret_uint(tree, hf_nas_5gs_ursp_traff_desc_conn_group_id_len, tvb, offset, 1, ENC_NA, &length);\n+            offset += 1;\n+            proto_tree_add_item(tree, hf_nas_5gs_ursp_traff_desc_conn_group_id, tvb, offset, length, ENC_UTF_8);\n+            offset += length;\n+            break;\n         default:\n             proto_tree_add_expert_remaining(tree, pinfo, &ei_nas_5gs_ie_not_dis, tvb, offset);\n             return;\n@@ -10685,6 +10709,7 @@ static const value_string nas_5gs_ursp_r_sel_desc_comp_type_values[] = {\n     { 0x81, \"5G ProSe layer-3 UE-to-network relay offload type\" },\n     { 0x82, \"PDU session pair ID type\" },\n     { 0x83, \"RSN type\" },\n+    { 0x84, \"5G ProSe multi-path preference type\" },\n     { 0, NULL }\n };\n \n@@ -16304,6 +16329,26 @@ proto_register_nas_5gs(void)\n             FT_ETHER, BASE_NONE, NULL, 0x0,\n             NULL, HFILL }\n         },\n+        { &hf_nas_5gs_ursp_traff_desc_pin_id_len,\n+        { \"PIN ID length\", \"nas-5gs.ursp.traff_desc.pin_id_len\",\n+            FT_UINT8, BASE_DEC, NULL, 0x0,\n+            NULL, HFILL }\n+        },\n+        { &hf_nas_5gs_ursp_traff_desc_pin_id,\n+        { \"PIN ID\", \"nas-5gs.ursp.traff_desc.pin_id\",\n+            FT_STRING, BASE_NONE, NULL, 0x0,\n+            NULL, HFILL }\n+        },\n+        { &hf_nas_5gs_ursp_traff_desc_conn_group_id_len,\n+        { \"Connectivity group ID length\", \"nas-5gs.ursp.traff_desc.conn_group_id_len\",\n+            FT_UINT8, BASE_DEC, NULL, 0x0,\n+            NULL, HFILL }\n+        },\n+        { &hf_nas_5gs_ursp_traff_desc_conn_group_id,\n+        { \"Connectivity group ID\", \"nas-5gs.ursp.traff_desc.conn_group_id\",\n+            FT_STRING, BASE_NONE, NULL, 0x0,\n+            NULL, HFILL }\n+        },\n         { &hf_nas_5gs_ursp_traff_desc_len,\n         { \"Length\", \"nas-5gs.ursp.r_sel_desc_len\",\n             FT_UINT16, BASE_DEC, NULL, 0x0,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-nas_5gs.c",
+      "old_path": "epan/dissectors/packet-nas_5gs.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1832847442,
+      "head_commit_sha": "0204878b392e69ed3f90fa482a426cbdec611376",
+      "base_commit_sha": "d76102fac2f23ad928a5219a9b46c15271710692",
+      "start_commit_sha": "d76102fac2f23ad928a5219a9b46c15271710692",
+      "created_at": "2026-06-03T15:55:20.178Z",
+      "merge_request_id": 490170154,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "7b4befa5a63e41c9ac3f4a083f9c1fed102c5b6f"
+    },
+    {
+      "id": 1832785283,
+      "head_commit_sha": "bea241df856ab787249c9f270f890854886e0f6c",
+      "base_commit_sha": "390d00de390710cd7980c80b13a1b3c894f6bd86",
+      "start_commit_sha": "7263aa9b42f81952a6511ffcdf56ab0a7f302e20",
+      "created_at": "2026-06-03T15:28:55.160Z",
+      "merge_request_id": 490170154,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "7b4befa5a63e41c9ac3f4a083f9c1fed102c5b6f"
+    },
+    {
+      "id": 1832622615,
+      "head_commit_sha": "fee220eff15226f1d1d5e27aa954299a8f2b08be",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "390d00de390710cd7980c80b13a1b3c894f6bd86",
+      "created_at": "2026-06-03T14:30:23.737Z",
+      "merge_request_id": 490170154,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "1ff326cc2441ee9bdfca803c6c6c972daafa65d8"
+    },
+    {
+      "id": 1832618425,
+      "head_commit_sha": "3e8825c61c7bdbd8219e2943eeae3a843215f309",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "390d00de390710cd7980c80b13a1b3c894f6bd86",
+      "created_at": "2026-06-03T14:29:00.376Z",
+      "merge_request_id": 490170154,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "5a3e057c83e38de54256732f2b8b1c7a1702ea25"
+    },
+    {
+      "id": 1830516653,
+      "head_commit_sha": "ea2fda96bf3dcc501017cf5b1816c3e4c4160c55",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "4dcf948bdb06e7fa9c91fb4727a790f15d122972",
+      "created_at": "2026-06-02T15:42:45.824Z",
+      "merge_request_id": 490170154,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "6e0297a9a7fcd877ec006cfade1b40078dcfa06d"
+    },
+    {
+      "id": 1830392566,
+      "head_commit_sha": "ab5ec5d9a71c68a1b78f92549fccefd5db706444",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "ed8b7927da49a63106589b3af9daf16131c770ed",
+      "created_at": "2026-06-02T14:51:22.112Z",
+      "merge_request_id": 490170154,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "b7d8d430d8b3bae89ab83faf951bdc1343534356"
+    },
+    {
+      "id": 1826531749,
+      "head_commit_sha": "c9ca6871be7ea1e6c99644d08c4141091263f8d6",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "created_at": "2026-05-31T14:04:45.741Z",
+      "merge_request_id": 490170154,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "76fc1abc96b4362317a29ffc041ade36a97d9714"
+    },
+    {
+      "id": 1826531739,
+      "head_commit_sha": "c9ca6871be7ea1e6c99644d08c4141091263f8d6",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "created_at": "2026-05-31T14:04:45.202Z",
+      "merge_request_id": 490170154,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "76fc1abc96b4362317a29ffc041ade36a97d9714"
+    },
+    {
+      "id": 1824422956,
+      "head_commit_sha": "931a794e41250eae4678a366c805bd418d432cd5",
+      "base_commit_sha": "37675811608d4ca1bc1cb68cdd43317d6f733d19",
+      "start_commit_sha": "37675811608d4ca1bc1cb68cdd43317d6f733d19",
+      "created_at": "2026-05-29T08:38:06.119Z",
+      "merge_request_id": 490170154,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "76fc1abc96b4362317a29ffc041ade36a97d9714"
+    }
+  ]
+}

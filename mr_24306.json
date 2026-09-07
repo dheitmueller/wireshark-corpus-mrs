@@ -1,0 +1,370 @@
+{
+  "id": 472831975,
+  "iid": 24306,
+  "project_id": 7898047,
+  "title": "SMB: Enable dissecting of NEGOTIATE response for Windows for Workgroups 3.1a",
+  "description": "Microsoft has documentation for SMB1 \"Windows for Workgroups 3.1a\" dialect and can disclose it to developers who ask for them on dochelp@microsoft.com email address (which is public address linked in \\[MS-CIFS\\] specifications).\n\nThe important part of the documentation from Microsoft is:\n\n```\nThere are no protocol-level differences between the \"Windows for\nWorkgroups 3.1a\" dialect and the LANMAN1.0 / LANMAN1.0.1 dialects. The\nWindows for Workgroups 3.1a string is a legacy dialect alias advertised\nby early Windows clients during SMB_COM_NEGOTIATE for environment and\ncompatibility identification only. When selected by a server, it falls\nback to the existing LAN Manager protocol rules, including command set,\npacket formats, and semantics, all of which are already documented in\n[SMB-LM1X] and [MS-CIFS]. This SMB dialect string does not represent a\ndistinct SMB protocol version, introduce new SMB commands, or define\nunique message structures.\n\n\"Windows for Workgroups 3.1a\" reflects a DOS-based client environment,\nusing standard LAN Manager protocol behavior and DOS-style error codes,\nwithout defining a separate protocol.\n```\n\nHence the Wireshark packet dissector for \"Windows for Workgroups 3.1a\" should be exactly same as the dissector for LANMAN dialects.\n\nWireshark dissector for LANMAN dialects was broken but was recently fixed in the commit 764cc06fddf9659197d8bf3eb8b0bb457f33a812 (\"SMB: Fix dissecting of Negotiate cryptkey from LAN Manager 1.x and 2.0 dialects\") from merge request !22260. Hence the Wireshark code is already able to dissect also that \"Windows for Workgroups 3.1a\" dialect too.\n\nSo enable dissecting the SMB1 \"Windows for Workgroups 3.1a\" dialect by removing the skip code. This effectively reverts the commit 595e4df20fa7b5c7836d3e13540713b060dba1b7 (\"smb: do not attempt to dissect wfw3.11 negotiate protocol blob\") from merge request !21937.\n\nThis change (together with merge request !22260) also address the Wireshark issue \\[work_item:20783\\] that the Wireshark is not able to dissect SMB Negotiate Protocol Response using Windows for Workgroups 3.1a dialect.\n\nThe problematic packet number 305 from smb-legacy-implementation.pcapng is:\n\n```\nNegotiate Protocol Response (0x72)\n    Word Count (WCT): 13 (Greater than CORE PROTOCOL and up to LANMAN2.1)\n    Selected Index: 4 (Windows for Workgroups 3.1a)\n    Security Mode: 0x0002, Password\n        .... .... .... ...0 = Mode: SHARE security mode\n        .... .... .... ..1. = Password: ENCRYPTED password. Use challenge/response\n    Max Buffer Size: 1430\n    Max Mpx Count: 1\n    Max VCs: 1\n    Raw Mode: 0x0000\n        .... .... .... ...0 = Read Raw: Read Raw is not supported\n        .... .... .... ..0. = Write Raw: Write Raw is not supported\n    Session Key: 0x80041002\n    Server Date and Time: Mar 16, 2016 10:48:34.000000000 CET\n        DOS Time: 10:48:34 (0x5611)\n        DOS Date: 2016-03-16 (0x4870)\n    Server Time Zone: 0 min from UTC\n    Challenge Length: 0\n    Reserved: 0000\n    Byte Count (BCC): 8\n    Challenge: 02100480033ae956\n```",
+  "state": "merged",
+  "created_at": "2026-04-10T19:12:07.367Z",
+  "updated_at": "2026-04-11T03:57:42.320Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2026-04-11T03:57:42.337Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "feature/enable_dissecting_of_negotiate_response",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 31326884,
+    "username": "Dugy1",
+    "public_email": null,
+    "name": "Dugy1",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/cfd101187a8bdc18b7ec4335396ebd633bdafba744a1ad2a4df7461235e5b45e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Dugy1"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 75764613,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0b00dda0d734e66be61f45420ae470f2adc99bc5",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-04-10T19:12:14.820Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!24306",
+  "references": {
+    "short": "!24306",
+    "relative": "!24306",
+    "full": "wireshark/wireshark!24306"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/24306",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-04-11T03:43:15.245Z",
+  "latest_build_finished_at": "2026-04-11T03:57:41.213Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2445589176,
+    "iid": 100255,
+    "project_id": 7898047,
+    "sha": "58f04df371f362087f84cb8325d348795fa51d35",
+    "ref": "refs/merge-requests/24306/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-04-11T03:43:13.819Z",
+    "updated_at": "2026-04-11T03:57:41.226Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2445589176"
+  },
+  "head_pipeline": {
+    "id": 2445589176,
+    "iid": 100255,
+    "project_id": 7898047,
+    "sha": "58f04df371f362087f84cb8325d348795fa51d35",
+    "ref": "refs/merge-requests/24306/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-04-11T03:43:13.819Z",
+    "updated_at": "2026-04-11T03:57:41.226Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2445589176",
+    "before_sha": "58f04df371f362087f84cb8325d348795fa51d35",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2026-04-11T03:43:15.245Z",
+    "finished_at": "2026-04-11T03:57:41.213Z",
+    "committed_at": null,
+    "duration": 866,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2445589176",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "b9b241d185683d04b385eca0b94d449e200b558a",
+    "head_sha": "0b00dda0d734e66be61f45420ae470f2adc99bc5",
+    "start_sha": "e87cd4c9a5996b5a128eecac6cbaabb1b3ac002f"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "42ae8e7971c39ee76d8514d4fa6c293906fd9985",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3241262272,
+          "type": null,
+          "body": "@sahlberg, can you please review this? It resolves an issue you worked on before.",
+          "author": {
+            "id": 31326884,
+            "username": "Dugy1",
+            "public_email": null,
+            "name": "Dugy1",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/cfd101187a8bdc18b7ec4335396ebd633bdafba744a1ad2a4df7461235e5b45e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dugy1"
+          },
+          "created_at": "2026-04-10T19:14:30.121Z",
+          "updated_at": "2026-04-10T19:14:30.121Z",
+          "system": false,
+          "noteable_id": 472831975,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24306,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1f388eb3fb91ed65501ea96bd3bbfc58f309a5ff",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3241583821,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 31326884,
+            "username": "Dugy1",
+            "public_email": null,
+            "name": "Dugy1",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/cfd101187a8bdc18b7ec4335396ebd633bdafba744a1ad2a4df7461235e5b45e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Dugy1"
+          },
+          "created_at": "2026-04-10T22:13:50.961Z",
+          "updated_at": "2026-04-10T22:13:50.965Z",
+          "system": true,
+          "noteable_id": 472831975,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24306,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c80ef761e0e56efee85aa7c46661ca40a09035e2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3241630739,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 7014716,
+            "username": "sahlberg",
+            "public_email": "",
+            "name": "Ronnie Sahlberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/88911e6cfe3dfc07b327385209d35a46898b5f12538fcb9fe0d5cf97dd7b94d2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/sahlberg"
+          },
+          "created_at": "2026-04-10T23:06:26.345Z",
+          "updated_at": "2026-04-10T23:06:26.500Z",
+          "system": true,
+          "noteable_id": 472831975,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24306,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "963229067dbd0f26809dca7e60c27123ba3a908f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3241779333,
+          "type": null,
+          "body": "This also removes a call of `strcmp` where on variable can be NULL (`g_strcmp0` would work), thus resolving #21176 / #21178. (!24182 made it so that NULL could be passed there, which was not true before.)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-04-11T02:35:07.327Z",
+          "updated_at": "2026-04-11T02:35:07.327Z",
+          "system": false,
+          "noteable_id": 472831975,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24306,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "236be98dcc7382e378d4a33eab13df78924fec27",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3241812716,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-04-11T03:43:12.350Z",
+          "updated_at": "2026-04-11T03:43:12.354Z",
+          "system": true,
+          "noteable_id": 472831975,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24306,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -3112,17 +3112,6 @@ dissect_negprot_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, in\n \n \tswitch(wc) {\n \tcase 13:\n-\t\t/*\n-\t\t * We don't know how to decode the blob for this ancient dialect\n-\t\t * and it is not documented in any of the MS documents.\n-\t\t */\n-\t\tif (!strcmp(dialect_name, \"Windows for Workgroups 3.1a\")) {\n-\t\t\tproto_tree_add_item(tree, hf_smb_unknown, tvb,\n-\t\t\t\t\t    offset, -1, ENC_NA);\n-\t\t\toffset += tvb_reported_length_remaining(tvb, offset);\n-\t\t\tbreak;\n-\t\t}\n-\n \t\t/*\n \t\t * Server selected CorePlus dialect or a dialect from LAN Manager 1.0 through\n \t\t * LAN Manager 2.1.\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-smb.c",
+      "old_path": "epan/dissectors/packet-smb.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1745651603,
+      "head_commit_sha": "0b00dda0d734e66be61f45420ae470f2adc99bc5",
+      "base_commit_sha": "b9b241d185683d04b385eca0b94d449e200b558a",
+      "start_commit_sha": "e87cd4c9a5996b5a128eecac6cbaabb1b3ac002f",
+      "created_at": "2026-04-10T19:12:10.486Z",
+      "merge_request_id": 472831975,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "198e23d0bea14d15d740df7cf68b1bfbd7364387"
+    }
+  ]
+}

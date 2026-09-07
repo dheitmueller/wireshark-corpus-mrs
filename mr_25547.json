@@ -1,0 +1,401 @@
+{
+  "id": 500572199,
+  "iid": 25547,
+  "project_id": 7898047,
+  "title": "IEEE 802.15.4: Fix ccm_cbc_mac stack buffer underflow",
+  "description": "## IEEE 802.15.4: Fix ccm_cbc_mac stack buffer underflow\n\n### Problem\n\nCommit d6049d90d7 (\"dissectors: more cppcheck errors\") changed two\n`memset` calls in `ccm_cbc_mac()` in `packet-ieee802154.c`, introducing\na stack buffer underflow that crashes OSCORE decryption (and any other\ncaller of `ccm_cbc_mac` with non-16-byte-aligned AAD/ciphertext).\n\n### Root Cause\n\nThe commit made two changes per line — a style change (pointer\narithmetic `block+x` → array index `&block[x]`, which is what cppcheck\nwanted) AND an index change (which introduced the bugs):\n\n1. **Line 5670**: `block+a_len` → `&block[a_len-1]`\n   - Off-by-one: overwrites the last byte of AuthData with 0.\n   - Fix: `&block[a_len]` (keeps array-index style, correct index).\n\n2. **Line 5690**: `block+m_len` → `&block[a_len]`\n   - Wrong variable: `a_len` is negative after the AuthData loop\n     completes, causing a stack buffer underflow that corrupts the\n     cipher handle and segfaults inside `gcry_cipher_encrypt`.\n   - Fix: `&block[m_len]` (keeps array-index style, correct variable).\n\n### Reproduction\n\nOSCORE decryption with AES-CCM-16-64-128 and a 1-byte ciphertext\nresponse crashes with SIGSEGV:\n\n```\nEXC_BAD_ACCESS (SIGSEGV), KERN_INVALID_ADDRESS at 0xb8\n\nFrame 0: _gcry_cipher_encrypt\nFrame 1: gcry_cipher_encrypt\nFrame 2: ccm_cbc_mac              [packet-ieee802154.c:5696]\nFrame 3: oscore_decrypt_and_verify [packet-oscore.c:562]\nFrame 4: oscore_dissect           [packet-oscore.c:631]\nFrame 5: call_dissector_with_data [packet-coap.c:1280]\n```\n\n### Verification\n\n- **OSCORE**: Decryption succeeds after the fix. Inner CoAP decoded\n  correctly (POST request and 2.04 Changed response). Authentication\n  tags verified.\n- **IEEE 802.15.4**: Sample capture (`ieee802154-association-data`)\n  processes without regression (13 packets).\n- **ZigBee**: Sample capture (`zigbee-join-authenticate`) with CCM*\n  network security processes without regression (54 packets, 28\n  security-level entries decoded).\n- **Build**: Compiles clean with no warnings.\n- **cppcheck**: No new warnings introduced. The array-index style\n  (`&block[x]`) that the original commit intended is preserved; only\n  the incorrect indices are corrected.\n\n### What This Fix Does NOT Revert\n\nCommit d6049d90d7 made other correct changes in the same file\n(`memcpy` for key assignment at lines 1976/1984, `ieee_hints` null\ncheck removal at lines 2871-2885). Those are **preserved** — this MR\nonly reverts the two buggy `memset` lines.\n\nFixup d6049d90d7\n\nAI-Assisted: yes (Claude)",
+  "state": "merged",
+  "created_at": "2026-06-26T18:17:55.597Z",
+  "updated_at": "2026-06-27T11:37:43.172Z",
+  "merged_by": {
+    "id": 2398962,
+    "username": "JaapKeuter",
+    "public_email": "",
+    "name": "Jaap Keuter",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/JaapKeuter"
+  },
+  "merge_user": {
+    "id": 2398962,
+    "username": "JaapKeuter",
+    "public_email": "",
+    "name": "Jaap Keuter",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/JaapKeuter"
+  },
+  "merged_at": "2026-06-27T11:37:43.198Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "ccm-cbc-mac-fix",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 39744249,
+    "username": "jaxlvl",
+    "public_email": "",
+    "name": "Juan Carlos Valera López",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+    "web_url": "https://gitlab.com/jaxlvl"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83796403,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "ded7f09f054246c6fea9d7d7823d38e5ad6bc567",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": false,
+  "force_remove_source_branch": false,
+  "prepared_at": "2026-06-26T18:18:04.581Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25547",
+  "references": {
+    "short": "!25547",
+    "relative": "!25547",
+    "full": "wireshark/wireshark!25547"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25547",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-06-27T11:24:02.844Z",
+  "latest_build_finished_at": "2026-06-27T11:37:42.090Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2633783051,
+    "iid": 105654,
+    "project_id": 7898047,
+    "sha": "d829fcf75c983031f605efa1438846afa45b453b",
+    "ref": "refs/merge-requests/25547/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-27T11:24:01.740Z",
+    "updated_at": "2026-06-27T11:37:42.101Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2633783051"
+  },
+  "head_pipeline": {
+    "id": 2633783051,
+    "iid": 105654,
+    "project_id": 7898047,
+    "sha": "d829fcf75c983031f605efa1438846afa45b453b",
+    "ref": "refs/merge-requests/25547/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-27T11:24:01.740Z",
+    "updated_at": "2026-06-27T11:37:42.101Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2633783051",
+    "before_sha": "d829fcf75c983031f605efa1438846afa45b453b",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 2398962,
+      "username": "JaapKeuter",
+      "public_email": "",
+      "name": "Jaap Keuter",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+      "web_url": "https://gitlab.com/JaapKeuter"
+    },
+    "started_at": "2026-06-27T11:24:02.844Z",
+    "finished_at": "2026-06-27T11:37:42.090Z",
+    "committed_at": null,
+    "duration": 817,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2633783051",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "4dfc29f541f463f8a7a126420d70f21ebe35b2a7",
+    "head_sha": "ded7f09f054246c6fea9d7d7823d38e5ad6bc567",
+    "start_sha": "4dfc29f541f463f8a7a126420d70f21ebe35b2a7"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "7f1101cef71148dac7853d7fb8f5f6b3166fe12b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3499009587,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>111b20f2...4dfc29f5 - 2 commits from branch <code>wireshark:master</code></li><li>ded7f09f - IEEE 802.15.4: Fix ccm_cbc_mac stack buffer underflow</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25547/diffs?diff_id=1873981374&start_sha=111b20f22fd69a41af92c477f570018ccb252cac)",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-06-26T21:33:17.526Z",
+          "updated_at": "2026-06-26T21:33:17.529Z",
+          "system": true,
+          "noteable_id": 500572199,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "26d31019f28bf654c174438e9275a7b1252a3ba6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3500204768,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-06-27T11:23:56.274Z",
+          "updated_at": "2026-06-27T11:23:56.275Z",
+          "system": true,
+          "noteable_id": 500572199,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "25df073910995b92283e7c267d431ad7968f4533",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3500204796,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-06-27T11:24:00.372Z",
+          "updated_at": "2026-06-27T11:24:00.374Z",
+          "system": true,
+          "noteable_id": 500572199,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9fd8e9854dad542bd04b1253f6c076d79681433e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3549604259,
+          "type": null,
+          "body": "mentioned in merge request !25753",
+          "author": {
+            "id": 39744249,
+            "username": "jaxlvl",
+            "public_email": "",
+            "name": "Juan Carlos Valera López",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39744249/avatar.png?v=1786977503",
+            "web_url": "https://gitlab.com/jaxlvl"
+          },
+          "created_at": "2026-07-12T13:55:19.093Z",
+          "updated_at": "2026-07-12T13:55:19.095Z",
+          "system": true,
+          "noteable_id": 500572199,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "660112b69abb6fc4349374c1b8df7af446ddff03",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3555213056,
+          "type": null,
+          "body": "mentioned in commit 3511f89277277b90a426af6a53168f070d394525",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-07-14T06:28:50.783Z",
+          "updated_at": "2026-07-14T06:28:50.784Z",
+          "system": true,
+          "noteable_id": 500572199,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25547,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -5667,7 +5667,7 @@ ccm_cbc_mac(const uint8_t *key, const uint8_t *iv, const uint8_t *a, int a_len,\n         }\n         else {\n             memcpy(block, a, a_len);\n-            memset(&block[a_len-1], 0, sizeof(block)-a_len);\n+            memset(&block[a_len], 0, sizeof(block)-a_len);\n         }\n         /* Adjust pointers. */\n         a += sizeof(block);\n@@ -5687,7 +5687,7 @@ ccm_cbc_mac(const uint8_t *key, const uint8_t *iv, const uint8_t *a, int a_len,\n         }\n         else {\n             memcpy(block, m, m_len);\n-            memset(&block[a_len], 0, sizeof(block)-m_len);\n+            memset(&block[m_len], 0, sizeof(block)-m_len);\n         }\n         /* Adjust pointers. */\n         m += sizeof(block);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ieee802154.c",
+      "old_path": "epan/dissectors/packet-ieee802154.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "ded7f09f054246c6fea9d7d7823d38e5ad6bc567",
+      "short_id": "ded7f09f",
+      "created_at": "2026-06-26T21:33:11.000+00:00",
+      "parent_ids": [
+        "4dfc29f541f463f8a7a126420d70f21ebe35b2a7"
+      ],
+      "title": "IEEE 802.15.4: Fix ccm_cbc_mac stack buffer underflow",
+      "message": "IEEE 802.15.4: Fix ccm_cbc_mac stack buffer underflow\n\nCommit d6049d90d7 (\"dissectors: more cppcheck errors\") changed two\nmemset calls in ccm_cbc_mac() in packet-ieee802154.c, introducing a\nstack buffer underflow that crashes OSCORE decryption (and any other\ncaller of ccm_cbc_mac with non-16-byte-aligned AAD/ciphertext).\n\n1. Line 5670: &block[a_len-1] overwrites the last byte of AuthData\n   with 0 (off-by-one). Restore &block[a_len].\n\n2. Line 5690: &block[a_len] uses a_len, which is negative after the\n   AuthData loop completes, causing a stack buffer underflow that\n   corrupts the cipher handle and segfaults inside gcry_cipher_encrypt.\n   Restore &block[m_len] (the message length, which is the correct\n   variable for the message-padding branch).\n\nReproduced: OSCORE decryption with AES-CCM-16-64-128 and a 1-byte\nciphertext response crashes with SIGSEGV in gcry_cipher_encrypt\ncalled from ccm_cbc_mac (packet-ieee802154.c:5696).\n\nVerified: OSCORE decryption succeeds after the fix (inner CoAP\ndecoded correctly). IEEE 802.15.4 and ZigBee captures with CCM*\nsecurity process without regression.\n\nFixup d6049d90d7\n\nAI-Assisted: yes (Claude)\n",
+      "author_name": "jaxlvl",
+      "author_email": "160593716+jaxlvl@users.noreply.github.com",
+      "authored_date": "2026-06-26T20:04:34.000+02:00",
+      "committer_name": "Juan Carlos Valera López",
+      "committer_email": "juancarlosvalera999@gmail.com",
+      "committed_date": "2026-06-26T21:33:11.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ded7f09f054246c6fea9d7d7823d38e5ad6bc567"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1873981374,
+      "head_commit_sha": "ded7f09f054246c6fea9d7d7823d38e5ad6bc567",
+      "base_commit_sha": "4dfc29f541f463f8a7a126420d70f21ebe35b2a7",
+      "start_commit_sha": "4dfc29f541f463f8a7a126420d70f21ebe35b2a7",
+      "created_at": "2026-06-26T21:33:16.890Z",
+      "merge_request_id": 500572199,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "d33daed50a28d441d7850b25198249a8cf2765fd"
+    },
+    {
+      "id": 1873742803,
+      "head_commit_sha": "111b20f22fd69a41af92c477f570018ccb252cac",
+      "base_commit_sha": "282c84389b4fb82fb37320d2b42eb2260d17b08b",
+      "start_commit_sha": "4dfc29f541f463f8a7a126420d70f21ebe35b2a7",
+      "created_at": "2026-06-26T18:17:59.144Z",
+      "merge_request_id": 500572199,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "d33daed50a28d441d7850b25198249a8cf2765fd"
+    }
+  ]
+}

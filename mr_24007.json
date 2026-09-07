@@ -1,0 +1,2263 @@
+{
+  "id": 466077647,
+  "iid": 24007,
+  "project_id": 7898047,
+  "title": "wiretap: Keep record Buffer length accurate in all formats",
+  "description": "A wiretap record has a Buffer as its data member. When appending new\ndata to the Buffer, the length should be kept accurate so that the\nfunctions, e.g. ws_buffer_remote_start, work properly. This can be\ndone by calling the Buffer API functions, which do this automatically,\nwhen appending, or by calling ws_buffer_increase_length. This also\nenables some other checks that make buffer overruns, etc. less likely.\n\nThere are three different groups of file formats here.\n\nFirst is a collection of file formats where switching to the Buffer API\nis very natural, e.g. wtap_read_bytes -> wtap_read_bytes_buffer, or\nmemcpy -> ws_buffer_append: nettl, logcat_text, visual, pppdump, pcapng.\n\nSecond are a collecton of mostly hexdump formats, where some function,\noften called parse_single_hex_dump_line is called one or more times.\nFor this, instead of passing in the raw pointer (and current offset),\npass in the Buffer, and increase the length at the end. These include\nvms, toshiba, netscreen, log3gpp, and dbs etherwatch.\n\nLast are some formats with generally more complicated parsing. Here,\njust add a ws_buffer_increase_length call near the end: systemd journal,\nvwr, ngsniffer, mplog, MP2T, json_log, iseries, eyesdn, catapult_dct2000,\nand ascend.\n\nIn a few places the return value of ws_buffer_start_ptr can be\nset to a const uint8_t* instead because the packet data is examined,\nnot modified.\n\nAlso, in a few places where g_strlcpy is used, advance the offset by\nthe minimum of the return value (+1) and the buffer width, since\ng_strlcpy returns the number of characters that would have been\nwritten if truncation occurs. (This probably isn't necessary because\nthe strings are already limited by buffers, but is more correct.)\n\nFix #21078\n\nAI-Assisted: no",
+  "state": "merged",
+  "created_at": "2026-03-21T12:34:41.145Z",
+  "updated_at": "2026-03-23T00:25:51.027Z",
+  "merged_by": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "merge_user": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "merged_at": "2026-03-22T23:06:54.116Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "wiretap_buffer",
+  "user_notes_count": 15,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "2cf70cdb9d36872e4b362558870f842a5eb68f1f",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-03-21T12:34:54.711Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!24007",
+  "references": {
+    "short": "!24007",
+    "relative": "!24007",
+    "full": "wireshark/wireshark!24007"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/24007",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "19",
+  "latest_build_started_at": "2026-03-22T22:53:40.376Z",
+  "latest_build_finished_at": "2026-03-22T23:06:51.406Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2401464219,
+    "iid": 98965,
+    "project_id": 7898047,
+    "sha": "b80d283fd6496fef5fb8d1a192a689877360aff6",
+    "ref": "refs/merge-requests/24007/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-03-22T22:53:39.167Z",
+    "updated_at": "2026-03-22T23:06:51.426Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2401464219"
+  },
+  "head_pipeline": {
+    "id": 2401464219,
+    "iid": 98965,
+    "project_id": 7898047,
+    "sha": "b80d283fd6496fef5fb8d1a192a689877360aff6",
+    "ref": "refs/merge-requests/24007/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-03-22T22:53:39.167Z",
+    "updated_at": "2026-03-22T23:06:51.426Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2401464219",
+    "before_sha": "b80d283fd6496fef5fb8d1a192a689877360aff6",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 5636682,
+      "username": "guyharris",
+      "public_email": "",
+      "name": "Guy Harris",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+      "web_url": "https://gitlab.com/guyharris"
+    },
+    "started_at": "2026-03-22T22:53:40.376Z",
+    "finished_at": "2026-03-22T23:06:51.406Z",
+    "committed_at": null,
+    "duration": 790,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2401464219",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+    "head_sha": "2cf70cdb9d36872e4b362558870f842a5eb68f1f",
+    "start_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "f748eaf1d5bc8c1027e1be7353eb8863a7c9703f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3179521214,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>cf72c15c - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715414261&start_sha=85e15f106b1963899b86faa84667e8205d9d2032)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-21T13:44:44.804Z",
+          "updated_at": "2026-03-21T13:44:44.811Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "88e9cfb8ddfad625ccf533b09a332ae4bc4f4752",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3179531565,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>cf72c15c...a62cdf89 - 5 commits from branch <code>wireshark:master</code></li><li>3b052936 - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715418577&start_sha=cf72c15c2845fc5844b5913233ba55bc3454b93b)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-21T14:07:12.345Z",
+          "updated_at": "2026-03-21T14:07:12.359Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0c2849af6b2e2419918868a8d6f429baabd0a5dd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3179550700,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>a302ecab - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715430216&start_sha=3b0529366269f8657d5bd423aa1a745c34b08591)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-21T15:07:11.649Z",
+          "updated_at": "2026-03-21T15:07:11.654Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0dccf275bd17ca1f28a5d5dce48ebbb363acdaa3",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3180475547,
+          "type": "DiffNote",
+          "body": "I think the answer to the question is \"yes\".",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-21T18:03:59.694Z",
+          "updated_at": "2026-03-21T23:53:42.956Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+            "start_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+            "head_sha": "a302ecab084ba22dbdff5b7b0d5b2bdd46aa234c",
+            "old_path": "wiretap/mp2t.c",
+            "new_path": "wiretap/mp2t.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 69,
+            "line_range": {
+              "start": {
+                "line_code": "cda129bea14327bdf9d34e0d22e53a31b4af51bb_69_69",
+                "type": "new",
+                "old_line": null,
+                "new_line": 69
+              },
+              "end": {
+                "line_code": "cda129bea14327bdf9d34e0d22e53a31b4af51bb_69_69",
+                "type": "new",
+                "old_line": null,
+                "new_line": 69
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2026-03-21T23:53:42.956Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3180725196,
+          "type": "DiffNote",
+          "body": "See !24012, which adds that routine and uses it.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-21T20:01:51.722Z",
+          "updated_at": "2026-03-21T23:53:42.956Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+            "start_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+            "head_sha": "a302ecab084ba22dbdff5b7b0d5b2bdd46aa234c",
+            "old_path": "wiretap/mp2t.c",
+            "new_path": "wiretap/mp2t.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 69,
+            "line_range": {
+              "start": {
+                "line_code": "cda129bea14327bdf9d34e0d22e53a31b4af51bb_69_69",
+                "type": "new",
+                "old_line": null,
+                "new_line": 69
+              },
+              "end": {
+                "line_code": "cda129bea14327bdf9d34e0d22e53a31b4af51bb_69_69",
+                "type": "new",
+                "old_line": null,
+                "new_line": 69
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2026-03-21T23:53:42.956Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3180964864,
+          "type": "DiffNote",
+          "body": "changed this line in [version 5 of the diff](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715566027&start_sha=a302ecab084ba22dbdff5b7b0d5b2bdd46aa234c#cda129bea14327bdf9d34e0d22e53a31b4af51bb_69_69)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-21T21:22:35.770Z",
+          "updated_at": "2026-03-21T21:22:35.770Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+            "start_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+            "head_sha": "a302ecab084ba22dbdff5b7b0d5b2bdd46aa234c",
+            "old_path": "wiretap/mp2t.c",
+            "new_path": "wiretap/mp2t.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 69,
+            "line_range": {
+              "start": {
+                "line_code": "cda129bea14327bdf9d34e0d22e53a31b4af51bb_69_69",
+                "type": "new",
+                "old_line": null,
+                "new_line": 69
+              },
+              "end": {
+                "line_code": "cda129bea14327bdf9d34e0d22e53a31b4af51bb_69_69",
+                "type": "new",
+                "old_line": null,
+                "new_line": 69
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2ca11d9c999934a5f8ee8e4f28a7c59ea9543613",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3180964869,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>a302ecab...2f23e64b - 2 commits from branch <code>wireshark:master</code></li><li>40fc3263 - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715566027&start_sha=a302ecab084ba22dbdff5b7b0d5b2bdd46aa234c)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-21T21:22:35.957Z",
+          "updated_at": "2026-03-21T21:22:35.961Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a7e00d0f6aa341576a299bd83f09c08f2397d665",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3180970530,
+          "type": "DiffNote",
+          "body": "Should `wtap_read_bytes_buffer()` be renamed to emphasize that it *appends* the bytes to the end of the buffer, and the same with `wtap_read_bytes_or_eof_buffer()`? E.g., `wtap_read_append_buffer()` and `wtap_read_append_buffer_or_eof()`?",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-21T21:27:37.203Z",
+          "updated_at": "2026-03-22T21:47:16.660Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+            "start_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+            "head_sha": "2cf70cdb9d36872e4b362558870f842a5eb68f1f",
+            "old_path": "wiretap/nettl.c",
+            "new_path": "wiretap/nettl.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 636,
+            "line_range": {
+              "start": {
+                "line_code": "268240ff621f5b74b5e39defb6b4ca75b5d6f639_637_636",
+                "type": "new",
+                "old_line": null,
+                "new_line": 636
+              },
+              "end": {
+                "line_code": "268240ff621f5b74b5e39defb6b4ca75b5d6f639_637_636",
+                "type": "new",
+                "old_line": null,
+                "new_line": 636
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-03-22T21:47:16.660Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181047743,
+          "type": "DiffNote",
+          "body": "Sounds reasonable to me.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:25:58.739Z",
+          "updated_at": "2026-03-22T21:47:16.660Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+            "start_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+            "head_sha": "2cf70cdb9d36872e4b362558870f842a5eb68f1f",
+            "old_path": "wiretap/nettl.c",
+            "new_path": "wiretap/nettl.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 636,
+            "line_range": {
+              "start": {
+                "line_code": "268240ff621f5b74b5e39defb6b4ca75b5d6f639_637_636",
+                "type": "new",
+                "old_line": null,
+                "new_line": 636
+              },
+              "end": {
+                "line_code": "268240ff621f5b74b5e39defb6b4ca75b5d6f639_637_636",
+                "type": "new",
+                "old_line": null,
+                "new_line": 636
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-03-22T21:47:16.660Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181050670,
+          "type": "DiffNote",
+          "body": "Although I think I'd prefer doing that in a different commit so that this one could be backported more easily.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:32:10.064Z",
+          "updated_at": "2026-03-22T21:47:16.660Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+            "start_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+            "head_sha": "2cf70cdb9d36872e4b362558870f842a5eb68f1f",
+            "old_path": "wiretap/nettl.c",
+            "new_path": "wiretap/nettl.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 636,
+            "line_range": {
+              "start": {
+                "line_code": "268240ff621f5b74b5e39defb6b4ca75b5d6f639_637_636",
+                "type": "new",
+                "old_line": null,
+                "new_line": 636
+              },
+              "end": {
+                "line_code": "268240ff621f5b74b5e39defb6b4ca75b5d6f639_637_636",
+                "type": "new",
+                "old_line": null,
+                "new_line": 636
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-03-22T21:47:16.660Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181059845,
+          "type": "DiffNote",
+          "body": "> Although I think I'd prefer doing that in a different commit so that this one could be backported more easily.\n\n+10^10^100",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-22T00:55:00.760Z",
+          "updated_at": "2026-03-22T21:47:16.660Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+            "start_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+            "head_sha": "2cf70cdb9d36872e4b362558870f842a5eb68f1f",
+            "old_path": "wiretap/nettl.c",
+            "new_path": "wiretap/nettl.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 636,
+            "line_range": {
+              "start": {
+                "line_code": "268240ff621f5b74b5e39defb6b4ca75b5d6f639_637_636",
+                "type": "new",
+                "old_line": null,
+                "new_line": 636
+              },
+              "end": {
+                "line_code": "268240ff621f5b74b5e39defb6b4ca75b5d6f639_637_636",
+                "type": "new",
+                "old_line": null,
+                "new_line": 636
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-03-22T21:47:16.660Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "47698a1f3e5f75510374858ca3ca29fd20c1afde",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3180982878,
+          "type": "DiffNote",
+          "body": "Should we add an `ng_read_append_buffer()` routine that combines the `ws_buffer_assure_space()`, `ng_read_bytes()`, and `ws_buffer_increase_length()` calls?",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-21T21:35:58.369Z",
+          "updated_at": "2026-03-22T00:40:54.313Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+            "start_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+            "head_sha": "4c866dadd5ea8018c2113c97f3eb98dfc937adaa",
+            "old_path": "wiretap/ngsniffer.c",
+            "new_path": "wiretap/ngsniffer.c",
+            "position_type": "text",
+            "old_line": 1364,
+            "new_line": 1364,
+            "line_range": {
+              "start": {
+                "line_code": "894bde443c0186371373e7ae29de6a073ba9c0b5_1364_1364",
+                "type": null,
+                "old_line": 1364,
+                "new_line": 1364
+              },
+              "end": {
+                "line_code": "894bde443c0186371373e7ae29de6a073ba9c0b5_1364_1364",
+                "type": null,
+                "old_line": 1364,
+                "new_line": 1364
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2026-03-22T00:40:54.313Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181053843,
+          "type": "DiffNote",
+          "body": "changed this line in [version 7 of the diff](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715602869&start_sha=4c866dadd5ea8018c2113c97f3eb98dfc937adaa#894bde443c0186371373e7ae29de6a073ba9c0b5_1364_1365)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:39:56.919Z",
+          "updated_at": "2026-03-22T00:39:56.919Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+            "start_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+            "head_sha": "4c866dadd5ea8018c2113c97f3eb98dfc937adaa",
+            "old_path": "wiretap/ngsniffer.c",
+            "new_path": "wiretap/ngsniffer.c",
+            "position_type": "text",
+            "old_line": 1364,
+            "new_line": 1364,
+            "line_range": {
+              "start": {
+                "line_code": "894bde443c0186371373e7ae29de6a073ba9c0b5_1364_1364",
+                "type": null,
+                "old_line": 1364,
+                "new_line": 1364
+              },
+              "end": {
+                "line_code": "894bde443c0186371373e7ae29de6a073ba9c0b5_1364_1364",
+                "type": null,
+                "old_line": 1364,
+                "new_line": 1364
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181054129,
+          "type": "DiffNote",
+          "body": "Done.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:40:53.380Z",
+          "updated_at": "2026-03-22T00:40:54.313Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+            "start_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+            "head_sha": "4c866dadd5ea8018c2113c97f3eb98dfc937adaa",
+            "old_path": "wiretap/ngsniffer.c",
+            "new_path": "wiretap/ngsniffer.c",
+            "position_type": "text",
+            "old_line": 1364,
+            "new_line": 1364,
+            "line_range": {
+              "start": {
+                "line_code": "894bde443c0186371373e7ae29de6a073ba9c0b5_1364_1364",
+                "type": null,
+                "old_line": 1364,
+                "new_line": 1364
+              },
+              "end": {
+                "line_code": "894bde443c0186371373e7ae29de6a073ba9c0b5_1364_1364",
+                "type": null,
+                "old_line": 1364,
+                "new_line": 1364
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2026-03-22T00:40:54.313Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "98e3094e2c8ddc325b4a81572c33d0fa1c026bf3",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3180985640,
+          "type": "DiffNote",
+          "body": "Could this be done with `wtap_read_bytes_buffer()`?",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-21T21:38:48.778Z",
+          "updated_at": "2026-03-22T00:25:33.652Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "start_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "head_sha": "40fc3263e08fd855f9fbde974e9e4415ca9507f1",
+            "old_path": "wiretap/systemd_journal.c",
+            "new_path": "wiretap/systemd_journal.c",
+            "position_type": "text",
+            "old_line": 203,
+            "new_line": 203,
+            "line_range": {
+              "start": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_203_203",
+                "type": "expanded",
+                "old_line": 203,
+                "new_line": 203
+              },
+              "end": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_203_203",
+                "type": "expanded",
+                "old_line": 203,
+                "new_line": 203
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2026-03-22T00:25:33.652Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181047457,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715600194&start_sha=40fc3263e08fd855f9fbde974e9e4415ca9507f1#9cf187e58132328bd258e95fecde9789a1a54363_203_200)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:25:28.080Z",
+          "updated_at": "2026-03-22T00:25:28.080Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "start_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "head_sha": "40fc3263e08fd855f9fbde974e9e4415ca9507f1",
+            "old_path": "wiretap/systemd_journal.c",
+            "new_path": "wiretap/systemd_journal.c",
+            "position_type": "text",
+            "old_line": 203,
+            "new_line": 203,
+            "line_range": {
+              "start": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_203_203",
+                "type": "expanded",
+                "old_line": 203,
+                "new_line": 203
+              },
+              "end": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_203_203",
+                "type": "expanded",
+                "old_line": 203,
+                "new_line": 203
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181047494,
+          "type": "DiffNote",
+          "body": "Yes.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:25:32.463Z",
+          "updated_at": "2026-03-22T00:25:33.652Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "start_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "head_sha": "40fc3263e08fd855f9fbde974e9e4415ca9507f1",
+            "old_path": "wiretap/systemd_journal.c",
+            "new_path": "wiretap/systemd_journal.c",
+            "position_type": "text",
+            "old_line": 203,
+            "new_line": 203,
+            "line_range": {
+              "start": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_203_203",
+                "type": "expanded",
+                "old_line": 203,
+                "new_line": 203
+              },
+              "end": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_203_203",
+                "type": "expanded",
+                "old_line": 203,
+                "new_line": 203
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2026-03-22T00:25:33.652Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dd870216466708a1e4fe25461fffb640335e31be",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3180985792,
+          "type": "DiffNote",
+          "body": "Ditto.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-21T21:39:01.258Z",
+          "updated_at": "2026-03-22T00:25:38.456Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "start_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "head_sha": "40fc3263e08fd855f9fbde974e9e4415ca9507f1",
+            "old_path": "wiretap/systemd_journal.c",
+            "new_path": "wiretap/systemd_journal.c",
+            "position_type": "text",
+            "old_line": 215,
+            "new_line": 215,
+            "line_range": {
+              "start": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_215_215",
+                "type": "expanded",
+                "old_line": 215,
+                "new_line": 215
+              },
+              "end": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_215_215",
+                "type": "expanded",
+                "old_line": 215,
+                "new_line": 215
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2026-03-22T00:25:38.456Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181047459,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715600194&start_sha=40fc3263e08fd855f9fbde974e9e4415ca9507f1#9cf187e58132328bd258e95fecde9789a1a54363_215_211)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:25:28.394Z",
+          "updated_at": "2026-03-22T00:25:28.394Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "start_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "head_sha": "40fc3263e08fd855f9fbde974e9e4415ca9507f1",
+            "old_path": "wiretap/systemd_journal.c",
+            "new_path": "wiretap/systemd_journal.c",
+            "position_type": "text",
+            "old_line": 215,
+            "new_line": 215,
+            "line_range": {
+              "start": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_215_215",
+                "type": "expanded",
+                "old_line": 215,
+                "new_line": 215
+              },
+              "end": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_215_215",
+                "type": "expanded",
+                "old_line": 215,
+                "new_line": 215
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        },
+        {
+          "id": 3181047549,
+          "type": "DiffNote",
+          "body": "Done.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:25:37.944Z",
+          "updated_at": "2026-03-22T00:25:38.456Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "start_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+            "head_sha": "40fc3263e08fd855f9fbde974e9e4415ca9507f1",
+            "old_path": "wiretap/systemd_journal.c",
+            "new_path": "wiretap/systemd_journal.c",
+            "position_type": "text",
+            "old_line": 215,
+            "new_line": 215,
+            "line_range": {
+              "start": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_215_215",
+                "type": "expanded",
+                "old_line": 215,
+                "new_line": 215
+              },
+              "end": {
+                "line_code": "9cf187e58132328bd258e95fecde9789a1a54363_215_215",
+                "type": "expanded",
+                "old_line": 215,
+                "new_line": 215
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2026-03-22T00:25:38.456Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "976542752e3b5b10d9cfabf192b4bd4098a52cc3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181047461,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>157d2fe3 - 1 commit from branch <code>wireshark:master</code></li><li>4c866dad - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715600194&start_sha=40fc3263e08fd855f9fbde974e9e4415ca9507f1)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:25:28.591Z",
+          "updated_at": "2026-03-22T00:25:28.596Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "78c09049c598c41d206037e90fffcc6605333ec0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181053846,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>d6f14d5a - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715602869&start_sha=4c866dadd5ea8018c2113c97f3eb98dfc937adaa)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:39:57.178Z",
+          "updated_at": "2026-03-22T00:39:57.184Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b38afdcb1f5f66724574fc6f0c87a61cc9209755",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181054133,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>ffb38f6e - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715603090&start_sha=d6f14d5a5a7add7a107a16b1ad428e7eaeaf0b98)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T00:40:55.058Z",
+          "updated_at": "2026-03-22T00:40:55.064Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "03100abfb7565ff6fadc7773da69f2aee9bf793b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181088774,
+          "type": null,
+          "body": "Perhaps a routine `size_t ws_buffer_append_reserve(Buffer* buffer, size_t bytes)`, which ensures that `bytes` bytes can be appended to the `Buffer`, saves the current value of `first_free`, adds `bytes` to `first_free`, and then returns the saved value of `first_free`, plus a routine `uint8_t* ws_buffer_offset_ptr(const Buffer* buffer, size_t bytes)`, which returns `buffer->data + bytes`, would be useful for some of these cases.\n\n`ws_buffer_append_reserve()` would be used if you want to append some manually-constructed data to the buffer, and `ws_buffer_offset_ptr()` would be used to get a pointer to the area into which to put the data.\n\nThe split is because, in theory, manually constructing the data might not be possible until we've processed more of the packet - see, for example, `mplog_read_packet()` in mplog.c - and the code might have to expand the buffer while processing more of the packet, and that might require a reallocation, invalidating any previously-fetched pointers into the `Buffer`'s data. THat's not an issue in `mplog_read_packet()`, because it doesn't do any buffer operations while processing the rest of the packet, but there might be cases in the future where the code *would* have to do that.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-22T02:04:58.457Z",
+          "updated_at": "2026-03-22T02:04:58.457Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2ef306fc4f5f350298c42efc88d4d9b31afc2b67",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181098300,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>051b1922 - 1 commit from branch <code>wireshark:master</code></li><li>ce4df3f5 - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715625437&start_sha=ffb38f6e7fee22ee1739d9f330608b1be7f2693e)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T02:30:15.760Z",
+          "updated_at": "2026-03-22T02:30:15.768Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f2b79f95583a3e231b1ba15b6bebbd36502bcdf2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181111989,
+          "type": null,
+          "body": "Or, instead of `ws_buffer_offset_ptr()`, we could have routines to put data into a `Buffer` at a particular offset (they would report an error if the offset is after the end offset).",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-22T03:09:34.604Z",
+          "updated_at": "2026-03-22T03:09:34.604Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9113b26f4e9da923cb1ea11a26f2f56132de750b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181118480,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>d026e86b - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715635877&start_sha=ce4df3f51be2ed6a41953d85753acf578c3949ed)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-22T03:28:31.797Z",
+          "updated_at": "2026-03-22T03:28:31.803Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9031a617fae3d697554684fee9e0a3c758345879",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181634577,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-03-22T21:47:16.723Z",
+          "updated_at": "2026-03-22T21:47:16.727Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ef074d2ec34cd5da79d1b26ee2c44e32eff3a365",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181634733,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-03-22T21:47:25.962Z",
+          "updated_at": "2026-03-22T21:47:25.971Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "20fa53059077e8319d12a80f0fe0ee0e1c2c1136",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181634757,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 4",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-03-22T21:47:28.643Z",
+          "updated_at": "2026-03-22T21:47:28.647Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0a40eea0d8fb18d1465c987bdbfaf9d2ba8d6245",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181661507,
+          "type": null,
+          "body": "added 5 commits\n\n<ul><li>d026e86b...8faae143 - 4 commits from branch <code>wireshark:master</code></li><li>2cf70cdb - wiretap: Keep record Buffer length accurate in all formats</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24007/diffs?diff_id=1715902904&start_sha=d026e86b3be9b1281e4361c62893baccaf05a540)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-22T22:27:54.862Z",
+          "updated_at": "2026-03-22T22:27:54.868Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bb52aaaf9f27862ae68343a41eeac287fd4b5611",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181661785,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-22T22:28:14.961Z",
+          "updated_at": "2026-03-22T22:28:14.964Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "132dfa558aacfd76621d576a3c209bc52966a95c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181676368,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-22T22:46:17.679Z",
+          "updated_at": "2026-03-22T22:46:17.700Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fb9a11cfb5ee5ce2c12c67c8cc29dddc413ce0e3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181683016,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-22T22:53:37.703Z",
+          "updated_at": "2026-03-22T22:53:37.707Z",
+          "system": true,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "13977d6f1790eb0788cd99946b95a3877cf63ca2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181742317,
+          "type": null,
+          "body": "> Perhaps a routine `size_t ws_buffer_append_reserve(Buffer* buffer, size_t bytes)`, which ensures that `bytes` bytes can be appended to the `Buffer`, saves the current value of `first_free`, adds `bytes` to `first_free`, and then returns the saved value of `first_free`, plus a routine `uint8_t* ws_buffer_offset_ptr(const Buffer* buffer, size_t bytes)`, which returns `buffer->data + bytes`, would be useful for some of these cases.\n\nNo, in retrospect I think separating the \"ensure there's space\" and \"consume the space\" routines should be separate - the attempt to fill the space might fail, and, although that usually causes an immediate failure return, it still seems a bit weird to say \"OK, I've filled that space with stuff\".\n\nMaybe some *name changes* are called for, but we can save that for after we do backporting.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-03-23T00:25:51.002Z",
+          "updated_at": "2026-03-23T00:25:51.002Z",
+          "system": false,
+          "noteable_id": 466077647,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24007,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -372,6 +372,7 @@ parse_ascend(ascend_t *ascend, wtap *wth, FILE_T fh, wtap_rec *rec,\n         rec->ts.nsecs = parser_state.usecs * 1000;\n         rec->rec_header.packet_header.caplen = parser_state.caplen;\n         rec->rec_header.packet_header.len = parser_state.wirelen;\n+        ws_buffer_increase_length(&rec->data, parser_state.caplen);\n \n         return true;\n     }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/ascendtext.c",
+      "old_path": "wiretap/ascendtext.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1294,7 +1294,7 @@ process_parsed_line(wtap *wth, const dct2000_file_externals_t *file_externals,\n                     int *err, char **err_info)\n {\n     int n;\n-    int stub_offset = 0;\n+    unsigned stub_offset = 0;\n     size_t length;\n     uint8_t *frame_buffer;\n \n@@ -1346,7 +1346,7 @@ process_parsed_line(wtap *wth, const dct2000_file_externals_t *file_externals,\n \n     /* Context name */\n     length = g_strlcpy((char*)frame_buffer, context_name, MAX_CONTEXT_NAME+1);\n-    stub_offset += (int)(length + 1);\n+    stub_offset += (unsigned)MIN(length, MAX_CONTEXT_NAME) + 1;\n \n     /* Context port number */\n     frame_buffer[stub_offset] = context_port;\n@@ -1354,19 +1354,19 @@ process_parsed_line(wtap *wth, const dct2000_file_externals_t *file_externals,\n \n     /* Timestamp within file (terminated string) */\n     length = g_strlcpy((char*)&frame_buffer[stub_offset], timestamp_string, MAX_TIMESTAMP_LEN+1);\n-    stub_offset += (int)(length + 1);\n+    stub_offset += (unsigned)MIN(length, MAX_TIMESTAMP_LEN) + 1;\n \n     /* Protocol name (terminated string) */\n     length = g_strlcpy((char*)&frame_buffer[stub_offset], protocol_name, MAX_PROTOCOL_NAME+1);\n-    stub_offset += (int)(length + 1);\n+    stub_offset += (unsigned)MIN(length, MAX_PROTOCOL_NAME) + 1;\n \n     /* Protocol variant number (as terminated string) */\n     length = g_strlcpy((char*)&frame_buffer[stub_offset], variant_name, MAX_VARIANT_DIGITS+1);\n-    stub_offset += (int)(length + 1);\n+    stub_offset += (unsigned)MIN(length, MAX_VARIANT_DIGITS) + 1;\n \n     /* Outhdr (terminated string) */\n     length = g_strlcpy((char*)&frame_buffer[stub_offset], outhdr_name, MAX_OUTHDR_NAME+1);\n-    stub_offset += (int)(length + 1);\n+    stub_offset += (unsigned)MIN(length, MAX_OUTHDR_NAME) + 1;\n \n     /* Direction */\n     frame_buffer[stub_offset++] = direction;\n@@ -1410,6 +1410,7 @@ process_parsed_line(wtap *wth, const dct2000_file_externals_t *file_externals,\n             /* Other supported types don't need to set anything here... */\n             break;\n     }\n+    ws_buffer_increase_length(&rec->data, file_offset);\n \n     return true;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/catapult_dct2000.c",
+      "old_path": "wiretap/catapult_dct2000.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -86,9 +86,9 @@ static bool dbs_etherwatch_seek_read(wtap *wth, int64_t seek_off,\n     wtap_rec *rec, int *err, char **err_info);\n static bool parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n     int *err, char **err_info);\n-static unsigned parse_single_hex_dump_line(char* rec, uint8_t *buf,\n+static unsigned parse_single_hex_dump_line(char* rec, Buffer *buf,\n     int byte_offset);\n-static unsigned parse_hex_dump(char* dump, uint8_t *buf, char separator, char end);\n+static unsigned parse_hex_dump(char* dump, Buffer *buf, char separator, char end);\n \n static int dbs_etherwatch_file_type_subtype = -1;\n \n@@ -316,7 +316,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n         return false;\n     }\n     p += strlen(DEST_MAC_PREFIX);\n-    if(parse_hex_dump(p, &pd[eth_hdr_len], HEX_HDR_SPR, HEX_HDR_END)\n+    if(parse_hex_dump(p, &rec->data, HEX_HDR_SPR, HEX_HDR_END)\n                 != MAC_ADDR_LENGTH) {\n         *err = WTAP_ERR_BAD_FILE;\n         *err_info = g_strdup(\"dbs_etherwatch: destination address not valid\");\n@@ -334,7 +334,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n     while(!g_ascii_isxdigit(*p)) {\n         p++;\n     }\n-    if(parse_hex_dump(p, &pd[eth_hdr_len], HEX_HDR_SPR,\n+    if(parse_hex_dump(p, &rec->data, HEX_HDR_SPR,\n         HEX_HDR_END) != MAC_ADDR_LENGTH) {\n         *err = WTAP_ERR_BAD_FILE;\n         *err_info = g_strdup(\"dbs_etherwatch: source address not valid\");\n@@ -398,7 +398,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n         strlen(ETH_II_CHECK_STR)) == 0) {\n         /* Ethernet II */\n         /* Get the Protocol */\n-        if(parse_hex_dump(&line[PROTOCOL_POS], &pd[eth_hdr_len], HEX_HDR_SPR,\n+        if(parse_hex_dump(&line[PROTOCOL_POS], &rec->data, HEX_HDR_SPR,\n                     HEX_HDR_END) != PROTOCOL_LENGTH) {\n             *err = WTAP_ERR_BAD_FILE;\n             *err_info = g_strdup(\"dbs_etherwatch: Ethernet II protocol value not valid\");\n@@ -414,7 +414,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n         /* Remember how much of the header should not be added to the length */\n         length_from = eth_hdr_len;\n         /* Get the DSAP + SSAP */\n-        if(parse_hex_dump(&line[SAP_POS], &pd[eth_hdr_len], HEX_HDR_SPR,\n+        if(parse_hex_dump(&line[SAP_POS], &rec->data, HEX_HDR_SPR,\n                     HEX_HDR_END) != SAP_LENGTH) {\n             *err = WTAP_ERR_BAD_FILE;\n             *err_info = g_strdup(\"dbs_etherwatch: 802.2 DSAP+SSAP value not valid\");\n@@ -422,7 +422,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n         }\n         eth_hdr_len += SAP_LENGTH;\n         /* Get the (first part of the) control field */\n-        if(parse_hex_dump(&line[CTL_POS], &pd[eth_hdr_len], HEX_HDR_SPR,\n+        if(parse_hex_dump(&line[CTL_POS], &rec->data, HEX_HDR_SPR,\n                     HEX_HDR_END) != CTL_UNNUMB_LENGTH) {\n             *err = WTAP_ERR_BAD_FILE;\n             *err_info = g_strdup(\"dbs_etherwatch: 802.2 control field first part not valid\");\n@@ -431,8 +431,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n         /* Determine whether the control is numbered, and thus longer */\n         if((pd[eth_hdr_len] & CTL_UNNUMB_MASK) != CTL_UNNUMB_VALUE) {\n             /* Get the rest of the control field, the first octet in the PID */\n-            if(parse_hex_dump(&line[PID_POS],\n-                        &pd[eth_hdr_len + CTL_UNNUMB_LENGTH], HEX_HDR_END,\n+            if(parse_hex_dump(&line[PID_POS], &rec->data, HEX_HDR_END,\n                         HEX_HDR_SPR) != CTL_NUMB_LENGTH - CTL_UNNUMB_LENGTH) {\n                 *err = WTAP_ERR_BAD_FILE;\n                 *err_info = g_strdup(\"dbs_etherwatch: 802.2 control field second part value not valid\");\n@@ -446,7 +445,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n         if(strncmp(&line[SNAP_CHECK_POS], SNAP_CHECK_STR,\n                 strlen(SNAP_CHECK_STR)) == 0) {\n             /* Get the PID */\n-            if(parse_hex_dump(&line[PID_POS], &pd[eth_hdr_len], HEX_HDR_SPR,\n+            if(parse_hex_dump(&line[PID_POS], &rec->data, HEX_HDR_SPR,\n                         HEX_PID_END) != PID_LENGTH) {\n                 *err = WTAP_ERR_BAD_FILE;\n                 *err_info = g_strdup(\"dbs_etherwatch: 802.2 PID value not valid\");\n@@ -506,7 +505,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n             return false;\n         }\n         if (!(line_count = parse_single_hex_dump_line(line,\n-                &pd[eth_hdr_len + count], count))) {\n+                &rec->data, count))) {\n             *err = WTAP_ERR_BAD_FILE;\n             *err_info = g_strdup(\"dbs_etherwatch: packet data value not valid\");\n             return false;\n@@ -559,7 +558,7 @@ parse_dbs_etherwatch_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n  * Returns length parsed if a good hex dump, 0 if bad.\n  */\n static unsigned\n-parse_single_hex_dump_line(char* rec, uint8_t *buf, int byte_offset) {\n+parse_single_hex_dump_line(char* rec, Buffer *buf, int byte_offset) {\n \n     int     pos, i;\n     int     value;\n@@ -622,12 +621,13 @@ parse_single_hex_dump_line(char* rec, uint8_t *buf, int byte_offset) {\n \n /* Parse a hex dump */\n static unsigned\n-parse_hex_dump(char* dump, uint8_t *buf, char separator, char end) {\n+parse_hex_dump(char* dump, Buffer *buf, char separator, char end) {\n     int     pos, count;\n \n     /* Parse the hex dump */\n     pos = 0;\n     count = 0;\n+    uint8_t *pd = ws_buffer_end_ptr(buf);\n     while(dump[pos] != end) {\n         /* Check the hex value */\n         if(!(g_ascii_isxdigit(dump[pos]) &&\n@@ -636,15 +636,15 @@ parse_hex_dump(char* dump, uint8_t *buf, char separator, char end) {\n         }\n         /* Get the hex value */\n         if(g_ascii_isdigit(dump[pos])) {\n-            buf[count] = (dump[pos] - '0') << 4;\n+            pd[count] = (dump[pos] - '0') << 4;\n         } else {\n-            buf[count] = (g_ascii_toupper(dump[pos]) - 'A' + 10) << 4;\n+            pd[count] = (g_ascii_toupper(dump[pos]) - 'A' + 10) << 4;\n         }\n         pos++;\n         if(g_ascii_isdigit(dump[pos])) {\n-            buf[count] += dump[pos] - '0';\n+            pd[count] += dump[pos] - '0';\n         } else {\n-            buf[count] += g_ascii_toupper(dump[pos]) - 'A' + 10;\n+            pd[count] += g_ascii_toupper(dump[pos]) - 'A' + 10;\n         }\n         pos++;\n         count++;\n@@ -653,6 +653,7 @@ parse_hex_dump(char* dump, uint8_t *buf, char separator, char end) {\n             pos++;\n         }\n     }\n+    ws_buffer_increase_length(buf, count);\n     return count;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/dbs-etherwatch.c",
+      "old_path": "wiretap/dbs-etherwatch.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -305,6 +305,7 @@ read_eyesdn_rec(FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n \tpd = ws_buffer_start_ptr(&rec->data);\n \tif (!esc_read(fh, pd, pkt_len, err, err_info))\n \t\treturn false;\n+\tws_buffer_increase_length(&rec->data, pkt_len);\n \treturn true;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/eyesdn.c",
+      "old_path": "wiretap/eyesdn.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -975,6 +975,7 @@ iseries_parse_packet (wtap * wth, FILE_T fh, wtap_rec *rec,\n   ws_buffer_assure_space (&rec->data, rec->rec_header.packet_header.caplen);\n   /* Convert ascii data to binary and return in the frame buffer */\n   iseries_parse_hex_string (ascii_buf, ws_buffer_start_ptr (&rec->data), ascii_offset);\n+  ws_buffer_increase_length(&rec->data, rec->rec_header.packet_header.caplen);\n \n   /* free buffer allocs and return */\n   *err = 0;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/iseries.c",
+      "old_path": "wiretap/iseries.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -260,8 +260,8 @@ static bool json_log_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec, int *err,\n     }\n     const char *log_end = log_data + bytes_read - 1;\n \n-\n     size_t entry_size = json_object_size(log_data, log_end);\n+    ws_buffer_increase_length(&rec->data, entry_size);\n \n     nstime_t ts = get_entry_timestamp(log_data, entry_size);\n     if (nstime_is_zero(&ts)) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/json_log.c",
+      "old_path": "wiretap/json_log.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -71,7 +71,7 @@ static bool read_new_line(FILE_T fh, int* length,\n     char** err_info);\n \n static bool parse_line_into_record(wtap* wth, wtap_rec *rec, log3gpp_t *log3gpp, int line_length);\n-static int write_stub_header(log3gpp_protocol_t const *protocol, unsigned char *frame_buffer, char *timestamp_string,\n+static unsigned write_stub_header(log3gpp_protocol_t const *protocol, Buffer *buf, char *timestamp_string,\n                              packet_direction_t direction);\n static unsigned char hex_from_char(char c);\n /*not used static char char_from_hex(unsigned char hex);*/\n@@ -213,7 +213,7 @@ build_packet_record(wtap* wth, wtap_rec *rec, log3gpp_t const *log3gpp,\n {\n     unsigned char *frame_buffer;\n     int n;\n-    int stub_offset = 0;\n+    unsigned stub_offset = 0;\n     char timestamp_string[MAX_TIMESTAMP_LEN+1];\n \n     snprintf(timestamp_string, 32, \"%d.%04d\", seconds, useconds/100);\n@@ -236,11 +236,9 @@ build_packet_record(wtap* wth, wtap_rec *rec, log3gpp_t const *log3gpp,\n                           strlen(log3gpp->protocol.parameters)+1 +\n                           (size_t)(data_chars/2));\n \n-      frame_buffer = ws_buffer_start_ptr(&rec->data);\n-\n       /*********************/\n       /* Write stub header */\n-      stub_offset = write_stub_header(&log3gpp->protocol, frame_buffer, timestamp_string,\n+      stub_offset = write_stub_header(&log3gpp->protocol, &rec->data, timestamp_string,\n                                       direction);\n \n       /* Binary data length is half bytestring length + stub header */\n@@ -248,11 +246,13 @@ build_packet_record(wtap* wth, wtap_rec *rec, log3gpp_t const *log3gpp,\n       rec->rec_header.packet_header.caplen = data_chars/2 + stub_offset;\n       /********************************/\n       /* Copy packet data into buffer */\n+      frame_buffer = ws_buffer_end_ptr(&rec->data);\n       for (n=0; n <= data_chars; n+=2)\n       {\n-        frame_buffer[stub_offset + n/2] = (hex_from_char(log3gpp->linebuff[data_offset+n]) << 4) |\n-                                           hex_from_char(log3gpp->linebuff[data_offset+n+1]);\n+        frame_buffer[n/2] = (hex_from_char(log3gpp->linebuff[data_offset+n]) << 4) |\n+                             hex_from_char(log3gpp->linebuff[data_offset+n+1]);\n       }\n+      ws_buffer_increase_length(&rec->data, data_chars/2);\n     }\n     else\n     {\n@@ -263,11 +263,10 @@ build_packet_record(wtap* wth, wtap_rec *rec, log3gpp_t const *log3gpp,\n                           1 +                                /* direction */\n                           strlen(log3gpp->protocol.parameters)+1 +\n                           data_chars);\n-      frame_buffer = ws_buffer_start_ptr(&rec->data);\n \n       /*********************/\n       /* Write stub header */\n-      stub_offset = write_stub_header(&log3gpp->protocol, frame_buffer, timestamp_string,\n+      stub_offset = write_stub_header(&log3gpp->protocol, &rec->data, timestamp_string,\n                                       direction);\n \n       /* Binary data length is bytestring length + stub header */\n@@ -275,8 +274,9 @@ build_packet_record(wtap* wth, wtap_rec *rec, log3gpp_t const *log3gpp,\n       rec->rec_header.packet_header.caplen = data_chars + stub_offset;\n \n       /* do not convert the ascii char */\n-      memcpy(&frame_buffer[stub_offset],&log3gpp->linebuff[data_offset],data_chars);\n-      frame_buffer[stub_offset+data_chars-1] = '\\0';\n+      ws_buffer_append(&rec->data, (const uint8_t*)&log3gpp->linebuff[data_offset], data_chars);\n+      /* XXX - Does this really need to be null terminated? */\n+      ws_buffer_start_ptr(&rec->data)[stub_offset+data_chars-1] = '\\0';\n     }\n }\n \n@@ -611,26 +611,29 @@ bool parse_line_into_record(wtap* wth, wtap_rec *rec, log3gpp_t *log3gpp, int li\n /*****************************************************************/\n /* Write the stub info to the data buffer while reading a packet */\n /*****************************************************************/\n-int write_stub_header(log3gpp_protocol_t const *protocol, unsigned char *frame_buffer, char *timestamp_string,\n+unsigned write_stub_header(log3gpp_protocol_t const *protocol, Buffer *buf, char *timestamp_string,\n                       packet_direction_t direction)\n {\n-    int stub_offset = 0;\n+    unsigned stub_offset = 0;\n+    uint8_t *frame_buffer = ws_buffer_end_ptr(buf);\n+    size_t retval;\n \n     /* Timestamp within file */\n-    (void) g_strlcpy((char*)&frame_buffer[stub_offset], timestamp_string, MAX_TIMESTAMP_LEN+1);\n-    stub_offset += (int)(strlen(timestamp_string) + 1);\n+    retval = g_strlcpy((char*)&frame_buffer[stub_offset], timestamp_string, MAX_TIMESTAMP_LEN+1);\n+    stub_offset += (unsigned)MIN(retval, MAX_TIMESTAMP_LEN) + 1;\n \n     /* Protocol name */\n-    (void) g_strlcpy((char*)&frame_buffer[stub_offset], protocol->name, MAX_PROTOCOL_NAME+1);\n-    stub_offset += (int)(strlen(protocol->name) + 1);\n+    retval = g_strlcpy((char*)&frame_buffer[stub_offset], protocol->name, MAX_PROTOCOL_NAME+1);\n+    stub_offset += (unsigned)MIN(retval, MAX_PROTOCOL_NAME) + 1;\n \n     /* Direction */\n     frame_buffer[stub_offset] = direction;\n     stub_offset++;\n \n     /* Option string (might be string of length 0) */\n-    (void) g_strlcpy((char*)&frame_buffer[stub_offset], protocol->parameters,MAX_PROTOCOL_PAR_STRING+1);\n-    stub_offset += (int)(strlen(protocol->parameters) + 1);\n+    retval = g_strlcpy((char*)&frame_buffer[stub_offset], protocol->parameters, MAX_PROTOCOL_PAR_STRING+1);\n+    stub_offset += (unsigned)MIN(retval, MAX_PROTOCOL_PAR_STRING) + 1;\n+    ws_buffer_increase_length(buf, stub_offset);\n     return stub_offset;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/log3gpp.c",
+      "old_path": "wiretap/log3gpp.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -183,7 +183,6 @@ static void get_time(char *string, wtap_rec *rec) {\n \n static bool logcat_text_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n         int file_type) {\n-    uint8_t *pd;\n     char *cbuff;\n     char *ret = NULL;\n \n@@ -232,8 +231,6 @@ static bool logcat_text_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n     rec->rec_header.packet_header.caplen = (uint32_t)strlen(cbuff);\n     rec->rec_header.packet_header.len = rec->rec_header.packet_header.caplen;\n \n-    ws_buffer_assure_space(&rec->data, rec->rec_header.packet_header.caplen + 1);\n-    pd = ws_buffer_start_ptr(&rec->data);\n     if ((logcat_text_time_file_type_subtype == file_type\n             || logcat_text_threadtime_file_type_subtype == file_type\n             || logcat_text_long_file_type_subtype == file_type)\n@@ -248,7 +245,7 @@ static bool logcat_text_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n         rec->ts.secs = (time_t) 0;\n         rec->ts.nsecs = 0;\n     }\n-    memcpy(pd, cbuff, rec->rec_header.packet_header.caplen + 1);\n+    ws_buffer_append(&rec->data, (uint8_t*)cbuff, rec->rec_header.packet_header.caplen + 1);\n     g_free(cbuff);\n     return true;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/logcat_text.c",
+      "old_path": "wiretap/logcat_text.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -118,6 +118,7 @@ static bool mplog_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n     /* leave space for the iso14443 pseudo header\n        we can't create it until we've seen the entire packet */\n     p += ISO14443_PSEUDO_HDR_LEN;\n+    ws_buffer_increase_length(&rec->data, ISO14443_PSEUDO_HDR_LEN);\n \n     do {\n         if (!wtap_read_bytes_or_eof(fh, block, sizeof(block), err, err_info)) {\n@@ -170,6 +171,7 @@ static bool mplog_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n     if (pkt_type == TYPE_UNKNOWN)\n         return false;\n \n+    ws_buffer_increase_length(&rec->data, pkt_bytes);\n     start_p[0] = ISO14443_PSEUDO_HDR_VER;\n \n     if (pkt_type==TYPE_PCD_PICC_A || pkt_type==TYPE_PCD_PICC_B)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/mplog.c",
+      "old_path": "wiretap/mplog.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -58,8 +58,7 @@ static bool netscreen_seek_read(wtap *wth, int64_t seek_off,\n \twtap_rec *rec, int *err, char **err_info);\n static bool parse_netscreen_packet(FILE_T fh, wtap_rec *rec,\n \tchar *line, int *err, char **err_info);\n-static int parse_single_hex_dump_line(char* rec, uint8_t *buf,\n-\tunsigned byte_offset, unsigned pkt_len);\n+static int parse_single_hex_dump_line(char* rec, Buffer *buf);\n \n /* Error returns from parse_single_hex_dump_line() */\n #define PARSE_LINE_INVALID_CHARACTER\t-1\n@@ -290,7 +289,7 @@ parse_netscreen_packet(FILE_T fh, wtap_rec *rec, char *line,\n \tchar\t\tdirection[2];\n \tchar\t\tcap_src[13];\n \tchar\t\tcap_dst[13];\n-\tuint8_t\t\t*pd;\n+\tconst uint8_t\t*pd;\n \tchar\t\t*p;\n \tint\t\tn, i = 0;\n \tint\t\toffset = 0;\n@@ -331,7 +330,6 @@ parse_netscreen_packet(FILE_T fh, wtap_rec *rec, char *line,\n \n \t/* Make sure we have enough room for the packet */\n \tws_buffer_assure_space(&rec->data, pkt_len);\n-\tpd = ws_buffer_start_ptr(&rec->data);\n \n \twhile(1) {\n \n@@ -355,7 +353,7 @@ parse_netscreen_packet(FILE_T fh, wtap_rec *rec, char *line,\n \t\t\tbreak;\n \t\t}\n \n-\t\tn = parse_single_hex_dump_line(p, pd, offset, pkt_len);\n+\t\tn = parse_single_hex_dump_line(p, &rec->data);\n \n \t\t/*\n \t\t * The smallest packet has a length of 6 bytes.\n@@ -429,6 +427,7 @@ parse_netscreen_packet(FILE_T fh, wtap_rec *rec, char *line,\n \t * XXX\tconvert this to a 'case' structure when adding more\n \t *\t(non-ethernet) interfacetypes\n \t */\n+\tpd = ws_buffer_start_ptr(&rec->data);\n \tif (strncmp(cap_int, \"adsl\", 4) == 0) {\n \t\t/* The ADSL interface can be bridged with or without\n \t\t * PPP encapsulation. Check whether the first six bytes\n@@ -454,17 +453,20 @@ parse_netscreen_packet(FILE_T fh, wtap_rec *rec, char *line,\n }\n \n /* Take a string representing one line from a hex dump, with leading white\n- * space removed, and converts the text to binary data. We place the bytes\n- * in the buffer at the specified offset.\n+ * space removed, and converts the text to binary data. We append the bytes\n+ * to the Buffer. The Buffer should already be large enough to contain the\n+ * entire packet data, i.e. ws_buffer_assure_space(buf, pkt_len) has been\n+ * called.\n  *\n  * Returns number of bytes successfully read, -1 if bad.  */\n static int\n-parse_single_hex_dump_line(char* rec, uint8_t *buf, unsigned byte_offset, unsigned pkt_len)\n+parse_single_hex_dump_line(char* rec, Buffer *buf)\n {\n-\tint num_items_scanned;\n+\tunsigned num_items_scanned;\n \tuint8_t character;\n \tuint8_t byte;\n-\n+\tsize_t buf_available = buf->allocated - buf->first_free;\n+\tuint8_t *pd = ws_buffer_end_ptr(buf);\n \n \tfor (num_items_scanned = 0; num_items_scanned < 16; num_items_scanned++) {\n \t\tcharacter = *rec++;\n@@ -494,11 +496,12 @@ parse_single_hex_dump_line(char* rec, uint8_t *buf, unsigned byte_offset, unsign\n \t\t * header, then there must be an error in the file; quit\n \t\t * now, as adding this byte will overflow the buffer.\n \t\t */\n-\t\tif (byte_offset + num_items_scanned >= pkt_len) {\n+\t\tif (num_items_scanned >= buf_available) {\n \t\t\treturn PARSE_LINE_TOO_MANY_BYTES_SEEN;\n \t\t}\n \n-\t\tbuf[byte_offset + num_items_scanned] = byte;\n+\t\tpd[num_items_scanned] = byte;\n+\t\tws_buffer_increase_length(buf, 1);\n \t\tcharacter = *rec++ & 0xFF;\n \t\tif (character == '\\0' || character == '\\r' || character == '\\n') {\n \t\t\t/* Nothing more to parse */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/netscreen.c",
+      "old_path": "wiretap/netscreen.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -355,7 +355,7 @@ nettl_read_rec(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n     int datalen;\n     uint8_t dummyc[16];\n     int bytes_to_read;\n-    uint8_t *pd;\n+    const uint8_t *pd;\n \n     if (!wtap_read_bytes_or_eof(fh, &rec_hdr.hdr_len, sizeof rec_hdr.hdr_len,\n                                 err, err_info))\n@@ -604,19 +604,19 @@ nettl_read_rec(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n      * Read the packet data.\n      */\n     ws_buffer_assure_space(&rec->data, datalen);\n-    pd = ws_buffer_start_ptr(&rec->data);\n     if (fddihack) {\n         /* read in FC, dest, src, DSAP and SSAP */\n         bytes_to_read = 15;\n         if (bytes_to_read > datalen)\n             bytes_to_read = datalen;\n-        if (!wtap_read_bytes(fh, pd, bytes_to_read, err, err_info))\n+        if (!wtap_read_bytes_buffer(fh, &rec->data, bytes_to_read, err, err_info))\n             return false;\n         datalen -= bytes_to_read;\n         if (datalen == 0) {\n             /* There's nothing past the FC, dest, src, DSAP and SSAP */\n             return true;\n         }\n+        pd = ws_buffer_start_ptr(&rec->data);\n         if (pd[13] == 0xAA) {\n             /* it's SNAP, have to eat 3 bytes??? */\n             bytes_to_read = 3;\n@@ -630,10 +630,10 @@ nettl_read_rec(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n                 return true;\n             }\n         }\n-        if (!wtap_read_bytes(fh, pd + 15, datalen, err, err_info))\n+        if (!wtap_read_bytes_buffer(fh, &rec->data, datalen, err, err_info))\n             return false;\n     } else {\n-        if (!wtap_read_bytes(fh, pd, datalen, err, err_info))\n+        if (!wtap_read_bytes_buffer(fh, &rec->data, datalen, err, err_info))\n             return false;\n     }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/nettl.c",
+      "old_path": "wiretap/nettl.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -534,6 +534,8 @@ static bool ng_read_bytes_or_eof(wtap *wth, void *buffer,\n     unsigned int nbytes, bool is_random, int *err, char **err_info);\n static bool ng_read_bytes(wtap *wth, void *buffer, unsigned int nbytes,\n     bool is_random, int *err, char **err_info);\n+static bool ng_read_append_buffer(wtap *wth, Buffer *buffer, unsigned int nbytes,\n+    bool is_random, int *err, char **err_info);\n static bool read_blob(FILE_T infile, ngsniffer_comp_stream_t *comp_stream,\n     int *err, char **err_info);\n static bool ng_skip_bytes_seq(wtap *wth, unsigned int count, int *err,\n@@ -1360,8 +1362,7 @@ process_frame_record(wtap *wth, bool is_random, unsigned *padding,\n \t/*\n \t * Read the packet data.\n \t */\n-\tws_buffer_assure_space(&rec->data, size);\n-\tif (!ng_read_bytes(wth, ws_buffer_start_ptr(&rec->data), size, is_random,\n+\tif (!ng_read_append_buffer(wth, &rec->data, size, is_random,\n \t    err, err_info))\n \t\treturn false;\n \n@@ -2621,6 +2622,18 @@ ng_read_bytes(wtap *wth, void *buffer, unsigned int nbytes, bool is_random,\n \treturn true;\n }\n \n+static bool\n+ng_read_append_buffer(wtap *wth, Buffer *buf, unsigned int nbytes, bool is_random,\n+    int *err, char **err_info)\n+{\n+\tws_buffer_assure_space(buf, nbytes);\n+\tif (!ng_read_bytes(wth, ws_buffer_end_ptr(buf), nbytes, is_random,\n+\t    err, err_info))\n+\t\treturn false;\n+\tws_buffer_increase_length(buf, nbytes);\n+\treturn true;\n+}\n+\n /* Read a blob from a compressed stream.\n    Return false and set \"*err\" and \"*err_info\" on error, otherwise return true. */\n static bool\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/ngsniffer.c",
+      "old_path": "wiretap/ngsniffer.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -189,9 +189,8 @@ pcapng_process_nflx_custom_option(wtapng_block_t *wblock,\n              * value to the data of the block, and use times from\n              * the option to set the time stamp.\n              */\n-            ws_buffer_assure_space(&wblock->rec->data, length);\n             wblock->rec->rec_header.custom_block_header.length = length + 4;\n-            memcpy(ws_buffer_start_ptr(&wblock->rec->data), value, length);\n+            ws_buffer_append(&wblock->rec->data, value, length);\n             memcpy(&temp, value, sizeof(uint64_t));\n             temp = GUINT64_FROM_LE(temp);\n             nflx_per_section_info = get_nflx_custom_blocK_data(section_info);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/pcapng-netflix-custom.c",
+      "old_path": "wiretap/pcapng-netflix-custom.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -201,11 +201,11 @@ typedef struct _pppdump_t {\n } pppdump_t;\n \n static int\n-process_data(pppdump_t *state, FILE_T fh, pkt_t *pkt, int n, uint8_t *pd,\n+process_data(pppdump_t *state, FILE_T fh, pkt_t *pkt, int n, Buffer *buf,\n     int *err, char **err_info, pkt_id *pid);\n \n static bool\n-collate(pppdump_t *state, FILE_T fh, int *err, char **err_info, uint8_t *pd,\n+collate(pppdump_t *state, FILE_T fh, int *err, char **err_info, Buffer *buf,\n \t\tint *num_bytes, direction_enum *direction, pkt_id *pid,\n \t\tint64_t num_bytes_to_skip);\n \n@@ -353,7 +353,7 @@ pppdump_read(wtap *wth, wtap_rec *rec, int *err, char **err_info,\n \t\tpid = NULL;\t/* sequential only */\n \n \tws_buffer_assure_space(&rec->data, PPPD_BUF_SIZE);\n-\tif (!collate(state, wth->fh, err, err_info, ws_buffer_start_ptr(&rec->data),\n+\tif (!collate(state, wth->fh, err, err_info, &rec->data,\n \t    &num_bytes, &direction, pid, 0)) {\n \t\tg_free(pid);\n \t\treturn false;\n@@ -382,7 +382,7 @@ pppdump_read(wtap *wth, wtap_rec *rec, int *err, char **err_info,\n  * comes with the ppp distribution.\n  */\n static int\n-process_data(pppdump_t *state, FILE_T fh, pkt_t *pkt, int n, uint8_t *pd,\n+process_data(pppdump_t *state, FILE_T fh, pkt_t *pkt, int n, Buffer *buf,\n     int *err, char **err_info, pkt_id *pid)\n {\n \tint\tc;\n@@ -438,7 +438,7 @@ process_data(pppdump_t *state, FILE_T fh, pkt_t *pkt, int n, uint8_t *pd,\n \t\t\t\t\t\treturn -1;\n \t\t\t\t\t}\n \n-\t\t\t\t\tmemcpy(pd, pkt->buf, num_written);\n+\t\t\t\t\tws_buffer_append(buf, pkt->buf, num_written);\n \n \t\t\t\t\t/*\n \t\t\t\t\t * Remember the offset of the\n@@ -543,7 +543,7 @@ process_data(pppdump_t *state, FILE_T fh, pkt_t *pkt, int n, uint8_t *pd,\n \n /* Returns true if packet data copied, false if error occurred or EOF (no more records). */\n static bool\n-collate(pppdump_t* state, FILE_T fh, int *err, char **err_info, uint8_t *pd,\n+collate(pppdump_t* state, FILE_T fh, int *err, char **err_info, Buffer *buf,\n \t\tint *num_bytes, direction_enum *direction, pkt_id *pid,\n \t\tint64_t num_bytes_to_skip)\n {\n@@ -552,7 +552,7 @@ collate(pppdump_t* state, FILE_T fh, int *err, char **err_info, uint8_t *pd,\n \tint\t\tbyte0, byte1;\n \tint\t\tn, num_written = 0;\n \tint64_t\t\tstart_offset;\n-\tuint32_t\t\ttime_long;\n+\tuint32_t\ttime_long;\n \tuint8_t\t\ttime_short;\n \n \t/*\n@@ -563,7 +563,7 @@ collate(pppdump_t* state, FILE_T fh, int *err, char **err_info, uint8_t *pd,\n \t\tws_assert(num_bytes_to_skip == 0);\n \t\tpkt = state->pkt;\n \t\tnum_written = process_data(state, fh, pkt, state->num_bytes,\n-\t\t    pd, err, err_info, pid);\n+\t\t    buf, err, err_info, pid);\n \n \t\tif (num_written < 0) {\n \t\t\treturn false;\n@@ -643,7 +643,7 @@ collate(pppdump_t* state, FILE_T fh, int *err, char **err_info, uint8_t *pd,\n \t\t\t\t\tn--;\n \t\t\t\t}\n \t\t\t\tnum_written = process_data(state, fh, pkt, n,\n-\t\t\t\t    pd, err, err_info, pid);\n+\t\t\t\t    buf, err, err_info, pid);\n \n \t\t\t\tif (num_written < 0) {\n \t\t\t\t\treturn false;\n@@ -730,7 +730,6 @@ pppdump_seek_read(wtap *wth,\n \t\t char **err_info)\n {\n \tint\t\tnum_bytes;\n-\tuint8_t\t\t*pd;\n \tdirection_enum\tdirection;\n \tpppdump_t\t*state;\n \tpkt_id\t\t*pid;\n@@ -752,7 +751,6 @@ pppdump_seek_read(wtap *wth,\n \tstate->seek_state->offset = pid->offset;\n \n \tws_buffer_assure_space(&rec->data, PPPD_BUF_SIZE);\n-\tpd = ws_buffer_start_ptr(&rec->data);\n \n \t/*\n \t * We'll start reading at the first record containing data from\n@@ -768,7 +766,7 @@ pppdump_seek_read(wtap *wth,\n \tnum_bytes_to_skip = pid->num_bytes_to_skip;\n \tdo {\n \t\tif (!collate(state->seek_state, wth->random_fh, err, err_info,\n-\t\t    pd, &num_bytes, &direction, NULL, num_bytes_to_skip))\n+\t\t    &rec->data, &num_bytes, &direction, NULL, num_bytes_to_skip))\n \t\t\treturn false;\n \t\tnum_bytes_to_skip = 0;\n \t} while (direction != pid->dir);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/pppdump.c",
+      "old_path": "wiretap/pppdump.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -157,8 +157,6 @@ static bool systemd_journal_seek_read(wtap *wth, int64_t seek_off,\n static bool systemd_journal_read_export_entry(FILE_T fh, wtap_rec *rec,\n         int *err, char **err_info)\n {\n-    size_t fld_end = 0;\n-    char *buf_ptr;\n     char *entry_line = NULL;\n     bool got_cursor = false;\n     bool got_rt_ts = false;\n@@ -168,14 +166,14 @@ static bool systemd_journal_read_export_entry(FILE_T fh, wtap_rec *rec,\n     size_t rt_ts_len = strlen(FLD__REALTIME_TIMESTAMP);\n \n     ws_buffer_assure_space(&rec->data, MAX_EXPORT_ENTRY_LENGTH);\n-    buf_ptr = (char *) ws_buffer_start_ptr(&rec->data);\n \n     for (line_num = 0; line_num < MAX_EXPORT_ENTRY_LINES; line_num++) {\n-        entry_line = file_gets(buf_ptr + fld_end, MAX_EXPORT_ENTRY_LENGTH - (int) fld_end, fh);\n+        // XXX - Should there be a file_gets_buffer() ?\n+        entry_line = file_gets((char*)ws_buffer_end_ptr(&rec->data), MAX_EXPORT_ENTRY_LENGTH - (int) ws_buffer_length(&rec->data), fh);\n         if (!entry_line) {\n             break;\n         }\n-        fld_end += strlen(entry_line);\n+        ws_buffer_increase_length(&rec->data, strlen(entry_line));\n         if (entry_line[0] == '\\n') {\n             got_double_newline = true;\n             break;\n@@ -194,30 +192,27 @@ static bool systemd_journal_read_export_entry(FILE_T fh, wtap_rec *rec,\n             got_mt_ts = true;\n         } else if (!strstr(entry_line, \"=\")) {\n             // Start of binary data.\n-            if (fld_end >= MAX_EXPORT_ENTRY_LENGTH - 8) {\n+            if (ws_buffer_length(&rec->data) >= MAX_EXPORT_ENTRY_LENGTH - 8) {\n                 *err = WTAP_ERR_BAD_FILE;\n                 *err_info = ws_strdup_printf(\"systemd: binary length too long\");\n                 return false;\n             }\n-            uint64_t data_len, le_data_len;\n-            if (!wtap_read_bytes(fh, &le_data_len, 8, err, err_info)) {\n+            uint64_t data_len;\n+            if (!wtap_read_bytes_buffer(fh, &rec->data, 8, err, err_info)) {\n                 return false;\n             }\n-            memcpy(buf_ptr + fld_end, &le_data_len, 8);\n-            fld_end += 8;\n-            data_len = pletohu64(&le_data_len);\n-            if (data_len < 1 || data_len - 1 >= MAX_EXPORT_ENTRY_LENGTH - fld_end) {\n+            data_len = pletohu64(&ws_buffer_end_ptr(&rec->data)[-8]);\n+            if (data_len < 1 || data_len - 1 >= MAX_EXPORT_ENTRY_LENGTH - ws_buffer_length(&rec->data)) {\n                 *err = WTAP_ERR_BAD_FILE;\n                 *err_info = ws_strdup_printf(\"systemd: binary data too long\");\n                 return false;\n             }\n             // Data + trailing \\n\n-            if (!wtap_read_bytes(fh, buf_ptr + fld_end, (unsigned) data_len + 1, err, err_info)) {\n+            if (!wtap_read_bytes_buffer(fh, &rec->data, (unsigned) data_len + 1, err, err_info)) {\n                 return false;\n             }\n-            fld_end += (size_t) data_len + 1;\n         }\n-        if (MAX_EXPORT_ENTRY_LENGTH < fld_end + 2) { // \\n\\0\n+        if (MAX_EXPORT_ENTRY_LENGTH < ws_buffer_length(&rec->data) + 2) { // \\n\\0\n             break;\n         }\n     }\n@@ -233,7 +228,7 @@ static bool systemd_journal_read_export_entry(FILE_T fh, wtap_rec *rec,\n     wtap_setup_systemd_journal_export_rec(rec);\n     rec->block = wtap_block_create(WTAP_BLOCK_SYSTEMD_JOURNAL_EXPORT);\n     rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;\n-    rec->rec_header.systemd_journal_export_header.record_len = (uint32_t) fld_end;\n+    rec->rec_header.systemd_journal_export_header.record_len = (uint32_t) ws_buffer_length(&rec->data);\n \n     return true;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/systemd_journal.c",
+      "old_path": "wiretap/systemd_journal.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -108,8 +108,8 @@ static bool toshiba_read(wtap *wth, wtap_rec *rec, int *err,\n \tchar **err_info, int64_t *data_offset);\n static bool toshiba_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,\n \tint *err, char **err_info);\n-static bool parse_single_hex_dump_line(char* rec, uint8_t *buf,\n-\tunsigned byte_offset, unsigned remaining_groups);\n+static bool parse_single_hex_dump_line(char* rec, Buffer *buf,\n+\tunsigned remaining_groups);\n static bool parse_toshiba_packet(FILE_T fh, wtap_rec *rec, int *err,\n \tchar **err_info);\n \n@@ -258,7 +258,6 @@ parse_toshiba_packet(FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n \tint\tpkt_len, pktnum, hr, min, sec, csec;\n \tchar\tchannel[10], direction[10];\n \tint\ti, hex_lines;\n-\tuint8_t\t*pd;\n \n \t/* Our file pointer should be on the line containing the\n \t * summary information for a packet. Read in that line and\n@@ -362,7 +361,6 @@ parse_toshiba_packet(FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n \t/* Round up because the format writes in groups of 2 bytes (4 hex). */\n \tunsigned rounded_len = WS_ROUNDUP_2(pkt_len);\n \tws_buffer_assure_space(&rec->data, rounded_len);\n-\tpd = ws_buffer_start_ptr(&rec->data);\n \n \t/* Calculate the number of hex dump lines, each\n \t * containing 16 bytes of data */\n@@ -376,7 +374,7 @@ parse_toshiba_packet(FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n \t\t\t}\n \t\t\treturn false;\n \t\t}\n-\t\tif (!parse_single_hex_dump_line(line, pd, i * 16, rounded_len/2 - i * 8)) {\n+\t\tif (!parse_single_hex_dump_line(line, &rec->data, rounded_len/2 - i * 8)) {\n \t\t\t*err = WTAP_ERR_BAD_FILE;\n \t\t\t*err_info = g_strdup(\"toshiba: hex dump not valid\");\n \t\t\treturn false;\n@@ -405,13 +403,14 @@ parse_toshiba_packet(FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n  * Returns true if good hex dump, false if bad.\n  */\n static bool\n-parse_single_hex_dump_line(char* rec, uint8_t *buf, unsigned byte_offset, unsigned remaining_groups) {\n+parse_single_hex_dump_line(char* rec, Buffer *buf, unsigned remaining_groups) {\n \n \tunsigned\tpos, i;\n \tchar\t\t*s;\n \tunsigned long\tvalue;\n \tuint16_t\tword_value;\n \tunsigned\thex_len;\n+\tuint8_t\t\t*pd;\n \n \tif (remaining_groups > 8) {\n \t\tremaining_groups = 8;\n@@ -431,7 +430,7 @@ parse_single_hex_dump_line(char* rec, uint8_t *buf, unsigned byte_offset, unsign\n \ts = rec;\n \tvalue = strtoul(s, NULL, 16);\n \n-\tif (value != byte_offset) {\n+\tif (value != ws_buffer_length(buf)) {\n \t\treturn false;\n \t}\n \n@@ -448,14 +447,16 @@ parse_single_hex_dump_line(char* rec, uint8_t *buf, unsigned byte_offset, unsign\n \t\t}\n \t}\n \n+\tpd = ws_buffer_end_ptr(buf);\n \tpos = START_POS;\n \tfor (i = 0; i < remaining_groups; i++) {\n \t\trec[pos+4] = '\\0';\n \n \t\tword_value = (uint16_t) strtoul(&rec[pos], NULL, 16);\n-\t\tphtonu16(&buf[byte_offset + i * 2], word_value);\n+\t\tphtonu16(&pd[i * 2], word_value);\n \t\tpos += 5;\n \t}\n+\tws_buffer_increase_length(buf, remaining_groups * 2);\n \n \treturn true;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/toshiba.c",
+      "old_path": "wiretap/toshiba.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -321,7 +321,7 @@ static bool visual_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,\n     struct visual_atm_hdr vatm_hdr;\n     uint32_t relmsecs;\n     uint32_t packet_status;\n-    uint8_t *pd;\n+    const uint8_t *pd;\n \n     /* Read the packet header. */\n     if (!wtap_read_bytes_or_eof(fh, &vpkt_hdr, (unsigned int)sizeof vpkt_hdr, err, err_info))\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/visual.c",
+      "old_path": "wiretap/visual.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -145,8 +145,8 @@ static bool vms_read(wtap *wth, wtap_rec *rec, int *err,\n     char **err_info, int64_t *data_offset);\n static bool vms_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,\n     int *err, char **err_info);\n-static bool parse_single_hex_dump_line(char* rec, uint8_t *buf,\n-    long byte_offset, int in_off, int remaining_bytes);\n+static bool parse_single_hex_dump_line(char* rec, Buffer *buf,\n+    int in_off, int remaining_bytes);\n static bool parse_vms_packet(wtap *wth, FILE_T fh, wtap_rec *rec, int *err,\n     char **err_info);\n \n@@ -347,7 +347,6 @@ parse_vms_packet(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n     static const char months[] = \"JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC\";\n     uint32_t i;\n     int     offset = 0;\n-    uint8_t *pd;\n \n     tm.tm_year = 1970;\n     tm.tm_mon = 0;\n@@ -446,7 +445,6 @@ parse_vms_packet(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n \n     /* Make sure we have enough room for the packet */\n     ws_buffer_assure_space(&rec->data, pkt_len);\n-    pd = ws_buffer_start_ptr(&rec->data);\n \n     /* Convert the ASCII hex dump to binary data */\n     for (i = 0; i < pkt_len; i += 16) {\n@@ -472,7 +470,7 @@ parse_vms_packet(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n             while (line[offset] && !g_ascii_isxdigit(line[offset]))\n                 offset++;\n         }\n-        if (!parse_single_hex_dump_line(line, pd, i,\n+        if (!parse_single_hex_dump_line(line, &rec->data,\n                                         offset, pkt_len - i)) {\n             *err = WTAP_ERR_BAD_FILE;\n             *err_info = g_strdup(\"vms: hex dump not valid\");\n@@ -515,21 +513,21 @@ parse_vms_packet(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)\n  * Returns true if good hex dump, false if bad.\n  */\n static bool\n-parse_single_hex_dump_line(char* rec, uint8_t *buf, long byte_offset,\n-               int in_off, int remaining_bytes) {\n+parse_single_hex_dump_line(char* rec, Buffer *buf, int in_off,\n+                           int remaining_bytes) {\n \n     int        i;\n     char        *s;\n-    int        value;\n+    unsigned long value;\n     static const int offsets[16] = {39,37,35,33,28,26,24,22,17,15,13,11,6,4,2,0};\n     char lbuf[3] = {0,0,0};\n-\n+    uint8_t *pd;\n \n     /* Get the byte_offset directly from the record */\n     s = rec;\n-    value = (int)strtoul(s + 45 + in_off, NULL, 16);    /* XXX - error check? */\n+    value = strtoul(s + 45 + in_off, NULL, 16);    /* XXX - error check? */\n \n-    if (value != byte_offset) {\n+    if (value != ws_buffer_length(buf)) {\n         return false;\n     }\n \n@@ -539,13 +537,14 @@ parse_single_hex_dump_line(char* rec, uint8_t *buf, long byte_offset,\n     /* Read the octets right to left, as that is how they are displayed\n      * in VMS.\n      */\n-\n+    pd = ws_buffer_end_ptr(buf);\n     for (i = 0; i < remaining_bytes; i++) {\n         lbuf[0] = rec[offsets[i] + in_off];\n         lbuf[1] = rec[offsets[i] + 1 + in_off];\n \n-        buf[byte_offset + i] = (uint8_t) strtoul(lbuf, NULL, 16);\n+        pd[i] = (uint8_t) strtoul(lbuf, NULL, 16);\n     }\n+    ws_buffer_increase_length(buf, remaining_bytes);\n \n     return true;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/vms.c",
+      "old_path": "wiretap/vms.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1403,6 +1403,9 @@ static bool vwr_read_s1_W_rec(wtap *wth, wtap_rec *record,\n     phtoleu32(&data_ptr[bytes_written], errors);\n     bytes_written += 4;\n \n+    /* Update the end of the valid data in the Buffer with what we've written */\n+    ws_buffer_increase_length(&record->data, bytes_written);\n+\n     /*\n      * Finally, copy the whole MAC frame to the packet buffer as-is.\n      * This does not include the PLCP; the MPDU starts at 4 or 6\n@@ -1410,7 +1413,7 @@ static bool vwr_read_s1_W_rec(wtap *wth, wtap_rec *record,\n      * This also does not include the last 4 bytes, as those don't\n      * contain an FCS, they just contain junk.\n      */\n-    memcpy(&data_ptr[bytes_written], &rec[plcp_hdr_len], actual_octets);\n+    ws_buffer_append(&record->data, &rec[plcp_hdr_len], actual_octets);\n \n     return true;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/vwr.c",
+      "old_path": "wiretap/vwr.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1715902915,
+      "head_commit_sha": "2cf70cdb9d36872e4b362558870f842a5eb68f1f",
+      "base_commit_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+      "start_commit_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+      "created_at": "2026-03-22T22:27:57.431Z",
+      "merge_request_id": 466077647,
+      "state": "collected",
+      "real_size": "19",
+      "patch_id_sha": "e314bd740350e9f3f6c12fa92e690b46413ff6bf"
+    },
+    {
+      "id": 1715902904,
+      "head_commit_sha": "2cf70cdb9d36872e4b362558870f842a5eb68f1f",
+      "base_commit_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+      "start_commit_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+      "created_at": "2026-03-22T22:27:53.397Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "19",
+      "patch_id_sha": "e314bd740350e9f3f6c12fa92e690b46413ff6bf"
+    },
+    {
+      "id": 1715635877,
+      "head_commit_sha": "d026e86b3be9b1281e4361c62893baccaf05a540",
+      "base_commit_sha": "051b1922554af08b7b5ed378b1e0791c69421121",
+      "start_commit_sha": "051b1922554af08b7b5ed378b1e0791c69421121",
+      "created_at": "2026-03-22T03:28:29.118Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "19",
+      "patch_id_sha": "e314bd740350e9f3f6c12fa92e690b46413ff6bf"
+    },
+    {
+      "id": 1715625437,
+      "head_commit_sha": "ce4df3f51be2ed6a41953d85753acf578c3949ed",
+      "base_commit_sha": "051b1922554af08b7b5ed378b1e0791c69421121",
+      "start_commit_sha": "051b1922554af08b7b5ed378b1e0791c69421121",
+      "created_at": "2026-03-22T02:30:14.369Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "20",
+      "patch_id_sha": "a69f7beb9d77d6d416a64a48f29553e3ed39b2e2"
+    },
+    {
+      "id": 1715603090,
+      "head_commit_sha": "ffb38f6e7fee22ee1739d9f330608b1be7f2693e",
+      "base_commit_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+      "start_commit_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+      "created_at": "2026-03-22T00:40:53.886Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "20",
+      "patch_id_sha": "4e0b7f2daff6396acdfccf923a2c6481f1a477f3"
+    },
+    {
+      "id": 1715602869,
+      "head_commit_sha": "d6f14d5a5a7add7a107a16b1ad428e7eaeaf0b98",
+      "base_commit_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+      "start_commit_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+      "created_at": "2026-03-22T00:39:55.426Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "20",
+      "patch_id_sha": "0acf255647bb50748f4c7ffd0cc14105cfa58f1a"
+    },
+    {
+      "id": 1715600194,
+      "head_commit_sha": "4c866dadd5ea8018c2113c97f3eb98dfc937adaa",
+      "base_commit_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+      "start_commit_sha": "157d2fe352aded887dceaebad90958d8cd1464db",
+      "created_at": "2026-03-22T00:25:26.740Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "20",
+      "patch_id_sha": "ea0a5646143f253dfef2435183179880d04023fd"
+    },
+    {
+      "id": 1715566027,
+      "head_commit_sha": "40fc3263e08fd855f9fbde974e9e4415ca9507f1",
+      "base_commit_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+      "start_commit_sha": "2f23e64bc32c963147d50f8035cbeeb2a686664e",
+      "created_at": "2026-03-21T21:22:34.837Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "20",
+      "patch_id_sha": "27aa112c891d0d21f3bab9b2045717fe3e21a69c"
+    },
+    {
+      "id": 1715430216,
+      "head_commit_sha": "a302ecab084ba22dbdff5b7b0d5b2bdd46aa234c",
+      "base_commit_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+      "start_commit_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+      "created_at": "2026-03-21T15:07:11.111Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "20",
+      "patch_id_sha": "b6f149541f470714d565eab85e5703c7a46d6281"
+    },
+    {
+      "id": 1715418577,
+      "head_commit_sha": "3b0529366269f8657d5bd423aa1a745c34b08591",
+      "base_commit_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+      "start_commit_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+      "created_at": "2026-03-21T14:07:11.588Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "20",
+      "patch_id_sha": "b2f998c53852c94aa18818a96ae9d351b8d673fb"
+    },
+    {
+      "id": 1715414261,
+      "head_commit_sha": "cf72c15c2845fc5844b5913233ba55bc3454b93b",
+      "base_commit_sha": "7c21644082c011f68b9e31c730235ad42116e3bb",
+      "start_commit_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+      "created_at": "2026-03-21T13:44:44.066Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "21",
+      "patch_id_sha": "209b8bd7d59a940dd077a7ed7f33584e622fb447"
+    },
+    {
+      "id": 1715400211,
+      "head_commit_sha": "85e15f106b1963899b86faa84667e8205d9d2032",
+      "base_commit_sha": "7c21644082c011f68b9e31c730235ad42116e3bb",
+      "start_commit_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+      "created_at": "2026-03-21T12:34:43.990Z",
+      "merge_request_id": 466077647,
+      "state": "without_files",
+      "real_size": "21",
+      "patch_id_sha": "057022ff12852a8074b6a345aab0fa8f66a76ff3"
+    }
+  ]
+}

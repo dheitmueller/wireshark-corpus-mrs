@@ -1,0 +1,2301 @@
+{
+  "id": 475780842,
+  "iid": 24493,
+  "project_id": 7898047,
+  "title": "EAP: support use of nested TLS decoding and fix EAPOL/TLS decoding",
+  "description": "The nested TLS work (https://gitlab.com/wireshark/wireshark/-/merge_requests/24261 and https://gitlab.com/wireshark/wireshark/-/merge_requests/24945) which this is based upon, allows us to clean up the EAP dissector.\n\nIncluded in this work is fixing TLS decoding for EAPOL, as well as improving conversation tracking when the PAE multicast group address is used in both directors as the destination MAC addresses.\n\nConversation topics:\n * I had to make the TLS dissector `use_conv_addr_port_endpoints` aware as it otherwise directly uses `pinfo->{src,dst,srcport,destport}` and rewriting them effects the display output\n    * I need guidance on what a better approach looks like.\n    * this more than likely breaks something, though there are very few users of `conversation_set_conv_addr_port_endpoints()` (TLS wise at a glance only `packet-eap.c` and potentially `packet-proxy.c`)\n    * I moved `struct conversation_addr_port_endpoints` into `conversation.h` only to show for this approach the contents of this needs exposing to `packet-tls-utils.c`; if this is probably the least awful way I'll create a set of 'get_endpoint_src()`-esque helpers\n    * My only other thought is to use the approach of `p_{get,set}_proto_depth` to smuggle a hint to TLS from keyed off `session->app_handle` on if this frame is a 'server' for `ssl_packet_from_server` to use; though maybe we need full addr/port for all the other parts of the TLS dissector that use `pinfo->{dst,src,srcport,destport}` \n    * ~I have not edited yet DTLS as I suspect my current approach needs to be replaced~\n * ~using `curr_layer_num` instead of `curr_proto_layer_num` for my nested EAP partitioning; maybe an effect of using `tls_set_appdata_dissector` doing things differently?~\n    * moved to `p_{get,set}_proto_depth` as recommended by @johnthacker in https://gitlab.com/wireshark/wireshark/-/merge_requests/24261#note_3330008756\n * ~not sure if the backfill of the seemingly missing nested TLS hooks is needed; should probably be further discussed in https://gitlab.com/wireshark/wireshark/-/work_items/21027~\n    * ~nested TLS merged, no longer necessary except for the missed plumbing fixed by https://gitlab.com/wireshark/wireshark/-/merge_requests/24945~\n\n[teap.pcapng](/uploads/17f65d80b1d287863d251d3f42f0b1dc/teap.pcapng)\n[teap-chained-tls-tls.pcapng](/uploads/8b396b8ee489aab44f9db3bf0428b44a/teap-chained-tls-tls.pcapng)\n[eapol-teap.pcapng](/uploads/98b629ff397baac07b84c847dfbc8615/eapol-teap.pcapng)\n[eapol-teap-chained-tls-tls.pcapng](/uploads/74573a166a7898de8e11b524e55cd079/eapol-teap-chained-tls-tls.pcapng)\n[eapol-pae.pcapng](/uploads/9cabda2acd10f00ee540c51d02ea6284/eapol-pae.pcapng)",
+  "state": "merged",
+  "created_at": "2026-04-20T17:30:48.010Z",
+  "updated_at": "2026-08-22T07:54:01.460Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-08-22T07:54:01.507Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "eap",
+  "user_notes_count": 8,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 449568,
+    "username": "jimdigriz",
+    "public_email": "alex@digriz.org.uk",
+    "name": "Alexander Clouter",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+    "web_url": "https://gitlab.com/jimdigriz"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 31479930,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "9dee61285c85288e99d4ce54d9de53719b642814",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-04-20T17:31:00.768Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!24493",
+  "references": {
+    "short": "!24493",
+    "relative": "!24493",
+    "full": "wireshark/wireshark!24493"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/24493",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "8",
+  "latest_build_started_at": "2026-08-22T07:36:45.554Z",
+  "latest_build_finished_at": "2026-08-22T07:54:00.007Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2781559934,
+    "iid": 108648,
+    "project_id": 7898047,
+    "sha": "ff0078e3a09b36fe58e14b451bcee0a0ec72f700",
+    "ref": "refs/merge-requests/24493/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-22T07:36:44.513Z",
+    "updated_at": "2026-08-22T07:54:00.018Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2781559934"
+  },
+  "head_pipeline": {
+    "id": 2781559934,
+    "iid": 108648,
+    "project_id": 7898047,
+    "sha": "ff0078e3a09b36fe58e14b451bcee0a0ec72f700",
+    "ref": "refs/merge-requests/24493/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-22T07:36:44.513Z",
+    "updated_at": "2026-08-22T07:54:00.018Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2781559934",
+    "before_sha": "ff0078e3a09b36fe58e14b451bcee0a0ec72f700",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-08-22T07:36:45.554Z",
+    "finished_at": "2026-08-22T07:54:00.007Z",
+    "committed_at": null,
+    "duration": 1033,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2781559934",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a",
+    "head_sha": "9dee61285c85288e99d4ce54d9de53719b642814",
+    "start_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "3f0e5fb27f08587ecf21b1d149513e5a06f49447",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3267735565,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-20T17:33:07.177Z",
+          "updated_at": "2026-04-20T17:33:07.181Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "efb330a3ee388b11782753a6b5eab27e3208c64e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3267749556,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-20T17:38:32.287Z",
+          "updated_at": "2026-04-20T17:38:32.293Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "558001d984c9dbc5c4b96900ffd8d5b19342900c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3292748062,
+          "type": null,
+          "body": "added 126 commits\n\n<ul><li>6a7abd73...bc31de5e - 119 commits from branch <code>wireshark:master</code></li><li>6731cff9 - TLS: Fix decryption of nested TLS sessions</li><li>99588fd8 - TLS: Fix trailing whitespace in nested TLS session changes</li><li>4b5fed57 - TLS: Fix memory leak in nested TLS session storage</li><li>1381529d - TLS: Add tls_get_session() to fix crash with wmem_map session storage</li><li>78440e93 - TLS: backfill missing nested TLS hooks</li><li>5b85ec9c - TLS: use use_conv_addr_port_endpoints where set</li><li>42f46dba - EAP: use wmem_map to partition conversation tracking by curr_proto_layer_num</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1771860694&start_sha=6a7abd734fe68149b15daf1ebffb6dd66dc21660)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-28T05:45:26.997Z",
+          "updated_at": "2026-04-28T05:45:27.006Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "96c678a5a8975a98e3004f4a9d4708103f94c768",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3313779969,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-05T05:49:10.299Z",
+          "updated_at": "2026-05-05T05:49:10.303Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "853fb6df1e6f1485052dacd2d0c6f53952e8fc13",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3354282660,
+          "type": null,
+          "body": "added 225 commits\n\n<ul><li>42f46dba...ab04a1f6 - 217 commits from branch <code>wireshark:master</code></li><li>6d448f19 - TLS: Fix decryption of nested TLS sessions</li><li>7b03b4f8 - TLS: Fix trailing whitespace in nested TLS session changes</li><li>6a01746a - TLS: Fix memory leak in nested TLS session storage</li><li>e5c70228 - TLS: Add tls_get_session() to fix crash with wmem_map session storage</li><li>547fa68b - TLS: Use p_get_proto_depth</li><li>2101c74e - Follow, TLS: Find the stream for the follow filter even with tunneling</li><li>a6394fd5 - TLS: use use_conv_addr_port_endpoints where set</li><li>fb1c02ac - EAP: use wmem_map to partition conversation tracking by curr_proto_layer_num</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1802961924&start_sha=42f46dba87bd6a3a58e0bd303b494ab9b3faea51)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-16T15:04:13.098Z",
+          "updated_at": "2026-05-16T15:04:13.104Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "70e99ddfdb19c2820856731392da41f43433199a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3354508800,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>ad8299ff - TLS: Fix decryption of nested TLS sessions</li><li>2a5d1341 - TLS: Fix trailing whitespace in nested TLS session changes</li><li>f6ed37b4 - TLS: Fix memory leak in nested TLS session storage</li><li>bc0c6835 - TLS: Add tls_get_session() to fix crash with wmem_map session storage</li><li>72e6d45a - TLS: Use p_get_proto_depth</li><li>f4be3045 - Follow, TLS: Find the stream for the follow filter even with tunneling</li><li>70889a94 - TLS: use use_conv_addr_port_endpoints where set</li><li>bc8e035b - EAP: use wmem_map to partition conversation tracking by curr_proto_layer_num</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803004780&start_sha=fb1c02ac1c1346ababb80a7b4a658438b9fc81ba)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-16T17:00:34.277Z",
+          "updated_at": "2026-05-16T17:00:34.282Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0c76c459f41eaaec776153beb49ce1f5a8682a16",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3354583682,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>c34b6383 - TLS: Use p_get_proto_depth for tls_set_appdata_dissector and ssl_starttls too</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803017225&start_sha=bc8e035bec31d1fd0a8c0ad1136f5c83ae6f8743)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-16T17:29:59.482Z",
+          "updated_at": "2026-05-16T17:29:59.485Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "aeb656352f0989b50b2b21100a0b8c4cbd092e55",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355447986,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>1cacd5ba - TLS: Use p_get_proto_depth for tls_set_appdata_dissector and ssl_starttls too</li><li>dd9f503c - TLS: use use_conv_addr_port_endpoints where set</li><li>c294263e - EAP: use wmem_map to partition conversation tracking by curr_proto_layer_num</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803222806&start_sha=c34b638347331bdbda86f6b9524dd0366b2a13b6)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T05:39:59.571Z",
+          "updated_at": "2026-05-17T05:39:59.576Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "803e561f4b8ea0916493812ec3e1f1b3a0b1519f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355448922,
+          "type": null,
+          "body": "added 335 commits\n\n<ul><li>c294263e...2b6353cc - 332 commits from branch <code>wireshark:master</code></li><li>9c314060 - TLS: Use p_get_proto_depth for tls_set_appdata_dissector and ssl_starttls too</li><li>b228956c - TLS: use use_conv_addr_port_endpoints where set</li><li>5267b1e6 - EAP: use wmem_map to partition conversation tracking by curr_proto_layer_num</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803222968&start_sha=c294263e9522e214129a90bdcda1393df6a24d62)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T05:41:00.313Z",
+          "updated_at": "2026-05-17T05:41:00.319Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c0158217109bb32bfadbfa1f6e39df28dd266196",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355450395,
+          "type": null,
+          "body": "mentioned in merge request !24261",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T05:44:16.181Z",
+          "updated_at": "2026-05-17T05:44:16.186Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d7f6bbd365e731003e2d9190b4d7aa11c34b82ff",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355469433,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>5de6667e - TLS: Use p_get_proto_depth for tls_set_appdata_dissector and ssl_starttls too</li><li>66965c9e - TLS: use use_conv_addr_port_endpoints where set</li><li>102db4ed - EAP: use wmem_map to partition conversation tracking by curr_proto_layer_num</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803231736&start_sha=5267b1e61f0bf09dcb0aee8a22c25f56876ef341)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T06:17:04.258Z",
+          "updated_at": "2026-05-17T06:17:04.262Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6adcf909aa6a307a0dd28793d42b328749b84f23",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355470245,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>7bd6f865 - EAP: use wmem_map to partition conversation tracking by curr_proto_layer_num</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803232061&start_sha=102db4ed54d70bb241230cffa9f648b9f000ce3e)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T06:18:52.520Z",
+          "updated_at": "2026-05-17T06:18:52.524Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "60ee7d205707e045045014982a8b360106c05d8d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355484165,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>37014d50 - EAP: use wmem_map to partition conversation tracking by dissection_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803237176&start_sha=7bd6f865631572eaba6b13c4dad2f62bed689f03)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T06:40:23.790Z",
+          "updated_at": "2026-05-17T06:40:23.814Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d35e30658e468df697b496c9bd47528f2f6b2d3e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355487796,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>e3952e70 - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803238242&start_sha=37014d505302c50d78e250d2656e6036db7b5052)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T06:44:30.829Z",
+          "updated_at": "2026-05-17T06:44:30.833Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dfe7cb9213af8031d75829e40e14ac2173cce115",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355494866,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>90b77ce8 - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803240897&start_sha=e3952e7088b18725f6494493e812e0d3897123f2)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T06:54:00.368Z",
+          "updated_at": "2026-05-17T06:54:00.372Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e61caa137bbc014c5f95d3498d3c4d5036c24c89",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355496791,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>f97587f9 - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803241677&start_sha=90b77ce81ca37416a8d2b4e15603472643575d5b)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T06:58:18.091Z",
+          "updated_at": "2026-05-17T06:58:18.097Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a6d1a62f09903115eedaf014da8d6bb9a1a90b1f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355521172,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T07:30:19.552Z",
+          "updated_at": "2026-05-17T07:30:19.556Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5cd0a26784d40ca13d29d80cb1d40258e295699b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355521452,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T07:30:57.648Z",
+          "updated_at": "2026-05-17T07:30:57.651Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c2790a14a7e9f901d7f15ace0618365df5fac71f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355522441,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T07:32:35.644Z",
+          "updated_at": "2026-05-17T07:32:35.648Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "81fc0550067546003a971e64c26b5442392b0a57",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355757224,
+          "type": null,
+          "body": "added 4 commits\n\n<ul><li>f97587f9...90f08c8b - 2 commits from branch <code>wireshark:master</code></li><li>a5d013f2 - TLS: use use_conv_addr_port_endpoints where set</li><li>bb53b02e - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1803363455&start_sha=f97587f97dd062511d0f376d4460da4790aabe37)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T14:14:36.023Z",
+          "updated_at": "2026-05-17T14:14:36.034Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f13c5d91b807924dd520147485a0bec88c8b9fdc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355859844,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T16:45:20.740Z",
+          "updated_at": "2026-05-17T16:45:20.744Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0b4519468d6d968e23028413aceca6fb1601882a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3376722076,
+          "type": null,
+          "body": "added 59 commits\n\n<ul><li>bb53b02e...f66d6359 - 57 commits from branch <code>wireshark:master</code></li><li>397d8566 - TLS: use use_conv_addr_port_endpoints where set</li><li>48d54ff7 - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1814094116&start_sha=bb53b02e33fa6b66c59914f709fe4c1a39482fcc)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-22T11:55:06.765Z",
+          "updated_at": "2026-05-22T11:55:06.769Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4870f639104badaba4534d75ab6f6e1812d72e7d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3376758410,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-22T12:07:58.428Z",
+          "updated_at": "2026-05-22T12:07:58.432Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f80b54a350730d0467f72c0093cd3fc4603d8fb3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3418960680,
+          "type": null,
+          "body": "added 187 commits\n\n<ul><li>48d54ff7...74a169fd - 185 commits from branch <code>wireshark:master</code></li><li>350518dc - TLS: use use_conv_addr_port_endpoints where set</li><li>5885fc72 - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1833430145&start_sha=48d54ff74d7b6e14262ceb23b0ac0a33e959cc7a)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-06-03T22:12:00.032Z",
+          "updated_at": "2026-06-03T22:12:00.038Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cbf303b4b216df6b545f7a52986d3637648fee26",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3431593094,
+          "type": null,
+          "body": "added 68 commits\n\n<ul><li>5885fc72...cbf395a8 - 66 commits from branch <code>wireshark:master</code></li><li>4b78a261 - TLS: use use_conv_addr_port_endpoints where set</li><li>a9fe0b4c - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1839106218&start_sha=5885fc72f44116b924f20091eb967314faaf6a7b)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-06-08T07:57:53.030Z",
+          "updated_at": "2026-06-08T07:57:53.033Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "979e803e4e6de88e15683f1946cffd81b0ed3ba2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3431613379,
+          "type": null,
+          "body": "@johnthacker /me polite prod\n\nIf there is a better approach here around the TLS dissector changes I made to handle `use_conv_addr_port_endpoints`, I can get to work on that.\n\nVague handwaving pointers are fine, happy to do the leg work and exploration work here.",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-06-08T08:04:50.800Z",
+          "updated_at": "2026-06-08T08:04:50.800Z",
+          "system": false,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "25f1feca6c0101e78c7443bcd563f2d771b19e11",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3549472180,
+          "type": null,
+          "body": "added 344 commits\n\n<ul><li>a9fe0b4c...961ee2b9 - 342 commits from branch <code>wireshark:master</code></li><li>98d18457 - TLS: use use_conv_addr_port_endpoints where set</li><li>0ae3605e - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1898854953&start_sha=a9fe0b4c5f48051ca8c5fe4f89cda69a78011614)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-07-12T10:43:08.603Z",
+          "updated_at": "2026-07-12T10:43:08.607Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f208a5d0c479e7095e5a6b06ac115a58bf20c9b1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3549473337,
+          "type": null,
+          "body": "@johnthacker any thoughts (or love) for this MR?\n\ntl;dr, is amending the TLS dissector to be aware of `use_conv_addr_port_endpoints` the right approach here?",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-07-12T10:44:45.509Z",
+          "updated_at": "2026-07-12T10:44:45.509Z",
+          "system": false,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "53260f56f7e6172ba5b6f66a1378a7be2cc7b6df",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3549673177,
+          "type": null,
+          "body": "Sorry, the state of the MR was still draft so I was looking at other issues first. I will take a look.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-07-12T15:44:32.874Z",
+          "updated_at": "2026-07-12T15:44:32.874Z",
+          "system": false,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "35f386861ad8d726291b76fecffbe76ed30c1938",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3550437584,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-07-13T05:25:48.857Z",
+          "updated_at": "2026-07-13T05:25:48.858Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c1b35751cbdc0b34ead6b8f12b8d15688a718e60",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3550445269,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>0ae3605e...9ced22a5 - 5 commits from branch <code>wireshark:master</code></li><li>598d5043 - TLS: use use_conv_addr_port_endpoints where set</li><li>22081516 - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1899359302&start_sha=0ae3605ee4a9752171fb7252e410b8451f1f7f26)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-07-13T05:31:41.220Z",
+          "updated_at": "2026-07-13T05:31:41.222Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "199b694a86e2d24817d1fb1d1489343d262144ea",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3576553177,
+          "type": "DiffNote",
+          "body": "Something like this should probably go in `packet_info.h`.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-07-19T14:01:57.248Z",
+          "updated_at": "2026-08-17T10:16:39.125Z",
+          "system": false,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+            "start_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+            "head_sha": "ea5c43ea0ef507d488245aca8994ff5729dbb8b9",
+            "old_path": "epan/dissectors/packet-tls-utils.h",
+            "new_path": "epan/dissectors/packet-tls-utils.h",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 432,
+            "line_range": {
+              "start": {
+                "line_code": "154b33191b21d36cdcd9cc72b404632b2a2be550_428_428",
+                "type": "new",
+                "old_line": null,
+                "new_line": 428
+              },
+              "end": {
+                "line_code": "154b33191b21d36cdcd9cc72b404632b2a2be550_428_432",
+                "type": "new",
+                "old_line": null,
+                "new_line": 432
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "resolved_at": "2026-08-17T10:16:39.125Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        },
+        {
+          "id": 3693805756,
+          "type": "DiffNote",
+          "body": "changed this line in [version 22 of the diff](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1965349977&start_sha=ea5c43ea0ef507d488245aca8994ff5729dbb8b9#154b33191b21d36cdcd9cc72b404632b2a2be550_432_428)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T10:06:12.990Z",
+          "updated_at": "2026-08-17T10:06:12.990Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+            "start_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+            "head_sha": "ea5c43ea0ef507d488245aca8994ff5729dbb8b9",
+            "old_path": "epan/dissectors/packet-tls-utils.h",
+            "new_path": "epan/dissectors/packet-tls-utils.h",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 432,
+            "line_range": {
+              "start": {
+                "line_code": "154b33191b21d36cdcd9cc72b404632b2a2be550_428_428",
+                "type": "new",
+                "old_line": null,
+                "new_line": 428
+              },
+              "end": {
+                "line_code": "154b33191b21d36cdcd9cc72b404632b2a2be550_428_432",
+                "type": "new",
+                "old_line": null,
+                "new_line": 432
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        },
+        {
+          "id": 3693852202,
+          "type": "DiffNote",
+          "body": "Moved",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T10:16:38.382Z",
+          "updated_at": "2026-08-17T10:16:39.125Z",
+          "system": false,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+            "start_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+            "head_sha": "ea5c43ea0ef507d488245aca8994ff5729dbb8b9",
+            "old_path": "epan/dissectors/packet-tls-utils.h",
+            "new_path": "epan/dissectors/packet-tls-utils.h",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 432,
+            "line_range": {
+              "start": {
+                "line_code": "154b33191b21d36cdcd9cc72b404632b2a2be550_428_428",
+                "type": "new",
+                "old_line": null,
+                "new_line": 428
+              },
+              "end": {
+                "line_code": "154b33191b21d36cdcd9cc72b404632b2a2be550_428_432",
+                "type": "new",
+                "old_line": null,
+                "new_line": 432
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "resolved_at": "2026-08-17T10:16:39.125Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1fbb710489f1c1784f3be0db09dbb2058d5ac146",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3576556405,
+          "type": "DiffNote",
+          "body": "I would prefer not to expose this struct in the public header and to instead have functions that take a pointer to this type.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-07-19T14:06:49.195Z",
+          "updated_at": "2026-08-17T10:17:54.448Z",
+          "system": false,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a",
+            "start_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a",
+            "head_sha": "9dee61285c85288e99d4ce54d9de53719b642814",
+            "old_path": "epan/conversation.h",
+            "new_path": "epan/conversation.h",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 338,
+            "line_range": {
+              "start": {
+                "line_code": "58efcb3551765ed5d51f08d1cf24c2dde4be1ebf_328_330",
+                "type": "new",
+                "old_line": null,
+                "new_line": 330
+              },
+              "end": {
+                "line_code": "58efcb3551765ed5d51f08d1cf24c2dde4be1ebf_328_337",
+                "type": "new",
+                "old_line": null,
+                "new_line": 337
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "resolved_at": "2026-08-17T10:17:54.448Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        },
+        {
+          "id": 3693857481,
+          "type": "DiffNote",
+          "body": "Done, users of `PINFO_{SRC,DST,...}` will need to include `conversation.h` but those macros now use the function getters.",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T10:17:53.814Z",
+          "updated_at": "2026-08-17T10:17:54.448Z",
+          "system": false,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a",
+            "start_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a",
+            "head_sha": "9dee61285c85288e99d4ce54d9de53719b642814",
+            "old_path": "epan/conversation.h",
+            "new_path": "epan/conversation.h",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 338,
+            "line_range": {
+              "start": {
+                "line_code": "58efcb3551765ed5d51f08d1cf24c2dde4be1ebf_328_330",
+                "type": "new",
+                "old_line": null,
+                "new_line": 330
+              },
+              "end": {
+                "line_code": "58efcb3551765ed5d51f08d1cf24c2dde4be1ebf_328_337",
+                "type": "new",
+                "old_line": null,
+                "new_line": 337
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "resolved_at": "2026-08-17T10:17:54.448Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "32431823bee003a4397dbe611c8cbdb7ef83c308",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3691431195,
+          "type": null,
+          "body": "added 278 commits\n\n<ul><li>22081516...83b6c52b - 276 commits from branch <code>wireshark:master</code></li><li>0afd7853 - TLS: use use_conv_addr_port_endpoints where set</li><li>c8f9a5cd - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1964348945&start_sha=22081516a7d337bf9e239a7fdb6c713d1be38a6c)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-16T14:03:25.888Z",
+          "updated_at": "2026-08-16T14:03:25.890Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e99d3a84496846e2b6090932df911d85d1eb31df",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3693086022,
+          "type": null,
+          "body": "added 13 commits\n\n<ul><li>c8f9a5cd...e53fdfbe - 11 commits from branch <code>wireshark:master</code></li><li>616420b8 - TLS: use use_conv_addr_port_endpoints where set</li><li>ea5c43ea - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1965047453&start_sha=c8f9a5cd011cae2bee0604ac80295a567abe87f2)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T07:58:12.815Z",
+          "updated_at": "2026-08-17T07:58:12.817Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b4a2b7c9eba7cdfc6b642025d9b8cc11d2dc5454",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3693805779,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>6f63bc16 - TLS: use use_conv_addr_port_endpoints where set</li><li>7c93a154 - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1965349977&start_sha=ea5c43ea0ef507d488245aca8994ff5729dbb8b9)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T10:06:13.301Z",
+          "updated_at": "2026-08-17T10:06:13.303Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "daadb7190d3c19dfe7fa5c7d75dd32904acfab25",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3693857570,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T10:17:54.478Z",
+          "updated_at": "2026-08-17T10:17:54.483Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1d02bdbe54a5e20b90a3f0ee9b11500cdb825b20",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3693862098,
+          "type": null,
+          "body": "@johnthacker made the requested changes, and updated `packet-dtls.c` to use the `PINFO_{SRC,DST,...}` macros too.",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T10:19:06.654Z",
+          "updated_at": "2026-08-17T10:19:06.654Z",
+          "system": false,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5793472c93e529f5e1165d47b622712a0a90e924",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3693863891,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T10:19:33.844Z",
+          "updated_at": "2026-08-17T10:19:33.846Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5bf6af1d243ef43be4818d5ffc1ed415ddad200c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3694684455,
+          "type": null,
+          "body": "added 5 commits\n\n<ul><li>7c93a154...e0127775 - 3 commits from branch <code>wireshark:master</code></li><li>df4c7310 - TLS: use use_conv_addr_port_endpoints where set</li><li>9dee6128 - EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24493/diffs?diff_id=1965814475&start_sha=7c93a154dbe13808a3c3ef2944cedb8f0a18b3a2)",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-08-17T13:25:58.719Z",
+          "updated_at": "2026-08-17T13:25:58.730Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "77d99e004dc590314697c5f4f2f3921bf3810ec5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3719354999,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-22T07:36:38.552Z",
+          "updated_at": "2026-08-22T07:36:38.554Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5eb7a9e71fe2a909a6d84aea3adbc54d66fc1c66",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3719355197,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-22T07:36:43.147Z",
+          "updated_at": "2026-08-22T07:36:43.148Z",
+          "system": true,
+          "noteable_id": 475780842,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24493,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -54,6 +54,7 @@\n #include <wsutil/utf8_entities.h>\n #include <wsutil/rsa.h>\n #include <wsutil/pint.h>\n+#include \"conversation.h\"\n #include \"packet-tls-utils.h\"\n #include \"packet-dtls.h\"\n #include \"packet-rtp.h\"\n@@ -845,8 +846,8 @@ dissect_dtls_appdata(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset,\n     /* Unknown protocol handle, ssl_starttls_ack was not called before.\n      * Try to find an appropriate dissection handle and cache it. */\n     dissector_handle_t handle;\n-    handle = dissector_get_uint_handle(dtls_associations, pinfo->srcport);\n-    handle = handle ? handle : dissector_get_uint_handle(dtls_associations, pinfo->destport);\n+    handle = dissector_get_uint_handle(dtls_associations, PINFO_SRCPORT(pinfo));\n+    handle = handle ? handle : dissector_get_uint_handle(dtls_associations, PINFO_DESTPORT(pinfo));\n     if (handle) session->app_handle = handle;\n   }\n \n@@ -877,9 +878,9 @@ dissect_dtls_appdata(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset,\n \n     saved_match_port = pinfo->match_uint;\n     if (is_from_server) {\n-      pinfo->match_uint = pinfo->srcport;\n+      pinfo->match_uint = PINFO_SRCPORT(pinfo);\n     } else {\n-      pinfo->match_uint = pinfo->destport;\n+      pinfo->match_uint = PINFO_DESTPORT(pinfo);\n     }\n     saved_match_string = pinfo->match_string;\n     pinfo->match_string = session->alpn_name;\n@@ -2199,7 +2200,7 @@ dissect_dtls_handshake(tvbuff_t *tvb, packet_info *pinfo,\n           case SSL_HND_CLIENT_HELLO:\n             if (ssl) {\n               /* ClientHello is first packet so set direction */\n-              ssl_set_server(session, &pinfo->dst, pinfo->ptype, pinfo->destport);\n+              ssl_set_server(session, PINFO_DST(pinfo), pinfo->ptype, PINFO_DESTPORT(pinfo));\n             }\n             ssl_dissect_hnd_cli_hello(&dissect_dtls_hf, sub_tvb, pinfo,\n                                       ssl_hand_tree, 0, length, session, ssl,\n@@ -2615,8 +2616,8 @@ dtls_dissect_hnd_hello_ext_use_srtp(packet_info *pinfo, tvbuff_t *tvb,\n      * (Being able to have the stream refer back to both the DTLS-SRTP and\n      * SDP setup frame might be useful, though.)\n      */\n-    srtp_add_address(pinfo, PT_UDP, &pinfo->net_src, pinfo->srcport, pinfo->destport, \"DTLS-SRTP\", pinfo->num, RTP_MEDIA_AUDIO, NULL, srtp_info, NULL);\n-    srtp_add_address(pinfo, PT_UDP, &pinfo->net_dst, pinfo->destport, pinfo->srcport, \"DTLS-SRTP\", pinfo->num, RTP_MEDIA_AUDIO, NULL, srtp_info, NULL);\n+    srtp_add_address(pinfo, PT_UDP, PINFO_NET_SRC(pinfo), PINFO_SRCPORT(pinfo), PINFO_DESTPORT(pinfo), \"DTLS-SRTP\", pinfo->num, RTP_MEDIA_AUDIO, NULL, srtp_info, NULL);\n+    srtp_add_address(pinfo, PT_UDP, PINFO_NET_DST(pinfo), PINFO_DESTPORT(pinfo), PINFO_SRCPORT(pinfo), \"DTLS-SRTP\", pinfo->num, RTP_MEDIA_AUDIO, NULL, srtp_info, NULL);\n   }\n   return offset;\n }\n@@ -2742,7 +2743,7 @@ static void\n dtls_src_prompt(packet_info *pinfo, char *result)\n {\n     SslPacketInfo* pi;\n-    uint32_t srcport = pinfo->srcport;\n+    uint32_t srcport = PINFO_SRCPORT(pinfo);\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);\n     if (pi != NULL)\n@@ -2758,7 +2759,7 @@ dtls_src_value(packet_info *pinfo)\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);\n     if (pi == NULL)\n-        return GUINT_TO_POINTER(pinfo->srcport);\n+        return GUINT_TO_POINTER(PINFO_SRCPORT(pinfo));\n \n     return GUINT_TO_POINTER(pi->srcport);\n }\n@@ -2767,7 +2768,7 @@ static void\n dtls_dst_prompt(packet_info *pinfo, char *result)\n {\n     SslPacketInfo* pi;\n-    uint32_t destport = pinfo->destport;\n+    uint32_t destport = PINFO_DESTPORT(pinfo);\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);\n     if (pi != NULL)\n@@ -2783,7 +2784,7 @@ dtls_dst_value(packet_info *pinfo)\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);\n     if (pi == NULL)\n-        return GUINT_TO_POINTER(pinfo->destport);\n+        return GUINT_TO_POINTER(PINFO_DESTPORT(pinfo));\n \n     return GUINT_TO_POINTER(pi->destport);\n }\n@@ -2792,8 +2793,8 @@ static void\n dtls_both_prompt(packet_info *pinfo, char *result)\n {\n     SslPacketInfo* pi;\n-    uint32_t srcport = pinfo->srcport,\n-            destport = pinfo->destport;\n+    uint32_t srcport = PINFO_SRCPORT(pinfo),\n+            destport = PINFO_DESTPORT(pinfo);\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, pinfo->curr_layer_num);\n     if (pi != NULL)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-dtls.c",
+      "old_path": "epan/dissectors/packet-dtls.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1807,17 +1807,16 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n   uint16_t        eap_len;\n   uint8_t         eap_type;\n   unsigned        len;\n-  conversation_t *conversation       = NULL;\n-  conv_state_t   *conversation_state = NULL;\n+  conversation_t *conversation;\n+  conv_state_t   *conversation_state;\n+  wmem_map_t     *conversation_state_map;\n   frame_state_t  *packet_state;\n   int             leap_state;\n   proto_tree     *ti, *ti_id, *ti_len;\n   proto_tree     *eap_tree;\n   proto_tree     *eap_tls_flags_tree;\n   proto_item     *eap_type_item;\n-  static address null_address = ADDRESS_INIT_NONE;\n-  static uint8_t pae_group_address_mac_addr[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x03 };\n-  static address pae_group_address = ADDRESS_INIT(AT_ETHER, sizeof(pae_group_address_mac_addr), pae_group_address_mac_addr);\n+  uint8_t        curr_layer_num = p_get_proto_depth(pinfo, proto_eap);\n \n   col_set_str(pinfo->cinfo, COL_PROTOCOL, \"EAP\");\n   col_clear(pinfo->cinfo, COL_INFO);\n@@ -1831,12 +1830,8 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n   /*\n    * Find a conversation to which we belong; create one if we don't find it.\n    *\n-   * EAP runs over RADIUS (which runs over UDP), EAPOL (802.1X Authentication)\n-   * or other transports. In case of RADIUS, a single \"session\" may consist\n-   * of two UDP associations (one for authorization, one for accounting) which\n-   * results in two separate conversations. This wastes memory, but won't affect\n-   * the use cases below. In case of EAPOL, there are no ports. In any case,\n-   * force a new conversation when the EAP-Request/Identity message is found.\n+   * EAP runs over RADIUS (which runs over UDP), EAPOL (Ethernet and 802.11,\n+   * known as 802.1X), PPP and other transports.\n    *\n    * Conversation tracking is required for 1) EAP-TLS reassembly and 2) tracking\n    * the stage in the LEAP protocol. In both cases, the protocol starts with an\n@@ -1844,65 +1839,49 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n    * session. Use it as a signal to start a new conversation. This ensures that\n    * the TLS dissector associates new TLS messages with a unique TLS session.\n    *\n-   * For EAPOL frames we need to massage the source/destination addresses into\n-   * something stable for the TLS decoder as wireshark typically thinks there\n-   * are three conversations occurring when there is only one:\n-   *  * src ether = server mac -> dst ether = PAE multicast group address\n-   *  * src ether = server mac -> dst ether = client mac\n-   *  * src ether = client mac -> dst ether = PAE multicast group address\n-   * We set the port so the TLS decoder can figure out which side is the server\n+   * For EAPOL frames the destination MAC in both directions can be the PAE\n+   * multicast group address which leads up to three conversations being\n+   * created instead of the single one so blast away those addresses but\n+   * fake the server port to provide something for ssl_packet_from_server\n    */\n-  address conv_src, conv_dst;\n-  uint32_t tls_group = pinfo->curr_proto_layer_num << 16;\n-  uint32_t conv_srcport = pinfo->srcport;\n-  uint32_t conv_destport = pinfo->destport;\n   if (pinfo->src.type == AT_ETHER) {\n+    address *conv_src, *conv_dst;\n+    uint32_t conv_srcport = 0, conv_destport = 0;\n+    static address null_address = ADDRESS_INIT_NONE;\n+    static uint8_t pae_group_address_mac_addr[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x03 };\n+    static address pae_group_address = ADDRESS_INIT(AT_ETHER, sizeof(pae_group_address_mac_addr), pae_group_address_mac_addr);\n     if (eap_code == EAP_REQUEST) {\t/* server -> client */\n-      copy_address_shallow(&conv_src, &null_address);\n-      copy_address_shallow(&conv_dst, &pae_group_address);\n+      conv_src = &pae_group_address;\n+      conv_dst = &null_address;\n       conv_srcport = 443;\n     } else {\t\t\t\t/* client -> server */\n-      copy_address_shallow(&conv_src, &pae_group_address);\n-      copy_address_shallow(&conv_dst, &null_address);\n+      conv_src = &null_address;\n+      conv_dst = &pae_group_address;\n       conv_destport = 443;\n     }\n-  }\n-  else {\n-    copy_address_shallow(&conv_src, &pinfo->src);\n-    copy_address_shallow(&conv_dst, &pinfo->dst);\n+    conversation_set_conv_addr_port_endpoints(pinfo, conv_src, conv_dst,\n+      conversation_pt_to_conversation_type(pinfo->ptype), conv_srcport, conv_destport);\n   }\n \n   /*\n-   * To support tunneled EAP-TLS (e.g. {TTLS,PEAP,TEAP,...}/EAP-TLS) we\n-   * group our TLS frames by the depth they are found at and use this\n-   * as offsets for p_get_proto_data/p_add_proto_data and as done for\n-   * EAPOL above we massage the client port using this too\n+   * TEAP supports chained authentications so we are unable to forcible\n+   * create a new conversation each time we see a EAP-Request/Identity\n    */\n-\n-  if (eap_code == EAP_REQUEST) {\t/* server -> client */\n-    conv_destport |= tls_group;\n-  }\n-  else {\t\t\t\t/* client -> server */\n-    conv_srcport |= tls_group;\n-  }\n-\n-  conversation_set_conv_addr_port_endpoints(pinfo, &conv_src, &conv_dst,\n-    conversation_pt_to_conversation_type(pinfo->ptype), conv_srcport, conv_destport);\n-\n-  if (PINFO_FD_VISITED(pinfo) || !(eap_code == EAP_REQUEST && tvb_get_uint8(tvb, 4) == EAP_TYPE_ID)) {\n-    conversation = find_or_create_conversation(pinfo);\n-  }\n-  if (conversation == NULL) {\n-    conversation = conversation_new(pinfo->num, &conv_src,\n-\t\t      &conv_dst, conversation_pt_to_conversation_type(pinfo->ptype),\n-\t\t      conv_srcport, conv_destport, 0);\n-  }\n+  conversation = find_or_create_conversation(pinfo);\n \n   /*\n    * Get the state information for the conversation; attach some if\n    * we don't find it.\n+   *\n+   * EAP can also be nested (such as EAP-TEAP or EAP-TTLS/EAP-MSCHAPv2) so\n+   * conversations need to be partitioned by curr_layer_num.\n    */\n-  conversation_state = (conv_state_t *)conversation_get_proto_data(conversation, proto_eap);\n+  conversation_state_map = conversation_get_proto_data(conversation, proto_eap);\n+  if (conversation_state_map == NULL) {\n+    conversation_state_map = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);\n+    conversation_add_proto_data(conversation, proto_eap, conversation_state_map);\n+  }\n+  conversation_state = wmem_map_lookup(conversation_state_map, GUINT_TO_POINTER(curr_layer_num));\n   if (conversation_state == NULL) {\n     /*\n      * Attach state information to the conversation.\n@@ -1913,9 +1892,20 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n     conversation_state->leap_state       = -1;\n     conversation_state->last_eap_id_req  = -1;\n     conversation_state->last_eap_id_resp = -1;\n-    conversation_add_proto_data(conversation, proto_eap, conversation_state);\n+    wmem_map_insert(conversation_state_map, GUINT_TO_POINTER(curr_layer_num), conversation_state);\n   }\n \n+  /*\n+   * we could use a wmem_map again here but it is a little excessive for\n+   * a few flags, so instead we note that curr_layer_num is\n+   * uint8_t and the key for proto_data is at least uint32_t (though only\n+   * the bottom 24bits are usable due to PROTO_DEPTH_KEY) whilst our\n+   * flag space is small so we partition by curr_layer_num\n+   */\n+  uint32_t p_proto_data_layer = curr_layer_num << 8;\n+\n+  p_set_proto_depth(pinfo, proto_eap, curr_layer_num + 1);\n+\n   /*\n    * Set this now, so that it gets remembered even if we throw an exception\n    * later.\n@@ -1936,29 +1926,28 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n     expert_add_info(pinfo, ti_len, &ei_eap_bad_length);\n   }\n \n+  bool visited = !!p_get_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_VISITED | p_proto_data_layer);\n+\n   /* Detect message retransmissions. Since the protocol proceeds in lock-step,\n    * reordering is not expected. If retransmissions somehow occur, we would have\n    * to detect retransmissions via a bitmap. */\n   bool is_duplicate_id = false;\n-  if (conversation_state) {\n-    if (eap_code == EAP_REQUEST || eap_code == EAP_RESPONSE ||\n-        eap_code == EAP_INITIATE || eap_code == EAP_FINISH) {\n-      if (!PINFO_FD_VISITED(pinfo)) {\n-        int16_t *last_eap_id = eap_code == EAP_REQUEST || eap_code == EAP_INITIATE ?\n-          &conversation_state->last_eap_id_req :\n-          &conversation_state->last_eap_id_resp;\n-        is_duplicate_id = *last_eap_id == eap_identifier;\n-        *last_eap_id = eap_identifier;\n-        if (is_duplicate_id) {\n-          // Use a dummy value to remember that this packet is a duplicate.\n-          p_add_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_DUPLICATE_ID | tls_group, GINT_TO_POINTER(1));\n-        }\n-      } else {\n-        is_duplicate_id = !!p_get_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_DUPLICATE_ID | tls_group);\n-      }\n+  if (eap_code == EAP_REQUEST || eap_code == EAP_RESPONSE ||\n+      eap_code == EAP_INITIATE || eap_code == EAP_FINISH) {\n+    if (!visited) {\n+      int16_t *last_eap_id = eap_code == EAP_REQUEST || eap_code == EAP_INITIATE ?\n+        &conversation_state->last_eap_id_req :\n+        &conversation_state->last_eap_id_resp;\n+      is_duplicate_id = *last_eap_id == eap_identifier;\n+      *last_eap_id = eap_identifier;\n       if (is_duplicate_id) {\n-        expert_add_info(pinfo, ti_id, &ei_eap_retransmission);\n+        p_add_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_DUPLICATE_ID | p_proto_data_layer, GINT_TO_POINTER(1));\n       }\n+    } else {\n+      is_duplicate_id = !!p_get_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_DUPLICATE_ID | p_proto_data_layer);\n+    }\n+    if (is_duplicate_id) {\n+      expert_add_info(pinfo, ti_id, &ei_eap_retransmission);\n     }\n   }\n \n@@ -1988,7 +1977,7 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n         if (size > 0) {\n           dissect_eap_identity(tvb, pinfo, eap_tree, offset, size);\n         }\n-        if (conversation_state && !PINFO_FD_VISITED(pinfo)) {\n+        if (!visited) {\n           conversation_state->leap_state  =  0;\n           conversation_state->eap_tls_seq = -1;\n         }\n@@ -2053,12 +2042,6 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n         uint32_t eap_reass_cookie =  0;\n         bool needs_reassembly =  false;\n \n-        if (!conversation_state) {\n-          // XXX expert info? There cannot be another EAP-TTLS message within\n-          // the EAP-Message inside EAP-TTLS.\n-          break;\n-        }\n-\n         /* Flags field, 1 byte */\n         ti = proto_tree_add_item(eap_tree, hf_eap_tls_flags, tvb, offset, 1, ENC_BIG_ENDIAN);\n         eap_tls_flags_tree = proto_item_add_subtree(ti, ett_eap_tls_flags);\n@@ -2164,12 +2147,12 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n             first pass through the capture.\n           */\n           /* See if we have a remembered defragmentation EAP ID. */\n-          packet_state = (frame_state_t *)p_get_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_FRAME_STATE | tls_group);\n+          packet_state = (frame_state_t *)p_get_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_FRAME_STATE | p_proto_data_layer);\n           if (packet_state == NULL) {\n             /*\n              * We haven't - does this message require reassembly?\n              */\n-            if (!pinfo->fd->visited) {\n+            if (!visited) {\n               /*\n                * This is the first time we've looked at this frame,\n                * so it wouldn't have any remembered information.\n@@ -2234,7 +2217,7 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n                 packet_state->info = eap_reass_cookie;\n                 packet_state->eap_tls_len = eap_tls_len;\n                 packet_state->outer_tlvs_length = outer_tlvs_length;\n-                p_add_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_FRAME_STATE | tls_group, packet_state);\n+                p_add_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_FRAME_STATE | p_proto_data_layer, packet_state);\n               }\n             }\n           } else {\n@@ -2314,7 +2297,7 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n                  * We're finished reassembling this frame.\n                  * Reinitialize the reassembly state.\n                  */\n-                if (!pinfo->fd->visited)\n+                if (!visited)\n                   conversation_state->eap_tls_seq = -1;\n               } else {\n                 ti = proto_tree_add_uint(eap_tree, hf_eap_tls_reassembled_in, tvb,\n@@ -2335,7 +2318,7 @@ dissect_eap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n                 tls_set_appdata_dissector(tls_handle, pinfo, diameter_avps_handle);\n                 break;\n               case EAP_TYPE_PEAP:\n-                p_add_proto_data(pinfo->pool, pinfo, proto_eap, PROTO_DATA_EAP_TVB | tls_group, tvb);\n+                p_add_proto_data(pinfo->pool, pinfo, proto_eap, PROTO_DATA_EAP_TVB | p_proto_data_layer, tvb);\n                 tls_set_appdata_dissector(tls_handle, pinfo, peap_handle);\n                 break;\n               case EAP_TYPE_TEAP:\n@@ -2389,15 +2372,11 @@ skip_tls_dissector:\n         /* Data    (byte*Count) */\n         /* This part is state-dependent. */\n \n-        if (!conversation_state) {\n-          // XXX expert info? LEAP is not expected within the EAP-Message within EAP-TTLS.\n-          break;\n-        }\n         /* XXX - are duplicates possible (is_duplicate_id)?\n          * If so, should we stop here to avoid modifying conversation_state? */\n \n         /* See if we've already remembered the state. */\n-        packet_state = (frame_state_t *)p_get_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_FRAME_STATE | tls_group);\n+        packet_state = (frame_state_t *)p_get_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_FRAME_STATE | p_proto_data_layer);\n         if (packet_state == NULL) {\n           /*\n            * We haven't - compute the state based on the current\n@@ -2418,7 +2397,7 @@ skip_tls_dissector:\n            */\n           packet_state = wmem_new(wmem_file_scope(), frame_state_t);\n           packet_state->info = leap_state;\n-          p_add_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_FRAME_STATE | tls_group, packet_state);\n+          p_add_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_FRAME_STATE | p_proto_data_layer, packet_state);\n \n           /*\n            * Update the conversation's state.\n@@ -2591,6 +2570,11 @@ skip_tls_dissector:\n \n   } /* switch (eap_code) */\n \n+  if (!visited)\n+    p_add_proto_data(wmem_file_scope(), pinfo, proto_eap, PROTO_DATA_EAP_VISITED | p_proto_data_layer, GINT_TO_POINTER(1));\n+\n+  p_set_proto_depth(pinfo, proto_eap, curr_layer_num);\n+\n   return tvb_captured_length(tvb);\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-eap.c",
+      "old_path": "epan/dissectors/packet-eap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -74,6 +74,7 @@ WS_DLL_PUBLIC const value_string eap_aka_subtype_vals[];\n WS_DLL_PUBLIC const value_string eap_ms_chap_v2_opcode_vals[];\n \n typedef enum {\n+  PROTO_DATA_EAP_VISITED = 1,\n   PROTO_DATA_EAP_DUPLICATE_ID,\n   PROTO_DATA_EAP_FRAME_STATE,\n   PROTO_DATA_EAP_TVB,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-eap.h",
+      "old_path": "epan/dissectors/packet-eap.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -37,6 +37,7 @@\n #include <wsutil/rsa.h>\n #include <wsutil/ws_assert.h>\n #include <wsutil/zlib_compat.h>\n+#include \"conversation.h\"\n #include \"packet-ber.h\"\n #include \"packet-x509af.h\"\n #include \"packet-x509if.h\"\n@@ -5561,10 +5562,10 @@ ssl_packet_from_server(SslSession *session, dissector_table_t table, const packe\n     int ret;\n     if (session && session->srv_addr.type != AT_NONE) {\n         ret = (session->srv_ptype == pinfo->ptype) &&\n-              (session->srv_port == pinfo->srcport) &&\n-              addresses_equal(&session->srv_addr, &pinfo->src);\n+              (session->srv_port == PINFO_SRCPORT(pinfo)) &&\n+              addresses_equal(&session->srv_addr, PINFO_SRC(pinfo));\n     } else {\n-        ret = (dissector_get_uint_handle(table, pinfo->srcport) != 0);\n+        ret = (dissector_get_uint_handle(table, PINFO_SRCPORT(pinfo)) != 0);\n     }\n \n     ssl_debug_printf(\"packet_from_server: is from server - %s\\n\", (ret)?\"TRUE\":\"FALSE\");\n@@ -5580,8 +5581,8 @@ tls_add_packet_info(int proto, packet_info *pinfo, uint8_t curr_layer_num_ssl)\n     SslPacketInfo *pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto, curr_layer_num_ssl);\n     if (!pi) {\n         pi = wmem_new0(wmem_file_scope(), SslPacketInfo);\n-        pi->srcport = pinfo->srcport;\n-        pi->destport = pinfo->destport;\n+        pi->srcport = PINFO_SRCPORT(pinfo);\n+        pi->destport = PINFO_DESTPORT(pinfo);\n         conversation_t *conv = find_or_create_conversation_strat(pinfo);\n         SslDecryptSession *ssl_session = tls_get_session(conv, proto, curr_layer_num_ssl);\n         if (ssl_session) {\n@@ -7873,15 +7874,15 @@ ssl_dissect_hnd_hello_ext_server_name(ssl_common_dissect_t *hf, tvbuff_t *tvb,\n \n             if (gbl_resolv_flags.handshake_sni_addr_resolution) {\n                 // Client Hello: Client (Src) -> Server (Dst)\n-                switch (pinfo->dst.type) {\n+                switch (PINFO_DST(pinfo)->type) {\n                     case AT_IPv4:\n-                        if (pinfo->dst.len == sizeof(uint32_t)) {\n-                            add_ipv4_name(*(uint32_t *)pinfo->dst.data, server_name, false);\n+                        if (PINFO_DST(pinfo)->len == sizeof(uint32_t)) {\n+                            add_ipv4_name(*(uint32_t *)PINFO_DST(pinfo)->data, server_name, false);\n                         }\n                         break;\n                     case AT_IPv6:\n-                        if (pinfo->dst.len == sizeof(ws_in6_addr)) {\n-                            add_ipv6_name(pinfo->dst.data, server_name, false);\n+                        if (PINFO_DST(pinfo)->len == sizeof(ws_in6_addr)) {\n+                            add_ipv6_name(PINFO_DST(pinfo)->data, server_name, false);\n                         }\n                         break;\n                 }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tls-utils.c",
+      "old_path": "epan/dissectors/packet-tls-utils.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -70,6 +70,7 @@\n #include <wsutil/ws_assert.h>\n #include <wsutil/filesystem.h>\n #include <wsutil/report_message.h>\n+#include \"conversation.h\"\n #include \"packet-tcp.h\"\n #include \"packet-x509af.h\"\n #include \"packet-tls.h\"\n@@ -658,13 +659,13 @@ ssl_follow_tap_listener(void *tapdata, packet_info *pinfo, epan_dissect_t *edt _\n \n     /* Compute the packet's sender. */\n     if (follow_info->client_port == 0) {\n-        follow_info->client_port = pinfo->srcport;\n-        copy_address(&follow_info->client_ip, &pinfo->src);\n-        follow_info->server_port = pinfo->destport;\n-        copy_address(&follow_info->server_ip, &pinfo->dst);\n+        follow_info->client_port = PINFO_SRCPORT(pinfo);\n+        copy_address(&follow_info->client_ip, PINFO_SRC(pinfo));\n+        follow_info->server_port = PINFO_DESTPORT(pinfo);\n+        copy_address(&follow_info->server_ip, PINFO_DST(pinfo));\n     }\n-    if (addresses_equal(&follow_info->client_ip, &pinfo->src) &&\n-            follow_info->client_port == pinfo->srcport) {\n+    if (addresses_equal(&follow_info->client_ip, PINFO_SRC(pinfo)) &&\n+            follow_info->client_port == PINFO_SRCPORT(pinfo)) {\n         from = FROM_CLIENT;\n     } else {\n         from = FROM_SERVER;\n@@ -2144,9 +2145,9 @@ process_ssl_payload(tvbuff_t *tvb, int offset, packet_info *pinfo,\n     next_tvb = tvb_new_subset_remaining(tvb, offset);\n \n     if (ssl_packet_from_server(session, ssl_associations, pinfo)) {\n-        app_port = pinfo->srcport;\n+        app_port = PINFO_SRCPORT(pinfo);\n     } else {\n-        app_port = pinfo->destport;\n+        app_port = PINFO_DESTPORT(pinfo);\n     }\n     /* If the appdata proto is not yet known (no STARTTLS or ALPN), try\n      * heuristics and ports-based dissectors, order depending on preference. */\n@@ -2563,8 +2564,8 @@ dissect_ssl3_record(tvbuff_t *tvb, packet_info *pinfo,\n             /* Unknown protocol handle, ssl_starttls_ack was not called before.\n              * Try to find a port-based protocol and use it if there is no\n              * heuristics dissector (see process_ssl_payload). */\n-            app_handle = dissector_get_uint_handle(ssl_associations, pinfo->srcport);\n-            if (!app_handle) app_handle = dissector_get_uint_handle(ssl_associations, pinfo->destport);\n+            app_handle = dissector_get_uint_handle(ssl_associations, PINFO_SRCPORT(pinfo));\n+            if (!app_handle) app_handle = dissector_get_uint_handle(ssl_associations, PINFO_DESTPORT(pinfo));\n         }\n \n         proto_item_set_text(ssl_record_tree,\n@@ -3199,7 +3200,7 @@ dissect_tls_handshake_full(tvbuff_t *tvb, packet_info *pinfo,\n             case SSL_HND_CLIENT_HELLO:\n                 if (ssl) {\n                     /* ClientHello is first packet so set direction */\n-                    ssl_set_server(session, &pinfo->dst, pinfo->ptype, pinfo->destport);\n+                    ssl_set_server(session, PINFO_DST(pinfo), pinfo->ptype, PINFO_DESTPORT(pinfo));\n                     ssl_load_keyfile(ssl_options.keylog_filename, &ssl_keylog_file, &ssl_master_key_map);\n                 }\n                 ssl_dissect_hnd_cli_hello(&dissect_ssl3_hf, tvb, pinfo,\n@@ -3793,7 +3794,7 @@ dissect_ssl2_hnd_client_hello(tvbuff_t *tvb, packet_info *pinfo,\n     }\n \n     if (ssl) {\n-      ssl_set_server(&ssl->session, &pinfo->dst, pinfo->ptype, pinfo->destport);\n+      ssl_set_server(&ssl->session, PINFO_DST(pinfo), pinfo->ptype, PINFO_DESTPORT(pinfo));\n     }\n \n     /* show the version */\n@@ -4698,7 +4699,7 @@ static void\n ssl_src_prompt(packet_info *pinfo, char *result)\n {\n     SslPacketInfo* pi;\n-    uint32_t srcport = pinfo->srcport;\n+    uint32_t srcport = PINFO_SRCPORT(pinfo);\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, pinfo->curr_layer_num);\n     if (pi != NULL)\n@@ -4714,7 +4715,7 @@ ssl_src_value(packet_info *pinfo)\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, pinfo->curr_layer_num);\n     if (pi == NULL)\n-        return GUINT_TO_POINTER(pinfo->srcport);\n+        return GUINT_TO_POINTER(PINFO_SRCPORT(pinfo));\n \n     return GUINT_TO_POINTER(pi->srcport);\n }\n@@ -4723,7 +4724,7 @@ static void\n ssl_dst_prompt(packet_info *pinfo, char *result)\n {\n     SslPacketInfo* pi;\n-    uint32_t destport = pinfo->destport;\n+    uint32_t destport = PINFO_DESTPORT(pinfo);\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, pinfo->curr_layer_num);\n     if (pi != NULL)\n@@ -4739,7 +4740,7 @@ ssl_dst_value(packet_info *pinfo)\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, pinfo->curr_layer_num);\n     if (pi == NULL)\n-        return GUINT_TO_POINTER(pinfo->destport);\n+        return GUINT_TO_POINTER(PINFO_DESTPORT(pinfo));\n \n     return GUINT_TO_POINTER(pi->destport);\n }\n@@ -4748,8 +4749,8 @@ static void\n ssl_both_prompt(packet_info *pinfo, char *result)\n {\n     SslPacketInfo* pi;\n-    uint32_t srcport = pinfo->srcport,\n-            destport = pinfo->destport;\n+    uint32_t srcport = PINFO_SRCPORT(pinfo),\n+            destport = PINFO_DESTPORT(pinfo);\n \n     pi = (SslPacketInfo *)p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, pinfo->curr_layer_num);\n     if (pi != NULL)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tls.c",
+      "old_path": "epan/dissectors/packet-tls.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -112,6 +112,23 @@ static const char * const type_names[] = {\n     \"blob\",\n };\n \n+/*\n+ * Getters to for struct conversation_addr_port_endpoints.\n+ * packet_info.h:{PINFO_{SRC,DST,...} macros for the reason.\n+ */\n+address *conversation_addr_port_endpoints_addr1(struct conversation_addr_port_endpoints *endpoints) {\n+    return &endpoints->addr1;\n+}\n+address *conversation_addr_port_endpoints_addr2(struct conversation_addr_port_endpoints *endpoints) {\n+    return &endpoints->addr2;\n+}\n+uint32_t conversation_addr_port_endpoints_port1(struct conversation_addr_port_endpoints *endpoints) {\n+    return endpoints->port1;\n+}\n+uint32_t conversation_addr_port_endpoints_port2(struct conversation_addr_port_endpoints *endpoints) {\n+    return endpoints->port2;\n+}\n+\n /*\n  * Hash table of hash tables for conversations identified by element lists.\n  */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/conversation.c",
+      "old_path": "epan/conversation.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -326,6 +326,16 @@ typedef struct conversation {\n  * find_or_create_conversation().\n  */\n struct conversation_addr_port_endpoints;\n+\n+/*\n+ * Getters for conversation_addr_port_endpoints, refer to\n+ * packet_info.h:{PINFO_{SRC,DST,...} macros for the reason.\n+ */\n+address *conversation_addr_port_endpoints_addr1(struct conversation_addr_port_endpoints *endpoints);\n+address *conversation_addr_port_endpoints_addr2(struct conversation_addr_port_endpoints *endpoints);\n+uint32_t conversation_addr_port_endpoints_port1(struct conversation_addr_port_endpoints *endpoints);\n+uint32_t conversation_addr_port_endpoints_port2(struct conversation_addr_port_endpoints *endpoints);\n+\n typedef struct conversation_addr_port_endpoints* conversation_addr_port_endpoints_t;\n \n /**\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/conversation.h",
+      "old_path": "epan/conversation.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -177,6 +177,13 @@ typedef struct _packet_info {\n \n /** @} */\n \n+#define PINFO_SRC(pi)\t\t((pi)->use_conv_addr_port_endpoints ? conversation_addr_port_endpoints_addr1((pi)->conv_addr_port_endpoints) : &((pi)->src))\n+#define PINFO_DST(pi)\t\t((pi)->use_conv_addr_port_endpoints ? conversation_addr_port_endpoints_addr2((pi)->conv_addr_port_endpoints) : &((pi)->dst))\n+#define PINFO_SRCPORT(pi)\t((pi)->use_conv_addr_port_endpoints ? conversation_addr_port_endpoints_port1((pi)->conv_addr_port_endpoints) : (pi)->srcport)\n+#define PINFO_DESTPORT(pi)\t((pi)->use_conv_addr_port_endpoints ? conversation_addr_port_endpoints_port2((pi)->conv_addr_port_endpoints) : (pi)->destport)\n+#define PINFO_NET_SRC(pi)\t\t((pi)->use_conv_addr_port_endpoints ? conversation_addr_port_endpoints_addr1((pi)->conv_addr_port_endpoints) : &((pi)->net_src))\n+#define PINFO_NET_DST(pi)\t\t((pi)->use_conv_addr_port_endpoints ? conversation_addr_port_endpoints_addr2((pi)->conv_addr_port_endpoints) : &((pi)->net_dst))\n+\n /*\n  * Editor modelines\n  *\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/packet_info.h",
+      "old_path": "epan/packet_info.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "9dee61285c85288e99d4ce54d9de53719b642814",
+      "short_id": "9dee6128",
+      "created_at": "2026-08-17T14:25:17.000+01:00",
+      "parent_ids": [
+        "df4c7310eccb5fd01166d6b184630720ec4d8406"
+      ],
+      "title": "EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth",
+      "message": "EAP: use wmem_map to partition conversation tracking by p_{get,set}_proto_depth\n\nThis commit also includes fixes for conversation tracking for EAPOL which\nuses multicast, allowing for TLS decoding there too.\n",
+      "author_name": "Alexander Clouter",
+      "author_email": "alex@coremem.com",
+      "authored_date": "2026-04-18T13:37:09.000+01:00",
+      "committer_name": "Alexander Clouter",
+      "committer_email": "alex@coremem.com",
+      "committed_date": "2026-08-17T14:25:17.000+01:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9dee61285c85288e99d4ce54d9de53719b642814"
+    },
+    {
+      "id": "df4c7310eccb5fd01166d6b184630720ec4d8406",
+      "short_id": "df4c7310",
+      "created_at": "2026-08-17T14:25:16.000+01:00",
+      "parent_ids": [
+        "e0127775dcdad4353f313101443c8dd1aabcb23a"
+      ],
+      "title": "TLS: use use_conv_addr_port_endpoints where set",
+      "message": "TLS: use use_conv_addr_port_endpoints where set\n",
+      "author_name": "Alexander Clouter",
+      "author_email": "alex@coremem.com",
+      "authored_date": "2026-04-19T00:04:16.000+01:00",
+      "committer_name": "Alexander Clouter",
+      "committer_email": "alex@coremem.com",
+      "committed_date": "2026-08-17T14:25:16.000+01:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/df4c7310eccb5fd01166d6b184630720ec4d8406"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1965814475,
+      "head_commit_sha": "9dee61285c85288e99d4ce54d9de53719b642814",
+      "base_commit_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a",
+      "start_commit_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a",
+      "created_at": "2026-08-17T13:25:57.669Z",
+      "merge_request_id": 475780842,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": "98aa5034c63ae43f0819b80b452cf0d884cb7466"
+    },
+    {
+      "id": 1965349977,
+      "head_commit_sha": "7c93a154dbe13808a3c3ef2944cedb8f0a18b3a2",
+      "base_commit_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+      "start_commit_sha": "e0127775dcdad4353f313101443c8dd1aabcb23a",
+      "created_at": "2026-08-17T10:06:12.341Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "8",
+      "patch_id_sha": "98aa5034c63ae43f0819b80b452cf0d884cb7466"
+    },
+    {
+      "id": 1965047453,
+      "head_commit_sha": "ea5c43ea0ef507d488245aca8994ff5729dbb8b9",
+      "base_commit_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+      "start_commit_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+      "created_at": "2026-08-17T07:58:12.017Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "08386d9c02f579302b871088bb3db103566df04e"
+    },
+    {
+      "id": 1964348945,
+      "head_commit_sha": "c8f9a5cd011cae2bee0604ac80295a567abe87f2",
+      "base_commit_sha": "83b6c52b4dd429181bd7791d90dcf84157635df6",
+      "start_commit_sha": "6b55ed3e7b142ff1600682a0ddc21544737698bb",
+      "created_at": "2026-08-16T14:03:25.215Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "08386d9c02f579302b871088bb3db103566df04e"
+    },
+    {
+      "id": 1899359302,
+      "head_commit_sha": "22081516a7d337bf9e239a7fdb6c713d1be38a6c",
+      "base_commit_sha": "9ced22a5eb115903002c16a9a932f5d4ed4a2038",
+      "start_commit_sha": "9ced22a5eb115903002c16a9a932f5d4ed4a2038",
+      "created_at": "2026-07-13T05:31:40.697Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "08386d9c02f579302b871088bb3db103566df04e"
+    },
+    {
+      "id": 1898854953,
+      "head_commit_sha": "0ae3605ee4a9752171fb7252e410b8451f1f7f26",
+      "base_commit_sha": "961ee2b9bf11d40706ee3ad33125d7a240aa4f1e",
+      "start_commit_sha": "961ee2b9bf11d40706ee3ad33125d7a240aa4f1e",
+      "created_at": "2026-07-12T10:43:08.083Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "08386d9c02f579302b871088bb3db103566df04e"
+    },
+    {
+      "id": 1839106218,
+      "head_commit_sha": "a9fe0b4c5f48051ca8c5fe4f89cda69a78011614",
+      "base_commit_sha": "cbf395a8d6e78571b42a5ba785a6a65a83b700a7",
+      "start_commit_sha": "cbf395a8d6e78571b42a5ba785a6a65a83b700a7",
+      "created_at": "2026-06-08T07:57:52.355Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "08386d9c02f579302b871088bb3db103566df04e"
+    },
+    {
+      "id": 1833430145,
+      "head_commit_sha": "5885fc72f44116b924f20091eb967314faaf6a7b",
+      "base_commit_sha": "74a169fd3645b7ca9a2f26bb2943b6d0f7183916",
+      "start_commit_sha": "74a169fd3645b7ca9a2f26bb2943b6d0f7183916",
+      "created_at": "2026-06-03T22:11:57.557Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "08386d9c02f579302b871088bb3db103566df04e"
+    },
+    {
+      "id": 1814094116,
+      "head_commit_sha": "48d54ff74d7b6e14262ceb23b0ac0a33e959cc7a",
+      "base_commit_sha": "f66d63598cf9df39534a2d684112a43e825c2425",
+      "start_commit_sha": "f66d63598cf9df39534a2d684112a43e825c2425",
+      "created_at": "2026-05-22T11:55:05.026Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "08386d9c02f579302b871088bb3db103566df04e"
+    },
+    {
+      "id": 1803363455,
+      "head_commit_sha": "bb53b02e33fa6b66c59914f709fe4c1a39482fcc",
+      "base_commit_sha": "90f08c8b6ea279366cea39ef0f2d44110dbab2b8",
+      "start_commit_sha": "90f08c8b6ea279366cea39ef0f2d44110dbab2b8",
+      "created_at": "2026-05-17T14:14:34.926Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "08386d9c02f579302b871088bb3db103566df04e"
+    },
+    {
+      "id": 1803241677,
+      "head_commit_sha": "f97587f97dd062511d0f376d4460da4790aabe37",
+      "base_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "start_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "created_at": "2026-05-17T06:58:17.256Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "5da7cf2c44bf53aba5554b0b7423988457a562e0"
+    },
+    {
+      "id": 1803240897,
+      "head_commit_sha": "90b77ce81ca37416a8d2b4e15603472643575d5b",
+      "base_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "start_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "created_at": "2026-05-17T06:53:59.776Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "6768e0f34bacc515d142a751199d015156301db9"
+    },
+    {
+      "id": 1803238242,
+      "head_commit_sha": "e3952e7088b18725f6494493e812e0d3897123f2",
+      "base_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "start_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "created_at": "2026-05-17T06:44:30.171Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "354c92d8f91870573fb4f9b898d6daaa3947b719"
+    },
+    {
+      "id": 1803237176,
+      "head_commit_sha": "37014d505302c50d78e250d2656e6036db7b5052",
+      "base_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "start_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "created_at": "2026-05-17T06:40:22.220Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "50aed552a61826c6cc04aaa7e3008177dc55a71e"
+    },
+    {
+      "id": 1803232061,
+      "head_commit_sha": "7bd6f865631572eaba6b13c4dad2f62bed689f03",
+      "base_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "start_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "created_at": "2026-05-17T06:18:51.934Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "354c92d8f91870573fb4f9b898d6daaa3947b719"
+    },
+    {
+      "id": 1803231736,
+      "head_commit_sha": "102db4ed54d70bb241230cffa9f648b9f000ce3e",
+      "base_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "start_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "created_at": "2026-05-17T06:17:03.570Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "354c92d8f91870573fb4f9b898d6daaa3947b719"
+    },
+    {
+      "id": 1803222968,
+      "head_commit_sha": "5267b1e61f0bf09dcb0aee8a22c25f56876ef341",
+      "base_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "start_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "created_at": "2026-05-17T05:40:59.544Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "354c92d8f91870573fb4f9b898d6daaa3947b719"
+    },
+    {
+      "id": 1803222806,
+      "head_commit_sha": "c294263e9522e214129a90bdcda1393df6a24d62",
+      "base_commit_sha": "ba0c6cf55114f7d298ba9b1392bebaf29b630aeb",
+      "start_commit_sha": "2b6353ccc9bc74a3fbfd52fd6eaa7d7ee5559fab",
+      "created_at": "2026-05-17T05:39:58.684Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "11",
+      "patch_id_sha": "b3273a791a2a9ac04c78f12a9604cad8d7ac2f8a"
+    },
+    {
+      "id": 1803017225,
+      "head_commit_sha": "c34b638347331bdbda86f6b9524dd0366b2a13b6",
+      "base_commit_sha": "ba0c6cf55114f7d298ba9b1392bebaf29b630aeb",
+      "start_commit_sha": "f9917254ff085f3550ce882cd4836d567998ae2a",
+      "created_at": "2026-05-16T17:29:58.851Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "11",
+      "patch_id_sha": "db9841a7e7d2aff677fbd56b22170873d0ee8718"
+    },
+    {
+      "id": 1803004780,
+      "head_commit_sha": "bc8e035bec31d1fd0a8c0ad1136f5c83ae6f8743",
+      "base_commit_sha": "ba0c6cf55114f7d298ba9b1392bebaf29b630aeb",
+      "start_commit_sha": "ab04a1f6c8d31bd24083a03f2bfb1e74f31fb4be",
+      "created_at": "2026-05-16T17:00:33.472Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "11",
+      "patch_id_sha": "b40283dce180840ecc5f7e0360b2f38c371a6b32"
+    },
+    {
+      "id": 1802961924,
+      "head_commit_sha": "fb1c02ac1c1346ababb80a7b4a658438b9fc81ba",
+      "base_commit_sha": "ab04a1f6c8d31bd24083a03f2bfb1e74f31fb4be",
+      "start_commit_sha": "ab04a1f6c8d31bd24083a03f2bfb1e74f31fb4be",
+      "created_at": "2026-05-16T15:04:12.303Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "11",
+      "patch_id_sha": "96a027bc9a0180d46a1b11059beeda355ba937ac"
+    },
+    {
+      "id": 1771860694,
+      "head_commit_sha": "42f46dba87bd6a3a58e0bd303b494ab9b3faea51",
+      "base_commit_sha": "bc31de5e5e32745e17b0c6492c8d7c57428c7b7e",
+      "start_commit_sha": "bc31de5e5e32745e17b0c6492c8d7c57428c7b7e",
+      "created_at": "2026-04-28T05:45:26.135Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "8",
+      "patch_id_sha": "7d1de5c1e78bd9dae178b748734af1015e76b614"
+    },
+    {
+      "id": 1759411857,
+      "head_commit_sha": "6a7abd734fe68149b15daf1ebffb6dd66dc21660",
+      "base_commit_sha": "a62c4ce83f50990bb8ce1815554b02f11ee1e6f8",
+      "start_commit_sha": "6eefcd6b012f7b112e4153106e86ba3eee701578",
+      "created_at": "2026-04-20T17:30:51.273Z",
+      "merge_request_id": 475780842,
+      "state": "without_files",
+      "real_size": "8",
+      "patch_id_sha": "7d1de5c1e78bd9dae178b748734af1015e76b614"
+    }
+  ]
+}

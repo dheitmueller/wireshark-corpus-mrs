@@ -1,0 +1,285 @@
+{
+  "id": 498792295,
+  "iid": 25491,
+  "project_id": 7898047,
+  "title": "GlusterFS: round opaque<> dict values to the XDR 4-byte boundary",
+  "description": "Closes #21364\n\n## Problem\n\n`gluster_rpc4_0_dissect_dict()` decodes `GF_DATA_TYPE_PTR` (6) dictionary values without\nrounding their length up to the XDR 4-byte boundary, unlike the `GF_DATA_TYPE_STR` (5)\nbranch, and has no case for `GF_DATA_TYPE_STR_OLD` (1), which shares the same `opaque<>`\nunion arm. When a PTR value's length is not a multiple of 4 -- e.g. the 57-byte\n`trusted.glusterfs.mdata` attribute present on nearly every LOOKUP/STAT reply once the\nctime feature is enabled (default since GlusterFS 9) -- the 1-3 XDR padding bytes are left\nunconsumed and every subsequent field is mis-aligned. The trailing `iattx` is then\ndissected at the wrong offset, so the file's size, mode, mtime, nlink, etc. come out as\ngarbage.\n\n## Fix\n\nRound the `opaque<>` value length up (matching the STR branch) and handle STR_OLD via the\nsame code path.\n\n## Verification\n\nOn a GlusterFS 11.2 capture, a 5 MiB / mode-0644 file whose LOOKUP reply previously\ndecoded as `ia_size=0, mode=0x100000` now decodes correctly (`ia_size=5242880,\nmode=0x81A4`). Also built as a downstream Debian package and confirmed on a live\nappliance testbed.\n\n`GF_DATA_TYPE_MDATA` (type 9) is also unhandled but was not observed in GlusterFS 11.2,\nwhich serializes mdata as PTR; it can be added if a capture surfaces it.\n\nBug introduced in 61aaeef2b0e (the original 4.0 dissector).\n\nAI-assisted; all changes verified against the wire format and on a live testbed.",
+  "state": "merged",
+  "created_at": "2026-06-22T17:15:44.057Z",
+  "updated_at": "2026-06-22T18:16:08.249Z",
+  "merged_by": {
+    "id": 2398962,
+    "username": "JaapKeuter",
+    "public_email": "",
+    "name": "Jaap Keuter",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/JaapKeuter"
+  },
+  "merge_user": {
+    "id": 2398962,
+    "username": "JaapKeuter",
+    "public_email": "",
+    "name": "Jaap Keuter",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/JaapKeuter"
+  },
+  "merged_at": "2026-06-22T18:16:08.301Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "glusterfs-dict-opaque-padding",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 12467294,
+    "username": "thalesadv1984",
+    "public_email": "thalesadv1984@gmail.com",
+    "name": "Thales Antunes de Oliveira Barretto",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/12467294/avatar.png?v=1784819933",
+    "web_url": "https://gitlab.com/thalesadv1984"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83613606,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "ee3757f541eb6d5894a2e2a10069b9ef7731c28f",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-06-22T17:15:53.646Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25491",
+  "references": {
+    "short": "!25491",
+    "relative": "!25491",
+    "full": "wireshark/wireshark!25491"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25491",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-06-22T17:56:57.152Z",
+  "latest_build_finished_at": "2026-06-22T18:16:05.478Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2620789159,
+    "iid": 105396,
+    "project_id": 7898047,
+    "sha": "fc996a6dbada1207329fe4098a1b0ef306cb34da",
+    "ref": "refs/merge-requests/25491/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-22T17:56:55.750Z",
+    "updated_at": "2026-06-22T18:16:05.490Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2620789159"
+  },
+  "head_pipeline": {
+    "id": 2620789159,
+    "iid": 105396,
+    "project_id": 7898047,
+    "sha": "fc996a6dbada1207329fe4098a1b0ef306cb34da",
+    "ref": "refs/merge-requests/25491/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-22T17:56:55.750Z",
+    "updated_at": "2026-06-22T18:16:05.490Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2620789159",
+    "before_sha": "fc996a6dbada1207329fe4098a1b0ef306cb34da",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 2398962,
+      "username": "JaapKeuter",
+      "public_email": "",
+      "name": "Jaap Keuter",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+      "web_url": "https://gitlab.com/JaapKeuter"
+    },
+    "started_at": "2026-06-22T17:56:57.152Z",
+    "finished_at": "2026-06-22T18:16:05.478Z",
+    "committed_at": null,
+    "duration": 1148,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2620789159",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "cbb4b3ed35bc37674ab1ea82600495588c905c89",
+    "head_sha": "ee3757f541eb6d5894a2e2a10069b9ef7731c28f",
+    "start_sha": "cbb4b3ed35bc37674ab1ea82600495588c905c89"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "891282854024e1ab67edb9b9b997d0d46ab7c17d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3480946028,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-06-22T17:56:51.874Z",
+          "updated_at": "2026-06-22T17:56:51.883Z",
+          "system": true,
+          "noteable_id": 498792295,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25491,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cb0eaf3696c25331d0ac85bef0bcf75fc47d637f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3480946110,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-06-22T17:56:53.642Z",
+          "updated_at": "2026-06-22T17:56:53.644Z",
+          "system": true,
+          "noteable_id": 498792295,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25491,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -720,8 +720,11 @@ gluster_rpc4_0_dissect_dict(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb,\n \t\t\tdict_item = proto_tree_add_guid_format(subtree, hf_glusterfs_gfid,\n \t\t\t\t\t\t\t\ttvb, offset, val_len, &gfid,\n \t\t\t\t\t\t\t\t\"%s: %s\", key, gfid_s);\n-\t\t} else if (val_type == 6) {\n+\t\t/* GF_DATA_TYPE_PTR and GF_DATA_TYPE_STR_OLD share the XDR opaque<>\n+\t\t * arm, whose payload is padded to a 4-byte boundary. */\n+\t\t} else if (val_type == 6 || val_type == 1) {\n \t\t\tval_len = tvb_get_ntohl(tvb, offset);\n+\t\t\tval_len = rpc_roundup(val_len);\n \t\t\toffset += 4;\n \n \t\t\t/* read the value, possibly '\\0' terminated */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-glusterfs.c",
+      "old_path": "epan/dissectors/packet-glusterfs.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "ee3757f541eb6d5894a2e2a10069b9ef7731c28f",
+      "short_id": "ee3757f5",
+      "created_at": "2026-06-22T12:22:10.000-03:00",
+      "parent_ids": [
+        "cbb4b3ed35bc37674ab1ea82600495588c905c89"
+      ],
+      "title": "GlusterFS: round opaque<> dict values to the XDR 4-byte boundary",
+      "message": "GlusterFS: round opaque<> dict values to the XDR 4-byte boundary\n\ngluster_rpc4_0_dissect_dict() read GF_DATA_TYPE_PTR values without\nrounding their length up to the XDR 4-byte boundary (unlike the\nGF_DATA_TYPE_STR branch), and never handled GF_DATA_TYPE_STR_OLD, which\nshares the same opaque<> union arm. A PTR value whose length is not a\nmultiple of 4 -- e.g. the 57-byte trusted.glusterfs.mdata present on\nnearly every LOOKUP/STAT reply once the ctime feature is enabled\n(default since GlusterFS 9) -- left 1-3 padding bytes unconsumed, so\nevery following field, including the trailing iatt, was dissected at the\nwrong offset. File size, mode, mtime, nlink, etc. then decoded as garbage.\n\nRound the opaque<> length up (matching the STR branch) and decode\nSTR_OLD via the same path.\n\nVerified against a GlusterFS 11.2 capture: a 5 MiB, mode-0644 file that\npreviously decoded as ia_size=0, mode=0x100000 now decodes correctly.\n\nIntroduced in 61aaeef2b0e (\"dissector/gluster: Add dissector for Gluster\n4.0 protocol\").\n\nCloses #21364\n\nAI-Assisted: yes (Anthropic Claude Opus 4.8, via Claude Code)\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>\n",
+      "author_name": "Thales Antunes de Oliveira Barretto",
+      "author_email": "thales.barretto.git@gmail.com",
+      "authored_date": "2026-06-22T12:22:10.000-03:00",
+      "committer_name": "Thales Antunes de Oliveira Barretto",
+      "committer_email": "thales.barretto.git@gmail.com",
+      "committed_date": "2026-06-22T12:22:10.000-03:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ee3757f541eb6d5894a2e2a10069b9ef7731c28f"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1864660288,
+      "head_commit_sha": "ee3757f541eb6d5894a2e2a10069b9ef7731c28f",
+      "base_commit_sha": "cbb4b3ed35bc37674ab1ea82600495588c905c89",
+      "start_commit_sha": "cbb4b3ed35bc37674ab1ea82600495588c905c89",
+      "created_at": "2026-06-22T17:15:47.736Z",
+      "merge_request_id": 498792295,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "fa0dd13deba8082691c743411be6a7238ea014fc"
+    }
+  ]
+}

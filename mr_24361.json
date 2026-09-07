@@ -1,0 +1,300 @@
+{
+  "id": 473419388,
+  "iid": 24361,
+  "project_id": 7898047,
+  "title": "RTPS: fix malformed packet on encrypted user-data payload",
+  "description": "When \"Enable User Data Dissection\" is on and a topic uses\ndata_protection_kind=ENCRYPT with metadata_protection_kind=NONE,\nthe DATA submessage header is in plaintext but the serialized payload\nis a CryptoContent blob. The dissector looked up the discovered type,\ntried to parse the encrypted bytes as CDR, read a garbage string\nlength, and threw a ReportedBoundsError that surfaced as a malformed\npacket error.\n\nThree changes to rtps_util_try_dissector:\n\n1. Add a payload_size parameter and create a bounded sub-tvb\n   (tvb_new_subset_length) before calling dissect_user_defined, so\n   reads cannot stray past the serialized data region. The same bound\n   is applied to the dissector-table path that previously used\n   tvb_new_subset_remaining.\n\n2. Wrap dissect_user_defined in TRY/CATCH_NONFATAL_ERRORS. On\n   exception add a PI_WARN expert info\n   (rtps.user_data_dissection_error) instead of propagating the\n   error as a malformed packet.\n\n3. Guard against payload_size <= 0 (DISPOSE batch samples, truncated\n   packets) and return false immediately.\n\nCall sites updated: dissect_serialized_data computes payload_size as\nthe total data size minus the encapsulation header bytes consumed\n(with a special case for decompressed payloads), and\ndissect_RTPS_DATA_BATCH passes sample_info_length[count].\n\nAI-Assisted: yes (Copilot)",
+  "state": "merged",
+  "created_at": "2026-04-13T17:53:27.311Z",
+  "updated_at": "2026-04-14T06:29:00.071Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-04-14T06:29:00.111Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "rtps-fix-encrypted-payload-dissection",
+  "user_notes_count": 1,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 20804351,
+    "username": "mattrti",
+    "public_email": "",
+    "name": "Matt Richards",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/20804351/avatar.png?v=1779390943",
+    "web_url": "https://gitlab.com/mattrti"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 56635421,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "b668ea5c8fb645a330aa896ed26a2661dea7be18",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "bd2386de03fa57457c32f50d83003aaca309f5c0",
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-04-13T17:53:34.106Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!24361",
+  "references": {
+    "short": "!24361",
+    "relative": "!24361",
+    "full": "wireshark/wireshark!24361"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/24361",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-04-14T06:12:25.926Z",
+  "latest_build_finished_at": "2026-04-14T06:28:57.948Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2451076721,
+    "iid": 100506,
+    "project_id": 7898047,
+    "sha": "bd2386de03fa57457c32f50d83003aaca309f5c0",
+    "ref": "refs/merge-requests/24361/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-04-14T06:12:24.431Z",
+    "updated_at": "2026-04-14T06:28:57.963Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2451076721"
+  },
+  "head_pipeline": {
+    "id": 2451076721,
+    "iid": 100506,
+    "project_id": 7898047,
+    "sha": "bd2386de03fa57457c32f50d83003aaca309f5c0",
+    "ref": "refs/merge-requests/24361/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-04-14T06:12:24.431Z",
+    "updated_at": "2026-04-14T06:28:57.963Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2451076721",
+    "before_sha": "bd2386de03fa57457c32f50d83003aaca309f5c0",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-04-14T06:12:25.926Z",
+    "finished_at": "2026-04-14T06:28:57.948Z",
+    "committed_at": null,
+    "duration": 992,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2451076721",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "d655b4ebc78088a73eb0706b75cc93fe045602bc",
+    "head_sha": "b668ea5c8fb645a330aa896ed26a2661dea7be18",
+    "start_sha": "d655b4ebc78088a73eb0706b75cc93fe045602bc"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "236cfb974877f229202c7368d1429a0f6a0e2c3b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3246177356,
+          "type": null,
+          "body": "[domain4.pcapng](/uploads/e00623bb100bab462308ffd837b69029/domain4.pcapng)\n[demo_governance.xml](/uploads/51edd4e1e0ce855bfbc85b8dafb120d1/demo_governance.xml)\nFor context, demo_governance.xml shows that domain 4 sets data_protection_kind=ENCRYPT for the Triangle topic -- Wireshark does not read this file, it's reference material explaining the capture.\n\nEnable the preference rtps.enable_user_data_dissection (off by default).\n\n- Filter _ws.malformed -- zero matches (was 99 before fix)\n- Filter rtps.user_data_dissection_error -- 99 matches, all Triangle DATA frames\n- Frame 1512 (encrypted Triangle DATA): serializedData shows [Expert Info (Warning/Protocol): User data dissection failed: payload may be encrypted] instead of [Malformed Packet: RTPS]. The SRTPS_POSTFIX submessage following it is now properly dissected (was hidden by the malformed error).\n- Frame 957 (unencrypted Square DATA, same capture): still dissects correctly -- color: BLUE, x: 197, y: 136, shapesize: 30, fillKind: 0, angle: 0.000000. Confirms no regression for non-encrypted traffic.",
+          "author": {
+            "id": 20804351,
+            "username": "mattrti",
+            "public_email": "",
+            "name": "Matt Richards",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/20804351/avatar.png?v=1779390943",
+            "web_url": "https://gitlab.com/mattrti"
+          },
+          "created_at": "2026-04-13T17:56:11.997Z",
+          "updated_at": "2026-04-13T17:56:11.997Z",
+          "system": false,
+          "noteable_id": 473419388,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24361,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1fc6e8f52d7e6d8e127fbbdbeeef57ea3b6dc578",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3247826856,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-04-14T06:12:19.099Z",
+          "updated_at": "2026-04-14T06:12:19.115Z",
+          "system": true,
+          "noteable_id": 473419388,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24361,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c200374dee5b643d4da1efda3a1264d73b1e8a52",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3247826952,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-04-14T06:12:22.203Z",
+          "updated_at": "2026-04-14T06:12:22.205Z",
+          "system": true,
+          "noteable_id": 473419388,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24361,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1910,6 +1910,7 @@ static expert_field ei_rtps_uncompression_error;\n static expert_field ei_rtps_value_too_large;\n static expert_field ei_rtps_invalid_psk;\n static expert_field ei_rtps_invalid_fragment_size;\n+static expert_field ei_rtps_user_data_dissection_error;\n \n /***************************************************************************/\n /* Value-to-String Tables */\n@@ -10381,8 +10382,13 @@ int rtps_util_dissect_encapsulation_options(\n \n static bool rtps_util_try_dissector(proto_tree *tree,\n         packet_info *pinfo, tvbuff_t *tvb, int offset, endpoint_guid * guid,\n-        rtps_dissector_data * data, unsigned encoding, unsigned encoding_version, bool try_dissection_from_type_object) {\n+        rtps_dissector_data * data, unsigned encoding, unsigned encoding_version,\n+        bool try_dissection_from_type_object, int payload_size) {\n \n+  /* Nothing to dissect (e.g. DISPOSE samples in a batch) or malformed size */\n+  if (payload_size <= 0) {\n+    return false;\n+  }\n \n   if (enable_topic_info) {\n     type_mapping * type_mapping_object = rtps_util_get_topic_info(guid);\n@@ -10395,14 +10401,26 @@ static bool rtps_util_try_dissector(proto_tree *tree,\n       if (try_dissection_from_type_object && (enable_user_data_dissection || is_builtin_type)) {\n           info = lookup_dissection_info_in_custom_and_builtin_types(type_mapping_object->type_id);\n         if (info != NULL) {\n+          /* Bound reads to the serialized payload so encrypted or malformed\n+           * data cannot cause reads past the data region. */\n+          tvbuff_t *payload_tvb = tvb_new_subset_length(tvb, offset, payload_size);\n           proto_item_append_text(tree, \" (TypeId: 0x%016\" PRIx64 \")\", info->type_id);\n-          return dissect_user_defined(tree, tvb, pinfo, offset, encoding, encoding_version, info,\n-              info->type_id, info->member_name, EXTENSIBILITY_INVALID, offset,\n-              0 /* flags */, 0 /* member_id */, true);\n+          TRY {\n+            dissect_user_defined(tree, payload_tvb, pinfo, 0, encoding, encoding_version, info,\n+                info->type_id, info->member_name, EXTENSIBILITY_INVALID, 0,\n+                0 /* flags */, 0 /* member_id */, true);\n+          }\n+          CATCH_NONFATAL_ERRORS {\n+            /* Payload could not be decoded, e.g. encrypted topic data */\n+            expert_add_info(pinfo, tree,\n+                &ei_rtps_user_data_dissection_error);\n+          }\n+          ENDTRY;\n+          return true;\n         }\n       }\n       /* This part tries to dissect the content using a dissector */\n-      next_tvb = tvb_new_subset_remaining(tvb, offset);\n+      next_tvb = tvb_new_subset_length(tvb, offset, payload_size);\n \n       rtps_util_format_typename(pinfo->pool, type_mapping_object->type_name, &dissector_name);\n       return dissector_try_string_with_data(rtps_type_name_table, dissector_name,\n@@ -13757,6 +13775,8 @@ static void dissect_serialized_data(proto_tree *tree, packet_info *pinfo, tvbuff\n     proto_tree_add_item(rtps_parameter_sequence_tree, hf_rtps_issue_data, tvb,\n             offset, size, ENC_NA);\n   } else {\n+    int encap_offset = offset;\n+    int payload_size;\n     /* Dissects the encapsulation header options and uncompress the tvb if it is\n      * compressed and can be uncompressed */\n     offset = rtps_prepare_encapsulated_data(\n@@ -13776,10 +13796,13 @@ static void dissect_serialized_data(proto_tree *tree, packet_info *pinfo, tvbuff\n         &compressed_tvb,\n         &compressed_subtree);\n     data->encapsulation_id = encapsulation_id;\n+    /* Payload size is total size minus the encapsulation header bytes consumed */\n+    payload_size = size - (offset - encap_offset);\n     if (is_compressed && uncompressed_ok) {\n         data_holder_tvb = compressed_tvb;\n         offset = 0;\n         dissected_data_holder_tree = compressed_subtree;\n+        payload_size = tvb_reported_length_remaining(data_holder_tvb, 0);\n     }\n \n     /* Sets the correct values for encapsulation_encoding */\n@@ -13808,7 +13831,8 @@ static void dissect_serialized_data(proto_tree *tree, packet_info *pinfo, tvbuff\n     if (is_compressed == uncompressed_ok) {\n         if (rtps_util_try_dissector(dissected_data_holder_tree,\n                 pinfo, data_holder_tvb, offset, guid, data, encapsulation_encoding,\n-                get_encapsulation_version(encapsulation_id), try_dissection_from_type_object)) {\n+                get_encapsulation_version(encapsulation_id), try_dissection_from_type_object,\n+                payload_size)) {\n             return;\n         }\n         /* The payload */\n@@ -16750,7 +16774,8 @@ static void dissect_RTPS_DATA_BATCH(tvbuff_t *tvb, packet_info *pinfo, int offse\n                       data_holder_tvb, offset, sample_info_length[count], NULL, \"serializedKey[%d]\", count);\n               } else {\n                   if (!rtps_util_try_dissector(\n-                      sil_tree, pinfo, data_holder_tvb, offset, guid, data, get_encapsulation_endianness(encapsulation_id), get_encapsulation_version(encapsulation_id), try_dissection_from_type_object)) {\n+                      sil_tree, pinfo, data_holder_tvb, offset, guid, data, get_encapsulation_endianness(encapsulation_id), get_encapsulation_version(encapsulation_id), try_dissection_from_type_object,\n+                      sample_info_length[count])) {\n                       proto_tree_add_bytes_format(sil_tree, hf_rtps_serialized_data,\n                           data_holder_tvb, offset, sample_info_length[count], NULL, \"serializedData[%d]\", count);\n                   }\n@@ -22649,6 +22674,7 @@ void proto_register_rtps(void) {\n      { &ei_rtps_checksum_check_error, { \"rtps.checksum_error\", PI_CHECKSUM, PI_ERROR, \"Error: Unexpected checksum\", EXPFILL }},\n      { &ei_rtps_invalid_psk, { \"rtps.psk_decryption_error\", PI_UNDECODED, PI_ERROR, \"Unable to decrypt content using PSK\", EXPFILL }},\n      { &ei_rtps_invalid_fragment_size, { \"rtps.fragment_size\", PI_MALFORMED, PI_WARN, \"Invalid fragment size\", EXPFILL }},\n+     { &ei_rtps_user_data_dissection_error, { \"rtps.user_data_dissection_error\", PI_PROTOCOL, PI_WARN, \"User data dissection failed: payload may be encrypted\", EXPFILL }},\n   };\n \n   module_t *rtps_module;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-rtps.c",
+      "old_path": "epan/dissectors/packet-rtps.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1748215315,
+      "head_commit_sha": "b668ea5c8fb645a330aa896ed26a2661dea7be18",
+      "base_commit_sha": "d655b4ebc78088a73eb0706b75cc93fe045602bc",
+      "start_commit_sha": "d655b4ebc78088a73eb0706b75cc93fe045602bc",
+      "created_at": "2026-04-13T17:53:30.221Z",
+      "merge_request_id": 473419388,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "ff7db65d0b6fbe3d4500968adde9b29dc226fba7"
+    }
+  ]
+}

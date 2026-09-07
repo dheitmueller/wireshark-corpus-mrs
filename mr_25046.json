@@ -1,0 +1,455 @@
+{
+  "id": 488244673,
+  "iid": 25046,
+  "project_id": 7898047,
+  "title": "nvme-mi: Fix request/response tracking and add MPR support",
+  "description": "The original dissector stored request/response state directly in the\nper-conversation nvme_mi_command struct and mutated it on every\ndissection pass.  This caused three problems:\n\n1. On re-dissection, the request frame was processed before its\n   response, so resp_frame was zero or stale — response_in showed\n   the wrong frame or nothing at all.\n\n2. No pinfo->fd->visited guard protected the conversation state, so\n   re-dissection clobbered the mappings established on the first pass.\n\n3. The dissector treated every command slot as a single request/response\n   pair, ignoring the NVMe-MI \"More Processing Required\" (MPR) status\n   that allows interim responses before the final one.\n\nFix all three by introducing per-frame data (p_add_proto_data) with a\nshared nvme_mi_transaction pointer.  The transaction is allocated once\nper request and shared across all frames in that exchange, so the\nrequest frame sees resp_frame as soon as it is written during the\nresponse's first-pass dissection — no second pass needed.\n\nAll conversation-side mutation is now guarded by !pinfo->fd->visited.\nMPR interim responses (status byte 0x01) keep the command slot open;\nonly the final response closes it and records resp_frame.\n\nAdd hf_nvme_mi_response_is_mpr display filter field for MPR responses.\n\nCloses #21269\n\nAI-Assisted: yes (Claude)",
+  "state": "merged",
+  "created_at": "2026-05-23T04:22:25.466Z",
+  "updated_at": "2026-05-24T05:48:42.227Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-05-24T05:48:42.251Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "bugfix/21269-dissector-nvme-mi-req-resp-matching",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 38291053,
+    "username": "chiub",
+    "public_email": "",
+    "name": "Brandon Chiu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+    "web_url": "https://gitlab.com/chiub"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82265243,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0c04527b3205c9ad2d636c3675750157bc450957",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-23T04:22:36.006Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25046",
+  "references": {
+    "short": "!25046",
+    "relative": "!25046",
+    "full": "wireshark/wireshark!25046"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25046",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "5",
+  "latest_build_started_at": "2026-05-24T05:37:38.583Z",
+  "latest_build_finished_at": "2026-05-24T05:48:17.457Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2548866309,
+    "iid": 103569,
+    "project_id": 7898047,
+    "sha": "db159f236574a17cfa390aa42400d5530d5032fc",
+    "ref": "refs/merge-requests/25046/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-24T05:37:25.767Z",
+    "updated_at": "2026-05-24T05:48:17.469Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2548866309"
+  },
+  "head_pipeline": {
+    "id": 2548866309,
+    "iid": 103569,
+    "project_id": 7898047,
+    "sha": "db159f236574a17cfa390aa42400d5530d5032fc",
+    "ref": "refs/merge-requests/25046/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-24T05:37:25.767Z",
+    "updated_at": "2026-05-24T05:48:17.469Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2548866309",
+    "before_sha": "db159f236574a17cfa390aa42400d5530d5032fc",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-05-24T05:37:38.583Z",
+    "finished_at": "2026-05-24T05:48:17.457Z",
+    "committed_at": null,
+    "duration": 639,
+    "queued_duration": 12,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2548866309",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+    "head_sha": "0c04527b3205c9ad2d636c3675750157bc450957",
+    "start_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "aa0a7be30d2aa4c461371ec31cb9f9ed79a69209",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3378713660,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>f95db134 - nvme-mi: Fix request/response tracking and add MPR support</li><li>c86ead7e - nvme-mi: Add test captures and test suite</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25046/diffs?diff_id=1815197961&start_sha=be49efa6dd9648a515a49297b257b870631af297)",
+          "author": {
+            "id": 38291053,
+            "username": "chiub",
+            "public_email": "",
+            "name": "Brandon Chiu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chiub"
+          },
+          "created_at": "2026-05-23T04:31:53.860Z",
+          "updated_at": "2026-05-23T04:31:53.865Z",
+          "system": true,
+          "noteable_id": 488244673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25046,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "93f60b7e23c7c40394032da71a00a9638e0cb22c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3378720885,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>b35745a0 - nvme-mi: Add test captures and test suite</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25046/diffs?diff_id=1815201304&start_sha=c86ead7e98c0701f60f7467ff68ce46fb7c5daf8)",
+          "author": {
+            "id": 38291053,
+            "username": "chiub",
+            "public_email": "",
+            "name": "Brandon Chiu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chiub"
+          },
+          "created_at": "2026-05-23T04:44:33.470Z",
+          "updated_at": "2026-05-23T04:44:33.476Z",
+          "system": true,
+          "noteable_id": 488244673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25046,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "68638bf1730c37d9aaf81d77db77b2d8c511a03e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3378721779,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>0c04527b - nvme-mi: Fix request/response tracking and add MPR support</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25046/diffs?diff_id=1815201731&start_sha=b35745a07017263ed660e3ff69f09f542c8bcc5a)",
+          "author": {
+            "id": 38291053,
+            "username": "chiub",
+            "public_email": "",
+            "name": "Brandon Chiu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/23197d27bb034300610f9a8c0021ee49f449c2e5aa5aa57bf010c2d158b0d993?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chiub"
+          },
+          "created_at": "2026-05-23T04:46:02.787Z",
+          "updated_at": "2026-05-23T04:46:02.791Z",
+          "system": true,
+          "noteable_id": 488244673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25046,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "494033a5212d490a3bf86d6064257d5b1cc039dc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379651157,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-05-24T05:36:53.857Z",
+          "updated_at": "2026-05-24T05:36:53.874Z",
+          "system": true,
+          "noteable_id": 488244673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25046,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "93a66d0f27e2fd7239d854cdb3d7921e68eb0c38",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379651183,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-05-24T05:36:57.389Z",
+          "updated_at": "2026-05-24T05:36:57.392Z",
+          "system": true,
+          "noteable_id": 488244673,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25046,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -18,6 +18,7 @@\n #include <epan/conversation.h>\n #include <epan/crc32-tvb.h>\n #include <epan/packet.h>\n+#include <epan/proto_data.h>\n #include <epan/tfs.h>\n #include <wsutil/array.h>\n #include \"packet-mctp.h\"\n@@ -71,6 +72,7 @@ static int hf_nvme_mi_admin_cqe3;\n static int hf_nvme_mi_response_in;\n static int hf_nvme_mi_response_to;\n static int hf_nvme_mi_response_time;\n+static int hf_nvme_mi_response_is_mpr;\n \n \n static int ett_nvme_mi;\n@@ -86,13 +88,27 @@ enum nvme_mi_type {\n     NVME_MI_TYPE_PCIE = 0x4,\n };\n \n-struct nvme_mi_command {\n-    bool                init;\n-    enum nvme_mi_type   type;\n-    unsigned            opcode;\n+#define NVME_MI_STATUS_MORE_PROCESSING_REQUIRED  0x01  /* NVMe-MI 2.1 Figure 29 */\n+\n+/* Shared across all frames of one transaction so the request frame sees\n+ * resp_frame written during the response's first dissection pass. */\n+struct nvme_mi_transaction {\n     uint32_t            req_frame;\n-    uint32_t            resp_frame;\n+    uint32_t            resp_frame;  /* 0 until a non-MPR response is seen */\n     nstime_t            req_time;\n+    unsigned            opcode;\n+};\n+\n+/* Per-frame annotation; points into the shared transaction. */\n+struct nvme_mi_frame_info {\n+    struct nvme_mi_transaction *trans;\n+    bool                        is_interim_mpr;\n+};\n+\n+/* Per-slot mutable state; only written when !pinfo->fd->visited. */\n+struct nvme_mi_command {\n+    bool                        pending;\n+    struct nvme_mi_transaction *current;\n };\n \n struct nvme_mi_conv_info {\n@@ -142,7 +158,7 @@ static const value_string admin_opcode_vals[] = {\n static const true_false_string tfs_meb = { \"data in MEB\", \"data in message\" };\n \n static int\n-dissect_nvme_mi_mi(tvbuff_t *tvb, bool resp, struct nvme_mi_command *cmd,\n+dissect_nvme_mi_mi(tvbuff_t *tvb, bool resp, struct nvme_mi_transaction *trans,\n                    proto_tree *tree)\n {\n     proto_item *it, *it2;\n@@ -152,8 +168,8 @@ dissect_nvme_mi_mi(tvbuff_t *tvb, bool resp, struct nvme_mi_command *cmd,\n     mi_tree = proto_item_add_subtree(it, ett_nvme_mi_mi);\n \n     if (!resp) {\n-        proto_tree_add_item_ret_uint(mi_tree, hf_nvme_mi_mi_opcode,\n-                                     tvb, 0, 1, ENC_NA, &cmd->opcode);\n+        proto_tree_add_item(mi_tree, hf_nvme_mi_mi_opcode,\n+                            tvb, 0, 1, ENC_NA);\n \n         proto_tree_add_item(mi_tree, hf_nvme_mi_mi_cdw0,\n                             tvb, 4, 4, ENC_LITTLE_ENDIAN);\n@@ -165,7 +181,7 @@ dissect_nvme_mi_mi(tvbuff_t *tvb, bool resp, struct nvme_mi_command *cmd,\n                                 tvb, 12, -1, ENC_NA);\n     } else {\n         it2 = proto_tree_add_uint(mi_tree, hf_nvme_mi_mi_opcode,\n-                                  tvb, 0, 0, cmd->opcode);\n+                                  tvb, 0, 0, trans ? trans->opcode : 0);\n         proto_item_set_generated(it2);\n \n         proto_tree_add_item(mi_tree, hf_nvme_mi_mi_status,\n@@ -182,7 +198,7 @@ dissect_nvme_mi_mi(tvbuff_t *tvb, bool resp, struct nvme_mi_command *cmd,\n }\n \n static int\n-dissect_nvme_mi_admin(tvbuff_t *tvb, bool resp, struct nvme_mi_command *cmd,\n+dissect_nvme_mi_admin(tvbuff_t *tvb, bool resp, struct nvme_mi_transaction *trans,\n                       proto_tree *tree)\n {\n     proto_tree *admin_tree;\n@@ -196,7 +212,7 @@ dissect_nvme_mi_admin(tvbuff_t *tvb, bool resp, struct nvme_mi_command *cmd,\n \n     if (resp) {\n         it2 = proto_tree_add_uint(admin_tree, hf_nvme_mi_admin_opcode,\n-                                  tvb, 0, 0, cmd->opcode);\n+                                  tvb, 0, 0, trans ? trans->opcode : 0);\n         proto_item_set_generated(it2);\n \n         proto_tree_add_item(admin_tree, hf_nvme_mi_admin_status,\n@@ -221,8 +237,8 @@ dissect_nvme_mi_admin(tvbuff_t *tvb, bool resp, struct nvme_mi_command *cmd,\n             NULL,\n         };\n \n-        proto_tree_add_item_ret_uint(admin_tree, hf_nvme_mi_admin_opcode,\n-                                     tvb, 0, 1, ENC_NA, &cmd->opcode);\n+        proto_tree_add_item(admin_tree, hf_nvme_mi_admin_opcode,\n+                            tvb, 0, 1, ENC_NA);\n \n         proto_tree_add_bitmask(admin_tree, tvb, 1, hf_nvme_mi_admin_flags,\n                                ett_nvme_mi_admin_flags, nvme_mi_admin_flags,\n@@ -338,45 +354,98 @@ dissect_nvme_mi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n     }\n \n     struct nvme_mi_command *cmd = &mi_conv->command_slots[csi];\n-\n-    if (resp) {\n-        if (cmd->req_frame) {\n-            nstime_t ns;\n-\n-            nstime_delta(&ns, &pinfo->fd->abs_ts, &cmd->req_time);\n-\n-            it2 = proto_tree_add_uint(nvme_mi_tree, hf_nvme_mi_response_to,\n-                                      tvb, 0, 0, cmd->req_frame);\n-            proto_item_set_generated(it2);\n-            it2 = proto_tree_add_time(nvme_mi_tree, hf_nvme_mi_response_time,\n-                                      tvb, 0, 0, &ns);\n-            proto_item_set_generated(it2);\n+    struct nvme_mi_frame_info *fi = p_get_proto_data(wmem_file_scope(), pinfo,\n+                                                     proto_nvme_mi, 0);\n+\n+    if (!pinfo->fd->visited) {\n+        if (resp) {\n+            if (cmd->pending && cmd->current) {\n+                bool is_mpr = false;\n+\n+                /*\n+                 * Detect More Processing Required: the status byte is the\n+                 * first byte of the payload (tvb offset 4) for both MI and\n+                 * Admin response types.  Control primitives (type 0x0) do\n+                 * not carry a status byte at this position and are excluded.\n+                 */\n+                if ((type == NVME_MI_TYPE_MI || type == NVME_MI_TYPE_ADMIN)\n+                        && payload_len >= 1) {\n+                    uint8_t status = tvb_get_uint8(tvb, 4);\n+                    is_mpr = (status == NVME_MI_STATUS_MORE_PROCESSING_REQUIRED);\n+                }\n+\n+                fi = wmem_new0(wmem_file_scope(), struct nvme_mi_frame_info);\n+                fi->trans = cmd->current;\n+                fi->is_interim_mpr = is_mpr;\n+                p_add_proto_data(wmem_file_scope(), pinfo, proto_nvme_mi,\n+                                 0, fi);\n+\n+                if (!is_mpr) {\n+                    cmd->current->resp_frame = pinfo->num;\n+                    cmd->pending = false;\n+                    cmd->current = NULL;\n+                }\n+                /* MPR: leave slot open so the next response links to the same transaction. */\n+            }\n         } else {\n-            /* TODO: no request frame available? */\n+            struct nvme_mi_transaction *trans =\n+                wmem_new0(wmem_file_scope(), struct nvme_mi_transaction);\n+            trans->req_frame = pinfo->num;\n+            trans->req_time  = pinfo->fd->abs_ts;\n+            if ((type == NVME_MI_TYPE_MI || type == NVME_MI_TYPE_ADMIN) && payload_len >= 1)\n+                trans->opcode = tvb_get_uint8(tvb, 4);\n+\n+            cmd->pending = true;\n+            cmd->current = trans;\n+\n+            fi = wmem_new0(wmem_file_scope(), struct nvme_mi_frame_info);\n+            fi->trans = trans;\n+            fi->is_interim_mpr = false;\n+            p_add_proto_data(wmem_file_scope(), pinfo, proto_nvme_mi, 0, fi);\n         }\n-        cmd->resp_frame = pinfo->num;\n+    }\n \n-    } else {\n-        if (cmd->resp_frame) {\n-            it2 = proto_tree_add_uint(nvme_mi_tree, hf_nvme_mi_response_in,\n-                                      tvb, 0, 0, cmd->resp_frame);\n-            proto_item_set_generated(it2);\n+    /* fi->trans is shared, so resp_frame written on the response pass is\n+     * visible here when re-dissecting the request. */\n+    if (fi && fi->trans) {\n+        if (resp) {\n+            if (fi->trans->req_frame) {\n+                nstime_t ns;\n+\n+                nstime_delta(&ns, &pinfo->fd->abs_ts, &fi->trans->req_time);\n+\n+                it2 = proto_tree_add_uint(nvme_mi_tree, hf_nvme_mi_response_to,\n+                                          tvb, 0, 0, fi->trans->req_frame);\n+                proto_item_set_generated(it2);\n+                it2 = proto_tree_add_time(nvme_mi_tree, hf_nvme_mi_response_time,\n+                                          tvb, 0, 0, &ns);\n+                proto_item_set_generated(it2);\n+            }\n+            if (fi->is_interim_mpr) {\n+                it2 = proto_tree_add_boolean(nvme_mi_tree,\n+                                             hf_nvme_mi_response_is_mpr,\n+                                             tvb, 0, 0, true);\n+                proto_item_set_generated(it2);\n+            }\n+        } else {\n+            if (fi->trans->resp_frame) {\n+                it2 = proto_tree_add_uint(nvme_mi_tree, hf_nvme_mi_response_in,\n+                                          tvb, 0, 0, fi->trans->resp_frame);\n+                proto_item_set_generated(it2);\n+            }\n         }\n-        cmd->type = type;\n-        cmd->opcode = 0;\n-        cmd->init = true;\n-        cmd->req_frame = pinfo->num;\n-        cmd->req_time = pinfo->fd->abs_ts;\n     }\n \n     sub_tvb = tvb_new_subset_length(tvb, 4, payload_len);\n \n+    struct nvme_mi_transaction *trans = fi ? fi->trans : NULL;\n+\n     switch (type) {\n     case NVME_MI_TYPE_MI:\n-        dissect_nvme_mi_mi(sub_tvb, resp, cmd, nvme_mi_tree);\n+        dissect_nvme_mi_mi(sub_tvb, resp, trans, nvme_mi_tree);\n         break;\n     case NVME_MI_TYPE_ADMIN:\n-        dissect_nvme_mi_admin(sub_tvb, resp, cmd, nvme_mi_tree);\n+        dissect_nvme_mi_admin(sub_tvb, resp, trans, nvme_mi_tree);\n         break;\n     default:\n         break;\n@@ -449,6 +518,11 @@ proto_register_nvme_mi(void)\n                 FT_RELATIVE_TIME, BASE_NONE, NULL, 0x0,\n                 \"The time between the request and the response\", HFILL }\n         },\n+        { &hf_nvme_mi_response_is_mpr,\n+            { \"More Processing Required\", \"nvme-mi.response_is_mpr\",\n+                FT_BOOLEAN, BASE_NONE, NULL, 0x0,\n+                \"This response has More Processing Required status; a further response will follow on this command slot\", HFILL }\n+        },\n \n         /* MI commands */\n         { &hf_nvme_mi_mi_opcode,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-nvme-mi.c",
+      "old_path": "epan/dissectors/packet-nvme-mi.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/nvme-mi-req-resp.pcapng differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/nvme-mi-req-resp.pcapng",
+      "old_path": "test/captures/nvme-mi-req-resp.pcapng",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/nvme-mi-types.pcapng differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/nvme-mi-types.pcapng",
+      "old_path": "test/captures/nvme-mi-types.pcapng",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "test/suite_dissection_nvme_mi.py",
+      "old_path": "test/suite_dissection_nvme_mi.py",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "tools/gen-nvme-mi-test-capture.py",
+      "old_path": "tools/gen-nvme-mi-test-capture.py",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1815201731,
+      "head_commit_sha": "0c04527b3205c9ad2d636c3675750157bc450957",
+      "base_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "start_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "created_at": "2026-05-23T04:46:02.102Z",
+      "merge_request_id": 488244673,
+      "state": "collected",
+      "real_size": "5",
+      "patch_id_sha": "1cf5cdfe9ba0b16b6c509fc86aef6883bfc9ed88"
+    },
+    {
+      "id": 1815201304,
+      "head_commit_sha": "b35745a07017263ed660e3ff69f09f542c8bcc5a",
+      "base_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "start_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "created_at": "2026-05-23T04:44:32.723Z",
+      "merge_request_id": 488244673,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": "1cf5cdfe9ba0b16b6c509fc86aef6883bfc9ed88"
+    },
+    {
+      "id": 1815197961,
+      "head_commit_sha": "c86ead7e98c0701f60f7467ff68ce46fb7c5daf8",
+      "base_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "start_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "created_at": "2026-05-23T04:31:53.188Z",
+      "merge_request_id": 488244673,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": "dac3e8d5fb8c3e673f6d57a87e6b64a19c805847"
+    },
+    {
+      "id": 1815195675,
+      "head_commit_sha": "be49efa6dd9648a515a49297b257b870631af297",
+      "base_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "start_commit_sha": "23a1a9b3b74b2de7888ef68b1fd8eb9804d717cf",
+      "created_at": "2026-05-23T04:22:29.792Z",
+      "merge_request_id": 488244673,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": "dac3e8d5fb8c3e673f6d57a87e6b64a19c805847"
+    }
+  ]
+}

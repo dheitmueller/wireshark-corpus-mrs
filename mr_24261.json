@@ -1,0 +1,1632 @@
+{
+  "id": 471633921,
+  "iid": 24261,
+  "project_id": 7898047,
+  "title": "TLS: Fix decryption of nested TLS sessions",
+  "description": "## Problem\n\nWireshark cannot decrypt inner TLS application data in nested TLS scenarios (EAP-TTLS, HTTP Upgrade tunnels) even when the keylog file contains valid CLIENT_RANDOM entries for both sessions.\n\n**Root Cause:** When TLS is nested inside TLS (same TCP connection, same 5-tuple), both sessions share a single `SslDecryptSession` object, preventing the inner TLS layer from maintaining separate decryption state.\n\n## Solution\n\nStore multiple `SslDecryptSession` objects per conversation using a `GHashTable` indexed by `curr_layer_num`. This allows outer (layer N) and inner (layer N+1) TLS sessions to maintain independent:\n\n- CLIENT_RANDOM values\n- Master secrets\n- Cipher states\n- Decoder contexts\n\n## Changes\n\n- `packet-tls-utils.h`: Added `curr_layer_num` parameter to `ssl_get_session()`\n- `packet-tls-utils.c`: Modified to use hash table for session storage\n- `packet-tls.c`: Updated all calls to pass protocol layer number\n- `packet-dtls.c`: Updated for DTLS compatibility\n\n## Testing\n\n- Compiles successfully\n- Backward compatible with single-layer TLS\n- Supports multiple nested TLS sessions per conversation\n- Preserves existing DTLS and QUIC functionality\n\nImplements the approach suggested by @eugene.adell @johnthacker in the issue discussion (#21027).\n\nFix #21027.",
+  "state": "merged",
+  "created_at": "2026-04-08T11:03:52.700Z",
+  "updated_at": "2026-05-21T09:13:09.310Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2026-05-16T19:05:15.874Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "nested-tls-decryption-fix",
+  "user_notes_count": 15,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 34785639,
+    "username": "chaitanyadeepchellu",
+    "public_email": "",
+    "name": "Chaitanya Deep Chellu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/5c59562fe827421016a8b4fecb0aecfdfced9fe02cd605fb24e993ba97a64979?s=80&d=identicon",
+    "web_url": "https://gitlab.com/chaitanyadeepchellu"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 81120881,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "c164190aa353487607618be56f4f188d3089d2fd",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "3f81e48276abc5c8fc39e7ed3d86192f95577e20",
+  "discussion_locked": null,
+  "should_remove_source_branch": false,
+  "force_remove_source_branch": false,
+  "prepared_at": "2026-04-08T11:04:06.066Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!24261",
+  "references": {
+    "short": "!24261",
+    "relative": "!24261",
+    "full": "wireshark/wireshark!24261"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/24261",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2026-05-16T18:54:47.339Z",
+  "latest_build_finished_at": "2026-05-16T19:05:14.042Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2530542401,
+    "iid": 102967,
+    "project_id": 7898047,
+    "sha": "3f81e48276abc5c8fc39e7ed3d86192f95577e20",
+    "ref": "refs/merge-requests/24261/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-16T18:54:46.401Z",
+    "updated_at": "2026-05-16T19:05:14.055Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2530542401"
+  },
+  "head_pipeline": {
+    "id": 2530542401,
+    "iid": 102967,
+    "project_id": 7898047,
+    "sha": "3f81e48276abc5c8fc39e7ed3d86192f95577e20",
+    "ref": "refs/merge-requests/24261/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-16T18:54:46.401Z",
+    "updated_at": "2026-05-16T19:05:14.055Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2530542401",
+    "before_sha": "3f81e48276abc5c8fc39e7ed3d86192f95577e20",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2026-05-16T18:54:47.339Z",
+    "finished_at": "2026-05-16T19:05:14.042Z",
+    "committed_at": null,
+    "duration": 626,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2530542401",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "cc29fbe6f8dd82eab472e3da5690c14146ccac4f",
+    "head_sha": "c164190aa353487607618be56f4f188d3089d2fd",
+    "start_sha": "cc29fbe6f8dd82eab472e3da5690c14146ccac4f"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "9bc3e206b4d6e5da63f8f0e891fe6ba8683d6e6a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3231012294,
+          "type": null,
+          "body": "added 37 commits\n\n<ul><li>05f0951f...ddee59dc - 36 commits from branch <code>wireshark:master</code></li><li>661675f7 - TLS: Fix decryption of nested TLS sessions</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1740498923&start_sha=05f0951f42ddaf04b2953d5a6b22d14e2f0bb1ca)",
+          "author": {
+            "id": 34785639,
+            "username": "chaitanyadeepchellu",
+            "public_email": "",
+            "name": "Chaitanya Deep Chellu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5c59562fe827421016a8b4fecb0aecfdfced9fe02cd605fb24e993ba97a64979?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chaitanyadeepchellu"
+          },
+          "created_at": "2026-04-08T11:05:13.510Z",
+          "updated_at": "2026-04-08T11:05:13.515Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2869ded4b6b6883a08b9a62843f14d58d8614a43",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3231023283,
+          "type": null,
+          "body": "mentioned in issue #21027",
+          "author": {
+            "id": 34785639,
+            "username": "chaitanyadeepchellu",
+            "public_email": "",
+            "name": "Chaitanya Deep Chellu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5c59562fe827421016a8b4fecb0aecfdfced9fe02cd605fb24e993ba97a64979?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chaitanyadeepchellu"
+          },
+          "created_at": "2026-04-08T11:08:55.752Z",
+          "updated_at": "2026-04-08T11:08:55.758Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a3beb0462061b46fe9a51874b826ac8878a89f1d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3234150090,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-04-09T06:05:32.481Z",
+          "updated_at": "2026-04-09T06:05:32.485Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b7a48032e4f7e987a21031873b05ed6c8636a504",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3240533377,
+          "type": null,
+          "body": "Please fix some trailing whitespace issues:\n\n```\nepan/dissectors/packet-dtls.c:492: trailing whitespace.\n+          \nepan/dissectors/packet-dtls.c:499: trailing whitespace.\n+          \nepan/dissectors/packet-tls-utils.c:6077: trailing whitespace.\n+    \nepan/dissectors/packet-tls-utils.c:6145: trailing whitespace.\n+    \n```",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-04-10T14:36:28.283Z",
+          "updated_at": "2026-04-10T14:36:28.283Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dad9e25df92588a3451df4e49eb06f32d0c0bdd6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3243712692,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>9c6e08de - TLS: Fix trailing whitespace in nested TLS session changes</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1746907026&start_sha=661675f75936dd93d77c1b7fc086d956d2ef928e)",
+          "author": {
+            "id": 34785639,
+            "username": "chaitanyadeepchellu",
+            "public_email": "",
+            "name": "Chaitanya Deep Chellu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5c59562fe827421016a8b4fecb0aecfdfced9fe02cd605fb24e993ba97a64979?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chaitanyadeepchellu"
+          },
+          "created_at": "2026-04-13T06:20:12.975Z",
+          "updated_at": "2026-04-13T06:20:12.980Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b645d243c3eba29fbe3f64488200b17af8d8b7fa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3243728053,
+          "type": null,
+          "body": "Identity verification is required in order to run CI jobs.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-04-13T06:28:34.928Z",
+          "updated_at": "2026-04-13T06:28:34.928Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bdefc6702d9220a42db9d1c3b4adf121084beef5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3243728561,
+          "type": null,
+          "body": "added 71 commits\n\n<ul><li>9c6e08de...450c9f45 - 69 commits from branch <code>wireshark:master</code></li><li>768c63b0 - TLS: Fix decryption of nested TLS sessions</li><li>44e79cc7 - TLS: Fix trailing whitespace in nested TLS session changes</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1746916360&start_sha=9c6e08dea48846f0feac69b30fb58b86ed1b2564)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-04-13T06:28:55.224Z",
+          "updated_at": "2026-04-13T06:28:55.228Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "97660826b4700cdbb0fb5c8a266d734329aa919d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3247654110,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>661675f7 - TLS: Fix decryption of nested TLS sessions</li><li>9c6e08de - TLS: Fix trailing whitespace in nested TLS session changes</li><li>14361195 - TLS: Fix memory leak in nested TLS session storage</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1748861559&start_sha=44e79cc7d794cbdd9ff6f454217add1180b441e3)",
+          "author": {
+            "id": 34785639,
+            "username": "chaitanyadeepchellu",
+            "public_email": "",
+            "name": "Chaitanya Deep Chellu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5c59562fe827421016a8b4fecb0aecfdfced9fe02cd605fb24e993ba97a64979?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chaitanyadeepchellu"
+          },
+          "created_at": "2026-04-14T04:34:41.639Z",
+          "updated_at": "2026-04-14T04:34:41.644Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "077f22772ea99686c5e5671383908152d0874e06",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3252538740,
+          "type": null,
+          "body": "There are a number of functions in `packet-tls.c`, e.g., `tls_get_cipher_info`, that have calls like\n\n`SslDecryptSession *ssl = (SslDecryptSession *)conversation_get_proto_data(conv, proto_tls);`\n\nAt a minimum, since the conversation proto data is no longer a `SslDecryptSession` but is a `wmem_map`, they will have to be adjusted or else they will crash. I suggest a function in `packet-tls-utils.c` (exposed in the header) that is similar to the existing `ssl_get_session` except that it does not create the session if it does not exist and returns NULL in that case.\n\nI would probably name it something like `tls_get_session`, in preparation for renaming the other function later to something like `tls_get_or_create_session`.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-04-15T08:43:34.922Z",
+          "updated_at": "2026-04-15T08:43:34.922Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "98d63583fea8543bbc6cb6b6df2113cd37f4ddee",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3258369248,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>d499f149 - TLS: Add tls_get_session() to fix crash with wmem_map session storage</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1754550098&start_sha=143611952dc04243ace2c922294ee11e936fe0e9)",
+          "author": {
+            "id": 34785639,
+            "username": "chaitanyadeepchellu",
+            "public_email": "",
+            "name": "Chaitanya Deep Chellu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5c59562fe827421016a8b4fecb0aecfdfced9fe02cd605fb24e993ba97a64979?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chaitanyadeepchellu"
+          },
+          "created_at": "2026-04-16T16:48:59.418Z",
+          "updated_at": "2026-04-16T16:48:59.426Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "20a70b567c56ef0ecd26379f6888d035b0e4d3a1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3264080227,
+          "type": null,
+          "body": "mentioned in commit jimdigriz/wireshark@2ea4d5ad5096d65f54ebfbbf9ebbf3bddcba9d19",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-18T23:05:23.961Z",
+          "updated_at": "2026-04-18T23:05:23.965Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "92fd6427bdf141a5556c8b1113a0c28ac95d040a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3264317424,
+          "type": null,
+          "body": "mentioned in commit jimdigriz/wireshark@917df549d6b785d866cf9ff06b9605b27a926aea",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-19T07:43:26.728Z",
+          "updated_at": "2026-04-19T07:43:26.735Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ad1d96ba0ea7e66c2d076990e1a071b6a1a1966b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3265576098,
+          "type": null,
+          "body": "I likely am misunderstanding things, but a few things I noticed:\n - a number of calls to `tls_get_session` use zero even though there is a `packet_info` object available\n - DTLS still looks to use bare `conversation_get_proto_data` calls with no `wmem_map`\n\nNo idea if this is correct, but I have a commit (https://gitlab.com/jimdigriz/wireshark/-/commit/e330fb0d8ea48312146d8b402da195126e2aedb9) showing possible fixes.",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-20T08:15:43.015Z",
+          "updated_at": "2026-04-20T08:16:35.866Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a1d770e21ea91230183d198a3594a8b3afda0fd1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3265972173,
+          "type": null,
+          "body": "mentioned in commit jimdigriz/wireshark@58afd14f455b5f71881d3d4015ed64c6167674ab",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-20T10:05:33.780Z",
+          "updated_at": "2026-04-20T10:05:33.785Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f9cf2a228bf480d50294d8a927d76c4f25d255f2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3265972176,
+          "type": null,
+          "body": "mentioned in commit jimdigriz/wireshark@43dffe8194cc45aa934938526be33e668371f4a6",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-20T10:05:33.840Z",
+          "updated_at": "2026-04-20T10:05:33.844Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "22271298512cc07576d5da33b82775930edbb575",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3267731364,
+          "type": null,
+          "body": "mentioned in merge request !24493",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-04-20T17:31:00.463Z",
+          "updated_at": "2026-04-20T17:31:00.490Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5e246d00c6843343ef8d177357987ecc2ee900ca",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3313737394,
+          "type": null,
+          "body": "@jimdigriz @johnthacker  Any updates i can expect towards resolving the issue",
+          "author": {
+            "id": 34785639,
+            "username": "chaitanyadeepchellu",
+            "public_email": "",
+            "name": "Chaitanya Deep Chellu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5c59562fe827421016a8b4fecb0aecfdfced9fe02cd605fb24e993ba97a64979?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chaitanyadeepchellu"
+          },
+          "created_at": "2026-05-05T05:31:49.568Z",
+          "updated_at": "2026-05-05T05:31:49.568Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "58972378f9a8776f01cf136adf04935bb2c59c4d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3313759436,
+          "type": null,
+          "body": "@chaitanyadeepchellu did you look at my backfilling commit (https://gitlab.com/jimdigriz/wireshark/-/commit/78440e93dba0d7e2f1e0807da7638a8b29e8ca72) for your work that I mentioned above in https://gitlab.com/wireshark/wireshark/-/merge_requests/24261#note_3265576098? Is it relevant or needed? Did I mis-understand your patch set?",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-05T05:41:37.097Z",
+          "updated_at": "2026-05-05T09:48:49.569Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "831ae544253fc0296f1b6cc7362a73311d517467",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3314939623,
+          "type": null,
+          "body": "Let me take a look, it seems like some of the tests are failing. I was a bit busy trying to work on getting the latest stable releases out; we've had a flood of AI-assisted security reports, like a lot of other projects.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-05T11:28:37.992Z",
+          "updated_at": "2026-05-05T11:28:37.992Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1d0cfc01078b06585ea6643c48acd4a4d0aebdbb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3321626379,
+          "type": null,
+          "body": "added 398 commits\n\n<ul><li>d499f149...0c3a37e8 - 394 commits from branch <code>wireshark:master</code></li><li>9bdf3cab - TLS: Fix decryption of nested TLS sessions</li><li>4a391ca3 - TLS: Fix trailing whitespace in nested TLS session changes</li><li>fd84db37 - TLS: Fix memory leak in nested TLS session storage</li><li>3dc5d219 - TLS: Add tls_get_session() to fix crash with wmem_map session storage</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1786482476&start_sha=d499f1498ffdac42da46a33afd32a9b64b0216bd)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-06T20:06:36.668Z",
+          "updated_at": "2026-05-06T20:06:36.673Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8bcba065e887c44fdc56e1eca2d34257d04f7fb0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3324217491,
+          "type": null,
+          "body": "It looks like `pinfo->curr_proto_layer_num` doesn't distinguish between multiple times the TLS dissector is called (e.g., due to TCP desegmentation) and actual nested TLS, and that's why some tests are failing. I am working on a related approach that uses `p_set_proto_depth` instead.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-07T12:52:36.309Z",
+          "updated_at": "2026-05-07T12:52:36.309Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3c98d53932cfe2fe6687951c9bd87746902372e6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3324240805,
+          "type": null,
+          "body": "@johnthacker I think I ran into a similar problem for my nested TLS for EAP patch based on this work and used `curr_layer_num` instead of `curr_proto_layer_num`; should I be moving my work to `p_set_proto_depth` instead?",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-07T12:58:05.687Z",
+          "updated_at": "2026-05-07T12:58:25.522Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4fe6d9bd8dde02568d9e638c7631fbc72c581ee1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3329859904,
+          "type": null,
+          "body": "added 25 commits\n\n<ul><li>3dc5d219...98cf2bcc - 21 commits from branch <code>wireshark:master</code></li><li>8c534bbc - TLS: Fix decryption of nested TLS sessions</li><li>e24d9ea8 - TLS: Fix trailing whitespace in nested TLS session changes</li><li>85a27d30 - TLS: Fix memory leak in nested TLS session storage</li><li>c4088292 - TLS: Add tls_get_session() to fix crash with wmem_map session storage</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1790965285&start_sha=3dc5d21957504ca51b9db933760d9412ab0b17ee)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-09T00:05:17.261Z",
+          "updated_at": "2026-05-09T00:05:17.596Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e0e65c48382aabe4400751f8346155af43af0d42",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3329998843,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>a40b6386 - TLS: Use p_get_proto_depth</li><li>78953775 - Follow, TLS: Find the stream for the follow filter even with tunneling</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1791044105&start_sha=c4088292a905b7296e935fefb5406a0064109f59)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-09T03:04:24.975Z",
+          "updated_at": "2026-05-09T03:04:24.981Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2cb85e03657a69cf9b913362142a367d235e3518",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3330008756,
+          "type": null,
+          "body": "I added some updates using `p_set_proto_depth` that make all the tests pass, and then some updates for Follow Stream that enable following either the inner or outer stream properly. I think this should fix the issue, although you can test with other files.\n\n@jimdigriz:\n\nI think so. The latest code should give you an idea of my current thinking.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-09T03:14:25.422Z",
+          "updated_at": "2026-05-09T03:14:25.422Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "096fa9488e309771952a9fda0f85e4440df1c397",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3330010492,
+          "type": null,
+          "body": "The changes for Follow Stream may give an idea on an approach to fix #18231.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-09T03:15:53.341Z",
+          "updated_at": "2026-05-09T03:15:53.341Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d4c3bf1cfc8853e09535e0fd4e00bdfe51c7bba4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3354653203,
+          "type": null,
+          "body": "added 85 commits\n\n<ul><li>78953775...cc29fbe6 - 79 commits from branch <code>wireshark:master</code></li><li>832855ad - TLS: Fix decryption of nested TLS sessions</li><li>e13c09a5 - TLS: Fix trailing whitespace in nested TLS session changes</li><li>506308c3 - TLS: Fix memory leak in nested TLS session storage</li><li>52b54ffb - TLS: Add tls_get_session() to fix crash with wmem_map session storage</li><li>bf01af80 - TLS: Use p_get_proto_depth</li><li>c164190a - Follow, TLS: Find the stream for the follow filter even with tunneling</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24261/diffs?diff_id=1803026741&start_sha=789537755c8b89d0f5ebfe03bda038dd04900d00)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-16T17:53:45.567Z",
+          "updated_at": "2026-05-16T17:53:45.571Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "23015fa21f18ea2cc6ddfe8943cb02120438fbc5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3354713377,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-16T18:54:41.051Z",
+          "updated_at": "2026-05-16T18:54:41.054Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "81c09953d11f47b25bc93b5d3963f13203337f61",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3354713393,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-16T18:54:43.697Z",
+          "updated_at": "2026-05-16T18:54:43.707Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d9e03c1b86920a474385fa8550ee0d8825a3f84e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3354713399,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-16T18:54:44.420Z",
+          "updated_at": "2026-05-16T18:54:44.426Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d6e7dd85ab2c4634dc521fa440086472aabe71c1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3354713484,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-16T18:54:57.820Z",
+          "updated_at": "2026-05-16T18:54:57.825Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "03576a887e5966579245209053ef74204b1e13f2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355450388,
+          "type": null,
+          "body": "@johnthacker wish I mentioned it earlier, sorry, discovered last night your proto depth changes missed some plumbing I picked up in https://gitlab.com/wireshark/wireshark/-/merge_requests/24493/diffs?commit_id=9c314060410a99c0f95d7db5229e4c87be64da1f I am planning to create a separate MR for this after doing some EAP tidy ups.\n\nFixed in https://gitlab.com/wireshark/wireshark/-/merge_requests/24945",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T05:44:15.121Z",
+          "updated_at": "2026-05-17T07:33:47.823Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "54c608720ab2824f4a050d100634d60045cf90e6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355706559,
+          "type": null,
+          "body": "Ah, thank you. Would you mind breaking that commit out into a separate MR so we can go ahead and get that fix in while I review your other changes?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-17T12:50:48.301Z",
+          "updated_at": "2026-05-17T12:50:48.301Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "26ba744a689766ec3f6a2318148b12cf7c15278c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3355710866,
+          "type": null,
+          "body": "@johnthacker I did, it is in MR https://gitlab.com/wireshark/wireshark/-/merge_requests/24945 as a single commit.",
+          "author": {
+            "id": 449568,
+            "username": "jimdigriz",
+            "public_email": "alex@digriz.org.uk",
+            "name": "Alexander Clouter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/449568/avatar.png?v=1788528330",
+            "web_url": "https://gitlab.com/jimdigriz"
+          },
+          "created_at": "2026-05-17T12:57:09.633Z",
+          "updated_at": "2026-05-17T12:57:09.633Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0a1764b1ba9eb4dd445213e409976cc71a97f218",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3371543031,
+          "type": null,
+          "body": "@jimdigriz ,  @johnthacker When can be the expected realease for the updates in the merge",
+          "author": {
+            "id": 34785639,
+            "username": "chaitanyadeepchellu",
+            "public_email": "",
+            "name": "Chaitanya Deep Chellu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5c59562fe827421016a8b4fecb0aecfdfced9fe02cd605fb24e993ba97a64979?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chaitanyadeepchellu"
+          },
+          "created_at": "2026-05-21T09:13:09.239Z",
+          "updated_at": "2026-05-21T09:13:09.239Z",
+          "system": false,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c537472b2283c77bcd881b4aa5ff9713021c96e7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3549566507,
+          "type": null,
+          "body": "mentioned in issue #21409",
+          "author": {
+            "id": 5878236,
+            "username": "m2martin",
+            "public_email": "",
+            "name": "Martin Mayer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/2c5b2f2eff56587ba743066ec0dc52beca2573e80ac3d871cbd7b54c446dc212?s=80&d=identicon",
+            "web_url": "https://gitlab.com/m2martin"
+          },
+          "created_at": "2026-07-12T13:22:48.916Z",
+          "updated_at": "2026-07-12T13:22:48.918Z",
+          "system": true,
+          "noteable_id": 471633921,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24261,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -415,26 +415,27 @@ static int   looks_like_dtls(tvbuff_t *tvb, uint32_t offset);\n static char *\n dtls_follow_conv_filter(epan_dissect_t *edt _U_, packet_info *pinfo, unsigned *stream, unsigned *sub_stream _U_)\n {\n-    conversation_t *conv = find_conversation_pinfo(pinfo, 0);\n-    if (!conv) {\n-        return NULL;\n-    }\n-    void *conv_data = conversation_get_proto_data(conv, proto_dtls);\n-    if (conv_data == NULL) {\n-        return NULL;\n+  char *filter = NULL;\n+  const SslPacketInfo *pi = NULL;\n+  uint8_t max_layer_num = proto_get_layer_num(pinfo, proto_dtls);\n+\n+  for (uint8_t curr_layer_num = max_layer_num; curr_layer_num; --curr_layer_num) {\n+    /* The (nesting) layer number in p_get_proto_data is 0-indexed. */\n+    pi = p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, curr_layer_num - 1);\n+    if (pi) {\n+      *stream = pi->stream;\n+      filter = ws_strdup_printf(\"dtls.stream eq %u\", *stream);\n+      break;\n     }\n+  }\n \n-    SslDecryptSession *ssl_session = (SslDecryptSession *)conv_data;\n-    SslSession *session = &ssl_session->session;\n-\n-    *stream = session->stream;\n-    return ws_strdup_printf(\"dtls.stream eq %u\", session->stream);\n+  return filter;\n }\n \n static char *\n dtls_follow_index_filter(unsigned stream, unsigned sub_stream _U_)\n {\n-    return ws_strdup_printf(\"dtls.stream eq %u\", stream);\n+  return ws_strdup_printf(\"dtls.stream eq %u\", stream);\n }\n \n /*********************************************************************\n@@ -456,7 +457,7 @@ dissect_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_\n   SslDecryptSession *ssl_session = NULL;\n   SslSession        *session = NULL;\n   int                is_from_server;\n-  uint8_t            curr_layer_num_ssl = pinfo->curr_layer_num;\n+  uint8_t            curr_layer_num_ssl = p_get_proto_depth(pinfo, proto_dtls);\n \n   ti                    = NULL;\n   dtls_tree             = NULL;\n@@ -486,16 +487,25 @@ dissect_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_\n       ssl_session = ssl_get_session_by_cid(tvb, offset+11);\n \n       if (ssl_session) {\n-          // update conversation\n-          conversation_add_proto_data(conversation,\n-                                      dissector_handle_get_protocol_index(dtls_handle),\n-                                      ssl_session);\n+          /* Update conversation - get or create the wmem map.\n+           * Using wmem_file_scope ensures the map is freed on capture reload. */\n+          void *conv_data = conversation_get_proto_data(conversation, dissector_handle_get_protocol_index(dtls_handle));\n+          wmem_map_t *session_map;\n+\n+          if (conv_data == NULL) {\n+              session_map = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);\n+              conversation_add_proto_data(conversation, dissector_handle_get_protocol_index(dtls_handle), session_map);\n+          } else {\n+              session_map = (wmem_map_t *)conv_data;\n+          }\n+\n+          wmem_map_insert(session_map, GUINT_TO_POINTER((unsigned)curr_layer_num_ssl), ssl_session);\n       }\n   }\n \n   /* if session cannot be retrieved from connection ID, get or create it from conversation */\n   if (ssl_session == NULL) {\n-      ssl_session = ssl_get_session(conversation, dtls_handle);\n+      ssl_session = ssl_get_session(conversation, dtls_handle, curr_layer_num_ssl);\n   }\n \n   session = &ssl_session->session;\n@@ -520,6 +530,11 @@ dissect_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_\n   if (pinfo->fd->visited)\n     ssl_session = NULL;\n \n+  /* Increment the proto depth, so any nested DTLS gets the new depth.\n+   * Make sure to decrement when leaving the function.\n+   * (XXX - Do we need a TRY...FINALLY or CLEANUP_CB_PUSH?) */\n+  p_set_proto_depth(pinfo, proto_dtls, curr_layer_num_ssl + 1);\n+\n   /* Initialize the protocol column; we'll set it later when we\n    * figure out what flavor of DTLS it is */\n   col_set_str(pinfo->cinfo, COL_PROTOCOL, \"DTLS\");\n@@ -567,6 +582,7 @@ dissect_dtls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_\n   // XXX Is this tap needed?\n   tap_queue_packet(dtls_tap, pinfo, NULL);\n   tap_queue_packet(dtls_follow_tap, pinfo, p_get_proto_data(wmem_file_scope(), pinfo, proto_dtls, curr_layer_num_ssl));\n+  p_set_proto_depth(pinfo, proto_dtls, curr_layer_num_ssl);\n   return tvb_captured_length(tvb);\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-dtls.c",
+      "old_path": "epan/dissectors/packet-dtls.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -6061,22 +6061,58 @@ proto_reg_handoff_tls_utils(void)\n     dtls_handle = find_dissector(\"dtls\");\n }\n \n+/* Look up an existing SslDecryptSession without creating one. Returns NULL if\n+ * no session exists. */\n+SslDecryptSession *\n+tls_get_session(conversation_t *conversation, int proto_ssl, uint8_t curr_layer_num)\n+{\n+    void       *conv_data;\n+    wmem_map_t *session_map;\n+\n+    if (!conversation)\n+        return NULL;\n+\n+    conv_data = conversation_get_proto_data(conversation, proto_ssl);\n+    if (conv_data == NULL)\n+        return NULL;\n+\n+    session_map = (wmem_map_t *)conv_data;\n+\n+    return (SslDecryptSession *)wmem_map_lookup(session_map,\n+                GUINT_TO_POINTER((unsigned)curr_layer_num));\n+\n+}\n+\n /* get ssl data for this session. if no ssl data is found allocate a new one*/\n SslDecryptSession *\n-ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle)\n+ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle, uint8_t curr_layer_num)\n {\n     void               *conv_data;\n     SslDecryptSession  *ssl_session;\n     int                 proto_ssl;\n+    wmem_map_t         *session_map;\n \n     /* Note proto_ssl is tls for either the main tls_handle or the\n      * tls13_handshake handle used by QUIC. */\n     proto_ssl = dissector_handle_get_protocol_index(tls_handle);\n     conv_data = conversation_get_proto_data(conversation, proto_ssl);\n-    if (conv_data != NULL)\n-        return (SslDecryptSession *)conv_data;\n \n-    /* no previous SSL conversation info, initialize it. */\n+    /* For nested TLS support, we store a wmem map of sessions indexed by layer number.\n+     * Using wmem_file_scope ensures the map is freed when the capture file is closed,\n+     * preventing memory leaks on capture reload. */\n+    if (conv_data != NULL) {\n+        session_map = (wmem_map_t *)conv_data;\n+        ssl_session = (SslDecryptSession *)wmem_map_lookup(session_map, GUINT_TO_POINTER((unsigned)curr_layer_num));\n+        if (ssl_session != NULL) {\n+            return ssl_session;\n+        }\n+    } else {\n+        /* Create a new wmem map to store sessions by layer number */\n+        session_map = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);\n+        conversation_add_proto_data(conversation, proto_ssl, session_map);\n+    }\n+\n+    /* no previous SSL conversation info for this layer, initialize it. */\n     ssl_session = wmem_new0(wmem_file_scope(), SslDecryptSession);\n \n     /* data_len is the part that is meaningful, not the allocated length */\n@@ -6128,7 +6164,9 @@ ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle)\n         ssl_session->session.stream = dtls_increment_stream_count();\n     }\n \n-    conversation_add_proto_data(conversation, proto_ssl, ssl_session);\n+    /* Store the session in the wmem map indexed by layer number */\n+    wmem_map_insert(session_map, GUINT_TO_POINTER((unsigned)curr_layer_num), ssl_session);\n+\n     return ssl_session;\n }\n \n@@ -6195,7 +6233,7 @@ tls_set_appdata_dissector(dissector_handle_t tls_handle, packet_info *pinfo,\n         return;\n \n     conversation = find_or_create_conversation(pinfo);\n-    session = &ssl_get_session(conversation, tls_handle)->session;\n+    session = &ssl_get_session(conversation, tls_handle, pinfo->curr_proto_layer_num)->session;\n     session->app_handle = app_handle;\n }\n \n@@ -6213,7 +6251,7 @@ ssl_starttls(dissector_handle_t tls_handle, packet_info *pinfo,\n     DISSECTOR_ASSERT(app_handle);\n \n     conversation = find_or_create_conversation(pinfo);\n-    session = &ssl_get_session(conversation, tls_handle)->session;\n+    session = &ssl_get_session(conversation, tls_handle, pinfo->curr_proto_layer_num)->session;\n \n     ssl_debug_printf(\"%s: old frame %d, app_handle=%p (%s)\\n\", G_STRFUNC,\n                      session->last_nontls_frame,\n@@ -6377,6 +6415,14 @@ tls_add_packet_info(int proto, packet_info *pinfo, uint8_t curr_layer_num_ssl)\n         pi = wmem_new0(wmem_file_scope(), SslPacketInfo);\n         pi->srcport = pinfo->srcport;\n         pi->destport = pinfo->destport;\n+        conversation_t *conv = find_or_create_conversation_strat(pinfo);\n+        SslDecryptSession *ssl_session = tls_get_session(conv, proto, curr_layer_num_ssl);\n+        if (ssl_session) {\n+            /* This can also be called by the QUIC TLS1.3 handshake only\n+             * dissector. That is not associated with a session, or a stream,\n+             * and doesn't need the information for Follow or Decode As. */\n+            pi->stream = ssl_session->session.stream;\n+        }\n         p_add_proto_data(wmem_file_scope(), pinfo, proto, curr_layer_num_ssl, pi);\n     }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tls-utils.c",
+      "old_path": "epan/dissectors/packet-tls-utils.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -466,6 +466,7 @@ typedef struct {\n     TlsHsFragment *hs_fragments;    /**< Handshake records that are part of a reassembly. */\n     uint32_t srcport;        /**< Used for Decode As */\n     uint32_t destport;\n+    uint32_t stream;       /**< Used for Follow Stream */\n     int cipher;            /**< Cipher at time of Key Exchange handshake message.\n                                  Session cipher can change in renegotiation. */\n } SslPacketInfo;\n@@ -645,9 +646,21 @@ SslDecryptSession *ssl_get_session_by_cid(tvbuff_t *tvb, uint32_t offset);\n /** Retrieve a SslSession, creating it if it did not already exist.\n  * @param conversation The SSL conversation.\n  * @param tls_handle The dissector handle for SSL or DTLS.\n+ * @param curr_layer_num The current protocol layer number (for nested TLS support).\n  */\n extern SslDecryptSession *\n-ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle);\n+ssl_get_session(conversation_t *conversation, dissector_handle_t tls_handle, uint8_t curr_layer_num);\n+\n+/** Look up an existing SslDecryptSession for a conversation without creating one.\n+ * Used by functions that query session state (cipher info, ALPN, exporters, etc.)\n+ * but must not create a new session as a side effect.\n+ * @param conversation The SSL conversation (may be NULL, returns NULL in that case).\n+ * @param proto_ssl The protocol index for TLS/DTLS.\n+ * @param curr_layer_num [D]TLS layer nesting number.\n+ * @return The existing SslDecryptSession, or NULL if none is found.\n+ */\n+extern SslDecryptSession *\n+tls_get_session(conversation_t *conversation, int proto_ssl, uint8_t curr_layer_num);\n \n /** Resets the decryption parameters for the next decoder. */\n extern void\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tls-utils.h",
+      "old_path": "epan/dissectors/packet-tls-utils.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -596,20 +596,32 @@ ssl_reset_uat(void)\n static char *\n tls_follow_conv_filter(epan_dissect_t *edt _U_, packet_info *pinfo, unsigned *stream, unsigned *sub_stream _U_)\n {\n-    conversation_t *conv = find_conversation_pinfo_strat(pinfo, 0);\n-    if (!conv) {\n-        return NULL;\n-    }\n-    void *conv_data = conversation_get_proto_data(conv, proto_tls);\n-    if (conv_data == NULL) {\n-        return NULL;\n+    /* This function wants to return \"the\" TLS stream for the frame.\n+     * If there are multiple, we prefer the inner one. While edt should\n+     * be non-NULL, because the pinfo lifetime is tied to the epan_dissect_t,\n+     * edt->tree can be NULL (e.g., when called by sharkd), which makes\n+     * it impossible to use anything in the tree as opposed to pinfo. */\n+\n+    char *filter = NULL;\n+    const SslPacketInfo *pi = NULL;\n+    uint8_t max_layer_num = proto_get_layer_num(pinfo, proto_tls);\n+\n+    /* The result from proto_get_layer_num is 1-indexed, and\n+     * includes times that the TLS dissector is called for times\n+     * that represent multiple PDUs in a frame (e.g., due to TCP\n+     * segmentation) in addition to times that represent nesting.\n+     */\n+    for (uint8_t curr_layer_num = max_layer_num; curr_layer_num; --curr_layer_num) {\n+        /* The (nesting) layer number in p_get_proto_data is 0-indexed. */\n+        pi = p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, curr_layer_num - 1);\n+        if (pi) {\n+            *stream = pi->stream;\n+            filter = ws_strdup_printf(\"tls.stream eq %u\", *stream);\n+            break;\n+        }\n     }\n \n-    SslDecryptSession *ssl_session = (SslDecryptSession *)conv_data;\n-    SslSession *session = &ssl_session->session;\n-\n-    *stream = session->stream;\n-    return ws_strdup_printf(\"tls.stream eq %u\", session->stream);\n+    return filter;\n }\n \n static char *\n@@ -630,6 +642,8 @@ ssl_follow_tap_listener(void *tapdata, packet_info *pinfo, epan_dissect_t *edt _\n     /* Skip packets without decrypted payload data. */\n     if (!pi || !pi->records) return TAP_PACKET_DONT_REDRAW;\n \n+    if (follow_info->stream_id != pi->stream) return TAP_PACKET_DONT_REDRAW;\n+\n     /* Compute the packet's sender. */\n     if (follow_info->client_port == 0) {\n         follow_info->client_port = pinfo->srcport;\n@@ -821,6 +835,7 @@ dissect_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n     int                is_from_server;\n     struct tcpinfo    *tcpinfo;\n     struct tlsinfo     tlsinfo;\n+\n     /*\n      * A single packet may contain multiple TLS records. Two possible scenarios:\n      *\n@@ -830,7 +845,7 @@ dissect_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n      * To support the second case, 'curr_layer_num_ssl' is used as identifier\n      * for the current TLS layer.\n      */\n-    uint8_t            curr_layer_num_ssl = pinfo->curr_proto_layer_num;\n+    uint8_t            curr_layer_num_ssl = p_get_proto_depth(pinfo, proto_tls);\n \n     ti = NULL;\n     ssl_tree   = NULL;\n@@ -876,8 +891,7 @@ dissect_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n      */\n     conversation = find_or_create_conversation_strat(pinfo);\n \n-\n-    ssl_session_save = ssl_session = ssl_get_session(conversation, tls_handle);\n+    ssl_session_save = ssl_session = ssl_get_session(conversation, tls_handle, curr_layer_num_ssl);\n     session = &ssl_session->session;\n     is_from_server = ssl_packet_from_server(session, ssl_associations, pinfo);\n \n@@ -895,6 +909,11 @@ dissect_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n \n     ssl_debug_printf(\"  conversation = %p, ssl_session = %p\\n\", (void *)conversation, (void *)ssl_session);\n \n+    /* Increment the proto depth, so any nested TLS gets the new depth.\n+     * Make sure to decrement this when leaving the function.\n+     * (XXX - Do we need a TRY...FINALLY or CLEANUP_CB_PUSH?) */\n+    p_set_proto_depth(pinfo, proto_tls, curr_layer_num_ssl + 1);\n+\n     /* Initialize the protocol column; we'll override it later when we\n      * detect a different version or flavor of TLS (assuming we don't\n      * throw an exception before we get the chance to do so). */\n@@ -1039,11 +1058,12 @@ dissect_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n \n         /* Desegmentation return check */\n         if (need_desegmentation) {\n-          ssl_debug_printf(\"  need_desegmentation: offset = %d, reported_length_remaining = %d\\n\",\n+            ssl_debug_printf(\"  need_desegmentation: offset = %d, reported_length_remaining = %d\\n\",\n                            offset, tvb_reported_length_remaining(tvb, offset));\n-          /* Make data available to ssl_follow_tap_listener */\n-          tap_queue_packet(tls_follow_tap, pinfo, p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, curr_layer_num_ssl));\n-          return tvb_captured_length(tvb);\n+            /* Make data available to ssl_follow_tap_listener */\n+            tap_queue_packet(tls_follow_tap, pinfo, p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, curr_layer_num_ssl));\n+            p_set_proto_depth(pinfo, proto_tls, curr_layer_num_ssl);\n+            return tvb_captured_length(tvb);\n         }\n     }\n \n@@ -1166,6 +1186,7 @@ dissect_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n     /* Make data available to ssl_follow_tap_listener */\n     tap_queue_packet(tls_follow_tap, pinfo, p_get_proto_data(wmem_file_scope(), pinfo, proto_tls, curr_layer_num_ssl));\n \n+    p_set_proto_depth(pinfo, proto_tls, curr_layer_num_ssl);\n     return ret;\n }\n \n@@ -1199,10 +1220,12 @@ dissect_tls13_handshake(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi\n      */\n     unsigned           record_id = GPOINTER_TO_UINT(data);\n \n+    uint8_t curr_layer_num_ssl = p_get_proto_depth(pinfo, proto_tls);\n+\n     ssl_debug_printf(\"\\n%s enter frame #%u (%s)\\n\", G_STRFUNC, pinfo->num, (pinfo->fd->visited)?\"already visited\":\"first time\");\n \n     conversation = find_or_create_conversation(pinfo);\n-    ssl_session = ssl_get_session(conversation, tls13_handshake_handle);\n+    ssl_session = ssl_get_session(conversation, tls13_handshake_handle, curr_layer_num_ssl);\n     session = &ssl_session->session;\n     is_from_server = ssl_packet_from_server(session, ssl_associations, pinfo);\n     if (session->version == SSL_VER_UNKNOWN) {\n@@ -4057,7 +4080,10 @@ void ssl_set_master_secret(uint32_t frame_num, address *addr_srv, address *addr_\n         conversation = conversation_new(frame_num, addr_srv, addr_cli, conversation_pt_to_conversation_type(ptype), port_srv, port_cli, 0);\n         ssl_debug_printf(\"  new conversation = %p created\\n\", (void *)conversation);\n     }\n-    ssl = ssl_get_session(conversation, tls_handle);\n+    /* XXX - This need to be updated to handle tunneling. This API call was\n+     * only ever used by external dissectors and plugins. For now just support\n+     * the outer TLS layer. */\n+    ssl = ssl_get_session(conversation, tls_handle, 0);\n \n     ssl_debug_printf(\"  conversation = %p, ssl_session = %p\\n\", (void *)conversation, (void *)ssl);\n \n@@ -4330,12 +4356,11 @@ tls_get_cipher_info(packet_info *pinfo, uint16_t cipher_suite, int *cipher_algo,\n             return false;\n         }\n \n-        void *conv_data = conversation_get_proto_data(conv, proto_tls);\n-        if (conv_data == NULL) {\n+        SslDecryptSession *ssl_session = tls_get_session(conv, proto_tls, p_get_proto_depth(pinfo, proto_tls));\n+        if (ssl_session == NULL) {\n             return false;\n         }\n \n-        SslDecryptSession *ssl_session = (SslDecryptSession *)conv_data;\n         cipher_suite = ssl_session->session.cipher;\n     }\n     const SslCipherSuite *suite = ssl_find_cipher(cipher_suite);\n@@ -4394,7 +4419,7 @@ tls13_get_quic_secret(packet_info *pinfo, bool is_from_server, int type, unsigne\n         return 0;\n     }\n \n-    SslDecryptSession *ssl = (SslDecryptSession *)conversation_get_proto_data(conv, proto_tls);\n+    SslDecryptSession *ssl = tls_get_session(conv, proto_tls, p_get_proto_depth(pinfo, proto_tls));\n     if (ssl == NULL) {\n         return 0;\n     }\n@@ -4465,7 +4490,7 @@ tls_get_alpn(packet_info *pinfo)\n         return NULL;\n     }\n \n-    SslDecryptSession *session = (SslDecryptSession *)conversation_get_proto_data(conv, proto_tls);\n+    SslDecryptSession *session = tls_get_session(conv, proto_tls, p_get_proto_depth(pinfo, proto_tls));\n     if (session == NULL) {\n         return NULL;\n     }\n@@ -4481,7 +4506,7 @@ tls_get_client_alpn(packet_info *pinfo)\n         return NULL;\n     }\n \n-    SslDecryptSession *session = (SslDecryptSession *)conversation_get_proto_data(conv, proto_tls);\n+    SslDecryptSession *session = tls_get_session(conv, proto_tls, p_get_proto_depth(pinfo, proto_tls));\n     if (session == NULL) {\n         return NULL;\n     }\n@@ -4563,12 +4588,11 @@ tls13_exporter(packet_info *pinfo, bool is_early,\n         return false;\n     }\n \n-    void *conv_data = conversation_get_proto_data(conv, proto_tls);\n-    if (conv_data == NULL) {\n+    SslDecryptSession *ssl_session = tls_get_session(conv, proto_tls, p_get_proto_depth(pinfo, proto_tls));\n+    if (ssl_session == NULL) {\n         return false;\n     }\n \n-    SslDecryptSession *ssl_session = (SslDecryptSession *)conv_data;\n     ssl_load_keyfile(ssl_options.keylog_filename, &ssl_keylog_file, &ssl_master_key_map);\n     key_map = is_early ? ssl_master_key_map.tls13_early_exporter\n                        : ssl_master_key_map.tls13_exporter;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tls.c",
+      "old_path": "epan/dissectors/packet-tls.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -68,6 +68,7 @@ typedef struct _follow_info {\n     address         client_ip;\n     address         server_ip;\n     void*           gui_data;\n+    uint64_t        stream_id;\n     uint64_t        substream_id;  /**< Sub-stream; used only by HTTP2 and QUIC */\n } follow_info_t;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/follow.h",
+      "old_path": "epan/follow.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -435,6 +435,7 @@ follow_arg_filter(const char **opt_argp, follow_info_t *follow_info)\n       ((*opt_argp)[len] == 0 || (*opt_argp)[len] == ','))\n   {\n     *opt_argp += len;\n+    follow_info->stream_id = cli_follow_info->stream_index;\n \n     /* if it's HTTP2 or QUIC protocol we should read substream id otherwise it's a range parameter from follow_arg_range */\n     if (cli_follow_info->sub_stream_index == -1 && sscanf(*opt_argp, \",%d%n\", &cli_follow_info->sub_stream_index, &len) == 1 &&\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/cli/tap-follow.c",
+      "old_path": "ui/cli/tap-follow.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1063,6 +1063,7 @@ bool FollowStreamDialog::follow(QString previous_filter, bool use_stream_index,\n         filter_out_filter_ = QStringLiteral(\"!(%1)\").arg(follow_filter);\n     }\n \n+    follow_info_.stream_id = stream_num;\n     follow_info_.substream_id = sub_stream_num;\n \n     /* data will be passed via tap callback*/\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/follow_stream_dialog.cpp",
+      "old_path": "ui/qt/follow_stream_dialog.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1803026741,
+      "head_commit_sha": "c164190aa353487607618be56f4f188d3089d2fd",
+      "base_commit_sha": "cc29fbe6f8dd82eab472e3da5690c14146ccac4f",
+      "start_commit_sha": "cc29fbe6f8dd82eab472e3da5690c14146ccac4f",
+      "created_at": "2026-05-16T17:53:44.790Z",
+      "merge_request_id": 471633921,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": "c2d2579360ec8686091051fb2c6da42a32785b8c"
+    },
+    {
+      "id": 1791044105,
+      "head_commit_sha": "789537755c8b89d0f5ebfe03bda038dd04900d00",
+      "base_commit_sha": "98cf2bcc750c736e62edcbc1931908ec9583b6ff",
+      "start_commit_sha": "8dc3d6457212c04b5ba2a65ff0f02c653099de1c",
+      "created_at": "2026-05-09T03:04:23.339Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "5743aa9a68ec4cb95b3e1ce7808da8f64e91f679"
+    },
+    {
+      "id": 1790965285,
+      "head_commit_sha": "c4088292a905b7296e935fefb5406a0064109f59",
+      "base_commit_sha": "98cf2bcc750c736e62edcbc1931908ec9583b6ff",
+      "start_commit_sha": "98cf2bcc750c736e62edcbc1931908ec9583b6ff",
+      "created_at": "2026-05-09T00:05:14.387Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "f5c2f2e2ec619d39f8951fe0e9066c300bb601ff"
+    },
+    {
+      "id": 1786482476,
+      "head_commit_sha": "3dc5d21957504ca51b9db933760d9412ab0b17ee",
+      "base_commit_sha": "0c3a37e8eaeb17a63a602eb8b46ac78cda554754",
+      "start_commit_sha": "0c3a37e8eaeb17a63a602eb8b46ac78cda554754",
+      "created_at": "2026-05-06T20:06:35.833Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "f5c2f2e2ec619d39f8951fe0e9066c300bb601ff"
+    },
+    {
+      "id": 1754550098,
+      "head_commit_sha": "d499f1498ffdac42da46a33afd32a9b64b0216bd",
+      "base_commit_sha": "ddee59dc0ffb922031d544420118a6ba5609b41d",
+      "start_commit_sha": "76283ad0a8082de41f74c9e40cf988abff049798",
+      "created_at": "2026-04-16T16:48:58.523Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "f5c2f2e2ec619d39f8951fe0e9066c300bb601ff"
+    },
+    {
+      "id": 1748861559,
+      "head_commit_sha": "143611952dc04243ace2c922294ee11e936fe0e9",
+      "base_commit_sha": "ddee59dc0ffb922031d544420118a6ba5609b41d",
+      "start_commit_sha": "8e3303b3d2d1697c6255a6f92bcab4e7abcf367d",
+      "created_at": "2026-04-14T04:34:40.906Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "7e01246b2b2f12fec9f03fb747428648eea5d58d"
+    },
+    {
+      "id": 1746916360,
+      "head_commit_sha": "44e79cc7d794cbdd9ff6f454217add1180b441e3",
+      "base_commit_sha": "450c9f457dbebfc375ea302ac8ab600d5fed93e4",
+      "start_commit_sha": "450c9f457dbebfc375ea302ac8ab600d5fed93e4",
+      "created_at": "2026-04-13T06:28:54.467Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "efd757dbaaa5198d4ee5986d8ee56d4608fbc627"
+    },
+    {
+      "id": 1746907026,
+      "head_commit_sha": "9c6e08dea48846f0feac69b30fb58b86ed1b2564",
+      "base_commit_sha": "ddee59dc0ffb922031d544420118a6ba5609b41d",
+      "start_commit_sha": "450c9f457dbebfc375ea302ac8ab600d5fed93e4",
+      "created_at": "2026-04-13T06:20:12.148Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "efd757dbaaa5198d4ee5986d8ee56d4608fbc627"
+    },
+    {
+      "id": 1740498923,
+      "head_commit_sha": "661675f75936dd93d77c1b7fc086d956d2ef928e",
+      "base_commit_sha": "ddee59dc0ffb922031d544420118a6ba5609b41d",
+      "start_commit_sha": "ddee59dc0ffb922031d544420118a6ba5609b41d",
+      "created_at": "2026-04-08T11:05:12.916Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "eca62f4c9870fb44f1f6311d0809dd768e566875"
+    },
+    {
+      "id": 1740496517,
+      "head_commit_sha": "05f0951f42ddaf04b2953d5a6b22d14e2f0bb1ca",
+      "base_commit_sha": "62e26a51cd7afe93b673602b9ab6e954180c91e5",
+      "start_commit_sha": "ddee59dc0ffb922031d544420118a6ba5609b41d",
+      "created_at": "2026-04-08T11:03:55.775Z",
+      "merge_request_id": 471633921,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "eca62f4c9870fb44f1f6311d0809dd768e566875"
+    }
+  ]
+}

@@ -1,0 +1,1026 @@
+{
+  "id": 490160301,
+  "iid": 25149,
+  "project_id": 7898047,
+  "title": "NAS-5GS: Parse URSP Time window, PDU session pair ID, and RSN descriptors",
+  "description": "## Summary\n\nAdd parsing for three route selection descriptor component types in URSP rules that were previously showing \"IE not dissected yet\".\n\n## Problem\n\nThe route selection descriptor parser (`de_nas_5gs_ursp_r_sel_desc`) is missing `case` handlers for types 0x80, 0x82, and 0x83. When any of these types is encountered, the `default` branch calls `proto_tree_add_expert_remaining()` which displays \"IE not dissected yet\" and abandons parsing of all subsequent components in the same RSD contents block.\n\n## Changes\n\nAdded three new cases to the RSD switch statement:\n\n- **0x80 (Time window)**: 16 bytes total — start time (8 bytes) + stop time (8 bytes), each as UNIX epoch seconds with 1/2^32 fractional seconds (`ENC_TIME_RTPS`)\n- **0x82 (PDU session pair ID)**: 1 byte identifier value\n- **0x83 (RSN)**: 1 byte value (0=v1, 1=v2)\n\nAlso added 4 new `hf` field declarations and registrations.\n\n## Specification Reference\n\n3GPP TS 24.526 Section 5.2:\n\n> For \"Time window type\", the route selection descriptor component value field shall be encoded as a sequence of a four octet start time field, a four octet start time fraction field, a four octet stop time field, and a four octet stop time fraction field.\n\n> For \"PDU session pair ID type\", the route selection descriptor component value field shall be encoded as one octet which specifies the PDU session pair identifier value.\n\n> For \"RSN type\", the route selection descriptor component value field shall be encoded as one octet which specifies the RSN value.\n\n## Testing\n\nVerified with pcap files:\n\n- **Time window (0x80)**\n  - Before: `IE not dissected yet`\n  - After: `Start time: Dec 31, 2025 15:00:00 UTC` / `Stop time: Dec 31, 2026 14:59:59 UTC`\n\n- **PDU session pair ID (0x82)**\n  - Before: `IE not dissected yet`\n  - After: `PDU session pair ID: 1`\n\n- **RSN (0x83)**\n  - Before: `IE not dissected yet`\n  - After: `RSN: 0`\n\nReproduction pcaps:\n- [RSD_0x80_time_window.pcap](https://gitlab.com/-/project/82634231/uploads/9b019d111dad16c36b7b6f58356ad724/RSD_0x80_time_window.pcap)\n- [RSD_0x82_PDU_session_pair_ID.pcap](https://gitlab.com/-/project/82634231/uploads/75a2c33a7c6e865f24d12dd2c9fb7a8c/RSD_0x82_PDU_session_pair_ID.pcap)\n- [RSD_0x83_RSN.pcap](https://gitlab.com/-/project/82634231/uploads/6a14a946963bd4e1ad1551d8322becf2/RSD_0x83_RSN.pcap)",
+  "state": "merged",
+  "created_at": "2026-05-29T08:13:44.190Z",
+  "updated_at": "2026-06-04T04:52:39.489Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-06-04T04:52:39.513Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "nas-5gs-ursp-time-window",
+  "user_notes_count": 5,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 38615586,
+    "username": "joostone-ahn",
+    "public_email": "",
+    "name": "Juseok Ahn",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+    "web_url": "https://gitlab.com/joostone-ahn"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82634231,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "21488bb5d67e2f4c71439b0200f4de92f626bd44",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-29T08:13:50.401Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25149",
+  "references": {
+    "short": "!25149",
+    "relative": "!25149",
+    "full": "wireshark/wireshark!25149"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25149",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-06-04T04:28:18.878Z",
+  "latest_build_finished_at": "2026-06-04T04:52:22.569Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2575576786,
+    "iid": 104268,
+    "project_id": 7898047,
+    "sha": "d524a95aa635bc96a82a131396c075c75764d11b",
+    "ref": "refs/merge-requests/25149/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-04T04:28:17.758Z",
+    "updated_at": "2026-06-04T04:52:22.580Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2575576786"
+  },
+  "head_pipeline": {
+    "id": 2575576786,
+    "iid": 104268,
+    "project_id": 7898047,
+    "sha": "d524a95aa635bc96a82a131396c075c75764d11b",
+    "ref": "refs/merge-requests/25149/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-04T04:28:17.758Z",
+    "updated_at": "2026-06-04T04:52:22.580Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2575576786",
+    "before_sha": "d524a95aa635bc96a82a131396c075c75764d11b",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-06-04T04:28:18.878Z",
+    "finished_at": "2026-06-04T04:52:22.569Z",
+    "committed_at": null,
+    "duration": 1443,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2575576786",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "25603cece100580a8e744b691d573016a331734a",
+    "head_sha": "21488bb5d67e2f4c71439b0200f4de92f626bd44",
+    "start_sha": "25603cece100580a8e744b691d573016a331734a"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "bd7407971e39c23afb3582f5b9d335c0fa179c16",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3398105135,
+          "type": null,
+          "body": "Reproduction pcap file: [RSD_0x82_PDU_session_pair_ID.pcap](/uploads/d8dea4a0bc19449f728c0a7e7d53c017/RSD_0x82_PDU_session_pair_ID.pcap)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-05-29T08:14:04.154Z",
+          "updated_at": "2026-05-29T08:14:04.154Z",
+          "system": false,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "30d0798ef860c2bfd278f91bf6a62685348956f0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3398105626,
+          "type": null,
+          "body": "Reproduction pcap file: [RSD_0x83_RSN.pcap](/uploads/cd59481e2ffe06faac32d3cfcd8c180b/RSD_0x83_RSN.pcap)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-05-29T08:14:12.767Z",
+          "updated_at": "2026-05-29T08:14:12.767Z",
+          "system": false,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2b176242ff14ed13726ee34ef5089a77f3dc078b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3398133488,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-05-29T08:20:59.174Z",
+          "updated_at": "2026-05-29T08:20:59.179Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "da486e893d5f1b0ef9f21d132f0ba3144e2731a9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3398151057,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-05-29T08:25:45.924Z",
+          "updated_at": "2026-05-29T08:25:45.928Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5394dd161524224a788931b00a1654bc44e66c24",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3403307242,
+          "type": null,
+          "body": "added 19 commits\n\n<ul><li>9207932e...38685448 - 18 commits from branch <code>wireshark:master</code></li><li>5e4d6ec8 - NAS-5GS: Parse URSP Time window, PDU session pair ID, and RSN descriptors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25149/diffs?diff_id=1826531761&start_sha=9207932e805e9ab62901fde783699910e3eb9615)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-05-31T14:04:47.699Z",
+          "updated_at": "2026-05-31T14:04:47.703Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "99b52ff65a5a7d38e7d4058dffa20f42e585b278",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3409808322,
+          "type": "DiffNote",
+          "body": "From TS 24.501 Table 9.11.4.33.1:\n\n- 0x00 = v1\n- 0x01 = v2\n\nAdding VALS(nas_5gs_sm_pdu_session_rsn_vals) will correct that",
+          "author": {
+            "id": 6524193,
+            "username": "oakimk",
+            "public_email": "",
+            "name": "Joakim Karlsson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6524193/avatar.png?v=1787702414",
+            "web_url": "https://gitlab.com/oakimk"
+          },
+          "created_at": "2026-06-02T08:44:34.150Z",
+          "updated_at": "2026-06-03T08:02:04.256Z",
+          "system": false,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "start_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "head_sha": "5e4d6ec83019c1ef10b15fddfa0f12d106aead54",
+            "old_path": "epan/dissectors/packet-nas_5gs.c",
+            "new_path": "epan/dissectors/packet-nas_5gs.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 16272,
+            "line_range": {
+              "start": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_16225_16272",
+                "type": "new",
+                "old_line": null,
+                "new_line": 16272
+              },
+              "end": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_16225_16272",
+                "type": "new",
+                "old_line": null,
+                "new_line": 16272
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-06-03T08:02:04.256Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        },
+        {
+          "id": 3411358764,
+          "type": "DiffNote",
+          "body": "changed this line in [version 4 of the diff](/wireshark/wireshark/-/merge_requests/25149/diffs?diff_id=1830273002&start_sha=5e4d6ec83019c1ef10b15fddfa0f12d106aead54#43e3f477f992367871c22b1456eca55763d47a47_16272_16272)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-02T14:07:44.885Z",
+          "updated_at": "2026-06-02T14:07:44.885Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "start_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "head_sha": "5e4d6ec83019c1ef10b15fddfa0f12d106aead54",
+            "old_path": "epan/dissectors/packet-nas_5gs.c",
+            "new_path": "epan/dissectors/packet-nas_5gs.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 16272,
+            "line_range": {
+              "start": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_16225_16272",
+                "type": "new",
+                "old_line": null,
+                "new_line": 16272
+              },
+              "end": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_16225_16272",
+                "type": "new",
+                "old_line": null,
+                "new_line": 16272
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        },
+        {
+          "id": 3411361845,
+          "type": "DiffNote",
+          "body": "Good catch, fixed. Added `VALS(nas_5gs_sm_pdu_session_rsn_vals)` to the RSN field.",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-02T14:08:15.664Z",
+          "updated_at": "2026-06-03T08:02:04.256Z",
+          "system": false,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "start_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+            "head_sha": "5e4d6ec83019c1ef10b15fddfa0f12d106aead54",
+            "old_path": "epan/dissectors/packet-nas_5gs.c",
+            "new_path": "epan/dissectors/packet-nas_5gs.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 16272,
+            "line_range": {
+              "start": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_16225_16272",
+                "type": "new",
+                "old_line": null,
+                "new_line": 16272
+              },
+              "end": {
+                "line_code": "43e3f477f992367871c22b1456eca55763d47a47_16225_16272",
+                "type": "new",
+                "old_line": null,
+                "new_line": 16272
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-06-03T08:02:04.256Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5fd319f6c425db2cf44715166d89fb5de0f1ae10",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3411358851,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>d9fd76d8 - NAS-5GS: Add VALS(nas_5gs_sm_pdu_session_rsn_vals) to RSN field</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25149/diffs?diff_id=1830273002&start_sha=5e4d6ec83019c1ef10b15fddfa0f12d106aead54)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-02T14:07:45.580Z",
+          "updated_at": "2026-06-02T14:07:45.584Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "282f0d71070941f37ed090d35141b77905b6da93",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3415003514,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-03T08:02:04.278Z",
+          "updated_at": "2026-06-03T08:02:04.282Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ab73db8839e734342d5da19a7d8d34d07948d945",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3415006218,
+          "type": null,
+          "body": "Needs local rebase.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-03T08:02:48.374Z",
+          "updated_at": "2026-06-03T08:02:48.374Z",
+          "system": false,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9ffb9ee9ba3e677dd9a3866b5ce4210ae79a71ea",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3415143282,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6524193,
+            "username": "oakimk",
+            "public_email": "",
+            "name": "Joakim Karlsson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6524193/avatar.png?v=1787702414",
+            "web_url": "https://gitlab.com/oakimk"
+          },
+          "created_at": "2026-06-03T08:31:43.855Z",
+          "updated_at": "2026-06-03T08:31:43.868Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2a978f81bc494b255e12bdbcccf1511895ddeddb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3416976310,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>de8f0168 - Rebase: re-apply Time window/PDU pair ID/RSN changes on current master</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25149/diffs?diff_id=1832630665&start_sha=d9fd76d82703143acea350d89e676612637d1505)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T14:32:46.712Z",
+          "updated_at": "2026-06-03T14:32:46.716Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "656fa2195c191b49d0328ec476c9cf7efdf1b980",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3416977941,
+          "type": null,
+          "body": "reset approvals from @oakimk by pushing to the branch",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T14:33:03.015Z",
+          "updated_at": "2026-06-03T14:33:03.048Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "96652288fa3b3ee0728d2d563d84b748af3dc695",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3417351846,
+          "type": null,
+          "body": "added 50 commits\n\n<ul><li>de8f0168...390d00de - 49 commits from branch <code>wireshark:master</code></li><li>b544afaa - NAS-5GS: Parse URSP Time window, PDU session pair ID, and RSN descriptors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25149/diffs?diff_id=1832782515&start_sha=de8f016895c16ef1c6bbb14b3ddb46dcd586f6eb)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T15:27:54.190Z",
+          "updated_at": "2026-06-03T15:27:54.200Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "997e6fb2fe7d594a413695ea80901f88743cf8f1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3417475424,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6524193,
+            "username": "oakimk",
+            "public_email": "",
+            "name": "Joakim Karlsson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6524193/avatar.png?v=1787702414",
+            "web_url": "https://gitlab.com/oakimk"
+          },
+          "created_at": "2026-06-03T15:52:11.477Z",
+          "updated_at": "2026-06-03T15:52:11.547Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "46bf050b999ca9470a7d93da4c5e6b9db449b8ec",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3417487719,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>b544afaa...d76102fa - 2 commits from branch <code>wireshark:master</code></li><li>6f77c1f5 - NAS-5GS: Parse URSP Time window, PDU session pair ID, and RSN descriptors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25149/diffs?diff_id=1832846145&start_sha=b544afaa2a24b8962b0cd12ee8739ce2c6037e46)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T15:54:51.598Z",
+          "updated_at": "2026-06-03T15:54:51.602Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ed72acb2e019023466ac2c8e80641df932e66bae",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3417785024,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>25603cec - 1 commit from branch <code>wireshark:master</code></li><li>21488bb5 - NAS-5GS: Parse URSP Time window, PDU session pair ID, and RSN descriptors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25149/diffs?diff_id=1832977427&start_sha=6f77c1f5219c8c3b34f355f78a5252045e18f5cc)",
+          "author": {
+            "id": 38615586,
+            "username": "joostone-ahn",
+            "public_email": "",
+            "name": "Juseok Ahn",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/7e741e7ce1b27c81f6593e8e13456987f3001744baf4475e6def908ef0faacc2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/joostone-ahn"
+          },
+          "created_at": "2026-06-03T16:59:27.960Z",
+          "updated_at": "2026-06-03T16:59:27.964Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "89a6e89399e79b25b2c43f3181d97a681501ed48",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3420577680,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-04T04:28:16.504Z",
+          "updated_at": "2026-06-04T04:28:16.506Z",
+          "system": true,
+          "noteable_id": 490160301,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25149,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -868,6 +868,10 @@ static int hf_nas_5gs_ursp_r_sel_desc_loc_nr_cell_id;\n static int hf_nas_5gs_ursp_r_sel_desc_loc_eutra_cell_id;\n static int hf_nas_5gs_ursp_r_sel_desc_loc_gnb_id;\n static int hf_nas_5gs_ursp_r_sel_desc_loc_tai_len;\n+static int hf_nas_5gs_ursp_r_sel_desc_time_win_start;\n+static int hf_nas_5gs_ursp_r_sel_desc_time_win_stop;\n+static int hf_nas_5gs_ursp_r_sel_desc_pdu_sess_pair_id;\n+static int hf_nas_5gs_ursp_r_sel_desc_rsn;\n static int hf_nas_5gs_dnn_len;\n static int hf_nas_5gs_upsi_sublist_len;\n static int hf_nas_5gs_upsc;\n@@ -10830,6 +10834,32 @@ de_nas_5gs_ursp_r_sel_desc(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree)\n             }\n             break;\n         }\n+        case 0x80: /* Time window */\n+            /* For \"Time window type\", the route selection descriptor component value field\n+               shall be encoded as a sequence of a four octet start time field,\n+               a four octet start time fraction field, a four octet stop time field,\n+               and a four octet stop time fraction field.\n+               The time values use UNIX epoch with 1/2^32 fractional seconds.\n+               TS 24.526 Section 5.2 */\n+            proto_tree_add_item(tree, hf_nas_5gs_ursp_r_sel_desc_time_win_start, tvb, offset, 8, ENC_TIME_RTPS | ENC_BIG_ENDIAN);\n+            offset += 8;\n+            proto_tree_add_item(tree, hf_nas_5gs_ursp_r_sel_desc_time_win_stop, tvb, offset, 8, ENC_TIME_RTPS | ENC_BIG_ENDIAN);\n+            offset += 8;\n+            break;\n+        case 0x82: /* PDU session pair ID */\n+            /* For \"PDU session pair ID type\", the route selection descriptor component\n+               value field shall be encoded as one octet which specifies the PDU session\n+               pair identifier value. TS 24.526 Section 5.2 */\n+            proto_tree_add_item(tree, hf_nas_5gs_ursp_r_sel_desc_pdu_sess_pair_id, tvb, offset, 1, ENC_BIG_ENDIAN);\n+            offset++;\n+            break;\n+        case 0x83: /* RSN */\n+            /* For \"RSN type\", the route selection descriptor component value field\n+               shall be encoded as one octet which specifies the RSN value.\n+               TS 24.526 Section 5.2 */\n+            proto_tree_add_item(tree, hf_nas_5gs_ursp_r_sel_desc_rsn, tvb, offset, 1, ENC_BIG_ENDIAN);\n+            offset++;\n+            break;\n         default:\n             proto_tree_add_expert_remaining(tree, pinfo, &ei_nas_5gs_ie_not_dis, tvb, offset);\n             return;\n@@ -16369,6 +16399,26 @@ proto_register_nas_5gs(void)\n             FT_UINT8, BASE_DEC, NULL, 0x0,\n             NULL, HFILL }\n         },\n+        { &hf_nas_5gs_ursp_r_sel_desc_time_win_start,\n+        { \"Start time\", \"nas-5gs.ursp.r_sel_desc.time_window.start\",\n+            FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, NULL, 0x0,\n+            NULL, HFILL }\n+        },\n+        { &hf_nas_5gs_ursp_r_sel_desc_time_win_stop,\n+        { \"Stop time\", \"nas-5gs.ursp.r_sel_desc.time_window.stop\",\n+            FT_ABSOLUTE_TIME, ABSOLUTE_TIME_UTC, NULL, 0x0,\n+            NULL, HFILL }\n+        },\n+        { &hf_nas_5gs_ursp_r_sel_desc_pdu_sess_pair_id,\n+        { \"PDU session pair ID\", \"nas-5gs.ursp.r_sel_desc.pdu_session_pair_id\",\n+            FT_UINT8, BASE_DEC, NULL, 0x0,\n+            NULL, HFILL }\n+        },\n+        { &hf_nas_5gs_ursp_r_sel_desc_rsn,\n+        { \"RSN\", \"nas-5gs.ursp.r_sel_desc.rsn\",\n+            FT_UINT8, BASE_DEC, VALS(nas_5gs_sm_pdu_session_rsn_vals), 0x0,\n+            NULL, HFILL }\n+        },\n         { &hf_nas_5gs_dnn_len,\n         { \"Length\", \"nas-5gs.dnn_len\",\n             FT_UINT8, BASE_DEC, NULL, 0x0,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-nas_5gs.c",
+      "old_path": "epan/dissectors/packet-nas_5gs.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1832977427,
+      "head_commit_sha": "21488bb5d67e2f4c71439b0200f4de92f626bd44",
+      "base_commit_sha": "25603cece100580a8e744b691d573016a331734a",
+      "start_commit_sha": "25603cece100580a8e744b691d573016a331734a",
+      "created_at": "2026-06-03T16:59:27.117Z",
+      "merge_request_id": 490160301,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "26072d06e2f722109cd63e11c25851c1206f0be8"
+    },
+    {
+      "id": 1832846145,
+      "head_commit_sha": "6f77c1f5219c8c3b34f355f78a5252045e18f5cc",
+      "base_commit_sha": "d76102fac2f23ad928a5219a9b46c15271710692",
+      "start_commit_sha": "d76102fac2f23ad928a5219a9b46c15271710692",
+      "created_at": "2026-06-03T15:54:47.331Z",
+      "merge_request_id": 490160301,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "26072d06e2f722109cd63e11c25851c1206f0be8"
+    },
+    {
+      "id": 1832782515,
+      "head_commit_sha": "b544afaa2a24b8962b0cd12ee8739ce2c6037e46",
+      "base_commit_sha": "390d00de390710cd7980c80b13a1b3c894f6bd86",
+      "start_commit_sha": "7263aa9b42f81952a6511ffcdf56ab0a7f302e20",
+      "created_at": "2026-06-03T15:27:49.093Z",
+      "merge_request_id": 490160301,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "26072d06e2f722109cd63e11c25851c1206f0be8"
+    },
+    {
+      "id": 1832630665,
+      "head_commit_sha": "de8f016895c16ef1c6bbb14b3ddb46dcd586f6eb",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "390d00de390710cd7980c80b13a1b3c894f6bd86",
+      "created_at": "2026-06-03T14:32:45.927Z",
+      "merge_request_id": 490160301,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "30b906e42a5cddc1165e690fd1fc2b00b773e0ea"
+    },
+    {
+      "id": 1830273002,
+      "head_commit_sha": "d9fd76d82703143acea350d89e676612637d1505",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "5e0906832593f34f862dbe0d24d5e7d6c9d757d7",
+      "created_at": "2026-06-02T14:07:43.693Z",
+      "merge_request_id": 490160301,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "1a88b3bacd83cb2d06c6d4ac58872e6172664a8d"
+    },
+    {
+      "id": 1826531761,
+      "head_commit_sha": "5e4d6ec83019c1ef10b15fddfa0f12d106aead54",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "created_at": "2026-05-31T14:04:46.930Z",
+      "merge_request_id": 490160301,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "f131457e60d5bde45dd6c08ae03daa6b3b3fd37c"
+    },
+    {
+      "id": 1826531748,
+      "head_commit_sha": "5e4d6ec83019c1ef10b15fddfa0f12d106aead54",
+      "base_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "start_commit_sha": "386854489aa6b0f008088815c89571c68b80fa5a",
+      "created_at": "2026-05-31T14:04:45.705Z",
+      "merge_request_id": 490160301,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "f131457e60d5bde45dd6c08ae03daa6b3b3fd37c"
+    },
+    {
+      "id": 1824372498,
+      "head_commit_sha": "9207932e805e9ab62901fde783699910e3eb9615",
+      "base_commit_sha": "37675811608d4ca1bc1cb68cdd43317d6f733d19",
+      "start_commit_sha": "37675811608d4ca1bc1cb68cdd43317d6f733d19",
+      "created_at": "2026-05-29T08:13:47.572Z",
+      "merge_request_id": 490160301,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "f131457e60d5bde45dd6c08ae03daa6b3b3fd37c"
+    }
+  ]
+}

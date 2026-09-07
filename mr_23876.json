@@ -1,0 +1,300 @@
+{
+  "id": 463386360,
+  "iid": 23876,
+  "project_id": 7898047,
+  "title": "editcap: Free the wtap_rec (and thus its buffer) on exit",
+  "description": "Call wtap_rec_cleanup() instead of wtap_rec_reset() when\nexiting, so that it gets called in the error path, instead\nof only calling it when there is no error.\n\nOtherwise ASAN/LSAN will complain about leaks when there are\nerrors:\n\n```\n==402786==ERROR: LeakSanitizer: detected memory leaks\n\nDirect leak of 1051648 byte(s) in 1 object(s) allocated from:\n    #0 0x55fb9d09e240 in realloc (/home/johnthacker/wireshark-qt6-clang-build/run/editcap+0xa7240) (BuildId: edeaa1c28aa59d5605e83520b5a5f1fcef5b250a)\n    #1 0x7fcea622ab0a in g_realloc (/lib64/libglib-2.0.so.0+0x48b0a) (BuildId: 2932f63ee7c53ae67d9b0b3ff877ece14c13edd5)\n    #2 0x7fcea6365968 in ws_buffer_assure_space /home/johnthacker/wireshark/wsutil/buffer.c:98:27\n    #3 0x7fcea683c609 in wtap_full_file_read_file /home/johnthacker/wireshark/wiretap/wtap.c:2140:3\n    #4 0x7fcea683c24d in wtap_full_file_read /home/johnthacker/wireshark/wiretap/wtap.c:2179:9\n    #5 0x7fcea683a8ad in wtap_read /home/johnthacker/wireshark/wiretap/wtap.c:1862:7\n    #6 0x55fb9d0e718b in main /home/johnthacker/wireshark/editcap.c:2219:12\n    #7 0x7fcea5efd5b4 in __libc_start_call_main (/lib64/libc.so.6+0x35b4) (BuildId: ff0267465bc3d76e21003b3bc5598fd5ee63e261)\n    #8 0x7fcea5efd667 in __libc_start_main@GLIBC_2.2.5 (/lib64/libc.so.6+0x3667) (BuildId: ff0267465bc3d76e21003b3bc5598fd5ee63e261)\n    #9 0x55fb9cff8944 in _start (/home/johnthacker/wireshark-qt6-clang-build/run/editcap+0x1944) (BuildId: edeaa1c28aa59d5605e83520b5a5f1fcef5b250a)\n\nDirect leak of 2048 byte(s) in 1 object(s) allocated from:\n    #0 0x55fb9d09de38 in malloc (/home/johnthacker/wireshark-qt6-clang-build/run/editcap+0xa6e38) (BuildId: edeaa1c28aa59d5605e83520b5a5f1fcef5b250a)\n    #1 0x7fcea6229c69 in g_malloc (/lib64/libglib-2.0.so.0+0x47c69) (BuildId: 2932f63ee7c53ae67d9b0b3ff877ece14c13edd5)\n    #2 0x7fcea63650cc in ws_buffer_init /home/johnthacker/wireshark/wsutil/buffer.c:33:29\n    #3 0x7fcea683b65b in wtap_rec_init /home/johnthacker/wireshark/wiretap/wtap.c:2001:2\n    #4 0x55fb9d0e7163 in main /home/johnthacker/wireshark/editcap.c:2218:5\n    #5 0x7fcea5efd5b4 in __libc_start_call_main (/lib64/libc.so.6+0x35b4) (BuildId: ff0267465bc3d76e21003b3bc5598fd5ee63e261)\n    #6 0x7fcea5efd667 in __libc_start_main@GLIBC_2.2.5 (/lib64/libc.so.6+0x3667) (BuildId: ff0267465bc3d76e21003b3bc5598fd5ee63e261)\n    #7 0x55fb9cff8944 in _start (/home/johnthacker/wireshark-qt6-clang-build/run/editcap+0x1944) (BuildId: edeaa1c28aa59d5605e83520b5a5f1fcef5b250a)\n\nSUMMARY: AddressSanitizer: 1053696 byte(s) leaked in 2 allocation(s).\n```\n\nAI-Assisted: no",
+  "state": "merged",
+  "created_at": "2026-03-12T00:07:54.748Z",
+  "updated_at": "2026-03-12T01:51:53.998Z",
+  "merged_by": {
+    "id": 8399509,
+    "username": "mmann78",
+    "public_email": "",
+    "name": "Michael Mann",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+    "web_url": "https://gitlab.com/mmann78"
+  },
+  "merge_user": {
+    "id": 8399509,
+    "username": "mmann78",
+    "public_email": "",
+    "name": "Michael Mann",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+    "web_url": "https://gitlab.com/mmann78"
+  },
+  "merged_at": "2026-03-12T01:51:54.027Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "editcap_leak",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "b77bf1d90cdb2ac18d43c9265b0ffac251a150d3",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-03-12T00:08:07.722Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!23876",
+  "references": {
+    "short": "!23876",
+    "relative": "!23876",
+    "full": "wireshark/wireshark!23876"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/23876",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-03-12T01:37:23.111Z",
+  "latest_build_finished_at": "2026-03-12T01:51:51.098Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2379837386,
+    "iid": 98297,
+    "project_id": 7898047,
+    "sha": "bd8a20156fc9b08846af9e3e98c77fc45630ae25",
+    "ref": "refs/merge-requests/23876/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-03-12T01:37:21.543Z",
+    "updated_at": "2026-03-12T01:51:51.119Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2379837386"
+  },
+  "head_pipeline": {
+    "id": 2379837386,
+    "iid": 98297,
+    "project_id": 7898047,
+    "sha": "bd8a20156fc9b08846af9e3e98c77fc45630ae25",
+    "ref": "refs/merge-requests/23876/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-03-12T01:37:21.543Z",
+    "updated_at": "2026-03-12T01:51:51.119Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2379837386",
+    "before_sha": "bd8a20156fc9b08846af9e3e98c77fc45630ae25",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 8399509,
+      "username": "mmann78",
+      "public_email": "",
+      "name": "Michael Mann",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+      "web_url": "https://gitlab.com/mmann78"
+    },
+    "started_at": "2026-03-12T01:37:23.111Z",
+    "finished_at": "2026-03-12T01:51:51.098Z",
+    "committed_at": null,
+    "duration": 868,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2379837386",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "060cc6852c4ffed57c2d551095139d1c9259e3ea",
+    "head_sha": "b77bf1d90cdb2ac18d43c9265b0ffac251a150d3",
+    "start_sha": "060cc6852c4ffed57c2d551095139d1c9259e3ea"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "f5fe9bf07ef7a63b16a35f6a2facf755e2e59228",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3152609571,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-03-12T00:08:16.467Z",
+          "updated_at": "2026-03-12T00:08:16.471Z",
+          "system": true,
+          "noteable_id": 463386360,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 23876,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ae3abfa7ca10a5f404a417b1fb5e8bc57658464f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3152734105,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2026-03-12T01:37:16.792Z",
+          "updated_at": "2026-03-12T01:37:16.796Z",
+          "system": true,
+          "noteable_id": 463386360,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 23876,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b1890d201058dbaedec010cde1455c9217a32ae6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3152734136,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2026-03-12T01:37:19.759Z",
+          "updated_at": "2026-03-12T01:37:19.763Z",
+          "system": true,
+          "noteable_id": 463386360,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 23876,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2648,7 +2648,6 @@ main(int argc, char *argv[])\n         count++;\n         wtap_rec_reset(&read_rec);\n     }\n-    wtap_rec_cleanup(&read_rec);\n \n     if (verbose)\n         fprintf(stderr, \"Total selected: %\" PRIu64 \"\\n\", written_count);\n@@ -2741,7 +2740,7 @@ clean_exit:\n     wtap_dump_params_cleanup(&params);\n     if (wth != NULL)\n         wtap_close(wth);\n-    wtap_rec_reset(&read_rec);\n+    wtap_rec_cleanup(&read_rec);\n     wtap_cleanup();\n     free_progdirs();\n     if (capture_comments != NULL) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "editcap.c",
+      "old_path": "editcap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1701530898,
+      "head_commit_sha": "b77bf1d90cdb2ac18d43c9265b0ffac251a150d3",
+      "base_commit_sha": "060cc6852c4ffed57c2d551095139d1c9259e3ea",
+      "start_commit_sha": "060cc6852c4ffed57c2d551095139d1c9259e3ea",
+      "created_at": "2026-03-12T00:07:58.743Z",
+      "merge_request_id": 463386360,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "55b37e915b4918212fb41502e56099d9e6f57731"
+    }
+  ]
+}

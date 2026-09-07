@@ -1,0 +1,566 @@
+{
+  "id": 477233205,
+  "iid": 24567,
+  "project_id": 7898047,
+  "title": "Qt: Lua Debugger: Freeze the main application while Lua is paused",
+  "description": "When a Lua breakpoint fires, the debugger drives a nested Qt event\nloop while the global lua_State is mid-execution inside the C hook.\nLetting the rest of the application run during that window caused\nre-entrant dissection (paint-triggered scrolling re-entered\ndissect_lua / heur_dissect_lua on a throwaway lua_newthread,\nclobbering debugger.paused_L), backing-store paint races, native\nmacOS menu items bypassing event filters, live-capture packets\nflowing into a suspended VM, and unsafe teardown when the main\nwindow or plugin reload ran with the Lua C stack still live.\n\nFor the duration of the pause, handlePause() now:\n\n - Disables every visible top-level widget and QAction outside the\n   debugger's QObject subtree, plus the central widget subtree (its\n   setEnabled(true) cascade forces a clean repaint on resume).\n - Installs PauseInputFilter on QApplication to swallow user input\n   outside the debugger and, critically, QEvent::UpdateRequest /\n   LayoutRequest on the main window so its backing store cannot be\n   re-entered. Input destined for the debugger or any window\n   parented under it (including top-level QMessageBox popups) is\n   forwarded by walking the QObject parent chain across window\n   boundaries.\n - Routes QEvent::Close by widget identity so auxiliary top-level\n   windows (I/O Graph, preferences, ...) survive macOS Dock-Quit's\n   fan-out close pulse instead of self-destructing while their\n   owning slots are still suspended on the stack.\n - Shows a splash-style pause overlay (LuaDebuggerPauseOverlay) on\n   the main window that resizes with it.\n - Defers any Lua plugin reload until the C stack has unwound.\n\ndissect_lua and heur_dissect_lua gain an early-return guard on\nwslua_debugger_is_paused() to close the Lua-VM re-entry path.\n\nClosing the main window while paused is a deliberate two-step\naction: closeEvent() ignore()s the close, raises the debugger, and\nrecords the request via a static LuaDebuggerDialog flag;\nhandlePause()'s post-loop cleanup re-issues the close via a queued\ninvoke once the Lua stack has unwound, restoring the normal\ntryClosingCaptureFile / cf_close / quit() shutdown path. Closing\nvia the debugger dialog itself takes a synchronous unfreeze path\n(idempotent endPauseFreeze() gated by pauseUnfrozen_) so the\n\"Save unsaved capture?\" prompt and packet list stay responsive on\nthe way out.\n\nLive capture is incompatible with pausing the VM (dumpcap's pipe\nGSource keeps firing, and detach/reattach from outside the GLib\nmainloop is fragile). A capture-session observer registered from\nthe existing UI-callback registrar force-disables the debugger\nwhile a capture is running, locks the UI checkbox, and shows\n\"Disabled (live capture)\" in the title; the user's enabled state\nis restored on stop / fail.\n\nPing #21193\n\nAI-Assisted: yes",
+  "state": "merged",
+  "created_at": "2026-04-23T15:12:22.563Z",
+  "updated_at": "2026-04-24T09:54:46.859Z",
+  "merged_by": {
+    "id": 4753670,
+    "username": "stigbjorlykke",
+    "public_email": "",
+    "name": "Stig Bjørlykke",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+    "web_url": "https://gitlab.com/stigbjorlykke"
+  },
+  "merge_user": {
+    "id": 4753670,
+    "username": "stigbjorlykke",
+    "public_email": "",
+    "name": "Stig Bjørlykke",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+    "web_url": "https://gitlab.com/stigbjorlykke"
+  },
+  "merged_at": "2026-04-24T09:54:46.872Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "lua-debugger-freeze-main",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 4753670,
+    "username": "stigbjorlykke",
+    "public_email": "",
+    "name": "Stig Bjørlykke",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+    "web_url": "https://gitlab.com/stigbjorlykke"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20701757,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "c9fa00ebebac79e240a4df67a805b7d4e601d963",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-04-23T15:12:35.126Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!24567",
+  "references": {
+    "short": "!24567",
+    "relative": "!24567",
+    "full": "wireshark/wireshark!24567"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/24567",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "9",
+  "latest_build_started_at": "2026-04-24T09:44:22.378Z",
+  "latest_build_finished_at": "2026-04-24T09:54:45.355Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2476855649,
+    "iid": 101364,
+    "project_id": 7898047,
+    "sha": "c9fa00ebebac79e240a4df67a805b7d4e601d963",
+    "ref": "refs/merge-requests/24567/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-04-24T09:44:20.269Z",
+    "updated_at": "2026-04-24T09:54:45.368Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2476855649"
+  },
+  "head_pipeline": {
+    "id": 2476855649,
+    "iid": 101364,
+    "project_id": 7898047,
+    "sha": "c9fa00ebebac79e240a4df67a805b7d4e601d963",
+    "ref": "refs/merge-requests/24567/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-04-24T09:44:20.269Z",
+    "updated_at": "2026-04-24T09:54:45.368Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2476855649",
+    "before_sha": "c9fa00ebebac79e240a4df67a805b7d4e601d963",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 4753670,
+      "username": "stigbjorlykke",
+      "public_email": "",
+      "name": "Stig Bjørlykke",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+      "web_url": "https://gitlab.com/stigbjorlykke"
+    },
+    "started_at": "2026-04-24T09:44:22.378Z",
+    "finished_at": "2026-04-24T09:54:45.355Z",
+    "committed_at": null,
+    "duration": 623,
+    "queued_duration": 2,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2476855649",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "1f078b66fdcfcc82194b0624c7cc9365bd97182c",
+    "head_sha": "c9fa00ebebac79e240a4df67a805b7d4e601d963",
+    "start_sha": "1f078b66fdcfcc82194b0624c7cc9365bd97182c"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "1d89569d723fe63776f58a675fb4fe49bd938289",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3280647890,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2026-04-23T17:13:04.294Z",
+          "updated_at": "2026-04-23T17:13:04.299Z",
+          "system": true,
+          "noteable_id": 477233205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24567,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5bc667bd5acca851edfed582b2e1d26ffd1e895a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3280812044,
+          "type": null,
+          "body": "mentioned in issue #21193",
+          "author": {
+            "id": 6701257,
+            "username": "chuckcraft",
+            "public_email": "",
+            "name": "Chuck Craft",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/0809ffc6d9d98013a1895132bc055c622830b8a20bfa49328f53d5eb4a1206cb?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chuckcraft"
+          },
+          "created_at": "2026-04-23T18:11:07.259Z",
+          "updated_at": "2026-04-23T18:11:07.272Z",
+          "system": true,
+          "noteable_id": 477233205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24567,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7c4e1cba0c94d725c9fd387e8aaa0c24bbcf8ec2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3283038867,
+          "type": null,
+          "body": "added 12 commits\n\n<ul><li>15583da8...1f078b66 - 11 commits from branch <code>wireshark:master</code></li><li>9299c0e0 - wslua: Debugger: Freeze the main application while Lua is paused</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24567/diffs?diff_id=1767209965&start_sha=15583da888cb89a73db18784a09cf9ccf33058d6)",
+          "author": {
+            "id": 37613919,
+            "username": "project_20701757_bot_e1281f0954468c4ba5deed75d9873997",
+            "public_email": null,
+            "name": "****",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b10c30abfd107a20a78ff030740b571a988ada3a180d902ef6462bad3c38d3a3?s=80&d=identicon",
+            "web_url": "https://gitlab.com/project_20701757_bot_e1281f0954468c4ba5deed75d9873997"
+          },
+          "created_at": "2026-04-24T08:29:21.810Z",
+          "updated_at": "2026-04-24T08:29:21.813Z",
+          "system": true,
+          "noteable_id": 477233205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24567,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3dd9e07b3ec0fc47f98eee8b973d3dd5bfb16ad3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3283185905,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>c9fa00eb - Qt: Lua Debugger: Freeze the main application while Lua is paused</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/24567/diffs?diff_id=1767258301&start_sha=9299c0e09710b98c8ca3c6014faba333109e316b)",
+          "author": {
+            "id": 37613919,
+            "username": "project_20701757_bot_e1281f0954468c4ba5deed75d9873997",
+            "public_email": null,
+            "name": "****",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b10c30abfd107a20a78ff030740b571a988ada3a180d902ef6462bad3c38d3a3?s=80&d=identicon",
+            "web_url": "https://gitlab.com/project_20701757_bot_e1281f0954468c4ba5deed75d9873997"
+          },
+          "created_at": "2026-04-24T08:52:47.039Z",
+          "updated_at": "2026-04-24T08:52:47.046Z",
+          "system": true,
+          "noteable_id": 477233205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24567,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "469087f3f7bc85b2f99161b8456ab82439130059",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3283186124,
+          "type": null,
+          "body": "<p>changed title from <code class=\"idiff\"><span class=\"idiff left deletion\">wsl</span>ua<span class=\"idiff right deletion\">:</span> Debugger: Freeze the main application while Lua is paused</code> to <code class=\"idiff\"><span class=\"idiff left right addition\">Qt: L</span>ua Debugger: Freeze the main application while Lua is paused</code></p>",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2026-04-24T08:52:51.459Z",
+          "updated_at": "2026-04-24T08:52:51.463Z",
+          "system": true,
+          "noteable_id": 477233205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24567,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "43b6d8073bee545db1d815b0936a5a036121cd82",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3283355793,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2026-04-24T09:43:59.437Z",
+          "updated_at": "2026-04-24T09:43:59.611Z",
+          "system": true,
+          "noteable_id": 477233205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24567,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f7bde5f42887c40e857551fa89d2968cf6d23da7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3283355908,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2026-04-24T09:44:01.957Z",
+          "updated_at": "2026-04-24T09:44:01.960Z",
+          "system": true,
+          "noteable_id": 477233205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 24567,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -318,6 +318,33 @@ static void lua_resetthread_cb(void *user_data) {\n \n int dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_) {\n     int consumed_bytes = tvb_captured_length(tvb);\n+\n+    /*\n+     * If the Lua debugger is currently paused at a breakpoint, the global\n+     * lua_State is mid-execution inside the C hook callback that drove the\n+     * UI's nested Qt event loop. Any other widget that paints or queries\n+     * dissection state during that loop (e.g. the packet list rendering\n+     * uncached rows uncovered by scrolling) would otherwise re-enter this\n+     * function and call lua_pcall on a freshly created lua_newthread()\n+     * coroutine. The hook installed on the main state is inherited by new\n+     * threads, so the re-entrant call hits the same breakpoint, the hook\n+     * overwrites debugger.paused_L with the throwaway thread, the inner\n+     * handlePause() short-circuits via its eventLoop guard, and when the\n+     * thread is reset and garbage-collected debugger.paused_L is left\n+     * dangling. Subsequent debugger queries dereference freed Lua memory\n+     * and corrupt arbitrary heap regions until the process eventually\n+     * faults somewhere unrelated.\n+     *\n+     * Returning the consumed length without entering Lua leaves the\n+     * packet untouched in the protocol tree for that brief window. That\n+     * matches what would happen if no Lua dissector were registered for\n+     * the protocol; the row will be re-dissected normally on the next\n+     * paint after the debugger resumes.\n+     */\n+    if (wslua_debugger_is_paused()) {\n+        return consumed_bytes;\n+    }\n+\n     tvbuff_t *saved_lua_tvb = lua_tvb;\n     packet_info *saved_lua_pinfo = lua_pinfo;\n     struct _wslua_treeitem *saved_lua_tree = lua_tree;\n@@ -427,6 +454,15 @@ int dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data\n  * @return true if the packet was recognized by the sub-dissector (stop dissection here)\n  */\n bool heur_dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_) {\n+    /*\n+     * Same reentry guard as dissect_lua(): refuse to enter the Lua VM\n+     * while the debugger is paused at a breakpoint. See the comment\n+     * there for the failure mode this prevents.\n+     */\n+    if (wslua_debugger_is_paused()) {\n+        return false;\n+    }\n+\n     bool result = false;\n     tvbuff_t *saved_lua_tvb = lua_tvb;\n     packet_info *saved_lua_pinfo = lua_pinfo;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/init_wslua.c",
+      "old_path": "epan/wslua/init_wslua.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -640,10 +640,10 @@ void wslua_debugger_set_breakpoint_active(const char *file_path, int64_t line,\n             bp->active = active;\n             g_mutex_unlock(&debugger.mutex);\n             g_free(norm_file_path);\n-            if (active)\n-            {\n-                wslua_debugger_set_enabled(true);\n-            }\n+            /* Toggling a breakpoint's active state must never change the\n+             * debugger's enabled flag (especially during a live capture,\n+             * where debugging is suppressed entirely). Just re-arm the\n+             * Lua line hook so the change takes effect on the next tick. */\n             wslua_debugger_update_hook();\n             return;\n         }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/wslua_debugger.c",
+      "old_path": "epan/wslua/wslua_debugger.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -9,6 +9,7 @@ set(WIRESHARK_LUA_DEBUGGER_HEADERS\n \t${CMAKE_CURRENT_LIST_DIR}/lua_debugger_dialog.h\n \t${CMAKE_CURRENT_LIST_DIR}/lua_debugger_find_frame.h\n \t${CMAKE_CURRENT_LIST_DIR}/lua_debugger_goto_line_frame.h\n+\t${CMAKE_CURRENT_LIST_DIR}/lua_debugger_pause_overlay.h\n )\n \n set(WIRESHARK_LUA_DEBUGGER_SRCS\n@@ -16,6 +17,7 @@ set(WIRESHARK_LUA_DEBUGGER_SRCS\n \t${CMAKE_CURRENT_LIST_DIR}/lua_debugger_dialog.cpp\n \t${CMAKE_CURRENT_LIST_DIR}/lua_debugger_find_frame.cpp\n \t${CMAKE_CURRENT_LIST_DIR}/lua_debugger_goto_line_frame.cpp\n+\t${CMAKE_CURRENT_LIST_DIR}/lua_debugger_pause_overlay.cpp\n )\n \n set(WIRESHARK_LUA_DEBUGGER_UI\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/lua_debugger/CMakeLists.txt",
+      "old_path": "ui/qt/lua_debugger/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "ui/qt/lua_debugger/lua_debugger_dialog.cpp",
+      "old_path": "ui/qt/lua_debugger/lua_debugger_dialog.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -17,8 +17,10 @@\n #include <QEventLoop>\n #include <QFont>\n #include <QHash>\n+#include <QList>\n #include <QPair>\n #include <QPlainTextEdit>\n+#include <QPointer>\n #include <QPushButton>\n #include <QSet>\n #include <QString>\n@@ -32,10 +34,15 @@\n \n #include \"epan/wslua/wslua_debugger.h\"\n \n+struct _capture_session;\n+\n class AccordionFrame;\n class CollapsibleSection;\n+class LuaDebuggerPauseOverlay;\n+class QAction;\n class QEvent;\n class QChildEvent;\n+class QCloseEvent;\n \n namespace Ui\n {\n@@ -75,6 +82,52 @@ class LuaDebuggerDialog : public GeometryStateDialog\n      */\n     static LuaDebuggerDialog *instance(QWidget *parent = nullptr);\n \n+    /**\n+     * @brief True when a live capture is running and the debugger has\n+     *        been forcibly disabled by it.\n+     *\n+     * The pause path (handlePause()) is incompatible with live capture:\n+     * the dumpcap pipe keeps delivering packets while we sit in a\n+     * nested QEventLoop, and dissecting them would re-enter Lua on the\n+     * paused stack. Suspending the pipe source from outside is also\n+     * fragile (g_source_destroy frees the GIOChannel, breaking the\n+     * resume path). The least invasive policy is to simply turn the\n+     * debugger off for the duration of any live capture and restore\n+     * the user's prior on/off setting when capture finishes.\n+     */\n+    static bool isSuppressedByLiveCapture();\n+\n+    /**\n+     * @brief Capture-session observer; force-disables the debugger\n+     *        while a live capture is running and restores the prior\n+     *        enabled state on capture stop.\n+     *\n+     * Registered from LuaDebuggerUiCallbackRegistrar so the policy is\n+     * in effect from process start, regardless of whether the dialog\n+     * has been opened. Always called on the GUI thread.\n+     */\n+    static void onCaptureSessionEvent(int event,\n+                                      struct _capture_session *cap_session,\n+                                      void *user_data);\n+\n+    /**\n+     * @brief If the debugger is paused, reject the supplied close\n+     *        event, record the pending close so it can be re-delivered\n+     *        once the Lua C stack has unwound, raise/activate the\n+     *        debugger window, and return true. Otherwise return false\n+     *        and do nothing.\n+     *\n+     * Called from WiresharkMainWindow::closeEvent /\n+     * StratosharkMainWindow::closeEvent. Encapsulates the pause-close\n+     * interaction so the main window does not need to know about the\n+     * debugger's paused state or its re-delivery protocol. Paths like\n+     * macOS Dock-Quit (which fan a single close pulse out to every\n+     * top-level window and never retry) are handled correctly because\n+     * handlePause()'s post-loop cleanup re-issues the deferred close\n+     * once the Lua stack has unwound.\n+     */\n+    static bool handleMainCloseIfPaused(QCloseEvent *event);\n+\n     /**\n      * @brief React to the debugger pausing execution at a breakpoint.\n      * @param file_path Path of the Lua file that triggered the pause.\n@@ -207,6 +260,40 @@ class LuaDebuggerDialog : public GeometryStateDialog\n     static LuaDebuggerDialog *_instance;\n     static int32_t currentTheme_;\n \n+    /* Live-capture suppression. See isSuppressedByLiveCapture(). */\n+    static bool s_captureSuppressionActive_;\n+    /* User's enabled-state at the moment the live capture started;\n+     * restored when capture finishes. Meaningful only while\n+     * s_captureSuppressionActive_ is true. */\n+    static bool s_captureSuppressionPrevEnabled_;\n+\n+    /* Enter / exit the \"live capture is suppressing the debugger\"\n+     * state. Idempotent; each returns true iff the call actually\n+     * transitioned the static state (and therefore whoever called\n+     * needs to refresh widgets). Shared between the capture-callback\n+     * path (onCaptureSessionEvent) and the dialog-startup\n+     * reconciliation path so both follow exactly the same protocol. */\n+    static bool enterLiveCaptureSuppression();\n+    static bool exitLiveCaptureSuppression();\n+\n+    /* Re-apply live-capture suppression at dialog startup so any\n+     * core-enable that leaked through constructor-time init paths\n+     * (e.g. wslua_debugger_add_breakpoint() while applying saved\n+     * settings) is forced back off without disturbing the previously\n+     * captured \"user intent\" used to restore state on capture stop. */\n+    void reconcileWithLiveCaptureOnStartup();\n+\n+    /* True when the main window's closeEvent has rejected a close\n+     * because the debugger was paused; consumed once the pause ends\n+     * so the close request is honoured on a clean call stack. See\n+     * handleMainCloseIfPaused(). */\n+    static bool s_mainCloseDeferredByPause_;\n+\n+    /* Re-deliver a main-window close that was deferred while paused.\n+     * Idempotent. Called from handlePause()'s post-loop cleanup so\n+     * the queued close runs after the Lua C stack has unwound. */\n+    static void deliverDeferredMainCloseIfPending();\n+\n     /**\n      * @brief Static callback invoked before Lua plugins are reloaded.\n      *\n@@ -239,6 +326,50 @@ class LuaDebuggerDialog : public GeometryStateDialog\n     QIcon fileIcon;\n     bool debuggerPaused;\n     bool reloadDeferred;\n+\n+    /* Pause-freeze state: populated on outermost-frame pause entry,\n+     * consumed on outermost-frame resume. */\n+    QList<QPointer<QWidget>> frozenTopLevels;\n+    /* Every QAction outside the debugger dialog disabled across the\n+     * pause: menu items, toolbar buttons, and keyboard shortcuts.\n+     * Needed because macOS native NSMenuItems bypass the QApplication\n+     * event filter and trigger QAction::triggered() directly, and\n+     * because Qt::ApplicationShortcut actions on background dialogs\n+     * could fire even though those dialogs are setEnabled(false). A\n+     * disabled QAction propagates to all of its UI representations,\n+     * which gives the user an unambiguous \"everything outside the\n+     * debugger is inert\" cue. */\n+    QList<QPointer<QAction>> frozenActions;\n+    /* QMainWindow::centralWidget() disabled across the pause. The\n+     * QApplication-level PauseInputFilter is meant to drop mouse and\n+     * key events for any window other than this dialog, but it is not\n+     * a reliable single point of truth — native menu-equivalent paths\n+     * on macOS and other edge cases can still drive selection changes\n+     * in the packet list. setEnabled(false) on centralWidget is a\n+     * guaranteed cut: Qt refuses to deliver user input to the widget\n+     * or any of its descendants, and the tree grays to match the\n+     * overlay's \"paused\" visual language. The dialog itself is\n+     * parented to the QMainWindow (not to its central widget) so this\n+     * does NOT disable the debugger UI. On resume, setEnabled(true)\n+     * triggers Qt's update() cascade over centralWidget and its\n+     * descendants, which is what restores the packet list from the\n+     * frozen-looking state it would otherwise be stuck in — the\n+     * QEvent::UpdateRequest filter swallowed every main-window paint\n+     * during the pause, so some child viewports have a stale backing\n+     * store until something forces a real paint pass. */\n+    QPointer<QWidget> frozenCentralWidget;\n+    /* Pause overlay is a plain child widget of the main window (like\n+     * SplashOverlay on the welcome page). Created on pause entry and\n+     * destroyed on resume; being a child widget means it has no\n+     * platform-window identity of its own, so it cannot surface as an\n+     * independent entry in Mission Control or Alt-Tab and follows the\n+     * main window for free. */\n+    QPointer<LuaDebuggerPauseOverlay> pauseOverlay;\n+    QObject *pauseInputFilter;\n+    /* One-shot guard for endPauseFreeze(): set to false at outer pause\n+     * entry, flipped to true on first unfreeze so the second call site\n+     * (handlePause post-loop vs. closeEvent) becomes a no-op. */\n+    bool pauseUnfrozen_ = true;\n     /** @brief lua_getstack level for variables; kept in sync with stack list. */\n     int stackSelectionLevel;\n \n@@ -428,6 +559,16 @@ class LuaDebuggerDialog : public GeometryStateDialog\n     /** @brief Resume the debugger (if paused) and exit any nested event loop.\n      */\n     void resumeDebuggerAndExitLoop();\n+    /**\n+     * @brief Undo the pause-entry UI freeze synchronously.\n+     *\n+     * Idempotent: safe to call from both handlePause()'s post-loop\n+     * (normal Continue/Step resume) and from closeEvent() (so the\n+     * rest of WiresharkMainWindow::closeEvent runs with a fully\n+     * interactive UI when the user closes the app while the\n+     * debugger is paused). Gated by pauseUnfrozen_.\n+     */\n+    void endPauseFreeze();\n     /**\n      * @brief Resume execution with a stepping mode; shared by step over/in/out.\n      * @param step_fn Core step function (e.g. wslua_debugger_step_over).\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/lua_debugger/lua_debugger_dialog.h",
+      "old_path": "ui/qt/lua_debugger/lua_debugger_dialog.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,175 @@\n+/* lua_debugger_pause_overlay.cpp\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#include \"lua_debugger_pause_overlay.h\"\n+\n+#include <QEvent>\n+#include <QPainter>\n+#include <QRadialGradient>\n+#include <QResizeEvent>\n+\n+#include <ui/qt/utils/color_utils.h>\n+\n+namespace\n+{\n+/* Shared geometry constants — tuned to match SplashOverlay's card\n+ * proportions so the pause banner reads as part of the same visual\n+ * family. */\n+constexpr int kCardPadding = 16;\n+constexpr int kCardCornerRadius = kCardPadding / 2;\n+constexpr int kCardHeight = 100;\n+constexpr qreal kCardVerticalPosition = 0.38;\n+constexpr int kTitleHeight = 22;\n+constexpr qreal kTitleFontScale = 1.05;\n+constexpr qreal kSubtextFontScale = 1.0;\n+/* Subtext is bold; use near-full foreground alpha so it stays readable. */\n+constexpr int kSubtextAlpha = 235;\n+\n+/* Pause glyph (two rounded vertical bars). */\n+constexpr int kGlyphBarWidth = 5;\n+constexpr int kGlyphBarHeight = 22;\n+constexpr int kGlyphBarGap = 5;\n+constexpr int kGlyphBarRadius = 2;\n+constexpr int kGlyphTotalWidth = 2 * kGlyphBarWidth + kGlyphBarGap;\n+constexpr int kGlyphTitleSpacing = 12;\n+} // namespace\n+\n+LuaDebuggerPauseOverlay::LuaDebuggerPauseOverlay(QWidget *parent) :\n+    QWidget(parent),\n+    title_text_(tr(\"Lua debugger paused\")),\n+    subtext_text_(tr(\"Use the Lua Debugger window to step, continue, or \"\n+                     \"evaluate. The main window resumes when execution is \"\n+                     \"released.\"))\n+{\n+    /* Translucent background + mouse-event pass-through: the overlay\n+     * only provides a visual cue. Input is policed separately by the\n+     * dialog (setEnabled(false) on every widget that is not part of\n+     * the debugger, plus an application event filter). */\n+    setAttribute(Qt::WA_TranslucentBackground);\n+    setAttribute(Qt::WA_TransparentForMouseEvents);\n+    setAttribute(Qt::WA_NoSystemBackground);\n+\n+    /* Track the parent's size ourselves. Qt does not auto-resize a\n+     * child widget with no layout, and the debugger's PauseInputFilter\n+     * swallows UpdateRequest / LayoutRequest on the main window while\n+     * paused, so we cannot rely on either the parent's layout or on\n+     * a deferred update() to refresh our geometry. QEvent::Resize is\n+     * not filtered, so we see it here and react with a synchronous\n+     * repaint() that bypasses the queued-event path entirely. */\n+    if (parent) {\n+        setGeometry(parent->rect());\n+        parent->installEventFilter(this);\n+    }\n+}\n+\n+LuaDebuggerPauseOverlay::~LuaDebuggerPauseOverlay() = default;\n+\n+bool LuaDebuggerPauseOverlay::eventFilter(QObject *obj, QEvent *event)\n+{\n+    if (obj == parent() && event->type() == QEvent::Resize) {\n+        if (QWidget *p = parentWidget()) {\n+            setGeometry(p->rect());\n+            repaint();\n+        }\n+    }\n+    return QWidget::eventFilter(obj, event);\n+}\n+\n+void LuaDebuggerPauseOverlay::paintEvent(QPaintEvent *)\n+{\n+    QPainter painter(this);\n+    painter.setRenderHint(QPainter::Antialiasing);\n+\n+    const bool dark = ColorUtils::themeIsDark();\n+\n+    /* Radial vignette — more opaque than SplashOverlay so the main\n+     * window clearly reads as \"stopped\". */\n+    const QColor edge_color = dark ? QColor(0, 0, 0, 220)\n+                                   : QColor(0, 0, 0, 175);\n+    const QColor center_color = dark ? QColor(0, 0, 0, 130)\n+                                     : QColor(0, 0, 0, 105);\n+\n+    const QPointF center(width() / 2.0, height() / 2.0);\n+    const qreal radius = qMax(width(), height()) * 0.75;\n+\n+    QRadialGradient vignette(center, radius);\n+    vignette.setColorAt(0.0, center_color);\n+    vignette.setColorAt(1.0, edge_color);\n+    painter.fillRect(rect(), vignette);\n+\n+    /* Centered card — same dimensions and colors as SplashOverlay. */\n+    const int card_w = qMax(360, static_cast<int>(width() * 0.6));\n+    const int card_x = (width() - card_w) / 2;\n+    const int card_y = static_cast<int>(height() * kCardVerticalPosition);\n+    const QRectF card_rect(card_x, card_y, card_w, kCardHeight);\n+\n+    const QColor card_bg = dark ? QColor(40, 40, 46, 230)\n+                                : QColor(255, 255, 255, 222);\n+    const QColor card_border = dark ? QColor(255, 255, 255, 40)\n+                                    : QColor(0, 0, 0, 35);\n+\n+    painter.setPen(QPen(card_border, 1.0));\n+    painter.setBrush(card_bg);\n+    painter.drawRoundedRect(card_rect, kCardCornerRadius, kCardCornerRadius);\n+\n+    const QColor text_color = dark ? QColor(220, 220, 225)\n+                                   : QColor(50, 50, 55);\n+\n+    /* Pause glyph (static two-bar symbol). */\n+    painter.setPen(Qt::NoPen);\n+    painter.setBrush(text_color);\n+\n+    const int glyph_y = card_y + kCardPadding +\n+                        (kTitleHeight - kGlyphBarHeight) / 2;\n+    const int bar1_x = card_x + kCardPadding;\n+    const int bar2_x = bar1_x + kGlyphBarWidth + kGlyphBarGap;\n+    painter.drawRoundedRect(QRectF(bar1_x, glyph_y, kGlyphBarWidth,\n+                                   kGlyphBarHeight),\n+                            kGlyphBarRadius, kGlyphBarRadius);\n+    painter.drawRoundedRect(QRectF(bar2_x, glyph_y, kGlyphBarWidth,\n+                                   kGlyphBarHeight),\n+                            kGlyphBarRadius, kGlyphBarRadius);\n+\n+    /* Title (bold, slightly larger) — same style as SplashOverlay. */\n+    const int text_left = card_x + kCardPadding + kGlyphTotalWidth +\n+                          kGlyphTitleSpacing;\n+    const int text_width = card_w - (text_left - card_x) - kCardPadding;\n+    QRectF title_rect(text_left, card_y + kCardPadding, text_width,\n+                      kTitleHeight);\n+\n+    QFont title_font = font();\n+    title_font.setPointSizeF(font().pointSizeF() * kTitleFontScale);\n+    title_font.setBold(true);\n+    painter.setFont(title_font);\n+    painter.setPen(text_color);\n+\n+    const QString elided_title = painter.fontMetrics().elidedText(\n+        title_text_, Qt::ElideMiddle, static_cast<int>(title_rect.width()));\n+    painter.drawText(title_rect, Qt::AlignLeft | Qt::AlignVCenter,\n+                     elided_title);\n+\n+    /* Subtext (smaller). */\n+    if (!subtext_text_.isEmpty()) {\n+        const int sub_top = card_y + kCardPadding + kTitleHeight + 4;\n+        const int sub_height = kCardHeight - (sub_top - card_y) - kCardPadding;\n+        QRectF sub_rect(text_left, sub_top, text_width, sub_height);\n+\n+        QFont sub_font = font();\n+        sub_font.setPointSizeF(font().pointSizeF() * kSubtextFontScale);\n+        painter.setFont(sub_font);\n+\n+        QColor sub_color = text_color;\n+        sub_color.setAlpha(kSubtextAlpha);\n+        painter.setPen(sub_color);\n+\n+        painter.drawText(sub_rect, Qt::AlignLeft | Qt::AlignTop |\n+                                       Qt::TextWordWrap,\n+                         subtext_text_);\n+    }\n+}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/lua_debugger/lua_debugger_pause_overlay.cpp",
+      "old_path": "ui/qt/lua_debugger/lua_debugger_pause_overlay.cpp",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,65 @@\n+/** @file\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#ifndef LUA_DEBUGGER_PAUSE_OVERLAY_H\n+#define LUA_DEBUGGER_PAUSE_OVERLAY_H\n+\n+#include <QString>\n+#include <QWidget>\n+\n+/**\n+ * @brief Translucent overlay shown over the main window while the Lua\n+ * debugger is paused.\n+ *\n+ * Renders a darkening vignette plus a centered card with a pause glyph,\n+ * bold title and subtext — similar visual vocabulary to the\n+ * startup SplashOverlay so the \"wait\" state feels native, with a\n+ * somewhat more opaque treatment so the pause state reads clearly.\n+ *\n+ * The overlay is a plain child QWidget of the main window, intentionally\n+ * *not* a top-level Qt::Window: a child widget has no platform-window\n+ * identity of its own (no NSWindow on macOS, no X11 window on Linux),\n+ * so it can never surface as an independent entry in Mission Control /\n+ * Alt-Tab, never carry its own drop shadow or zoom animation, and\n+ * trivially stays glued to the main window for free — exactly like\n+ * SplashOverlay does on the welcome page.\n+ *\n+ * The paint is static (no animation): like the splash screen, the card\n+ * is drawn once and stays put. While the debugger is paused the dialog\n+ * also installs a QEvent::UpdateRequest filter on the main window\n+ * (see PauseInputFilter in lua_debugger_dialog.cpp) to prevent\n+ * re-entrant paints of the main window's backing store.\n+ *\n+ * The overlay tracks its parent's size itself: the constructor\n+ * installs an event filter on the parent and sets the initial\n+ * geometry to the parent's rect. On QEvent::Resize the overlay\n+ * resizes to the new parent rect and calls repaint() synchronously\n+ * — required because an update() would post a QEvent::UpdateRequest\n+ * to the top-level main window, which PauseInputFilter swallows.\n+ * QEvent::Resize itself is not filtered, so the WM's resize is\n+ * delivered to the main window and we see it here as well.\n+ */\n+class LuaDebuggerPauseOverlay : public QWidget\n+{\n+    Q_OBJECT\n+\n+  public:\n+    explicit LuaDebuggerPauseOverlay(QWidget *parent);\n+    ~LuaDebuggerPauseOverlay() override;\n+\n+  protected:\n+    void paintEvent(QPaintEvent *event) override;\n+    bool eventFilter(QObject *obj, QEvent *event) override;\n+\n+  private:\n+    QString title_text_;\n+    QString subtext_text_;\n+};\n+\n+#endif // LUA_DEBUGGER_PAUSE_OVERLAY_H\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/lua_debugger/lua_debugger_pause_overlay.h",
+      "old_path": "ui/qt/lua_debugger/lua_debugger_pause_overlay.h",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1016,15 +1016,13 @@ void WiresharkMainWindow::closeEvent(QCloseEvent *event) {\n     }\n \n #ifdef HAVE_LUA\n-    /*\n-     * If the Lua debugger is paused we are inside a nested event loop\n-     * with the Lua dissector still on the C call stack.\n-     */\n-    if (wslua_debugger_is_paused()) {\n-        LuaDebuggerDialog *dbg = LuaDebuggerDialog::instance();\n-        if (dbg) {\n-            dbg->close();\n-        }\n+    /* Refuse to close while the Lua debugger is paused; the debugger\n+     * defers and re-delivers the close once the Lua C stack has\n+     * unwound. Running tryClosingCaptureFile() / mainApp->quit() with\n+     * the Lua dissector still on the C stack would tear down capture /\n+     * epan state and abort in wmem_cleanup_scopes() at exit. */\n+    if (LuaDebuggerDialog::handleMainCloseIfPaused(event)) {\n+        return;\n     }\n #endif\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/wireshark_main_window.cpp",
+      "old_path": "ui/qt/wireshark_main_window.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -936,15 +936,13 @@ void StratosharkMainWindow::closeEvent(QCloseEvent *event) {\n     }\n \n #ifdef HAVE_LUA\n-    /*\n-     * If the Lua debugger is paused we are inside a nested event loop\n-     * with the Lua dissector still on the C call stack.\n-     */\n-    if (wslua_debugger_is_paused()) {\n-        LuaDebuggerDialog *dbg = LuaDebuggerDialog::instance();\n-        if (dbg) {\n-            dbg->close();\n-        }\n+    /* Refuse to close while the Lua debugger is paused; the debugger\n+     * defers and re-delivers the close once the Lua C stack has\n+     * unwound. Running tryClosingCaptureFile() / mainApp->quit() with\n+     * the Lua dissector still on the C stack would tear down capture /\n+     * epan state and abort in wmem_cleanup_scopes() at exit. */\n+    if (LuaDebuggerDialog::handleMainCloseIfPaused(event)) {\n+        return;\n     }\n #endif\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/stratoshark/stratoshark_main_window.cpp",
+      "old_path": "ui/stratoshark/stratoshark_main_window.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1767258301,
+      "head_commit_sha": "c9fa00ebebac79e240a4df67a805b7d4e601d963",
+      "base_commit_sha": "1f078b66fdcfcc82194b0624c7cc9365bd97182c",
+      "start_commit_sha": "1f078b66fdcfcc82194b0624c7cc9365bd97182c",
+      "created_at": "2026-04-24T08:52:46.400Z",
+      "merge_request_id": 477233205,
+      "state": "collected",
+      "real_size": "9",
+      "patch_id_sha": "a79e590ea99e559c640088a18a55addde810a530"
+    },
+    {
+      "id": 1767209965,
+      "head_commit_sha": "9299c0e09710b98c8ca3c6014faba333109e316b",
+      "base_commit_sha": "1f078b66fdcfcc82194b0624c7cc9365bd97182c",
+      "start_commit_sha": "1f078b66fdcfcc82194b0624c7cc9365bd97182c",
+      "created_at": "2026-04-24T08:29:21.076Z",
+      "merge_request_id": 477233205,
+      "state": "without_files",
+      "real_size": "9",
+      "patch_id_sha": "a79e590ea99e559c640088a18a55addde810a530"
+    },
+    {
+      "id": 1765921231,
+      "head_commit_sha": "15583da888cb89a73db18784a09cf9ccf33058d6",
+      "base_commit_sha": "39bb083c0194dcf8dcc7141ab8626d27bb75b9e7",
+      "start_commit_sha": "39bb083c0194dcf8dcc7141ab8626d27bb75b9e7",
+      "created_at": "2026-04-23T15:12:25.718Z",
+      "merge_request_id": 477233205,
+      "state": "without_files",
+      "real_size": "9",
+      "patch_id_sha": "a5427a58cbf1ffe27ca5ae7e37da7d3e520bdd07"
+    }
+  ]
+}

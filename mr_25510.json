@@ -1,0 +1,374 @@
+{
+  "id": 499371332,
+  "iid": 25510,
+  "project_id": 7898047,
+  "title": "DVB-S2-TABLE: Fix duplicate field name and waveform_id display base in BCT table",
+  "description": "## Fix duplicate field name and waveform_id display base in DVB-S2 table dissector\n\n### Summary\n\nTwo issues in the `dvb-s2_table` dissector for the `tx_type` descriptor in BCT table:\n\n1. The `tx_start_offset_2` field is registered with the display name and filter abbreviation copied and pasted exactly from `tx_start_offset_1`, so the two distinct part of the field are indistinguishable in the GUI and share a duplicate filter name.\n2. The `waveform_id` field is displayed in hexadecimal, whereas the standard enumerates waveform IDs in decimal.\n\n### Bug 1: duplicate field name\n\nIn `epan/dissectors/packet-dvb-s2-table.c`:\n\n```\n// tx_start_offset_2 - name and abbrev copied from tx_start_offset_1\n\n\n{&hf_dvb_s2_table_tx_type_tx_start_offset_2,\n  { \"Tx type tx start offset 1\", \"dvb-s2_table.tx_type.tx_start_offset_1\",\n    FT_UINT24, BASE_DEC, NULL, DVB_S2_TABLE_TX_TYPE_TX_START_OFFSET_MASK, NULL, HFILL} },\n```\n\nBoth the display name (`\"Tx type tx start offset 1\"`) and the filter abbreviation (`dvb-s2_table.tx_type.tx_start_offset_1`) duplicate `tx_start_offset_1`.\n\n**Fix:**\n\n```\n{&hf_dvb_s2_table_tx_type_tx_start_offset_2,\n  { \"Tx type tx start offset 2\", \"dvb-s2_table.tx_type.tx_start_offset_2\",\n    FT_UINT24, BASE_DEC, NULL, DVB_S2_TABLE_TX_TYPE_TX_START_OFFSET_MASK, NULL, HFILL} },\n```\n\n### Enhancement 1: waveform_id display base\n\nWaveform IDs are enumerated in decimal in the standard.\n\n`{&hf_dvb_s2_table_tx_type_waveform_id, { \"Tx type waveform id\", \"dvb-s2_table.tx_type.waveform_id\", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL} },`\n\n**Fix:** `BASE_HEX` → `BASE_DEC`.\n\n### Standard reference\n\n**ETSI EN 301 545-2 V1.4.1** - waveform IDs in the `tx_type` descriptor are numbered in decimal, so decimal display matches the standard and it is easier to read.\n\n### Impact\n\n* The two parts of `tx_start_offset` fields can now be distinguished in the GUI and filtered independently.\n* `waveform_id` is shown in decimal, consistent with the standard's numbering.",
+  "state": "merged",
+  "created_at": "2026-06-24T05:47:54.677Z",
+  "updated_at": "2026-06-24T15:50:06.480Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-06-24T15:50:06.568Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix-dvb-s2_table-tx-type-fields",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 39400678,
+    "username": "dbatalov02",
+    "public_email": "",
+    "name": "Daniil Batalov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dbatalov02"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 83569096,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "83146087787f8c371cca1d946c4e309bcc3364bf",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "2b67767a43be8922c64daaaa913cc62a69bf4b98",
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-06-24T05:48:00.141Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25510",
+  "references": {
+    "short": "!25510",
+    "relative": "!25510",
+    "full": "wireshark/wireshark!25510"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25510",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-06-24T15:31:38.643Z",
+  "latest_build_finished_at": "2026-06-24T15:50:03.868Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2626617947,
+    "iid": 105517,
+    "project_id": 7898047,
+    "sha": "2b67767a43be8922c64daaaa913cc62a69bf4b98",
+    "ref": "refs/merge-requests/25510/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-24T15:31:37.093Z",
+    "updated_at": "2026-06-24T15:50:03.882Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2626617947"
+  },
+  "head_pipeline": {
+    "id": 2626617947,
+    "iid": 105517,
+    "project_id": 7898047,
+    "sha": "2b67767a43be8922c64daaaa913cc62a69bf4b98",
+    "ref": "refs/merge-requests/25510/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-06-24T15:31:37.093Z",
+    "updated_at": "2026-06-24T15:50:03.882Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2626617947",
+    "before_sha": "2b67767a43be8922c64daaaa913cc62a69bf4b98",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-06-24T15:31:38.643Z",
+    "finished_at": "2026-06-24T15:50:03.868Z",
+    "committed_at": null,
+    "duration": 1105,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2626617947",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "cc5675eb9b8197cd1051ffd9c1e097e9bc5300f9",
+    "head_sha": "83146087787f8c371cca1d946c4e309bcc3364bf",
+    "start_sha": "cc5675eb9b8197cd1051ffd9c1e097e9bc5300f9"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b75662e6585749429eb8ec5f9a93c2980562a766",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3486960140,
+          "type": null,
+          "body": "<p>changed title from <code class=\"idiff\">DVB-S2-TABLE: Fix duplicate field name <span class=\"idiff left right deletion\">for tx_start_offset_2</span> in BCT table</code> to <code class=\"idiff\">DVB-S2-TABLE: Fix duplicate field name <span class=\"idiff left right addition\">and waveform_id display base</span> in BCT table</code></p>",
+          "author": {
+            "id": 39400678,
+            "username": "dbatalov02",
+            "public_email": "",
+            "name": "Daniil Batalov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dbatalov02"
+          },
+          "created_at": "2026-06-24T06:10:50.505Z",
+          "updated_at": "2026-06-24T06:10:50.507Z",
+          "system": true,
+          "noteable_id": 499371332,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25510,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6425d485cc8d6deeed8da6ad46e0161f6a1734ba",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3486960141,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 39400678,
+            "username": "dbatalov02",
+            "public_email": "",
+            "name": "Daniil Batalov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3bd3adb508d945329cdc078608afae223127023db33bcabda5c908c4c0474e80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dbatalov02"
+          },
+          "created_at": "2026-06-24T06:10:50.545Z",
+          "updated_at": "2026-06-24T06:10:50.547Z",
+          "system": true,
+          "noteable_id": 499371332,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25510,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4762a7a14a784910279dd7853c23d411c53c268f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3489722257,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-24T15:31:26.118Z",
+          "updated_at": "2026-06-24T15:31:26.124Z",
+          "system": true,
+          "noteable_id": 499371332,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25510,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d83f4f8a308356c5fd60e2190280716f0e0b6f20",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3489723476,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-06-24T15:31:34.983Z",
+          "updated_at": "2026-06-24T15:31:34.985Z",
+          "system": true,
+          "noteable_id": 499371332,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25510,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -3242,7 +3242,7 @@ void proto_register_dvb_s2_table(void)\n         },\n         {&hf_dvb_s2_table_tx_type_waveform_id, {\n                 \"Tx type waveform id\", \"dvb-s2_table.tx_type.waveform_id\",\n-                FT_UINT8, BASE_HEX, NULL, 0x0,\n+                FT_UINT8, BASE_DEC, NULL, 0x0,\n                 NULL, HFILL}\n         },\n         {&hf_dvb_s2_table_tx_type_tx_start_offset, {\n@@ -3257,7 +3257,7 @@ void proto_register_dvb_s2_table(void)\n                 NULL, HFILL}\n         },\n         {&hf_dvb_s2_table_tx_type_tx_start_offset_2, {\n-                \"Tx type tx start offset 1\", \"dvb-s2_table.tx_type.tx_start_offset_1\",\n+                \"Tx type tx start offset 2\", \"dvb-s2_table.tx_type.tx_start_offset_2\",\n                 FT_UINT24, BASE_DEC, NULL, DVB_S2_TABLE_TX_TYPE_TX_START_OFFSET_MASK,\n                 NULL , HFILL}\n         },\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-dvb-s2-table.c",
+      "old_path": "epan/dissectors/packet-dvb-s2-table.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "83146087787f8c371cca1d946c4e309bcc3364bf",
+      "short_id": "83146087",
+      "created_at": "2026-06-24T12:27:22.000+07:00",
+      "parent_ids": [
+        "9d69ef08742090334f1911c65811bad73b3b5222"
+      ],
+      "title": "DVB-S2-TABLE: Display tx_type waveform_id in decimal in BCT table",
+      "message": "DVB-S2-TABLE: Display tx_type waveform_id in decimal in BCT table\n\nhf_dvb_s2_table_tx_type_waveform_id used BASE_HEX. Waveform IDs are\nenumerated in decimal in ETSI EN 301 545-2, so display them in decimal\nto match the standard and improve readability.\n\nAI-Assisted: no\n",
+      "author_name": "Daniil Batalov",
+      "author_email": "dbatalov@deltard.ru",
+      "authored_date": "2026-06-24T12:25:23.000+07:00",
+      "committer_name": "Daniil Batalov",
+      "committer_email": "dbatalov@deltard.ru",
+      "committed_date": "2026-06-24T12:27:22.000+07:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/83146087787f8c371cca1d946c4e309bcc3364bf"
+    },
+    {
+      "id": "9d69ef08742090334f1911c65811bad73b3b5222",
+      "short_id": "9d69ef08",
+      "created_at": "2026-06-24T12:27:03.000+07:00",
+      "parent_ids": [
+        "cc5675eb9b8197cd1051ffd9c1e097e9bc5300f9"
+      ],
+      "title": "DVB-S2-TABLE: Fix duplicate field name for tx_start_offset_2 in BCT table",
+      "message": "DVB-S2-TABLE: Fix duplicate field name for tx_start_offset_2 in BCT table\n\nhf_dvb_s2_table_tx_type_tx_start_offset_2 was registered with the\ndisplay name \"Tx type tx start offset 1\" and the filter abbreviation\n\"dvb-s2_table.tx_type.tx_start_offset_1\", both copied and paste exactly from\ntx_start_offset_1. As a result the two distinct fields were\nindistinguishable in the GUI and shared the same filter name.\n\nCorrect the name to \"Tx type tx start offset 2\" and the abbreviation\nto \"dvb-s2_table.tx_type.tx_start_offset_2\".\n\nAI-Assisted: no\n",
+      "author_name": "Daniil Batalov",
+      "author_email": "dbatalov@deltard.ru",
+      "authored_date": "2026-06-24T12:23:13.000+07:00",
+      "committer_name": "Daniil Batalov",
+      "committer_email": "dbatalov@deltard.ru",
+      "committed_date": "2026-06-24T12:27:03.000+07:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9d69ef08742090334f1911c65811bad73b3b5222"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1867728670,
+      "head_commit_sha": "83146087787f8c371cca1d946c4e309bcc3364bf",
+      "base_commit_sha": "cc5675eb9b8197cd1051ffd9c1e097e9bc5300f9",
+      "start_commit_sha": "cc5675eb9b8197cd1051ffd9c1e097e9bc5300f9",
+      "created_at": "2026-06-24T05:47:58.098Z",
+      "merge_request_id": 499371332,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "31a3671016d69a907fba35fc3ee70d0d018b6f1a"
+    }
+  ]
+}

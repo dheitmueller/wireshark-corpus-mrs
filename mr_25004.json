@@ -1,0 +1,2987 @@
+{
+  "id": 486917588,
+  "iid": 25004,
+  "project_id": 7898047,
+  "title": "Qt: Add Find in Packet search feature",
+  "description": "# Find in Packet Search\n\n## Summary\n\nAdds in-packet search to Wireshark in two complementary forms:\n\n1. **Main window: Find in selected Packet** extends the existing **Find Packet** toolbar, so when exactly one packet is selected, you can search within that packet's protocol details tree using the same search field and controls (limited to String and Regular Expression).\n2. **Single-packet window: Find in Packet** adds a dedicated find bar above the protocol tree in pop-out packet windows, with its own search field and controls matching the Find Packet toolbar style.\n\nBoth paths share a common search engine (InPacketSearch).\n\n## Access\n\n### Main window (Find in selected Packet)\n\n- **Find Packet** toolbar (Edit -\\> Find Packet, or the toolbar button)\n- Check **Find in selected Packet** on the options row at the bottom of the toolbar (to the right of **Multiple occurrences**)\n- Available only when a **single** packet is selected in the packet list\n\n### Single-packet pop-out window (Find in Packet)\n\n- **Edit -\\> Find in Packet**\n- **Find in Packet** checkbox in the row of options below the protocol tree\n- Shortcut: **Ctrl + Alt + F** (scoped to the focused pop-out window).\n\n## Key Features\n\n### Shared search engine (InPacketSearch)\n\n- String and regular expression search (case-sensitive option)\n- Real-time match collection across the protocol details tree\n- Next / previous match navigation with tree scrolling and selection\n- Auto-expanding collapsed tree nodes to reveal matches\n- Match highlighting via custom tree delegate (InPacketFindDelegate)\n  - Theme (light / dark mode safe)\n\n### Main window integration\n\n- **Find in selected Packet** checkbox on the Find Packet toolbar\n- Reuses the existing Find Packet search field\n- Match counter shown in the status bar (ex. \\[3 of 57\\], or \\[no matches\\] String)\n- Green / red syntax feedback on the search field similar to existing set up\n- Checkbox disabled when no packet is selected\n\n### Single-packet window (InPacketFindBar)\n\n- Inline find bar above the protocol tree with animated show / hide transition\n- Dedicated search field (InPacketFindEdit) with filtering checkboxes\n- Match counter (1 of 4, no matches, invalid pattern)\n- Similar layout to current find bar implementation\n- Each pop-out window maintains its own independent find bar state\n- **Ctrl + Alt + F** toggles the find bar only when that window is focused\n\n## Keyboard Shortcuts\n\n### Main window (in-packet mode via Find Packet toolbar)\n\n| Shortcut | Action |\n|----------|--------|\n| **Enter** | Next match |\n| **Shift + Enter** | Previous match |\n| **Ctrl + N** / **Ctrl + B** | Find Next / Find Previous (Edit menu) |\n| **Esc** | Close Find Packet toolbar and clear highlighting |\n\n### Single-packet pop-out window\n\n| Shortcut | Action |\n|----------|--------|\n| **Ctrl + Alt + F** | Toggle Find in Packet bar |\n| **Enter** | Next match |\n| **Shift + Enter** | Previous match |\n| **Esc** | Close find bar and clear highlighting |\n\n## Testing\n\nTested on **Windows 11** (MSVC build), **macOS** and **Linux** (Debian) across multiple scenarios:\n\n- **Basic text search**\n- **Regex search**\n- **Main window in-packet mode**\n- **Packet selection changes**\n- **Pop-out isolation**\n- **Zero matches / edge cases**\n- **Syntax feedback**\n\n## Documentation Updates\n\n- **User Guide** (doc/wsug_src/wsug_work.adoc)\n\n## Images\n\n1. **Find in selected Packet** checkbox on the Find Packet toolbar (main window), to the right of **Multiple occurrences.**\n\n![image.png](/uploads/bebf959c4a5c85873d7790faccb72adf/image.png){width=909 height=94}\n\n2. Main window in-packet search with green syntax state and status bar match counter (ex. \\[2 of 9\\]).\n\n   \n\n   ![image.png](/uploads/adccc6f004d708a5bbbe8862d6a3517c/image.png){width=699 height=42}\n3. Status bar match counter no matches (ex. \\[no matches\\]).\n\n   \n\n   ![image.png](/uploads/e25fa5f18dc5f6a253f0066985b79e50/image.png){width=750 height=42}\n4. Single-packet pop-out w/ **Find in Packet** checkbox and shortcut toggle.\n\n   ![image.png](/uploads/d49604691a3ccb38f65c32f1a34cc4ed/image.png){width=893 height=102}\n5. Pop-out find bar with match counter and highlighted fields in the protocol tree\n\n![image.png](/uploads/0fd3e36c7e318e0679e2432a60386766/image.png){width=899 height=222}\n\n6. Multiple pop-out windows each with their own find bar state\n\n![image.png](/uploads/38d74b6f83141489065af2332f0e2a2b/image.png){width=936 height=709}",
+  "state": "merged",
+  "created_at": "2026-05-20T01:52:31.189Z",
+  "updated_at": "2026-07-07T02:21:18.716Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-05-28T05:21:40.352Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "qt-find-in-packet",
+  "user_notes_count": 19,
+  "upvotes": 1,
+  "downvotes": 0,
+  "author": {
+    "id": 37829815,
+    "username": "jonb4323",
+    "public_email": "",
+    "name": "Jon B",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+    "web_url": "https://gitlab.com/jonb4323"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 82358672,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "b8eced2ebabb1192ecb8f843cad83c1b1d43135b",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-05-20T01:52:43.250Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25004",
+  "references": {
+    "short": "!25004",
+    "relative": "!25004",
+    "full": "wireshark/wireshark!25004"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25004",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "23",
+  "latest_build_started_at": "2026-05-28T04:57:28.746Z",
+  "latest_build_finished_at": "2026-05-28T05:21:38.823Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2557852224,
+    "iid": 103830,
+    "project_id": 7898047,
+    "sha": "7cb0b8bfefa39c4eb08ba8b0700d530e821126f3",
+    "ref": "refs/merge-requests/25004/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-28T04:57:27.650Z",
+    "updated_at": "2026-05-28T05:21:38.837Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2557852224"
+  },
+  "head_pipeline": {
+    "id": 2557852224,
+    "iid": 103830,
+    "project_id": 7898047,
+    "sha": "7cb0b8bfefa39c4eb08ba8b0700d530e821126f3",
+    "ref": "refs/merge-requests/25004/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-05-28T04:57:27.650Z",
+    "updated_at": "2026-05-28T05:21:38.837Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2557852224",
+    "before_sha": "7cb0b8bfefa39c4eb08ba8b0700d530e821126f3",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-05-28T04:57:28.746Z",
+    "finished_at": "2026-05-28T05:21:38.823Z",
+    "committed_at": null,
+    "duration": 1450,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2557852224",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+    "head_sha": "b8eced2ebabb1192ecb8f843cad83c1b1d43135b",
+    "start_sha": "da6bde43691b1fa69d4024f5a8f90bd4c6fae97b"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "49f04a1ce9aaeee1d868faaefc3d3d198fe36347",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3365965945,
+          "type": null,
+          "body": "added 55 commits\n\n<ul><li>bd5fa3b8...abc31343 - 54 commits from branch <code>wireshark:master</code></li><li>0fcc6be6 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1808398148&start_sha=bd5fa3b8e785f5494ff3ae8ca49f9d6ecda9abe2)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-20T02:12:53.318Z",
+          "updated_at": "2026-05-20T02:12:53.322Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b141562425069b7bf28b21286ef0b531c886221c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3366010707,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-20T02:22:12.843Z",
+          "updated_at": "2026-05-20T02:22:12.848Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "40c8bde461b205b181accb80a1454594b40c65aa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3366127437,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>c9d75ee3 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1808444598&start_sha=0fcc6be6099084a36fe197b4d6d1774b2dd80f3a)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-20T03:05:22.011Z",
+          "updated_at": "2026-05-20T03:05:22.019Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6a963310d24f864926923229d24f8a88d4bc94d8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3366176187,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>38751063 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1808461757&start_sha=c9d75ee3fda9ae6a97d2a80a3bafc88051567375)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-20T03:22:09.601Z",
+          "updated_at": "2026-05-20T03:22:09.605Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cfce5325bc125cb4f429fd5c54be644eb54137ab",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3366184376,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>006df072 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1808464811&start_sha=38751063f1295eb92789207bdeaa1fa6aa26a910)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-20T03:25:55.043Z",
+          "updated_at": "2026-05-20T03:25:55.048Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "22455a743a3a0dd8d091fdd721b45237aec45533",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3366324889,
+          "type": "DiffNote",
+          "body": "This should use the application's monospace font, not a hardcoded font.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-20T04:35:33.928Z",
+          "updated_at": "2026-05-27T21:09:12.462Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 39,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_39",
+                "type": "new",
+                "old_line": null,
+                "new_line": 39
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_39",
+                "type": "new",
+                "old_line": null,
+                "new_line": 39
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:09:12.462Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379536358,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815531739&start_sha=006df07202b1424d09ad4662b144fcb01e876074#d224f5aae0a067632d2f895d3a17778c3e8e2b76_39_47)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T01:31:32.482Z",
+          "updated_at": "2026-05-24T01:31:32.482Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 39,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_39",
+                "type": "new",
+                "old_line": null,
+                "new_line": 39
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_39",
+                "type": "new",
+                "old_line": null,
+                "new_line": 39
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379588667,
+          "type": "DiffNote",
+          "body": "Fixed in the new mr now using the application's monospace font instead of the hardcoded family string.",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:19:49.241Z",
+          "updated_at": "2026-05-27T21:09:12.462Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 39,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_39",
+                "type": "new",
+                "old_line": null,
+                "new_line": 39
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_39",
+                "type": "new",
+                "old_line": null,
+                "new_line": 39
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:09:12.462Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7bd3c354f2a71f636d32da797077abb3614c5962",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3366350553,
+          "type": null,
+          "body": "It is seriously irritating all the places where the indentation was changed or comments, including Doxygen style comments, were removed.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-20T04:43:52.315Z",
+          "updated_at": "2026-05-20T04:43:52.315Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "97a86785a328c4ab1d09c9b360de0faa56a671c7",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3366356686,
+          "type": "DiffNote",
+          "body": "So you want to reassign an existing shortcut, not just assign a new one? That would have been good to find space to mention in your writeup.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-20T04:47:37.385Z",
+          "updated_at": "2026-05-27T21:09:21.708Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "da6bde43691b1fa69d4024f5a8f90bd4c6fae97b",
+            "head_sha": "b8eced2ebabb1192ecb8f843cad83c1b1d43135b",
+            "old_path": "ui/qt/wireshark_main_window.ui",
+            "new_path": "ui/qt/wireshark_main_window.ui",
+            "position_type": "text",
+            "old_line": 1375,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "18e5a6a65eb3fd35c742ffdcb32231f2a37a4840_1375_1376",
+                "type": "old",
+                "old_line": 1375,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "18e5a6a65eb3fd35c742ffdcb32231f2a37a4840_1375_1376",
+                "type": "old",
+                "old_line": 1375,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:09:21.708Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379590058,
+          "type": "DiffNote",
+          "body": "Fixed the shortcut issue w/ a unused shortcut.",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:23:10.272Z",
+          "updated_at": "2026-05-27T21:09:21.708Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "da6bde43691b1fa69d4024f5a8f90bd4c6fae97b",
+            "head_sha": "b8eced2ebabb1192ecb8f843cad83c1b1d43135b",
+            "old_path": "ui/qt/wireshark_main_window.ui",
+            "new_path": "ui/qt/wireshark_main_window.ui",
+            "position_type": "text",
+            "old_line": 1375,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "18e5a6a65eb3fd35c742ffdcb32231f2a37a4840_1375_1376",
+                "type": "old",
+                "old_line": 1375,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "18e5a6a65eb3fd35c742ffdcb32231f2a37a4840_1375_1376",
+                "type": "old",
+                "old_line": 1375,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:09:21.708Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f5b0d7908fca5fa2740802ab1686d13d3ae9a413",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3366370573,
+          "type": "DiffNote",
+          "body": "Why is the Doxygen comment removed for the DataSourceTab?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-20T04:52:32.103Z",
+          "updated_at": "2026-05-27T21:09:02.417Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+            "head_sha": "ff17face463cac0df9cd00c6ede2229eed0512aa",
+            "old_path": "ui/qt/packet_dialog.h",
+            "new_path": "ui/qt/packet_dialog.h",
+            "position_type": "text",
+            "old_line": 119,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "4c15a20af9dd12d2f0bc7221a4c25687193a745e_119_122",
+                "type": "old",
+                "old_line": 119,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "4c15a20af9dd12d2f0bc7221a4c25687193a745e_119_122",
+                "type": "old",
+                "old_line": 119,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:09:02.417Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379580576,
+          "type": "DiffNote",
+          "body": "changed this line in [version 9 of the diff](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815551573&start_sha=ff17face463cac0df9cd00c6ede2229eed0512aa#4c15a20af9dd12d2f0bc7221a4c25687193a745e_124_123)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:04:26.098Z",
+          "updated_at": "2026-05-24T03:04:26.098Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+            "head_sha": "ff17face463cac0df9cd00c6ede2229eed0512aa",
+            "old_path": "ui/qt/packet_dialog.h",
+            "new_path": "ui/qt/packet_dialog.h",
+            "position_type": "text",
+            "old_line": 119,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "4c15a20af9dd12d2f0bc7221a4c25687193a745e_119_122",
+                "type": "old",
+                "old_line": 119,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "4c15a20af9dd12d2f0bc7221a4c25687193a745e_119_122",
+                "type": "old",
+                "old_line": 119,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379589657,
+          "type": "DiffNote",
+          "body": "Fixed Doxygen comments.",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:22:17.180Z",
+          "updated_at": "2026-05-27T21:09:02.417Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+            "head_sha": "ff17face463cac0df9cd00c6ede2229eed0512aa",
+            "old_path": "ui/qt/packet_dialog.h",
+            "new_path": "ui/qt/packet_dialog.h",
+            "position_type": "text",
+            "old_line": 119,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "4c15a20af9dd12d2f0bc7221a4c25687193a745e_119_122",
+                "type": "old",
+                "old_line": 119,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "4c15a20af9dd12d2f0bc7221a4c25687193a745e_119_122",
+                "type": "old",
+                "old_line": 119,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:09:02.417Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d4770b58c9bffcd373a32ee459a403e4e7ee7f49",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3366408483,
+          "type": "DiffNote",
+          "body": "ProtoTree has a autoScrollTo member function that also sets the current index. You could use that.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-20T05:04:00.810Z",
+          "updated_at": "2026-05-27T21:09:28.571Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 383,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_383",
+                "type": "new",
+                "old_line": null,
+                "new_line": 383
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_383",
+                "type": "new",
+                "old_line": null,
+                "new_line": 383
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:09:28.571Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379536365,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815531739&start_sha=006df07202b1424d09ad4662b144fcb01e876074#d224f5aae0a067632d2f895d3a17778c3e8e2b76_383_393)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T01:31:33.236Z",
+          "updated_at": "2026-05-24T01:31:33.236Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 383,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_383",
+                "type": "new",
+                "old_line": null,
+                "new_line": 383
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_383",
+                "type": "new",
+                "old_line": null,
+                "new_line": 383
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379588950,
+          "type": "DiffNote",
+          "body": "Fixed switched to using autoScrollTo.",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:20:40.329Z",
+          "updated_at": "2026-05-27T21:09:28.571Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 383,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_383",
+                "type": "new",
+                "old_line": null,
+                "new_line": 383
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_383",
+                "type": "new",
+                "old_line": null,
+                "new_line": 383
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:09:28.571Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "82e9b5e6413a0b1a9219ca0d908f5e4ea63012a6",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3366424176,
+          "type": "DiffNote",
+          "body": "We support UTF-8 source code, and we use literal ellipses in several places. Failing that, we also have some defines in `wsutil/utf8_entities.h` that make it easier for people reading the code to know what glyph will be used without having to memorize Unicode code points.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-20T05:10:28.979Z",
+          "updated_at": "2026-05-27T21:08:50.694Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 36,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_36",
+                "type": "new",
+                "old_line": null,
+                "new_line": 36
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_36",
+                "type": "new",
+                "old_line": null,
+                "new_line": 36
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:08:50.694Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379536370,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815531739&start_sha=006df07202b1424d09ad4662b144fcb01e876074#d224f5aae0a067632d2f895d3a17778c3e8e2b76_36_47)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T01:31:33.552Z",
+          "updated_at": "2026-05-24T01:31:33.552Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 36,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_36",
+                "type": "new",
+                "old_line": null,
+                "new_line": 36
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_36",
+                "type": "new",
+                "old_line": null,
+                "new_line": 36
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379589190,
+          "type": "DiffNote",
+          "body": "Fixed now using a literal UTF-8 ellipsis character.",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:21:16.650Z",
+          "updated_at": "2026-05-27T21:08:50.694Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "start_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+            "head_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+            "old_path": "ui/qt/in_packet_find_bar.cpp",
+            "new_path": "ui/qt/in_packet_find_bar.cpp",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 36,
+            "line_range": {
+              "start": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_36",
+                "type": "new",
+                "old_line": null,
+                "new_line": 36
+              },
+              "end": {
+                "line_code": "d224f5aae0a067632d2f895d3a17778c3e8e2b76_0_36",
+                "type": "new",
+                "old_line": null,
+                "new_line": 36
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-27T21:08:50.694Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e1fceb660509d2aeb409023db5cf39bdc6490cc0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3366457384,
+          "type": null,
+          "body": "I'm not sure I understand the use of custom style sheets in order to make this inconsistent with the rest of the UI look.\n\nThere are some nice features here; the main Find Packet can search within a proto tree (and find multiple hits in it), but this does take advantage of knowing that it will only search one proto tree in order to count how many matches there are. Certainly being able to search in the separate packet window is useful.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-20T05:21:12.882Z",
+          "updated_at": "2026-05-24T03:21:54.950Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "94699cf8076babe0bb49f30ab46f23f1c43e4a08",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3366467781,
+          "type": null,
+          "body": "> Familiarity: Utilizing existing and familiar Wireshark UI patterns (Case, Regex, Word search pills).\n\nI'm sorry, what does \"pills\" mean here? These also don't seem like particularly familiar UI patterns. They're different, especially in wording, than the options in Find Packet. https://www.wireshark.org/docs/wsug_html_chunked/ChWorkFindPacketSection.html#_the_find_packet_toolbar\n\n> Safety: Connecting cleanly to standard keyboard events without colliding with the global Ctrl+F search frame.\n\nHowever, removing and taking over an existing shortcut for Reload As File Format.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-05-20T05:27:33.272Z",
+          "updated_at": "2026-05-24T03:21:38.461Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "eb085da5efb695f0722f978e40a54c4a47e6bf6f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3366852740,
+          "type": null,
+          "body": "For the main packet list this should be an option to the existing Find Packet instead of a different Find.",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2026-05-20T07:58:52.762Z",
+          "updated_at": "2026-05-20T07:58:52.762Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dedb53919e60edee7a6cda765da580cae76697d3",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3370875689,
+          "type": "DiscussionNote",
+          "body": "A new toolbar button is not going to happen either.",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-05-21T05:40:06.920Z",
+          "updated_at": "2026-05-28T04:55:43.431Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-28T04:55:43.431Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3379590619,
+          "type": "DiscussionNote",
+          "body": "Reworked based on your feedback, the in packet search is now integrated into the existing Find Packet toolbar as a checkbox option rather than a separate bar. Does that approach work better?",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:24:26.997Z",
+          "updated_at": "2026-05-28T04:55:43.431Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-05-28T04:55:43.431Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "86a7423b73e8407857dd3edc7c89a0da5e71ac8f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379507410,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T00:41:18.435Z",
+          "updated_at": "2026-05-24T00:41:18.438Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0ca7c297609c8d5f10a4cdbf38e1047eeefd7fe4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379507670,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T00:41:59.038Z",
+          "updated_at": "2026-05-24T00:41:59.041Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "049f93360652317cdf551c7863a17e8b6885847f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379523339,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T01:10:28.106Z",
+          "updated_at": "2026-05-24T01:10:28.109Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "021c191d279734d07c3e16fa56074c0de4d52985",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379523839,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T01:11:06.388Z",
+          "updated_at": "2026-05-24T01:11:06.392Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "83e8849d2056a6f68fae2c31f74ef8b6c9bfbf33",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379525230,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T01:12:09.269Z",
+          "updated_at": "2026-05-24T01:12:09.273Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "abbcff51a9fd79490f0cf7c456c3c8dd43755d2e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379536372,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>1dc6134a - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815531739&start_sha=006df07202b1424d09ad4662b144fcb01e876074)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T01:31:33.877Z",
+          "updated_at": "2026-05-24T01:31:33.882Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8405c5821989174c7ade5767dc9f3b6773f1b963",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379549200,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>6aa35f30 - Reformatted main_window.h comments</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815537234&start_sha=1dc6134a5401423c46c5e25e11de898960bb7cab)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T02:00:33.855Z",
+          "updated_at": "2026-05-24T02:00:33.859Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "14b2b00ecd7aec430daa5203507f69e266d90d5c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379564384,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>ff17face - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815543445&start_sha=6aa35f306bafc62e26f88b548dc2d2b21a13e715)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T02:26:04.934Z",
+          "updated_at": "2026-05-24T02:26:04.939Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "36c75ee85219908a1a55453b5d9e821ffa958a9f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379580585,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>ece90405 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815551573&start_sha=ff17face463cac0df9cd00c6ede2229eed0512aa)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:04:27.680Z",
+          "updated_at": "2026-05-24T03:04:27.732Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "82ffb6fa2c7512f9c49507295610f2c6acacbb6a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379585869,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>37d87e06 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815553798&start_sha=ece904051a975424ca9e68ca461b7a6722bcfdf0)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T03:13:49.759Z",
+          "updated_at": "2026-05-24T03:13:49.764Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c2a832a8d4060bb30f28f041d466f83ccc8a816c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379604931,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>84a72707 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815561946&start_sha=37d87e0658f5ae89c65e39d9274d3e93f751035e)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T04:02:21.322Z",
+          "updated_at": "2026-05-24T04:02:21.326Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0d8b526cd9e2f97a708b46eb9fd98ce1f8315e19",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379614390,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>1b902ad5 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815565574&start_sha=84a7270709f100b99c43ab56d673936c7fb95a78)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T04:15:44.660Z",
+          "updated_at": "2026-05-24T04:15:44.668Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b674c3e1a656c9cee7b94dcc4e39c6d8eaf59566",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379621390,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>7cded9c4 - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815568469&start_sha=1b902ad5e1d4b2fe587fb346925ce2f44f5450db)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T04:32:33.591Z",
+          "updated_at": "2026-05-24T04:32:33.595Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d10addc3e208ed939c90527873efdeb6c564019f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3379993459,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>a1adacea - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815755913&start_sha=7cded9c4256409ebb57df8b956ebbc34828563d7)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T16:15:11.046Z",
+          "updated_at": "2026-05-24T16:15:11.056Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6bffd831739aee3183425a733a615d70872f91a1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3380043876,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>9c4a616a - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815778906&start_sha=a1adacea750f53d5741d341e8c34ac6883001534)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T17:34:24.117Z",
+          "updated_at": "2026-05-24T17:34:24.124Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9a19b0a00f6a5c2d007c947316f75e745ed8bf2e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3380144750,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>e26b7dfe - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815815269&start_sha=9c4a616a76dd300f1d407f57118a411af8fe4966)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T19:40:54.322Z",
+          "updated_at": "2026-05-24T19:40:54.328Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e80a1da043d3024348978ad5c4ee0fc378da366a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3380273437,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>b8eced2e - Qt: Add Find in Packet search feature</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25004/diffs?diff_id=1815875318&start_sha=e26b7dfefbc59646796c1288da6115a84a0b7a35)",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-05-24T20:57:58.356Z",
+          "updated_at": "2026-05-24T20:57:58.360Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0b87d3af7ecfc17bdad3e2e4a166cf695e6b4f66",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3392885367,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-05-28T04:55:43.460Z",
+          "updated_at": "2026-05-28T04:55:43.464Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "817f8fb757f12e8926b8d21142ce9691b2f33381",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3392890676,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-05-28T04:57:21.776Z",
+          "updated_at": "2026-05-28T04:57:21.791Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f553a68aaf529a22d260d4dbe92be443ba7fea9c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3392890874,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-05-28T04:57:26.253Z",
+          "updated_at": "2026-05-28T04:57:26.256Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dbf9bda85d5129008ddb15caedf7cbfe7f2a1d05",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 3393113460,
+          "type": "DiscussionNote",
+          "body": "1. The existing find toolbar already support search in Packet details and it also has a checkbox for \"Multiple occurrences\" to find multiple entries in one packet. Why implement a second find for the exact same purpose?\n2. Why does the new find toolbar look different than the existing find toolbar? On macOS the UI looks unfinished and does not match the existing UI. See screenshots attached.\n3. What does the new \"Find in Packet\" checkbox do which is different from a find in Packet details?\n4. The names \"Find Packet\" vs \"Find in Packet\" is very similar and it's hard to understand the difference for new users.\n5. When show a packet in a separate window the menu item \"Find in Packet\" does not show the find toolbar in the new window, only toggle the find toolbar in Packet details in the main window. Same with the keyboard shortcut.\n6. It's no menu item or any way to figure how to get the new find toolbar in a separate packet window.\n7. Doing a find with no match makes the background colour red. This colour indicates an error with the search field other places in Wireshark, but here it indicates no match found. This is inconsistent behaviour.\n8. Doing a find with a match and then select \"Find in Packet\" does not add green background to the search field. This is inconsistent.\n9. Pressing the up or down buttons in case 8 does not find a match even if the packet has a match. Toggling one of the Case/Regex/Word buttons does update UI and makes the find work.\n10. The features in the Find Packet and Find in Packet must be aligned to be consistent.\n11. Where is the documentation for this feature?\n\nI think this feature is not ready yet.\n\n![Screenshot_2026-05-28_at_08.13.49](/uploads/19122c67d6699321e46914a25439416c/Screenshot_2026-05-28_at_08.13.49.png){width=862 height=70}\n\n![Screenshot_2026-05-28_at_08.16.12](/uploads/bccd9aff56565f010e1b75b70313c197/Screenshot_2026-05-28_at_08.16.12.png){width=718 height=70}",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2026-05-28T06:36:31.778Z",
+          "updated_at": "2026-05-29T20:05:08.358Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3400493751,
+          "type": "DiscussionNote",
+          "body": "Also needs to be better integrated into Stratoshark.  The immediate crash at startup should be fixed by !25157",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2026-05-29T20:05:08.279Z",
+          "updated_at": "2026-05-29T20:05:08.279Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        },
+        {
+          "id": 3413937460,
+          "type": "DiscussionNote",
+          "body": "All feedback has been addressed in the follow-up MR: !25219",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-06-03T02:09:09.272Z",
+          "updated_at": "2026-06-03T02:09:09.272Z",
+          "system": false,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "82c82fc63b8033e4f3f14075ffc64d03f4f15f0e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3400492724,
+          "type": null,
+          "body": "mentioned in merge request !25157",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2026-05-29T20:04:35.444Z",
+          "updated_at": "2026-05-29T20:04:35.747Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8bedc86f47dcef2bc7c7ad0d05975ce9aaf22ae9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3400637223,
+          "type": null,
+          "body": "mentioned in merge request !25158",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2026-05-29T21:17:39.408Z",
+          "updated_at": "2026-05-29T21:17:39.412Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "254bb1228e3b7f85ff747933d7e54e660723db81",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3413935995,
+          "type": null,
+          "body": "mentioned in merge request !25219",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-06-03T02:08:34.648Z",
+          "updated_at": "2026-06-03T02:08:34.658Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3c8a7c591b8948ec56870f2d23b599c8b7bd326c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3413937466,
+          "type": null,
+          "body": "left review comments",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-06-03T02:09:09.469Z",
+          "updated_at": "2026-06-03T02:09:09.472Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "095578cc36342364ce52a5838b3560fd4abac44f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3530276947,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-07T02:11:35.151Z",
+          "updated_at": "2026-07-07T02:11:35.152Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "821a5921b4b4a74eb98847f148b4829b89315dde",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3530290085,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 37829815,
+            "username": "jonb4323",
+            "public_email": "",
+            "name": "Jon B",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/37829815/avatar.png?v=1788744909",
+            "web_url": "https://gitlab.com/jonb4323"
+          },
+          "created_at": "2026-07-07T02:21:18.873Z",
+          "updated_at": "2026-07-07T02:21:18.875Z",
+          "system": true,
+          "noteable_id": 486917588,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25004,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -63,6 +63,9 @@ The following features are either new or have been significantly updated since v\n \n * The RTP Player now supports AMR-WB encoded audio.\n \n+* A \"Find in Packet\" search bar has been added to the packet details pane.\n+  It can be opened via the Edit menu, the toolbar, or the shortcut Ctrl+Shift+F, enabling filtering, highlighting, and navigation of protocol fields within the selected packet.\n+\n * The protocol dissection API has been updated to more safely handle packet data offsets and lengths.\n   See the <<Major API Changes>> section below for details.\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "doc/Wireshark_Release_Notes.adoc",
+      "old_path": "doc/Wireshark_Release_Notes.adoc",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/resources/stock_icons/24x24/edit-find-in.template.png differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "resources/stock_icons/24x24/edit-find-in.template.png",
+      "old_path": "resources/stock_icons/24x24/edit-find-in.template.png",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,2 @@\n+<?xml version=\"1.0\" encoding=\"utf-8\"?>\n+<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"16\" width=\"16\" version=\"1.1\" id=\"svg9548\" xmlns:bx=\"https://boxy-svg.com\" viewBox=\"0 0 16 16\"><defs id=\"defs9552\"><style bx:fonts=\"Tiny5\">@import url(https://fonts.googleapis.com/css2?family=Tiny5%3Aital%2Cwght%400%2C400&amp;display=swap);</style><bx:export><bx:file format=\"svg\"/></bx:export></defs><radialGradient id=\"a\" cx=\"3.776183\" cy=\"8.476432\" gradientTransform=\"matrix(0.850203, 0.490865, -0.490865, 0.850203, 4.567728, -0.470794)\" gradientUnits=\"userSpaceOnUse\" r=\"4.321379\"><stop offset=\"0\" stop-opacity=\".121569\" id=\"stop9531\"/><stop offset=\"1\" stop-opacity=\".309645\" id=\"stop9535\" style=\"stop-color:#000000;stop-opacity:0.24705882\"/></radialGradient><rect style=\"fill:#0c0000;stroke:#000000;stroke-linecap:round;stroke-opacity:1;fill-opacity:1\" id=\"rect9538\" y=\"13.242122\" x=\"2.593333\" width=\"1.763713\" transform=\"rotate(-30)\" rx=\"1\" height=\"5.2911401\"/><path style=\"fill:none;stroke:#000000;stroke-width:2;stroke-opacity:1\" id=\"path9542\" d=\"m 9.2089838,9 c 0.715675,1.2396 0.715675,1.2396 0.715675,1.2396\"/><circle style=\"fill:url(#a);stroke:#000000;stroke-linecap:round;stroke-opacity:1\" id=\"circle9544\" transform=\"matrix(0.866025, -0.5, 0.5, 0.866025, -0.060218, -0.020073)\" r=\"3.821\" cy=\"8.245\" cx=\"3.475\"/><text style=\"fill: rgb(30, 80, 15); font-family: Tiny5; font-size: 3px; white-space: pre;\" transform=\"matrix(1.305743, 0, 0, 1, -1.849176, 0.441592)\"><tspan x=\"5.543\" y=\"4.558\">10</tspan><tspan x=\"5.543\" dy=\"1em\">​</tspan><tspan>01</tspan></text></svg>\n\\ No newline at end of file\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "resources/stock_icons/24x24/edit-find-in.template.svg",
+      "old_path": "resources/stock_icons/24x24/edit-find-in.template.svg",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -134,6 +134,8 @@\n         <file>stock_icons/24x14/x-filter-apply.selected@2x.png</file>\n         <file>stock_icons/24x24/edit-find.template.png</file>\n         <file>stock_icons/24x24/edit-find.template@2x.png</file>\n+        <file>stock_icons/24x24/edit-find-in.template.png</file>\n+        <file>stock_icons/24x24/edit-find-in.template.svg</file>\n         <file>stock_icons/24x24/go-first.png</file>\n         <file>stock_icons/24x24/go-first@2x.png</file>\n         <file>stock_icons/24x24/go-jump.png</file>\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "resources/stock_icons.qrc",
+      "old_path": "resources/stock_icons.qrc",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,51 @@\n+/* in_packet_find_delegate.cpp\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#include \"in_packet_find_delegate.h\"\n+#include <ui/qt/in_packet_find_bar.h>\n+\n+#include <QPainter>\n+\n+InPacketFindDelegate::InPacketFindDelegate(InPacketFindBar *find_bar, QObject *parent) :\n+    QStyledItemDelegate(parent),\n+    find_bar_(find_bar)\n+{\n+}\n+\n+void InPacketFindDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,\n+                                  const QModelIndex &index) const\n+{\n+    if (find_bar_ && find_bar_->isVisible()) {\n+        bool is_current = find_bar_->isCurrentMatch(index);\n+        bool is_match = is_current || find_bar_->isMatch(index);\n+\n+        if (is_match) {\n+            painter->save();\n+\n+            bool dark = find_bar_->isDarkMode();\n+            QColor match_color = dark ? QColor(0xb8, 0x9a, 0x00) : QColor(0xf6, 0xd3, 0x2d);\n+            QColor current_color = dark ? QColor(0xc8, 0x50, 0x00) : QColor(0xe6, 0x60, 0x00);\n+\n+            QRect rect = option.rect;\n+\n+            if (is_current) {\n+                painter->fillRect(rect, current_color);\n+                painter->setPen(QPen(current_color.darker(130), 1));\n+                painter->drawRect(rect.adjusted(0, 0, -1, -1));\n+            } else {\n+                painter->fillRect(rect, match_color);\n+            }\n+\n+            painter->restore();\n+        }\n+    }\n+\n+    // Draw the standard content on top\n+    QStyledItemDelegate::paint(painter, option, index);\n+}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/models/in_packet_find_delegate.cpp",
+      "old_path": "ui/qt/models/in_packet_find_delegate.cpp",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,31 @@\n+/** @file\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#ifndef IN_PACKET_FIND_DELEGATE_H\n+#define IN_PACKET_FIND_DELEGATE_H\n+\n+#include <QStyledItemDelegate>\n+\n+class InPacketFindBar;\n+\n+class InPacketFindDelegate : public QStyledItemDelegate\n+{\n+    Q_OBJECT\n+\n+public:\n+    explicit InPacketFindDelegate(InPacketFindBar *find_bar, QObject *parent = nullptr);\n+\n+    void paint(QPainter *painter, const QStyleOptionViewItem &option,\n+               const QModelIndex &index) const override;\n+\n+private:\n+    InPacketFindBar *find_bar_;\n+};\n+\n+#endif // IN_PACKET_FIND_DELEGATE_H\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/models/in_packet_find_delegate.h",
+      "old_path": "ui/qt/models/in_packet_find_delegate.h",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -124,6 +124,13 @@ StockIcon::StockIcon(const QString icon_name) :\n             continue;\n         }\n \n+        // Fallback: check for SVG template icon\n+        QString icon_path_svg_template = QStringLiteral(\"%1%2/%3.template.svg\").arg(path_pfx_, type, icon_name);\n+        if (QFile::exists(icon_path_svg_template)) {\n+            addFile(icon_path_svg_template);\n+            continue;\n+        }\n+\n         // Regular full-color icons\n         QString icon_path = QStringLiteral(\"%1%2/%3.png\").arg(path_pfx_, type, icon_name);\n         if (QFile::exists(icon_path)) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/utils/stock_icon.cpp",
+      "old_path": "ui/qt/utils/stock_icon.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -355,6 +355,10 @@ bool SyntaxLineEdit::event(QEvent *event)\n         // qDebug() << \"=so\" << key_event->key() << key_event->modifiers() << key_event->text();\n \n         if (key_event->modifiers() == Qt::KeyboardModifiers(Qt::ControlModifier|Qt::AltModifier)) {\n+            if (key_event->key() == Qt::Key_F) {\n+                // Allow Ctrl+Alt+F to reach the global/find-in-packet shortcut\n+                return false;\n+            }\n             event->accept();\n             return true;\n         }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/widgets/syntax_line_edit.cpp",
+      "old_path": "ui/qt/widgets/syntax_line_edit.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -415,6 +415,7 @@ set(WIRESHARK_MODEL_SRCS\n \tmodels/export_objects_model.cpp\n \tmodels/fileset_entry_model.cpp\n \tmodels/filter_list_model.cpp\n+\tmodels/in_packet_find_delegate.cpp\n \tmodels/info_proxy_model.cpp\n \tmodels/interface_sort_filter_model.cpp\n \tmodels/interface_tree_cache_model.cpp\n@@ -496,6 +497,7 @@ set(WIRESHARK_QT_SRC\n \tglib_mainloop_on_qeventloop.cpp\n \tiax2_analysis_dialog.cpp\n \timport_text_dialog.cpp\n+\tin_packet_find_bar.cpp\n \tinterface_frame.cpp\n \tinterface_toolbar_reader.cpp\n \tinterface_toolbar.cpp\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/CMakeLists.txt",
+      "old_path": "ui/qt/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,432 @@\n+/* in_packet_find_bar.cpp\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#include \"in_packet_find_bar.h\"\n+#include \"proto_tree.h\"\n+#include \"models/in_packet_find_delegate.h\"\n+\n+#include <QAbstractItemModel>\n+#include <QApplication>\n+#include <QHBoxLayout>\n+#include <QKeyEvent>\n+#include <QPalette>\n+#include <QRegularExpression>\n+#include <QStyle>\n+#include \"main_application.h\"\n+\n+int InPacketFindBar::open_instances_ = 0;\n+\n+InPacketFindBar::~InPacketFindBar()\n+{\n+    if (is_open_) {\n+        --open_instances_;\n+        is_open_ = false;\n+    }\n+}\n+\n+InPacketFindBar::InPacketFindBar(ProtoTree *tree, QWidget *parent) :\n+    QWidget(parent),\n+    proto_tree_(tree),\n+    is_open_(false),\n+    current_match_(-1),\n+    regex_invalid_(false),\n+    natural_height_(0)\n+{\n+    // Build UI\n+    QHBoxLayout *layout = new QHBoxLayout(this);\n+    layout->setContentsMargins(4, 2, 4, 2);\n+    layout->setSpacing(4);\n+\n+    // Search field\n+    search_edit_ = new SyntaxLineEdit(this);\n+    search_edit_->setPlaceholderText(tr(\"Find in packet%1\").arg(UTF8_HORIZONTAL_ELLIPSIS));\n+    search_edit_->setFont(mainApp->monospaceFont());\n+    search_edit_->setMinimumWidth(180);\n+    layout->addWidget(search_edit_);\n+\n+    // Toggle buttons helper lambda\n+    auto makePill = [this](const QString &text) -> QToolButton* {\n+        QToolButton *btn = new QToolButton(this);\n+        btn->setText(text);\n+        btn->setCheckable(true);\n+        return btn;\n+    };\n+\n+    case_button_ = makePill(tr(\"Case\"));\n+    regex_button_ = makePill(tr(\"Regex\"));\n+    word_button_ = makePill(tr(\"Word\"));\n+    layout->addWidget(case_button_);\n+    layout->addWidget(regex_button_);\n+    layout->addWidget(word_button_);\n+\n+    // Counter label\n+    counter_label_ = new QLabel(this);\n+    counter_label_->setMinimumWidth(70);\n+    layout->addWidget(counter_label_);\n+\n+    // Prev / Next\n+    prev_button_ = new QToolButton(this);\n+    prev_button_->setText(QStringLiteral(\"\\u25B2\"));\n+    prev_button_->setToolTip(tr(\"Previous match (Shift+Enter)\"));\n+    prev_button_->setAutoRaise(true);\n+    layout->addWidget(prev_button_);\n+\n+    next_button_ = new QToolButton(this);\n+    next_button_->setText(QStringLiteral(\"\\u25BC\"));\n+    next_button_->setToolTip(tr(\"Next match (Enter)\"));\n+    next_button_->setAutoRaise(true);\n+    layout->addWidget(next_button_);\n+\n+    // Spacer\n+    layout->addStretch();\n+\n+    // Close\n+    close_button_ = new QToolButton(this);\n+    close_button_->setText(tr(\"Cancel\"));\n+    layout->addWidget(close_button_);\n+\n+    setLayout(layout);\n+\n+    // Match bar background to proto tree\n+    QPalette pal = palette();\n+    pal.setColor(QPalette::Window, pal.color(QPalette::Base));\n+    setPalette(pal);\n+    setAutoFillBackground(true);\n+\n+    // Animation setup\n+    animation_ = new QPropertyAnimation(this, \"barHeight\", this);\n+    animation_->setDuration(120);\n+    animation_->setEasingCurve(QEasingCurve::OutCubic);\n+\n+    // Debounce timer\n+    debounce_timer_ = new QTimer(this);\n+    debounce_timer_->setSingleShot(true);\n+    debounce_timer_->setInterval(50);\n+    connect(debounce_timer_, &QTimer::timeout, this, &InPacketFindBar::performSearch);\n+\n+    // Connections\n+    connect(search_edit_, &QLineEdit::textChanged, this, &InPacketFindBar::onTextChanged);\n+    connect(next_button_, &QToolButton::clicked, this, &InPacketFindBar::findNext);\n+    connect(prev_button_, &QToolButton::clicked, this, &InPacketFindBar::findPrevious);\n+    connect(close_button_, &QToolButton::clicked, this, &InPacketFindBar::closeBar);\n+    connect(case_button_, &QToolButton::toggled, this, &InPacketFindBar::onToggleChanged);\n+    connect(regex_button_, &QToolButton::toggled, this, &InPacketFindBar::onToggleChanged);\n+    connect(word_button_, &QToolButton::toggled, this, &InPacketFindBar::onToggleChanged);\n+\n+    // Install event filter on search_edit_ for Enter / Shift+Enter / Escape\n+    search_edit_->installEventFilter(this);\n+\n+    // Install delegate on tree\n+    InPacketFindDelegate *delegate = new InPacketFindDelegate(this, proto_tree_);\n+    proto_tree_->setItemDelegate(delegate);\n+\n+    // Start hidden\n+    setVisible(false);\n+    setMaximumHeight(0);\n+}\n+\n+int InPacketFindBar::barHeight() const \n+{\n+    return maximumHeight();\n+}\n+\n+void InPacketFindBar::setBarHeight(int h)\n+{\n+    setMaximumHeight(h);\n+}\n+\n+void InPacketFindBar::showAnimated()\n+{\n+    if (isVisible() && maximumHeight() > 0) {\n+        // Already open (just refocus)\n+        search_edit_->setFocus();\n+        search_edit_->selectAll();\n+        return;\n+    }\n+\n+    // Calculate natural height on first show\n+    if (natural_height_ == 0) {\n+        setMaximumHeight(QWIDGETSIZE_MAX);\n+        adjustSize();\n+        natural_height_ = sizeHint().height();\n+        setMaximumHeight(0);\n+    }\n+\n+    setVisible(true);\n+    animation_->stop();\n+    animation_->setStartValue(0);\n+    animation_->setEndValue(natural_height_);\n+    animation_->start();\n+\n+    if (!is_open_) { \n+        ++open_instances_;\n+        is_open_ = true;\n+    }\n+\n+    search_edit_->setFocus();\n+    search_edit_->selectAll();\n+}\n+\n+void InPacketFindBar::hideAnimated()\n+{\n+    animation_->stop();\n+    animation_->setStartValue(maximumHeight());\n+    animation_->setEndValue(0);\n+\n+    QMetaObject::Connection *conn = new QMetaObject::Connection();\n+    *conn = connect(animation_, &QPropertyAnimation::finished, this, [this, conn]() {\n+        setVisible(false);\n+        // Clear highlights\n+        matches_.clear();\n+        current_match_ = -1;\n+        regex_invalid_ = false;\n+        counter_label_->clear();\n+        search_edit_->setSyntaxState(SyntaxLineEdit::Empty);\n+        if (is_open_) {\n+            --open_instances_;\n+            is_open_ = false;\n+        }\n+        emit matchesChanged();\n+        disconnect(*conn);\n+        delete conn;\n+    });\n+    animation_->start();\n+}\n+\n+void InPacketFindBar::focusSearchField()\n+{\n+    if (isVisible()) {\n+        search_edit_->setFocus();\n+        search_edit_->selectAll();\n+    }\n+}\n+\n+bool InPacketFindBar::isMatch(const QModelIndex &index) const\n+{\n+    return matches_.contains(index);\n+}\n+\n+bool InPacketFindBar::isCurrentMatch(const QModelIndex &index) const\n+{\n+    if (current_match_ < 0 || current_match_ >= matches_.size())\n+        return false;\n+    return matches_.at(current_match_) == index;\n+}\n+\n+bool InPacketFindBar::isDarkMode() const\n+{\n+    return palette().color(QPalette::Window).lightness() < 128;\n+}\n+\n+bool InPacketFindBar::eventFilter(QObject *obj, QEvent *event)\n+{\n+    if (obj == search_edit_ && event->type() == QEvent::KeyPress) {\n+        QKeyEvent *ke = static_cast<QKeyEvent *>(event);\n+        if (ke->key() == Qt::Key_Escape) {\n+            closeBar();\n+            return true;\n+        }\n+        if (ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter) {\n+            if (ke->modifiers() & Qt::ShiftModifier) {\n+                findPrevious();\n+            } else {\n+                findNext();\n+            }\n+            return true;\n+        }\n+    }\n+    return QWidget::eventFilter(obj, event);\n+}\n+\n+void InPacketFindBar::onTextChanged(const QString &)\n+{\n+    debounce_timer_->start();\n+}\n+\n+void InPacketFindBar::performSearch()\n+{\n+    updateMatches();\n+}\n+\n+void InPacketFindBar::onToggleChanged()\n+{\n+    if (!search_edit_->text().isEmpty()) {\n+        updateMatches();\n+    }\n+}\n+\n+void InPacketFindBar::collectIndices(const QModelIndex &parent, QList<QModelIndex> &out)\n+{\n+    QAbstractItemModel *model = proto_tree_->model();\n+    if (!model) return;\n+\n+    QList<QModelIndex> stack;\n+    int rows = model->rowCount(parent);\n+    for (int r = rows - 1; r >= 0; --r) {\n+        QModelIndex idx = model->index(r, 0, parent);\n+        if (idx.isValid()) {\n+            stack.append(idx);\n+        }\n+    }\n+\n+    while (!stack.isEmpty()) {\n+        QModelIndex current = stack.takeLast();\n+        out.append(current);\n+\n+        int child_rows = model->rowCount(current);\n+        for (int r = child_rows - 1; r >= 0; --r) {\n+            QModelIndex child = model->index(r, 0, current);\n+            if (child.isValid()) {\n+                stack.append(child);\n+            }\n+        }\n+    }\n+}\n+\n+void InPacketFindBar::updateMatches()\n+{\n+    matches_.clear();\n+    current_match_ = -1;\n+    regex_invalid_ = false;\n+\n+    QString pattern = search_edit_->text();\n+\n+    if (pattern.isEmpty()) {\n+        search_edit_->setSyntaxState(SyntaxLineEdit::Empty);\n+        updateCounterLabel();\n+        emit matchesChanged();\n+        proto_tree_->viewport()->update();\n+        return;\n+    }\n+\n+    // Build all indices\n+    QList<QModelIndex> all_indices;\n+    collectIndices(QModelIndex(), all_indices);\n+\n+    bool case_sensitive = case_button_->isChecked();\n+    bool use_regex = regex_button_->isChecked();\n+    bool whole_word = word_button_->isChecked();\n+\n+    // Build pattern string\n+    QString regex_pattern;\n+    if (use_regex) {\n+        regex_pattern = pattern;\n+    } else {\n+        regex_pattern = QRegularExpression::escape(pattern);\n+    }\n+\n+    if (whole_word) {\n+        regex_pattern = QStringLiteral(\"\\\\b\") + regex_pattern + QStringLiteral(\"\\\\b\");\n+    }\n+\n+    QRegularExpression::PatternOptions opts = QRegularExpression::NoPatternOption;\n+    if (!case_sensitive) {\n+        opts |= QRegularExpression::CaseInsensitiveOption;\n+    }\n+\n+    QRegularExpression re(regex_pattern, opts);\n+    if (!re.isValid()) {\n+        regex_invalid_ = true;\n+        search_edit_->setSyntaxState(SyntaxLineEdit::Invalid);\n+        updateCounterLabel();\n+        emit matchesChanged();\n+        proto_tree_->viewport()->update();\n+        return;\n+    }\n+\n+    search_edit_->setSyntaxState(SyntaxLineEdit::Valid);\n+\n+    // Search all items\n+    for (const QModelIndex &idx : all_indices) {\n+        QString text = idx.data(Qt::DisplayRole).toString();\n+        if (re.match(text).hasMatch()) {\n+            matches_.append(idx);\n+        }\n+    }\n+\n+    if (!matches_.isEmpty()) {\n+        current_match_ = 0;\n+        navigateTo(current_match_);\n+        search_edit_->setSyntaxState(SyntaxLineEdit::Valid);\n+    } else {\n+        search_edit_->setSyntaxState(SyntaxLineEdit::Invalid);\n+    }\n+\n+    updateCounterLabel();\n+    emit matchesChanged();\n+    proto_tree_->viewport()->update();\n+}\n+\n+void InPacketFindBar::updateCounterLabel()\n+{\n+    if (search_edit_->text().isEmpty()) {\n+        counter_label_->clear();\n+        return;\n+    }\n+    if (regex_invalid_) {\n+        counter_label_->setText(tr(\"invalid pattern\"));\n+        return;\n+    }\n+    if (matches_.isEmpty()) {\n+        counter_label_->setText(tr(\"no matches\"));\n+        return;\n+    }\n+    counter_label_->setText(tr(\"%1 of %2\").arg(current_match_ + 1).arg(matches_.size()));\n+}\n+\n+void InPacketFindBar::navigateTo(qsizetype index)\n+{\n+    if (index < 0 || index >= matches_.size())\n+        return;\n+\n+    QModelIndex match = matches_.at(index);\n+\n+    // Expand parents so the item is visible\n+    expandParents(match);\n+\n+    proto_tree_->autoScrollTo(match);\n+\n+    proto_tree_->viewport()->update();\n+}\n+\n+void InPacketFindBar::expandParents(const QModelIndex &index)\n+{\n+    QList<QModelIndex> parents;\n+    QModelIndex parent = index.parent();\n+    while (parent.isValid()) {\n+        parents.prepend(parent);\n+        parent = parent.parent();\n+    }\n+    for (const QModelIndex &p : parents) {\n+        proto_tree_->expand(p);\n+    }\n+}\n+\n+void InPacketFindBar::findNext()\n+{\n+    if (matches_.isEmpty()) return;\n+    current_match_ = static_cast<qsizetype>((current_match_ + 1) % matches_.size());\n+    navigateTo(current_match_);\n+    updateCounterLabel();\n+    proto_tree_->viewport()->update();\n+}\n+\n+void InPacketFindBar::findPrevious()\n+{\n+    if (matches_.isEmpty()) return;\n+    current_match_ = static_cast<qsizetype>((current_match_ - 1 + matches_.size()) % matches_.size());\n+    navigateTo(current_match_);\n+    updateCounterLabel();\n+    proto_tree_->viewport()->update();\n+}\n+\n+void InPacketFindBar::closeBar()\n+{\n+    hideAnimated();\n+}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/in_packet_find_bar.cpp",
+      "old_path": "ui/qt/in_packet_find_bar.cpp",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,216 @@\n+/** @file\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#ifndef IN_PACKET_FIND_BAR_H\n+#define IN_PACKET_FIND_BAR_H\n+\n+#include <QLabel>\n+#include <wsutil/utf8_entities.h>\n+#include \"widgets/syntax_line_edit.h\"\n+#include <QModelIndex>\n+#include <QPropertyAnimation>\n+#include <QTimer>\n+#include <QToolButton>\n+#include <QWidget>\n+\n+class ProtoTree;\n+\n+/**\n+ * @brief Find bar widget for searching within a specific packet's protocol tree.\n+ */\n+class InPacketFindBar : public QWidget\n+{\n+    Q_OBJECT\n+    Q_PROPERTY(int barHeight READ barHeight WRITE setBarHeight)\n+\n+public:\n+    /**\n+     * @brief Constructs a new InPacketFindBar object.\n+     * @param tree The protocol tree to search within.\n+     * @param parent The parent widget.\n+     */\n+    explicit InPacketFindBar(ProtoTree *tree, QWidget *parent = nullptr);\n+\n+    /**\n+     * @brief Destroys the InPacketFindBar object.\n+     */\n+    ~InPacketFindBar();\n+\n+    /**\n+     * @brief Returns the number of currently open instances of the find bar.\n+     * @return Number of open instances.\n+     */\n+    static int openInstances() { return open_instances_; }\n+\n+    /**\n+     * @brief Shows the find bar with an animation.\n+     */\n+    void showAnimated();\n+\n+    /**\n+     * @brief Hides the find bar with an animation.\n+     */\n+    void hideAnimated();\n+\n+    /**\n+     * @brief Sets focus to the search input field.\n+     */\n+    void focusSearchField();\n+\n+    /**\n+     * @brief Checks if a specific model index matches the current search criteria.\n+     * @param model_index The model index to check.\n+     * @return @c true if the index matches; @c false otherwise.\n+     */\n+    bool isMatch(const QModelIndex &model_index) const;\n+\n+    /**\n+     * @brief Checks if a specific model index is the currently active/selected match.\n+     * @param model_index The model index to check.\n+     * @return @c true if it is the current match; @c false otherwise.\n+     */\n+    bool isCurrentMatch(const QModelIndex &model_index) const;\n+\n+    /**\n+     * @brief Checks whether the widget is currently operating in dark mode.\n+     * @return @c true if dark mode is active; @c false otherwise.\n+     */\n+    bool isDarkMode() const;\n+\n+    /**\n+     * @brief Gets the current height of the animated bar.\n+     * @return The height in pixels.\n+     */\n+    int barHeight() const;\n+\n+    /**\n+     * @brief Sets the height of the animated bar.\n+     * @param h The new height in pixels.\n+     */\n+    void setBarHeight(int h);\n+\n+signals:\n+    /**\n+     * @brief Signal emitted when the search matches are updated.\n+     */\n+    void matchesChanged();\n+\n+protected:\n+    /**\n+     * @brief Event filter for handling specific widget events.\n+     * @param obj Object that received the event.\n+     * @param event The event to process.\n+     * @return @c true if the event was handled; @c false to pass it on.\n+     */\n+    bool eventFilter(QObject *obj, QEvent *event) override;\n+\n+private slots:\n+    /**\n+     * @brief Slot triggered when the search text changes.\n+     * @param text The new search text.\n+     */\n+    void onTextChanged(const QString &text);\n+\n+    /**\n+     * @brief Slot to perform the actual search operation.\n+     */\n+    void performSearch();\n+\n+    /**\n+     * @brief Slot to navigate to the next match.\n+     */\n+    void findNext();\n+\n+    /**\n+     * @brief Slot to navigate to the previous match.\n+     */\n+    void findPrevious();\n+\n+    /**\n+     * @brief Slot to close the find bar.\n+     */\n+    void closeBar();\n+\n+    /**\n+     * @brief Slot triggered when search toggle options (case, regex, word) change.\n+     */\n+    void onToggleChanged();\n+\n+private:\n+    /**\n+     * @brief Updates the internal list of matching model indices.\n+     */\n+    void updateMatches();\n+\n+    /**\n+     * @brief Updates the label displaying the current match count (e.g. \"1 of 5\").\n+     */\n+    void updateCounterLabel();\n+\n+    /**\n+     * @brief Navigates the selection to the specified match index.\n+     * @param model_index The match index to navigate to.\n+     */\n+    void navigateTo(qsizetype model_index);\n+\n+    /**\n+     * @brief Expands parent nodes in the tree so the match is visible.\n+     * @param model_index The model index whose parents should be expanded.\n+     */\n+    void expandParents(const QModelIndex &model_index);\n+\n+    /**\n+     * @brief Recursively collects all model indices within the tree.\n+     * @param parent The parent model index to start from.\n+     * @param out List to populate with model indices.\n+     */\n+    void collectIndices(const QModelIndex &parent, QList<QModelIndex> &out);\n+\n+    /** @brief Pointer to the protocol tree. */\n+    ProtoTree *proto_tree_;\n+\n+    /** @brief Line edit for entering search text. */\n+    SyntaxLineEdit *search_edit_;\n+    /** @brief Button to toggle case-sensitive search. */\n+    QToolButton *case_button_;\n+    /** @brief Button to toggle regular expression search. */\n+    QToolButton *regex_button_;\n+    /** @brief Button to toggle whole word search. */\n+    QToolButton *word_button_;\n+    /** @brief Label showing current match count and total matches. */\n+    QLabel *counter_label_;\n+    /** @brief Button to go to the previous match. */\n+    QToolButton *prev_button_;\n+    /** @brief Button to go to the next match. */\n+    QToolButton *next_button_;\n+    /** @brief Button to close the find bar. */\n+    QToolButton *close_button_;\n+\n+    /** @brief Timer for debouncing search input. */\n+    QTimer *debounce_timer_;\n+    /** @brief Animation for showing and hiding the bar. */\n+    QPropertyAnimation *animation_;\n+\n+    /** @brief State flag tracking if the bar is open. */\n+    bool is_open_;\n+\n+    /** @brief Count of open bar instances. */\n+    static int open_instances_;\n+\n+    /** @brief List of model indices that match the current search. */\n+    QList<QModelIndex> matches_;\n+    /** @brief The index of the currently active match in matches_. */\n+    qsizetype current_match_;\n+    /** @brief State flag for an invalid regular expression. */\n+    bool regex_invalid_;\n+    /** @brief The natural height of the find bar for animation purposes. */\n+    int natural_height_;\n+};\n+\n+#endif // IN_PACKET_FIND_BAR_H\n\\ No newline at end of file\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/in_packet_find_bar.h",
+      "old_path": "ui/qt/in_packet_find_bar.h",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -311,6 +311,9 @@ protected:\n     /** Pointer to the protocol tree widget. */\n     ProtoTree *proto_tree_;\n \n+    /** Wraps proto_tree_ + in-packet find bar */\n+    QWidget *proto_container_;\n+\n     /** Pointer to the data source tab widget. */\n     DataSourceTab *data_source_tab_;\n \n@@ -463,7 +466,6 @@ signals:\n      * @param success True if the display filter was valid and applied.\n      */\n     void displayFilterSuccess(bool success);\n-\n };\n \n-#endif // MAINWINDOW_H\n+#endif // MAINWINDOW_H\n\\ No newline at end of file\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/main_window.h",
+      "old_path": "ui/qt/main_window.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -56,7 +56,7 @@ QWidget* MainWindow::getLayoutWidget(layout_pane_content_e type) {\n         case layout_pane_content_plist:\n             return packet_list_;\n         case layout_pane_content_pdetails:\n-            return proto_tree_;\n+            return proto_container_;\n         case layout_pane_content_pbytes:\n             return data_source_tab_;\n         case layout_pane_content_pdiagram:\n@@ -78,7 +78,7 @@ void MainWindow::cyclePane(bool reverse)\n     QList<QWidget *> panes;\n     if (df_combo_box_) panes << df_combo_box_;\n     if (packet_list_) panes << packet_list_;\n-    if (proto_tree_) panes << proto_tree_;\n+    if (proto_tree_) panes << proto_container_;\n     if (data_source_tab_) panes << data_source_tab_;\n \n     if (panes.isEmpty()) return;\n@@ -123,7 +123,7 @@ void MainWindow::layoutPanes()\n     // This hides each widget as well.\n     bool frozen = packet_list_->freeze(); // Clears tree, byte view tabs, and diagram.\n     packet_list_->setParent(main_stack_);\n-    proto_tree_->setParent(main_stack_);\n+    proto_container_->setParent(main_stack_);\n     data_source_tab_->setParent(main_stack_);\n     if (packet_diagram_) {\n         packet_diagram_->setParent(main_stack_);\n@@ -200,7 +200,7 @@ void MainWindow::layoutPanes()\n \n     extra_split_.setVisible(ms_children.contains(&extra_split_));\n     packet_list_->setVisible(ms_children.contains(packet_list_) && recent.packet_list_show);\n-    proto_tree_->setVisible(ms_children.contains(proto_tree_) && recent.tree_view_show);\n+    proto_container_->setVisible(ms_children.contains(proto_container_) && recent.tree_view_show);\n     data_source_tab_->setVisible(ms_children.contains(data_source_tab_) && recent.byte_view_show);\n     if (packet_diagram_) {\n         packet_diagram_->setVisible(ms_children.contains(packet_diagram_) && recent.packet_diagram_show);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/main_window_layout.cpp",
+      "old_path": "ui/qt/main_window_layout.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -22,10 +22,14 @@\n \n #include \"data_source_tab.h\"\n #include \"proto_tree.h\"\n+#include \"in_packet_find_bar.h\"\n #include \"main_application.h\"\n \n #include <ui/qt/utils/field_information.h>\n #include <QTreeWidgetItemIterator>\n+#include <QShortcut>\n+#include <QVBoxLayout>\n+#include <QApplication>\n \n Q_DECLARE_METATYPE(splitter_layout_e)\n \n@@ -38,6 +42,7 @@ PacketDialog::PacketDialog(QWidget &parent, CaptureFile &cf, frame_data *fdata)\n     ui(new Ui::PacketDialog),\n     pref_packet_dialog_layout_(nullptr),\n     proto_tree_(NULL),\n+    in_packet_find_bar_(nullptr),\n     data_source_tab_(NULL)\n {\n     ui->setupUi(this);\n@@ -69,11 +74,21 @@ PacketDialog::PacketDialog(QWidget &parent, CaptureFile &cf, frame_data *fdata)\n                      fdata, &(cap_file_.capFile()->cinfo));\n     epan_dissect_fill_in_columns(&edt_, true, true);\n \n-    proto_tree_ = new ProtoTree(ui->packetSplitter, &edt_);\n+    QWidget *proto_container = new QWidget(ui->packetSplitter);\n+    QVBoxLayout *proto_vbox = new QVBoxLayout(proto_container);\n+    proto_vbox->setContentsMargins(0, 0, 0, 0);\n+    proto_vbox->setSpacing(0);\n+\n+    proto_tree_ = new ProtoTree(proto_container, &edt_);\n     // Do not call proto_tree_->setCaptureFile, ProtoTree only needs the\n     // dissection context.\n     proto_tree_->setRootNode(edt_.tree);\n \n+    // Wrap proto_tree_ + in-packet find bar in a container inside the splitter\n+    in_packet_find_bar_ = new InPacketFindBar(proto_tree_, proto_container);\n+    proto_vbox->addWidget(in_packet_find_bar_);\n+    proto_vbox->addWidget(proto_tree_);\n+\n     data_source_tab_ = new DataSourceTab(ui->packetSplitter, &edt_);\n     data_source_tab_->setCaptureFile(cap_file_.capFile());\n     data_source_tab_->selectedFrameChanged(QList<int>() << 0);\n@@ -163,6 +178,19 @@ PacketDialog::PacketDialog(QWidget &parent, CaptureFile &cf, frame_data *fdata)\n #else\n     connect(ui->chkShowByteView, &QCheckBox::stateChanged, this, &PacketDialog::viewVisibilityStateChanged);\n #endif\n+\n+    // Ctrl+Alt+F shortcut for in-packet find bar (only when this dialog has focus)\n+    QShortcut *find_shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_F), this);\n+    connect(find_shortcut, &QShortcut::activated, this, [this]() {\n+        if (QApplication::activeWindow() != this) return;\n+        if (in_packet_find_bar_) {\n+            if (!in_packet_find_bar_->isVisible()) {\n+                in_packet_find_bar_->showAnimated();\n+            } else {\n+                in_packet_find_bar_->hideAnimated();\n+            }\n+        }\n+    });\n }\n \n PacketDialog::~PacketDialog()\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/packet_dialog.cpp",
+      "old_path": "ui/qt/packet_dialog.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -19,6 +19,7 @@\n #include <ui/qt/utils/field_information.h>\n \n class DataSourceTab;\n+class InPacketFindBar;\n class ProtoTree;\n \n namespace Ui {\n@@ -116,6 +117,9 @@ private:\n     /** @brief Pointer to the protocol tree representation. */\n     ProtoTree *proto_tree_;\n \n+    /** @brief The in-packet find bar. */\n+    InPacketFindBar *in_packet_find_bar_;\n+\n     /** @brief Pointer to the data source tab widget. */\n     DataSourceTab *data_source_tab_;\n \n@@ -126,4 +130,4 @@ private:\n     epan_dissect_t edt_;\n };\n \n-#endif // PACKET_DIALOG_H\n+#endif // PACKET_DIALOG_H\n\\ No newline at end of file\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/packet_dialog.h",
+      "old_path": "ui/qt/packet_dialog.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -18,12 +18,14 @@\n \n #include <wsutil/utf8_entities.h>\n #include <wsutil/regex.h>\n-\n+#include \"main_window.h\"\n #include \"main_application.h\"\n #include \"utils/qt_ui_utils.h\"\n \n #include <QKeyEvent>\n #include <QCheckBox>\n+#include <QApplication>\n+#include \"in_packet_find_bar.h\"\n \n enum {\n     in_packet_list_,\n@@ -60,6 +62,15 @@ SearchFrame::SearchFrame(QWidget *parent) :\n \n     applyRecentSearchSettings();\n \n+    connect(qApp, &QApplication::focusChanged, this, &SearchFrame::onApplicationFocusChanged);\n+    connect(sf_ui_->inPacketCheckBox, &QCheckBox::toggled, this, &SearchFrame::on_inPacketCheckBox_toggled);\n+    QWidget *main_win = mainApp->mainWindow();\n+    if (main_win) {\n+        for (InPacketFindBar *bar : main_win->findChildren<InPacketFindBar *>()) {\n+            connect(bar, &InPacketFindBar::matchesChanged, this, &SearchFrame::updateWidgets, Qt::UniqueConnection);\n+        }\n+    }\n+\n     updateWidgets();\n }\n \n@@ -122,6 +133,11 @@ void SearchFrame::setCaptureFile(capture_file *cf)\n     updateWidgets();\n }\n \n+void SearchFrame::refreshWidgets()\n+{\n+    updateWidgets();\n+}\n+\n void SearchFrame::findFrameWithFilter(QString &filter)\n {\n     animatedShow();\n@@ -256,6 +272,14 @@ void SearchFrame::updateWidgets()\n     // don't highlight what fields / offsets caused the match.)\n     sf_ui_->multipleCheckBox->setEnabled((sf_ui_->searchInComboBox->isEnabled() && sf_ui_->searchInComboBox->currentIndex() != in_packet_list_) || search_type == hex_search_);\n \n+    // The \"Find in Packet\" checkbox always enabled as a single packet is always available. \n+    sf_ui_->inPacketCheckBox->setEnabled(true);\n+    // Show checked if any in-packet find bars are open; this makes the\n+    // checkbox stay checked until all bars are closed.\n+    sf_ui_->inPacketCheckBox->blockSignals(true);\n+    sf_ui_->inPacketCheckBox->setChecked(InPacketFindBar::openInstances() > 0);\n+    sf_ui_->inPacketCheckBox->blockSignals(false);\n+\n     switch (search_type) {\n     case df_search_:\n         sf_ui_->searchLineEdit->checkDisplayFilter(sf_ui_->searchLineEdit->text());\n@@ -545,6 +569,54 @@ void SearchFrame::on_findButton_clicked()\n     }\n }\n \n+void SearchFrame::on_inPacketCheckBox_toggled(bool checked)\n+{\n+    auto hideAllBars = []() {\n+        for (QWidget *widget : qApp->allWidgets()) {\n+            if (InPacketFindBar *bar = qobject_cast<InPacketFindBar *>(widget)) {\n+                if (bar->isVisible()) {\n+                    bar->hideAnimated();\n+                }\n+            }\n+        }\n+    };\n+\n+    auto refreshCheckBox = [this]() {\n+        sf_ui_->inPacketCheckBox->blockSignals(true);\n+        sf_ui_->inPacketCheckBox->setChecked(InPacketFindBar::openInstances() > 0);\n+        sf_ui_->inPacketCheckBox->blockSignals(false);\n+    };\n+\n+    if (!checked) {\n+        hideAllBars();\n+        // Immediately reflect the user's action instead of waiting for\n+        // hideAnimated() to finish (which can leave openInstances()>0\n+        // until the animation completes and would require a second click).\n+        sf_ui_->inPacketCheckBox->blockSignals(true);\n+        sf_ui_->inPacketCheckBox->setChecked(false);\n+        sf_ui_->inPacketCheckBox->blockSignals(false);\n+        return;\n+    }\n+\n+    if (mainApp->mainWindow()) {\n+        if (InPacketFindBar *bar = mainApp->mainWindow()->findChild<InPacketFindBar *>()) {\n+            if (!bar->isVisible()) {\n+                bar->showAnimated();\n+            }\n+        }\n+    }\n+\n+    refreshCheckBox();\n+}\n+\n+void SearchFrame::onApplicationFocusChanged(QWidget *old, QWidget *now)\n+{\n+    Q_UNUSED(old)\n+    Q_UNUSED(now)\n+    // Re-evaluate checkbox state when focus changes\n+    updateWidgets();\n+}\n+\n void SearchFrame::on_cancelButton_clicked()\n {\n     mainApp->popStatus(MainApplication::FilterSyntax);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/search_frame.cpp",
+      "old_path": "ui/qt/search_frame.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -70,6 +70,11 @@ public slots:\n      */\n     void setCaptureFile(capture_file *cf);\n \n+    /**\n+     * @brief Refreshes widget state when external in-packet-find bar visibility changes.\n+     */\n+    void refreshWidgets();\n+\n     /**\n      * @brief Populates the search field with @p filter, switches the search\n      *        type to display filter, and immediately executes a forward search.\n@@ -168,6 +173,17 @@ private slots:\n      */\n     void on_multipleCheckBox_toggled(bool checked);\n \n+    /**\n+     * @brief Toggles the in-packet find bar in the currently active window.\n+     * @param checked Checked state of the checkbox.\n+     */\n+    void on_inPacketCheckBox_toggled(bool checked);\n+\n+    /**\n+     * @brief Called when application focus changes so the checkbox can update.\n+     */\n+    void onApplicationFocusChanged(QWidget *old, QWidget *now);\n+\n     /**\n      * @brief Executes a search in the current direction using the current criteria.\n      */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/search_frame.h",
+      "old_path": "ui/qt/search_frame.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -259,9 +259,29 @@\n      </property>\n     </widget>\n    </item>\n-  </layout>\n-  </item>\n-  </layout>\n+   <item>\n+    <spacer name=\"horizontalSpacer_7\">\n+     <property name=\"orientation\">\n+      <enum>Qt::Horizontal</enum>\n+     </property>\n+     <property name=\"sizeHint\" stdset=\"0\">\n+      <size>\n+       <width>20</width>\n+       <height>10</height>\n+      </size>\n+     </property>\n+    </spacer>\n+   </item>\n+   <item>\n+    <widget class=\"QCheckBox\" name=\"inPacketCheckBox\">\n+     <property name=\"text\">\n+      <string>Find in Packet</string>\n+     </property>\n+    </widget>\n+     </item>\n+    </layout>\n+    </item>\n+ </layout>\n  </widget>\n  <customwidgets>\n   <customwidget>\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/search_frame.ui",
+      "old_path": "ui/qt/search_frame.ui",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -9,6 +9,7 @@\n \n #include \"main_application.h\"\n #include \"wireshark_main_window.h\"\n+#include \"in_packet_find_bar.h\"\n #include <ui/qt/widgets/capture_card_widget.h>\n \n /*\n@@ -354,6 +355,9 @@ WiresharkMainWindow::WiresharkMainWindow(QWidget *parent) :\n #ifdef HAVE_LIBPCAP\n     , capture_options_dialog_(NULL)\n     , info_data_()\n+    , in_packet_find_bar_(nullptr)\n+#else\n+    , in_packet_find_bar_(nullptr)\n #endif\n {\n     if (!gbl_cur_main_window_) {\n@@ -578,9 +582,26 @@ WiresharkMainWindow::WiresharkMainWindow(QWidget *parent) :\n     action->setShortcut(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_C));\n     connect(main_ui_->menuPacketComment, &QMenu::aboutToShow, this, &WiresharkMainWindow::setEditCommentsMenu);\n \n-    proto_tree_ = new ProtoTree(&master_split_);\n+    proto_container_ = new QWidget(&master_split_);\n+    proto_container_->setObjectName(QStringLiteral(\"protoContainer\"));\n+    QVBoxLayout *proto_vbox = new QVBoxLayout(proto_container_);\n+    proto_vbox->setContentsMargins(0, 0, 0, 0);\n+    proto_vbox->setSpacing(0);\n+\n+    proto_tree_ = new ProtoTree(proto_container_);\n     proto_tree_->installEventFilter(this);\n \n+    // Wrap proto_tree_ + in-packet find bar in a container\n+    in_packet_find_bar_ = new InPacketFindBar(proto_tree_, proto_container_);\n+    proto_vbox->addWidget(in_packet_find_bar_);\n+    proto_vbox->addWidget(proto_tree_);\n+\n+    if (main_ui_->searchFrame) {\n+        connect(in_packet_find_bar_, &InPacketFindBar::matchesChanged,\n+                main_ui_->searchFrame, &SearchFrame::refreshWidgets,\n+                Qt::UniqueConnection);\n+    }\n+\n     packet_list_->setProtoTree(proto_tree_);\n     packet_list_->setProfileSwitcher(profile_switcher_);\n     packet_list_->installEventFilter(this);\n@@ -2134,6 +2155,7 @@ void WiresharkMainWindow::initMainToolbarIcons()\n     main_ui_->actionFileClose->setIcon(StockIcon(\"x-capture-file-close\"));\n \n     main_ui_->actionEditFindPacket->setIcon(StockIcon(\"edit-find\"));\n+    main_ui_->actionEditFindInPacket->setIcon(StockIcon(\"edit-find-in\"));\n     main_ui_->actionGoPreviousPacket->setIcon(StockIcon(\"go-previous\"));\n     main_ui_->actionGoNextPacket->setIcon(StockIcon(\"go-next\"));\n     main_ui_->actionGoGoToPacket->setIcon(StockIcon(\"go-jump\"));\n@@ -2562,6 +2584,9 @@ void WiresharkMainWindow::setForCapturedPackets(bool have_captured_packets)\n //                         have_captured_packets);\n \n     main_ui_->actionEditFindPacket->setEnabled(have_captured_packets);\n+    if (main_ui_->actionEditFindInPacket) {\n+        main_ui_->actionEditFindInPacket->setEnabled(have_captured_packets);\n+    }\n     main_ui_->actionEditFindNext->setEnabled(have_captured_packets);\n     main_ui_->actionEditFindPrevious->setEnabled(have_captured_packets);\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/wireshark_main_window.cpp",
+      "old_path": "ui/qt/wireshark_main_window.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -42,6 +42,7 @@\n \n #include \"ui/ws_ui_util.h\"\n #include \"ui/iface_toolbar.h\"\n+\n #ifdef HAVE_LIBPCAP\n #include \"ui/capture_opts.h\"\n #endif\n@@ -73,6 +74,7 @@ class AccordionFrame;\n class DataSourceTab;\n class CaptureOptionsDialog;\n class DisStreamDialog;\n+class InPacketFindBar;\n class PrintDialog;\n class FileSetDialog;\n class FilterDialog;\n@@ -286,7 +288,7 @@ private:\n     CaptureOptionsDialog      *capture_options_dialog_;  /**< Modeless capture options dialog. */\n     info_data_t                info_data_;               /**< Live capture statistics updated during capture. */\n #endif\n-\n+    InPacketFindBar *in_packet_find_bar_; /**< In-packet find bar. */\n     QPoint dragStartPosition; /**< Mouse position recorded at the start of a drag operation. */\n \n     QPointer<TLSKeylogDialog> tlskeylog_dialog_; /**< Modeless TLS keylog dialog; null when not open. */\n@@ -967,6 +969,9 @@ private slots:\n     /** @brief Opens the Find Packet dialog or focuses it if already open. */\n     void findPacket();\n \n+    /** @brief Handles the \"Find in Packet\" menu item. */\n+    void on_actionEditFindInPacket_triggered();\n+\n     /** @brief Opens the Time Shift dialog for adjusting packet timestamps. */\n     void editTimeShift();\n \n@@ -1317,4 +1322,4 @@ private slots:\n     friend class MainApplication;\n };\n \n-#endif // WIRESHARK_MAIN_WINDOW_H\n+#endif // WIRESHARK_MAIN_WINDOW_H\n\\ No newline at end of file\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/wireshark_main_window.h",
+      "old_path": "ui/qt/wireshark_main_window.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -737,6 +737,7 @@\n     </widget>\n     <addaction name=\"menuEditCopy\"/>\n     <addaction name=\"actionEditFindPacket\"/>\n+    <addaction name=\"actionEditFindInPacket\"/>\n     <addaction name=\"actionEditFindNext\"/>\n     <addaction name=\"actionEditFindPrevious\"/>\n     <addaction name=\"separator\"/>\n@@ -842,7 +843,7 @@\n    <addaction name=\"actionFileClose\"/>\n    <addaction name=\"actionViewReload\"/>\n    <addaction name=\"separator\"/>\n-   <addaction name=\"actionEditFindPacket\"/>\n+  <addaction name=\"actionEditFindPacket\"/>\n    <addaction name=\"actionGoPreviousPacket\"/>\n    <addaction name=\"actionGoNextPacket\"/>\n    <addaction name=\"actionGoGoToPacket\"/>\n@@ -1371,9 +1372,9 @@\n    <property name=\"text\">\n     <string>Reload as File Format/Capture</string>\n    </property>\n-   <property name=\"shortcut\">\n-    <string notr=\"true\">Ctrl+Shift+F</string>\n-   </property>\n+    <property name=\"shortcut\">\n+     <string notr=\"true\">Ctrl+Shift+F</string>\n+    </property>\n   </action>\n   <action name=\"actionCaptureOptions\">\n    <property name=\"text\">\n@@ -1561,6 +1562,17 @@\n     <string notr=\"true\">Ctrl+F</string>\n    </property>\n   </action>\n+  <action name=\"actionEditFindInPacket\">\n+   <property name=\"text\">\n+    <string>Find in Pac&amp;ket</string>\n+   </property>\n+   <property name=\"toolTip\">\n+    <string>Find in Packet</string>\n+   </property>\n+   <property name=\"shortcut\">\n+    <string notr=\"true\">Ctrl+Alt+F</string>\n+   </property>\n+  </action>\n   <action name=\"actionEditFindNext\">\n    <property name=\"text\">\n     <string>Find Ne&amp;xt</string>\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/wireshark_main_window.ui",
+      "old_path": "ui/qt/wireshark_main_window.ui",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -17,6 +17,7 @@\n \n #include \"wireshark_main_window.h\"\n #include <ui/qt/widgets/capture_card_widget.h>\n+#include \"in_packet_find_bar.h\"\n \n /*\n  * The generated Ui_WiresharkMainWindow::setupUi() can grow larger than our configured limit,\n@@ -2285,6 +2286,20 @@ void WiresharkMainWindow::findPacket()\n     main_ui_->searchFrame->setFocus();\n }\n \n+void WiresharkMainWindow::on_actionEditFindInPacket_triggered()\n+{\n+    if (in_packet_find_bar_) {\n+        if (!in_packet_find_bar_->isVisible()) {\n+            in_packet_find_bar_->showAnimated();\n+        } else {\n+            in_packet_find_bar_->hideAnimated();\n+        }\n+        if (main_ui_->searchFrame) {\n+            main_ui_->searchFrame->refreshWidgets();\n+        }\n+    }\n+}\n+\n void WiresharkMainWindow::editTimeShift()\n {\n     TimeShiftDialog *ts_dialog = new TimeShiftDialog(this, capture_file_.capFile());\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/wireshark_main_window_slots.cpp",
+      "old_path": "ui/qt/wireshark_main_window_slots.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -137,6 +137,7 @@ set(WIRESHARK_MODEL_HEADERS\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/recentcapturefiles_list_model.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/multi_color_packet_delegate.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/related_packet_delegate.h\n+\t${CMAKE_SOURCE_DIR}/ui/qt/models/in_packet_find_delegate.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/resolved_addresses_models.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/sparkline_delegate.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/supported_protocols_model.h\n@@ -198,6 +199,7 @@ set(WIRESHARK_QT_HEADERS\n \t${CMAKE_SOURCE_DIR}/ui/qt/interface_frame.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/interface_toolbar_reader.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/interface_toolbar.h\n+\t${CMAKE_SOURCE_DIR}/ui/qt/in_packet_find_bar.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/io_console_dialog.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/io_graph.h\n \t${CMAKE_SOURCE_DIR}/ui/qt/io_graph_action.h\n@@ -406,6 +408,7 @@ set(WIRESHARK_MODEL_SRCS\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/recentcapturefiles_list_model.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/multi_color_packet_delegate.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/related_packet_delegate.cpp\n+\t${CMAKE_SOURCE_DIR}/ui/qt/models/in_packet_find_delegate.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/resolved_addresses_models.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/sparkline_delegate.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/models/supported_protocols_model.cpp\n@@ -462,6 +465,7 @@ set(WIRESHARK_QT_SRC\n \t${CMAKE_SOURCE_DIR}/ui/qt/interface_frame.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/interface_toolbar_reader.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/interface_toolbar.cpp\n+\t${CMAKE_SOURCE_DIR}/ui/qt/in_packet_find_bar.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/io_console_dialog.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/io_graph_action.cpp\n \t${CMAKE_SOURCE_DIR}/ui/qt/layout_preferences_frame.cpp\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/stratoshark/CMakeLists.txt",
+      "old_path": "ui/stratoshark/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1815875318,
+      "head_commit_sha": "b8eced2ebabb1192ecb8f843cad83c1b1d43135b",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "da6bde43691b1fa69d4024f5a8f90bd4c6fae97b",
+      "created_at": "2026-05-24T20:57:57.047Z",
+      "merge_request_id": 486917588,
+      "state": "collected",
+      "real_size": "23",
+      "patch_id_sha": "cdf6b26246683d6c1ec1a6e0274596ab19c09975"
+    },
+    {
+      "id": 1815815269,
+      "head_commit_sha": "e26b7dfefbc59646796c1288da6115a84a0b7a35",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "8f87e99622ea7c572f611bed30a1b0b85f2e0a57",
+      "created_at": "2026-05-24T19:40:53.018Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "23",
+      "patch_id_sha": "be1e2d377cf1fa7e85fba74be6f28199e558f486"
+    },
+    {
+      "id": 1815778906,
+      "head_commit_sha": "9c4a616a76dd300f1d407f57118a411af8fe4966",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "1b8ed961b98b1143d30798015d2573fabf171f34",
+      "created_at": "2026-05-24T17:34:22.831Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "23",
+      "patch_id_sha": "a75dd1635f4ee889561e7cf28eeb76491c0b9b0b"
+    },
+    {
+      "id": 1815755913,
+      "head_commit_sha": "a1adacea750f53d5741d341e8c34ac6883001534",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "7751439f1da303fd18a861a28a482a7efbdb9ae5",
+      "created_at": "2026-05-24T16:15:08.533Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "c59f9c4357404faebd98f398e620123ad6ae450d"
+    },
+    {
+      "id": 1815568469,
+      "head_commit_sha": "7cded9c4256409ebb57df8b956ebbc34828563d7",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+      "created_at": "2026-05-24T04:32:32.396Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "094e11850b31b36009ddc64e74e9dc2e75ffca1f"
+    },
+    {
+      "id": 1815565574,
+      "head_commit_sha": "1b902ad5e1d4b2fe587fb346925ce2f44f5450db",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+      "created_at": "2026-05-24T04:15:43.165Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "bd6657dcec7b0053c68902053c3f2fc4416bbe2f"
+    },
+    {
+      "id": 1815561946,
+      "head_commit_sha": "84a7270709f100b99c43ab56d673936c7fb95a78",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+      "created_at": "2026-05-24T04:02:20.081Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "7ef6187c80fe7a5bc4076de78baeb17c20f958a6"
+    },
+    {
+      "id": 1815553798,
+      "head_commit_sha": "37d87e0658f5ae89c65e39d9274d3e93f751035e",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+      "created_at": "2026-05-24T03:13:48.622Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "30071c9b3647e1f839855116ebfbea4bcc2dd558"
+    },
+    {
+      "id": 1815551573,
+      "head_commit_sha": "ece904051a975424ca9e68ca461b7a6722bcfdf0",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+      "created_at": "2026-05-24T03:04:21.297Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "00bafb063f6ebbc56bc9902c1c2a1d1bc3409c79"
+    },
+    {
+      "id": 1815543445,
+      "head_commit_sha": "ff17face463cac0df9cd00c6ede2229eed0512aa",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "eba44af23ff2f9a91e666d431aeeb1c831afd15b",
+      "created_at": "2026-05-24T02:26:03.358Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "bb8d7417c5608c65afd7b5d2d26b3a067c01b2df"
+    },
+    {
+      "id": 1815537234,
+      "head_commit_sha": "6aa35f306bafc62e26f88b548dc2d2b21a13e715",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "ee015477a0df26be7d1d087a96b685bee95b5cc3",
+      "created_at": "2026-05-24T02:00:32.546Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "bb8d7417c5608c65afd7b5d2d26b3a067c01b2df"
+    },
+    {
+      "id": 1815531739,
+      "head_commit_sha": "1dc6134a5401423c46c5e25e11de898960bb7cab",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "cc63424938c586407adc340a4a0c2e4d13f5a509",
+      "created_at": "2026-05-24T01:31:31.422Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "22",
+      "patch_id_sha": "c27cb2bfbb2c9d9b26618832260b1b85e329382d"
+    },
+    {
+      "id": 1808464811,
+      "head_commit_sha": "006df07202b1424d09ad4662b144fcb01e876074",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "created_at": "2026-05-20T03:25:54.348Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "18",
+      "patch_id_sha": "6e2ceae7db2bfdf338f534515e765840e550b512"
+    },
+    {
+      "id": 1808461757,
+      "head_commit_sha": "38751063f1295eb92789207bdeaa1fa6aa26a910",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "created_at": "2026-05-20T03:22:08.908Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "18",
+      "patch_id_sha": "7158e8ef2f11c09c4d7f77caceff782317fcc6d9"
+    },
+    {
+      "id": 1808444598,
+      "head_commit_sha": "c9d75ee3fda9ae6a97d2a80a3bafc88051567375",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "created_at": "2026-05-20T03:05:20.263Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "18",
+      "patch_id_sha": "c277a564a99eed376f37ba65141a1c0b571491d0"
+    },
+    {
+      "id": 1808398148,
+      "head_commit_sha": "0fcc6be6099084a36fe197b4d6d1774b2dd80f3a",
+      "base_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "start_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "created_at": "2026-05-20T02:12:52.696Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "18",
+      "patch_id_sha": "9f9269975bc3adf59134385293c9c4e47ab5cc7a"
+    },
+    {
+      "id": 1808381124,
+      "head_commit_sha": "bd5fa3b8e785f5494ff3ae8ca49f9d6ecda9abe2",
+      "base_commit_sha": "4653e8f0f25301f8a77474c0df072e5000c0106d",
+      "start_commit_sha": "abc313430e13673dd64a1f0cecb3014f1f841b9d",
+      "created_at": "2026-05-20T01:52:34.851Z",
+      "merge_request_id": 486917588,
+      "state": "without_files",
+      "real_size": "18",
+      "patch_id_sha": "4e67f09e64d3b139ee4abcdefb7e320e17fe9289"
+    }
+  ]
+}
