@@ -1,0 +1,893 @@
+{
+  "id": 520070922,
+  "iid": 26202,
+  "project_id": 7898047,
+  "title": "UDX: add conversation and endpoint tables",
+  "description": "## Summary\n\nSeveral UDX streams can share one UDP socket pair, so the enclosing UDP conversation counts them together and Statistics > Conversations cannot say how much traffic any single stream carried. On `udx_multi.pcap.gz`, already in the tree, the UDP table shows one conversation of 381 frames where there are three streams of 127 frames each.\n\nThis registers conversation and endpoint tables keyed on the stream index the dissector already assigns, so each stream becomes its own row with its own frame and byte counts, identified by the Stream ID column.\n\n```\n-z conv,udp   1 conversation    381 frames   227184 bytes\n-z conv,udx   3 conversations   127 frames    75728 bytes each\n```\n\n3 x 127 = 381 and 3 x 75728 = 227184, so the split accounts for every frame and byte the UDP row reports.\n\n## What changed\n\nThe tables read a new `udx` tap. Its payload is declared in a new `epan/dissectors/packet-udx.h` as `udx_info_t`, carrying the decoded fixed header, the stream index, the addresses and ports of the carrying datagram plus the SACK blocks. `UDX_MAX_SACK_BLOCKS` moves into that header with it.\n\n`CONVERSATION_UDX` and `ENDPOINT_UDX` are appended to the enum in `epan/conversation.h`. Appended rather than inserted, so no existing value renumbers.\n\nThe stream index only exists while sequence analysis is on, the same condition under which `udx.stream` is absent from the tree, so the tables follow the existing `analyze_sequence_numbers` preference. There is a test for that.\n\nTwo notes on things a reviewer may reasonably query:\n\n- Ports are reported as the UDP ports that carried the stream, since UDX has none of its own, which is why the filter callbacks return `udp.srcport` and friends.\n- `ui/cli/tap-iousers.c` decides whether to print ports with a hardcoded comparison against TCP, UDP and SCTP rather than the registered `hide_ports` flag, so `tshark -z conv,udx` omits them, as it already does for `-z conv,dccp`. Left alone here to keep this change focused. Happy to fix it separately if you would like.\n\n## A prerequisite leak fix (first commit)\n\nAdding the first `-z conv,...` and `-z endpoints,...` tests to the suite ran those CLI taps under AddressSanitizer for the first time, which surfaced a pre-existing leak. The conversation and endpoint taps allocate a `conv_hash_t` per run whose `conv_array` alone reserves about 2 MB, then never freed any of it. `iousers_finish` freed only its wrapper struct. The endpoint tap registered no finish callback at all.\n\nThe first commit fixes that in `ui/cli/tap-iousers.c` and `ui/cli/tap-endpoints.c`, calling `reset_conversation_table_data` / `reset_endpoint_table_data` and freeing the filter string on finish. It stands on its own and is not specific to UDX. `tshark -z conv,udp` leaked the same way before it. The UDX tables and tests are the second commit. Happy to split it into its own MR if you would rather.\n\n## Testing\n\nFour cases added to `test/suite_dissection.py`: the three-versus-one conversation split, the frame and byte totals cross-checked against the UDP table, the endpoint rows with the direction split and the fallback when sequence analysis is turned off. Byte counts are asked for machine readable so the columns are plain integers rather than SI prefixed.\n\nRebased onto master after the sequence analysis and reassembly change landed. The only overlap was that test file, where the new sequence cases and these conversation cases both append to the same class, so both sets are kept. Rebuilt on the new base and re-verified on Ubuntu 24.04, gcc 13, Qt 6.4.2:\n\n- `packet-udx.c` compiled with `-DENABLE_WERROR=ON`: 0 warnings, 0 errors.\n- Full build including the Qt GUI: exit 0.\n- UDX dissection cases: 22 passed, the baseline set, the new sequence cases and the 4 added here.\n- Whole test suite: **1467 passed, 21 skipped, 0 failed**, after `ninja test-programs`.\n- Clang ASAN build (`WIRESHARK_DEBUG_WMEM_OVERRIDE=simple`): `-z conv,udx`, `-z endpoints,udx`, `-z conv,udp` and `-z endpoints,udp` all exit clean with no LeakSanitizer report. The UDX cases pass.\n- `check_apis.py`, `check_col_apis.py`, `check_tfs.py`, `check_val_to_str.py`, `check_typed_item_calls.py --all-checks` and `check_static.py`: 0 warnings each.\n- `checkhf.pl`, `checkfiltername.pl` and `tools/validate-commit.py`: clean.\n\nTwo details checked rather than assumed while writing this. `CONV_ID_UNSET` is `UINT32_MAX` rather than 0, so stream 0 still renders in the Stream ID column. And `pinfo->srcport` is `uint32_t`, which is why `udx_info_t` uses 32-bit ports and stays clean under the conversion warnings.\n\nA release notes entry is included under New and Updated Features.\n\n## AI assistance\n\nAn AI assistant (Claude, Anthropic) was used while developing this change. The design, the review and the verification are mine. I will make any changes you ask for myself. Protocol behaviour was taken from the existing dissector and from the libudx source rather than from a model's description of it. Every number quoted above is from a real run against captures already in the tree.\n\nAssisted-by: Claude (Anthropic)\n\n## CI\n\nThe earlier red pipeline was the account validation shared runners require, not a real failure. GitLab reported \"The pipeline failed due to the user not being verified\" and produced zero jobs. That is now verified, so the pipeline on this push runs for real.",
+  "state": "merged",
+  "created_at": "2026-08-17T08:33:09.573Z",
+  "updated_at": "2026-08-19T12:56:16.936Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-08-19T12:56:17.021Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "udx-conversation-tables",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 39181401,
+    "username": "zkasuran",
+    "public_email": "zkasuran@gmail.com",
+    "name": "Prabakaran Sivakumar",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+    "web_url": "https://gitlab.com/zkasuran"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 85469398,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "eaf55a4475c1186a3f4ae8f3f38393df3945727c",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "abf2da4d21adbcf06ef9870c22a013fdd79322d0",
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-08-17T08:33:14.707Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26202",
+  "references": {
+    "short": "!26202",
+    "relative": "!26202",
+    "full": "wireshark/wireshark!26202"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26202",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2026-08-19T12:37:22.110Z",
+  "latest_build_finished_at": "2026-08-19T12:56:09.763Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2772445164,
+    "iid": 108514,
+    "project_id": 7898047,
+    "sha": "abf2da4d21adbcf06ef9870c22a013fdd79322d0",
+    "ref": "refs/merge-requests/26202/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-19T12:37:13.364Z",
+    "updated_at": "2026-08-19T12:56:09.777Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2772445164"
+  },
+  "head_pipeline": {
+    "id": 2772445164,
+    "iid": 108514,
+    "project_id": 7898047,
+    "sha": "abf2da4d21adbcf06ef9870c22a013fdd79322d0",
+    "ref": "refs/merge-requests/26202/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-19T12:37:13.364Z",
+    "updated_at": "2026-08-19T12:56:09.777Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2772445164",
+    "before_sha": "abf2da4d21adbcf06ef9870c22a013fdd79322d0",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-08-19T12:37:22.110Z",
+    "finished_at": "2026-08-19T12:56:09.763Z",
+    "committed_at": null,
+    "duration": 1126,
+    "queued_duration": 8,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2772445164",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+    "head_sha": "eaf55a4475c1186a3f4ae8f3f38393df3945727c",
+    "start_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "68108f5ba53da0dd6fbd9d5c6503101e67764ebb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3693297272,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-17T08:33:45.749Z",
+          "updated_at": "2026-08-17T08:33:45.751Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "339f60634d1d26b5be1994f41001e3e51c88a21f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3693334702,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-17T08:38:43.131Z",
+          "updated_at": "2026-08-17T08:38:43.133Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "90a608e2a94c057aa969c94f4d61f0a30c08ec64",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3693341402,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-17T08:39:21.857Z",
+          "updated_at": "2026-08-17T08:39:21.858Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "85f4ef5f6025c7518a5ac6dfc617e12e828a237c",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3703503473,
+          "type": "DiscussionNote",
+          "body": "Identity verification is required in order to run CI jobs",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-19T06:42:27.644Z",
+          "updated_at": "2026-08-19T12:34:49.388Z",
+          "system": false,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-08-19T12:34:49.388Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        },
+        {
+          "id": 3703539530,
+          "type": "DiscussionNote",
+          "body": "can you direct me how?",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-19T06:47:47.487Z",
+          "updated_at": "2026-08-19T12:34:49.388Z",
+          "system": false,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-08-19T12:34:49.388Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        },
+        {
+          "id": 3703552741,
+          "type": "DiscussionNote",
+          "body": "Googling:\nhttps://forum.gitlab.com/t/identity-verification-is-required-in-order-to-run-ci-jobs/126689\n\nhttps://docs.gitlab.com/security/identity_verification/",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-19T06:51:42.027Z",
+          "updated_at": "2026-08-19T12:34:49.388Z",
+          "system": false,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-08-19T12:34:49.388Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0b5472ae0f3dad047d276b13d4f54b6682ac129e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3703690547,
+          "type": null,
+          "body": "added 18 commits\n\n<ul><li>00c92d99...2a6fbc7f - 17 commits from branch <code>wireshark:master</code></li><li>b51db534 - UDX: add conversation and endpoint tables</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26202/diffs?diff_id=1970136254&start_sha=00c92d9982f412464b08c57a1e1f6a19e0f49ba5)",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-19T07:34:38.340Z",
+          "updated_at": "2026-08-19T07:34:38.341Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9f2486723ed91bbc6fbba552048dde6af2e402cc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3703696696,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-19T07:36:34.672Z",
+          "updated_at": "2026-08-19T07:36:34.674Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "80202b5db1cfc188010732807abbe56ad345d660",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3703698348,
+          "type": null,
+          "body": "Thanks, that was it. Verified the account by mobile number, so a pipeline can actually run now.\n\nI also rebased onto master since the sequence analysis and reassembly change landed after I branched. Only the test file needed a hand resolve, my conversation and endpoint cases sit alongside the new sequence tests. Full suite is green locally on the new base (1467 passed, 21 skipped, 0 failed). Pushed. A pipeline is running now.",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-19T07:37:02.474Z",
+          "updated_at": "2026-08-19T07:37:02.474Z",
+          "system": false,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8695dbd90b50687302a6bf258e730dccdd0f0d8c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3703864816,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>3b90cf2a - UDX: add conversation and endpoint tables</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26202/diffs?diff_id=1970231274&start_sha=b51db53441bff1c1ed3f3c78a3831724a9728624)",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-19T08:17:32.606Z",
+          "updated_at": "2026-08-19T08:17:32.607Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dcd0a1f5bbd988dcdd660e3b8da78f460eb23b3b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3704122650,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>f5b5ca74 - tshark: free conversation and endpoint tap tables on exit</li><li>eaf55a44 - UDX: add conversation and endpoint tables</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26202/diffs?diff_id=1970372353&start_sha=3b90cf2af311b95818f6562e7f15bf1efb2d07fc)",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-19T09:15:03.561Z",
+          "updated_at": "2026-08-19T09:15:03.563Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "19764b18f9652789583f647d136bcea95971b806",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3704129260,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 39181401,
+            "username": "zkasuran",
+            "public_email": "zkasuran@gmail.com",
+            "name": "Prabakaran Sivakumar",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/39181401/avatar.png?v=1788658403",
+            "web_url": "https://gitlab.com/zkasuran"
+          },
+          "created_at": "2026-08-19T09:16:36.691Z",
+          "updated_at": "2026-08-19T09:16:36.692Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b17cb718fe3acd5c83bb5764efa649f67ef11171",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3705065129,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-19T12:34:49.426Z",
+          "updated_at": "2026-08-19T12:34:49.430Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6e8f76056141d7713924981cde988ed37939785e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3705073834,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-19T12:36:35.443Z",
+          "updated_at": "2026-08-19T12:36:35.449Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cb01f45a8822f50cf39d00f7f6f8f9908f11a57b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3705074832,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-19T12:36:45.032Z",
+          "updated_at": "2026-08-19T12:36:45.033Z",
+          "system": true,
+          "noteable_id": 520070922,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26202,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -107,6 +107,13 @@ The following features are either new or have been significantly updated since v\n   with packet counts, first/last frame numbers, and protocols.\n   A new \"imsi\" tap is registered by the E.212 dissector.\n \n+* UDX conversations and endpoints are now listed per stream, in\n+  menu:Statistics[Conversations] and menu:Statistics[Endpoints] as well as\n+  `tshark -z conv,udx` and `tshark -z endpoints,udx`.\n+  Several UDX streams can share one UDP socket pair, which the UDP tables count\n+  as a single conversation.\n+  A new \"udx\" tap is registered by the UDX dissector.\n+\n * New compact JSON output option omits indentation and whitespace,\n   significantly reducing output size and improving performance.\n   Available as `tshark --json-compact` (with `-T json` or `-T jsonraw`)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "doc/Wireshark_Release_Notes.adoc",
+      "old_path": "doc/Wireshark_Release_Notes.adoc",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -19,6 +19,7 @@\n \n #include <epan/packet.h>\n #include <epan/conversation.h>\n+#include <epan/conversation_table.h>\n #include <epan/expert.h>\n #include <epan/prefs.h>\n #include <epan/proto_data.h>\n@@ -26,6 +27,7 @@\n #include <epan/addr_resolv.h>\n #include <epan/tap.h>\n #include \"packet-udp.h\"\n+#include \"packet-udx.h\"\n #include <wsutil/wmem/wmem_map.h>\n #include <wsutil/wmem/wmem_tree.h>\n \n@@ -66,10 +68,6 @@\n #define UDX_SEQ_GT(a, b)  ((int32_t)((a) - (b)) > 0)\n #define UDX_SEQ_GEQ(a, b) ((int32_t)((a) - (b)) >= 0)\n \n-/* Bounds the SACK blocks examined per packet; data_offset caps the area at\n- * 255 bytes, i.e. 31 blocks. */\n-#define UDX_MAX_SACK_BLOCKS 32\n-\n /* Floor for the derived retransmission timeout, in seconds. Below this a\n  * repeat is attributed to loss recovery rather than to a timer firing. */\n #define UDX_MIN_RTO 0.2\n@@ -92,6 +90,7 @@ static int proto_udx;\n static bool udx_analyze_sequence_numbers = true;\n \n static int udx_follow_tap;\n+static int udx_tap;\n \n /* Stream numbers are handed out across the whole capture so that a filter\n  * such as \"udx.stream eq 3\" identifies exactly one stream. */\n@@ -868,6 +867,140 @@ udx_show_analysis(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, udx_ppd_t\n }\n \n \n+/*\n+ * Conversations and endpoints.\n+ *\n+ * A UDX conversation is one stream, not one socket pair. Several streams can\n+ * be multiplexed over a single UDP flow, so the enclosing UDP conversation\n+ * counts them together and cannot say how much traffic any one of them\n+ * carried. Keying on the stream index the dissector already assigns splits\n+ * them apart.\n+ */\n+\n+static const char *\n+udx_conv_get_filter_type(conv_item_t *conv, conv_filter_type_e filter)\n+{\n+    if (filter == CONV_FT_SRC_PORT)\n+        return \"udp.srcport\";\n+\n+    if (filter == CONV_FT_DST_PORT)\n+        return \"udp.dstport\";\n+\n+    if (filter == CONV_FT_ANY_PORT)\n+        return \"udp.port\";\n+\n+    if (conv == NULL)\n+        return CONV_FILTER_INVALID;\n+\n+    if (filter == CONV_FT_SRC_ADDRESS) {\n+        if (conv->src_address.type == AT_IPv4)\n+            return \"ip.src\";\n+        if (conv->src_address.type == AT_IPv6)\n+            return \"ipv6.src\";\n+    }\n+\n+    if (filter == CONV_FT_DST_ADDRESS) {\n+        if (conv->dst_address.type == AT_IPv4)\n+            return \"ip.dst\";\n+        if (conv->dst_address.type == AT_IPv6)\n+            return \"ipv6.dst\";\n+    }\n+\n+    if (filter == CONV_FT_ANY_ADDRESS) {\n+        if (conv->src_address.type == AT_IPv4)\n+            return \"ip.addr\";\n+        if (conv->src_address.type == AT_IPv6)\n+            return \"ipv6.addr\";\n+    }\n+\n+    return CONV_FILTER_INVALID;\n+}\n+\n+static ct_dissector_info_t udx_ct_dissector_info = { &udx_conv_get_filter_type };\n+\n+static tap_packet_status\n+udx_conversation_packet(void *pct, packet_info *pinfo, epan_dissect_t *edt _U_,\n+                        const void *vip, tap_flags_t flags)\n+{\n+    conv_hash_t          *hash = (conv_hash_t *) pct;\n+    const udx_info_t     *udxh = (const udx_info_t *) vip;\n+\n+    hash->flags = flags;\n+\n+    add_conversation_table_data_with_conv_id(hash, &udxh->ip_src, &udxh->ip_dst,\n+                                             udxh->sport, udxh->dport,\n+                                             (conv_id_t) udxh->stream, 1,\n+                                             pinfo->fd->pkt_len,\n+                                             &pinfo->rel_ts, &pinfo->abs_ts,\n+                                             &udx_ct_dissector_info,\n+                                             CONVERSATION_UDX);\n+\n+    return TAP_PACKET_REDRAW;\n+}\n+\n+static const char *\n+udx_endpoint_get_filter_type(endpoint_item_t *endpoint, conv_filter_type_e filter)\n+{\n+    if (filter == CONV_FT_SRC_PORT)\n+        return \"udp.srcport\";\n+\n+    if (filter == CONV_FT_DST_PORT)\n+        return \"udp.dstport\";\n+\n+    if (filter == CONV_FT_ANY_PORT)\n+        return \"udp.port\";\n+\n+    if (endpoint == NULL)\n+        return CONV_FILTER_INVALID;\n+\n+    if (filter == CONV_FT_SRC_ADDRESS) {\n+        if (endpoint->myaddress.type == AT_IPv4)\n+            return \"ip.src\";\n+        if (endpoint->myaddress.type == AT_IPv6)\n+            return \"ipv6.src\";\n+    }\n+\n+    if (filter == CONV_FT_DST_ADDRESS) {\n+        if (endpoint->myaddress.type == AT_IPv4)\n+            return \"ip.dst\";\n+        if (endpoint->myaddress.type == AT_IPv6)\n+            return \"ipv6.dst\";\n+    }\n+\n+    if (filter == CONV_FT_ANY_ADDRESS) {\n+        if (endpoint->myaddress.type == AT_IPv4)\n+            return \"ip.addr\";\n+        if (endpoint->myaddress.type == AT_IPv6)\n+            return \"ipv6.addr\";\n+    }\n+\n+    return CONV_FILTER_INVALID;\n+}\n+\n+static et_dissector_info_t udx_endpoint_dissector_info = { &udx_endpoint_get_filter_type };\n+\n+static tap_packet_status\n+udx_endpoint_packet(void *pit, packet_info *pinfo, epan_dissect_t *edt _U_,\n+                    const void *vip, tap_flags_t flags)\n+{\n+    conv_hash_t      *hash = (conv_hash_t *) pit;\n+    const udx_info_t *udxh = (const udx_info_t *) vip;\n+\n+    hash->flags = flags;\n+\n+    /* One pass per direction, so a datagram addressed to its own sender is\n+     * still counted for both endpoints. */\n+    add_endpoint_table_data(hash, &udxh->ip_src, udxh->sport, true, 1,\n+                            pinfo->fd->pkt_len, &udx_endpoint_dissector_info,\n+                            ENDPOINT_UDX);\n+    add_endpoint_table_data(hash, &udxh->ip_dst, udxh->dport, false, 1,\n+                            pinfo->fd->pkt_len, &udx_endpoint_dissector_info,\n+                            ENDPOINT_UDX);\n+\n+    return TAP_PACKET_REDRAW;\n+}\n+\n+\n /*\n  * Follow stream.\n  *\n@@ -1170,6 +1303,31 @@ dissect_udx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n     if (ppd != NULL) {\n         udx_show_analysis(tvb, pinfo, udx_tree, ppd);\n \n+        if (have_tap_listener(udx_tap)) {\n+            udx_info_t *udxh = wmem_new0(pinfo->pool, udx_info_t);\n+\n+            udxh->id          = id;\n+            udxh->seq         = seq;\n+            udxh->ack         = ack;\n+            udxh->window      = window;\n+            udxh->payload_len = payload_len;\n+            udxh->stream      = ppd->stream;\n+            udxh->sport       = pinfo->srcport;\n+            udxh->dport       = pinfo->destport;\n+            udxh->flags       = flags;\n+            udxh->data_offset = data_offset;\n+            copy_address_shallow(&udxh->ip_src, &pinfo->src);\n+            copy_address_shallow(&udxh->ip_dst, &pinfo->dst);\n+\n+            udxh->num_sack_blocks = n_sacks;\n+            for (unsigned i = 0; i < n_sacks; i++) {\n+                udxh->sack_start[i] = sack_start[i];\n+                udxh->sack_end[i]   = sack_end[i];\n+            }\n+\n+            tap_queue_packet(udx_tap, pinfo, udxh);\n+        }\n+\n         /* MESSAGE payloads travel outside the ordered stream, so they are\n          * shown per packet but left out of the reassembled conversation. */\n         if (ppd->follow_ok && !(flags & UDX_FLAG_MESSAGE) &&\n@@ -1475,6 +1633,13 @@ proto_register_udx(void)\n                            udp_follow_address_filter, udp_port_to_display,\n                            udx_follow_tap_listener, udx_get_stream_count, NULL);\n \n+    /* The conversation and endpoint tables read this tap. It carries the\n+     * stream index, which only exists while sequence analysis is on, so the\n+     * tables follow the \"analyze_sequence_numbers\" preference. */\n+    udx_tap = register_tap(\"udx\");\n+    register_conversation_table(proto_udx, false,\n+                                udx_conversation_packet, udx_endpoint_packet);\n+\n     udx_module = prefs_register_protocol(proto_udx, NULL);\n     prefs_register_bool_preference(udx_module, \"analyze_sequence_numbers\",\n         \"Analyze UDX sequence numbers\",\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-udx.c",
+      "old_path": "epan/dissectors/packet-udx.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,70 @@\n+/* packet-udx.h\n+ * Routines for UDX dissection\n+ * Copyright 2026, Prabakaran Sivakumar <zkasuran@gmail.com>\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#ifndef __PACKET_UDX_H__\n+#define __PACKET_UDX_H__\n+\n+#include \"ws_symbol_export.h\"\n+\n+#include <epan/conversation.h>\n+\n+#ifdef __cplusplus\n+extern \"C\" {\n+#endif /* __cplusplus */\n+\n+/* Bounds the SACK blocks carried per packet; data_offset caps the area at\n+ * 255 bytes, i.e. 31 blocks. */\n+#define UDX_MAX_SACK_BLOCKS 32\n+\n+/*\n+ * Queued on the \"udx\" tap: one decoded UDX header, with the stream it belongs\n+ * to and the addresses and ports of the datagram that carried it.\n+ *\n+ * Sequence and acknowledgement numbers count packets rather than bytes, so\n+ * seq advances by one per packet whatever the payload size. Consumers that\n+ * want a byte offset have to accumulate payload_len themselves.\n+ */\n+typedef struct udx_info {\n+    uint32_t id;            /* the receiver's stream id, as carried on the wire */\n+    uint32_t seq;           /* per-packet sequence counter */\n+    uint32_t ack;           /* next seq expected from the peer */\n+    uint32_t window;        /* sender's receive window, in bytes */\n+    uint32_t payload_len;   /* payload bytes, excluding SACK blocks and padding */\n+    uint32_t stream;        /* Wireshark UDX stream index, as in udx.stream */\n+    uint32_t sport;         /* UDP source port of the carrying datagram */\n+    uint32_t dport;         /* UDP destination port of the carrying datagram */\n+    uint8_t  flags;         /* UDX type flags */\n+    uint8_t  data_offset;   /* bytes between the fixed header and the payload */\n+    address  ip_src;\n+    address  ip_dst;\n+    unsigned num_sack_blocks;\n+    uint32_t sack_start[UDX_MAX_SACK_BLOCKS];\n+    uint32_t sack_end[UDX_MAX_SACK_BLOCKS];\n+} udx_info_t;\n+\n+#ifdef __cplusplus\n+}\n+#endif /* __cplusplus */\n+\n+#endif /* __PACKET_UDX_H__ */\n+\n+/*\n+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html\n+ *\n+ * Local variables:\n+ * c-basic-offset: 4\n+ * tab-width: 8\n+ * indent-tabs-mode: nil\n+ * End:\n+ *\n+ * vi: set shiftwidth=4 tabstop=8 expandtab:\n+ * :indentSize=4:tabSize=8:noTabs=true:\n+ */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-udx.h",
+      "old_path": "epan/dissectors/packet-udx.h",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -166,6 +166,7 @@ typedef enum {\n     CONVERSATION_DNP3,           /**< DNP3 (Distributed Network Protocol 3) conversation */\n     CONVERSATION_ILNP,           /**< Identifier-Locator Network Protocol (ILNP) conversation */\n     CONVERSATION_SYNCHROPHASOR,  /**< Synchrophasor conversation */\n+    CONVERSATION_UDX,            /**< UDX stream */\n } conversation_type;\n \n /*\n@@ -217,6 +218,7 @@ typedef enum {\n #define ENDPOINT_IPv6\t\tCONVERSATION_IPv6\n #define ENDPOINT_ETH\t\tCONVERSATION_ETH\n #define ENDPOINT_ILNP\t\tCONVERSATION_ILNP\n+#define ENDPOINT_UDX\t\tCONVERSATION_UDX\n \n typedef conversation_type endpoint_type;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/conversation.h",
+      "old_path": "epan/conversation.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1579,6 +1579,70 @@ class TestDissectUdx:\n             ), encoding='utf-8', env=test_env)\n         assert grep_output(stdout, 'Tail loss probe')\n \n+    def test_udx_conversations_split_multiplexed_streams(self, cmd_tshark, capture_file, test_env):\n+        '''Three streams on one socket pair are three UDX conversations.\n+\n+        The enclosing UDP flow counts them together, so the UDP table shows a\n+        single conversation for the same capture.\n+        '''\n+        def rows(table):\n+            stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                    '-r', capture_file('udx_multi.pcap.gz'),\n+                    '-q', '-z', table,\n+                ), encoding='utf-8', env=test_env)\n+            return [l for l in stdout.splitlines() if '<->' in l]\n+\n+        assert len(rows('conv,udp')) == 1\n+        assert len(rows('conv,udx')) == 3\n+\n+    def test_udx_conversation_totals(self, cmd_tshark, capture_file, test_env):\n+        '''The streams account for exactly what the UDP conversation carried.\n+\n+        Each of the three streams reports 127 frames and 75728 bytes, which adds\n+        up to the 381 frames and 227184 bytes the UDP table reports for the whole\n+        capture. Byte counts are asked for machine readable so the columns are\n+        plain integers rather than SI prefixed.\n+        '''\n+        def total(table):\n+            stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                    '-r', capture_file('udx_multi.pcap.gz'),\n+                    '-o', 'conv.machine_readable:TRUE',\n+                    '-q', '-z', table,\n+                ), encoding='utf-8', env=test_env)\n+            rows = [l.split() for l in stdout.splitlines() if '<->' in l]\n+            return [(int(r[7]), int(r[8])) for r in rows]\n+\n+        assert total('conv,udx') == [(127, 75728)] * 3\n+        assert total('conv,udp') == [(381, 227184)]\n+\n+    def test_udx_endpoints(self, cmd_tshark, capture_file, test_env):\n+        '''Both ends appear once, with the traffic split by direction.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                '-r', capture_file('udx_multi.pcap.gz'),\n+                '-o', 'conv.machine_readable:TRUE',\n+                '-q', '-z', 'endpoints,udx',\n+            ), encoding='utf-8', env=test_env)\n+        rows = [l.split() for l in stdout.splitlines() if l.startswith('10.0.0.')]\n+        assert [(r[0], int(r[1]), int(r[2])) for r in rows] == [\n+            ('10.0.0.1', 381, 227184),\n+            ('10.0.0.2', 381, 227184),\n+        ]\n+        # Sent one way is received the other.\n+        assert (int(rows[0][3]), int(rows[0][4])) == (int(rows[1][5]), int(rows[1][6]))\n+\n+    def test_udx_conversations_follow_analysis_preference(self, cmd_tshark, capture_file, test_env):\n+        '''The tables carry the stream index, so they need sequence analysis.\n+\n+        With the preference off the dissector assigns no stream number, the same\n+        condition under which udx.stream is absent from the tree.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                '-r', capture_file('udx_multi.pcap.gz'),\n+                '-oudx.analyze_sequence_numbers:FALSE',\n+                '-q', '-z', 'conv,udx',\n+            ), encoding='utf-8', env=test_env)\n+        assert len([l for l in stdout.splitlines() if '<->' in l]) == 0\n+\n \n class TestDissectGsmtapUm:\n     def test_gsmtap_um_encap(self, cmd_tshark, capture_file, test_env):\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissection.py",
+      "old_path": "test/suite_dissection.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -112,6 +112,20 @@ endpoints_draw(void *arg)\n \tprintf(\"================================================================================\\n\");\n }\n \n+static void\n+endpoints_finish(void *arg)\n+{\n+\tif (!arg)\n+\t\treturn;\n+\tconv_hash_t *hash = (conv_hash_t*)arg;\n+\tendpoints_t *iu = (endpoints_t *)hash->user_data;\n+\treset_endpoint_table_data(hash);\n+\tif (iu) {\n+\t\tg_free((char *)iu->filter);\n+\t\tg_free(iu);\n+\t}\n+}\n+\n void init_endpoints(struct register_ct *ct, const char *filter)\n {\n \tendpoints_t *iu;\n@@ -122,7 +136,7 @@ void init_endpoints(struct register_ct *ct, const char *filter)\n \tiu->filter = g_strdup(filter);\n \tiu->hash.user_data = iu;\n \n-\terror_string = register_tap_listener(proto_get_protocol_filter_name(get_conversation_proto_id(ct)), &iu->hash, filter, 0, NULL, get_endpoint_packet_func(ct), endpoints_draw, NULL);\n+\terror_string = register_tap_listener(proto_get_protocol_filter_name(get_conversation_proto_id(ct)), &iu->hash, filter, 0, NULL, get_endpoint_packet_func(ct), endpoints_draw, endpoints_finish);\n \tif (error_string) {\n \t\tg_free(iu);\n \t\tcmdarg_err(\"Couldn't register endpoint tap: %s\",\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/cli/tap-endpoints.c",
+      "old_path": "ui/cli/tap-endpoints.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -249,8 +249,11 @@ static void iousers_finish(void *arg)\n \t\treturn;\n \tconv_hash_t *hash = (conv_hash_t*)arg;\n \tio_users_t *iu = (io_users_t *)hash->user_data;\n-\tif (iu)\n+\treset_conversation_table_data(hash);\n+\tif (iu) {\n+\t\tg_free((char *)iu->filter);\n \t\tg_free(iu);\n+\t}\n }\n \n void init_iousers(struct register_ct *ct, const char *filter)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/cli/tap-iousers.c",
+      "old_path": "ui/cli/tap-iousers.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "eaf55a4475c1186a3f4ae8f3f38393df3945727c",
+      "short_id": "eaf55a44",
+      "created_at": "2026-08-19T14:41:26.000+05:30",
+      "parent_ids": [
+        "f5b5ca748813df0ac5051dc49188b95d610c6a5c"
+      ],
+      "title": "UDX: add conversation and endpoint tables",
+      "message": "UDX: add conversation and endpoint tables\n\nSeveral UDX streams can share one UDP socket pair, so the enclosing UDP\nconversation counts them together and Statistics > Conversations cannot\nsay how much traffic any single stream carried. On the udx_multi capture\nthe UDP table shows one conversation of 381 frames where there are three\nstreams of 127 frames each.\n\nRegister conversation and endpoint tables keyed on the stream index the\ndissector already assigns, so each stream becomes its own row with its own\nframe and byte counts. The Stream ID column identifies it. The three\nstreams account for exactly the 381 frames and 227184 bytes the UDP\nconversation reports.\n\nThe tables read a new \"udx\" tap. Its payload is declared in a new\npacket-udx.h as udx_info_t, carrying the decoded fixed header, the stream\nindex, the addresses and ports of the carrying datagram plus the SACK\nblocks. UDX_MAX_SACK_BLOCKS moves to that header with it.\n\nThe stream index only exists while sequence analysis is on, which is the\nsame condition under which udx.stream is absent from the tree, so the\ntables follow the existing analyze_sequence_numbers preference.\n\nPorts are shown as the UDP ports that carried the stream, since UDX has\nnone of its own. tap-iousers.c only prints ports for TCP, UDP and SCTP,\nso tshark -z conv,udx omits them, as it already does for DCCP.\n\nAssisted-by: Claude (Anthropic)\nAI-Assisted: yes (Claude, Anthropic)\n",
+      "author_name": "Prabakaran Sivakumar",
+      "author_email": "zkasuran@gmail.com",
+      "authored_date": "2026-08-17T13:27:46.000+05:30",
+      "committer_name": "Prabakaran Sivakumar",
+      "committer_email": "zkasuran@gmail.com",
+      "committed_date": "2026-08-19T14:41:26.000+05:30",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/eaf55a4475c1186a3f4ae8f3f38393df3945727c"
+    },
+    {
+      "id": "f5b5ca748813df0ac5051dc49188b95d610c6a5c",
+      "short_id": "f5b5ca74",
+      "created_at": "2026-08-19T14:41:26.000+05:30",
+      "parent_ids": [
+        "2a6fbc7f8e2320abe8d3b55360581922f922f39a"
+      ],
+      "title": "tshark: free conversation and endpoint tap tables on exit",
+      "message": "tshark: free conversation and endpoint tap tables on exit\n\nThe CLI conversation and endpoint taps allocate a conv_hash_t per run,\nwhose conv_array reserves room for 10000 items (about 2 MB), plus a\nhashtable and a deep copy of every address. None of it was ever freed.\niousers_finish freed only the io_users_t wrapper. The endpoint tap\nregistered no finish callback at all.\n\nIt went unnoticed because nothing exercised these taps under\nAddressSanitizer. Adding the first \"-z conv,...\" and \"-z endpoints,...\"\ntests surfaced it: LeakSanitizer reported about 2 MB leaked per run and\nfailed the job.\n\nCall reset_conversation_table_data and reset_endpoint_table_data from the\nfinish callbacks and free the filter string, so \"tshark -z conv,<proto>\"\nand \"tshark -z endpoints,<proto>\" leave nothing behind.\n\nAssisted-by: Claude (Anthropic)\nAI-Assisted: yes (Claude, Anthropic)\n",
+      "author_name": "Prabakaran Sivakumar",
+      "author_email": "zkasuran@gmail.com",
+      "authored_date": "2026-08-19T14:41:26.000+05:30",
+      "committer_name": "Prabakaran Sivakumar",
+      "committer_email": "zkasuran@gmail.com",
+      "committed_date": "2026-08-19T14:41:26.000+05:30",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/f5b5ca748813df0ac5051dc49188b95d610c6a5c"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1970372353,
+      "head_commit_sha": "eaf55a4475c1186a3f4ae8f3f38393df3945727c",
+      "base_commit_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+      "start_commit_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+      "created_at": "2026-08-19T09:15:03.171Z",
+      "merge_request_id": 520070922,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": "59a66649129b96157908bd1a1011fa5847e46679"
+    },
+    {
+      "id": 1970231274,
+      "head_commit_sha": "3b90cf2af311b95818f6562e7f15bf1efb2d07fc",
+      "base_commit_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+      "start_commit_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+      "created_at": "2026-08-19T08:17:32.212Z",
+      "merge_request_id": 520070922,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": "59d18c764fc7f7124026d1da31c90a4aeb4acef6"
+    },
+    {
+      "id": 1970136254,
+      "head_commit_sha": "b51db53441bff1c1ed3f3c78a3831724a9728624",
+      "base_commit_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+      "start_commit_sha": "2a6fbc7f8e2320abe8d3b55360581922f922f39a",
+      "created_at": "2026-08-19T07:34:37.935Z",
+      "merge_request_id": 520070922,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "a088e89ff2a4a1cf1b2a36e0d1a032b9c9656413"
+    },
+    {
+      "id": 1965131201,
+      "head_commit_sha": "00c92d9982f412464b08c57a1e1f6a19e0f49ba5",
+      "base_commit_sha": "e53fdfbe92141db3df3131a99ed9001e5ab1c809",
+      "start_commit_sha": "72984e6210391cd5aca311ab7e2b855f33d8890e",
+      "created_at": "2026-08-17T08:33:12.975Z",
+      "merge_request_id": 520070922,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "23b29840f40fea09c1530057851919e0accd1694"
+    }
+  ]
+}

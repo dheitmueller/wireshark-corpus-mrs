@@ -1,0 +1,495 @@
+{
+  "id": 518627484,
+  "iid": 26131,
+  "project_id": 7898047,
+  "title": "extcap: sshdump: Terminate remote command if no packets captured",
+  "description": "Dumpcap and tcpdump, when reading from a network interface and using a\ncapture filter that excludes all incoming packets, may sit indefinitely\nwithout reading from stdin or writing to stdout or stderr. They will\nclose if they receive a SIGHUP or other signals.\n\nHowever, when a remote SSH command is executed directly without a PTY,\nthe connection ends by default without a SIGHUP. OTOH, using a PTY is\na problem because stdout and stderr would be mixed, and the binary data\nwould be transformed (e.g., newlines to CRLF, which at least is obvious\nand fails capture immediately as it disturbs the pcapng SHB block type).\n\nThe SSH protocol does have support for sending signals over a channel[1],\nand libssh supports that, and OpenSSH's server has supported it since 7.9\n(October 2018)[2]. So we should send HUP when closing. In order to do\nthat, we need to have a graceful shutdown callback that will break out\nof the loop. If there is no data incoming, using a blocking read in the\nloop is a problem. libssh provides ssh_select to use instead, so use\nthat.\n\nOn non Win32, we can set up a self-pipe, monitor it along with the\nlibssh fd, and exit cleanly. This doesn't work on Win32 for multiple\nreasons - Windows can't select() on pipes, and what libssh provides\nis a wrapper around select(). We could setup a socketpair, using a\nloopback socket or (on recent Windows) a AF_UNIX socket, although again\nWindows doesn't provide socketpair() so we'd have to implement that.\nWe'd also need to set up sshdump to read the control in pipe, since the\ncurrent signaling method doesn't work on Windows (#17131).\n\nPing #14239. This still needs a non Win32 solution. Also the same\nsolution should be used for wifidump and sshdig (but not apparently\nciscodump), so perhaps the loop should go into ssh-base.\n\n[1] - https://datatracker.ietf.org/doc/html/rfc4254#section-6.9\n[2] - https://www.openssh.org/txt/release-7.9",
+  "state": "merged",
+  "created_at": "2026-08-12T13:38:04.938Z",
+  "updated_at": "2026-08-13T06:49:52.645Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-08-13T06:49:52.676Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "sshdump_graceful_shutdown_no_capture",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "894e2f513bff2062c8bb23886967c13b63a4f4c7",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-08-12T13:38:11.401Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26131",
+  "references": {
+    "short": "!26131",
+    "relative": "!26131",
+    "full": "wireshark/wireshark!26131"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26131",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2026-08-13T06:29:49.208Z",
+  "latest_build_finished_at": "2026-08-13T06:49:50.419Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2756476829,
+    "iid": 108146,
+    "project_id": 7898047,
+    "sha": "8219ef82e0bb1ec83f8354476db29ca78916c7f7",
+    "ref": "refs/merge-requests/26131/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-13T06:29:48.139Z",
+    "updated_at": "2026-08-13T06:49:50.431Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2756476829"
+  },
+  "head_pipeline": {
+    "id": 2756476829,
+    "iid": 108146,
+    "project_id": 7898047,
+    "sha": "8219ef82e0bb1ec83f8354476db29ca78916c7f7",
+    "ref": "refs/merge-requests/26131/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-13T06:29:48.139Z",
+    "updated_at": "2026-08-13T06:49:50.431Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2756476829",
+    "before_sha": "8219ef82e0bb1ec83f8354476db29ca78916c7f7",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-08-13T06:29:49.208Z",
+    "finished_at": "2026-08-13T06:49:50.419Z",
+    "committed_at": null,
+    "duration": 1199,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2756476829",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "f2d2df870d2deb7e601c5358495c33fd14f34a2f",
+    "head_sha": "894e2f513bff2062c8bb23886967c13b63a4f4c7",
+    "start_sha": "f2d2df870d2deb7e601c5358495c33fd14f34a2f"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "87767e70e507958e84d72294e1c8bc393f6ef8c4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3677823295,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>457e7f65 - extcap: sshdump: Terminate remote command if no packets captured</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26131/diffs?diff_id=1957757110&start_sha=dc60c5720fc2cb3b8bd589b60097ae88be6e7c30)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-08-12T14:00:29.024Z",
+          "updated_at": "2026-08-12T14:00:29.025Z",
+          "system": true,
+          "noteable_id": 518627484,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26131,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f302a69cbb054aed1db2255da7831485f89123b6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3677887928,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>3876ed8b - extcap: sshdump: Terminate remote command if no packets captured</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26131/diffs?diff_id=1957793813&start_sha=457e7f6598b32f897779a1cacefc5341ea048dc0)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-08-12T14:14:39.131Z",
+          "updated_at": "2026-08-12T14:14:39.133Z",
+          "system": true,
+          "noteable_id": 518627484,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26131,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bffef03d1d6323098666915dac39fabdea8ccbf0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3678424764,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>3876ed8b...f29bcaf6 - 2 commits from branch <code>wireshark:master</code></li><li>07af892c - extcap: sshdump: Terminate remote command if no packets captured</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26131/diffs?diff_id=1958064196&start_sha=3876ed8b1e9d8c50153beed113f62cc792cadd6f)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-08-12T15:57:13.404Z",
+          "updated_at": "2026-08-12T15:57:13.448Z",
+          "system": true,
+          "noteable_id": 518627484,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26131,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3792b4ba86268cd23db0e59144668f64550cbe1b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3680476398,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>07af892c...f2d2df87 - 2 commits from branch <code>wireshark:master</code></li><li>894e2f51 - extcap: sshdump: Terminate remote command if no packets captured</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26131/diffs?diff_id=1959002228&start_sha=07af892cf3c3b02b6cd98eea3584ad4d62446202)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-08-13T02:40:33.036Z",
+          "updated_at": "2026-08-13T02:40:33.038Z",
+          "system": true,
+          "noteable_id": 518627484,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26131,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bb77b53e975564eea7054e32029b421d626fa7ee",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3680939899,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-13T06:29:41.121Z",
+          "updated_at": "2026-08-13T06:29:41.123Z",
+          "system": true,
+          "noteable_id": 518627484,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26131,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "aadc33218ca15417d155d94a15f1cfff44044c4d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3680940094,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-13T06:29:46.637Z",
+          "updated_at": "2026-08-13T06:29:46.638Z",
+          "system": true,
+          "noteable_id": 518627484,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26131,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -22,8 +22,10 @@\n \n #include <extcap/extcap-base.h>\n #include <string.h>\n+#include <fcntl.h>\n #include <libssh/callbacks.h>\n #include <ws_attributes.h>\n+#include <wsutil/file_util.h>\n #include <wsutil/wslog.h>\n \n /*\n@@ -65,6 +67,8 @@\n \t\"hmac-sha1-etm@openssh.com,hmac-sha1\"\n #endif\n \n+#define SSH_READ_BLOCK_SIZE 256\n+\n static void extcap_log(int priority, const char *function, const char *buffer, void *userdata _U_)\n {\n \tenum ws_log_level level = LOG_LEVEL_DEBUG;\n@@ -476,9 +480,132 @@ int ssh_channel_printf(ssh_channel channel, const char* fmt, ...)\n \treturn ret;\n }\n \n+#ifndef _WIN32\n+static int pipe_fds[2];\n+\n+static void graceful_shutdown_cb(void)\n+{\n+        if (ws_write(pipe_fds[1], \"q\", 1) == -1) {\n+                ws_warning(\"failed to write to pipe\");\n+        }\n+}\n+\n+bool ssh_base_setup_graceful_shutdown(extcap_parameters *extcap_conf)\n+{\n+        if (pipe(pipe_fds) < 0) {\n+                ws_warning(\"pipe failed\");\n+\t\tpipe_fds[0] = -1;\n+                return false;\n+        }\n+        fcntl(pipe_fds[0], F_SETFL, O_NONBLOCK);\n+\n+        return extcap_base_register_graceful_shutdown_cb(extcap_conf, graceful_shutdown_cb);\n+}\n+#else\n+bool ssh_base_setup_graceful_shutdown(extcap_parameters *extcap_conf _U_)\n+{\n+        return true;\n+}\n+#endif\n+\n+int ssh_async_loop_read(ssh_session sshs, ssh_channel channel, FILE* fp)\n+{\n+\tint nbytes;\n+\tint ret = EXIT_SUCCESS;\n+\tchar buffer[SSH_READ_BLOCK_SIZE];\n+\n+\t/* read from stdin until data are available */\n+\twhile (ssh_channel_is_open(channel) && !ssh_channel_is_eof(channel)) {\n+\t\tstruct timeval timeout;\n+\t\tssh_channel in_channels[2], out_channels[2];\n+\t\tfd_set fds;\n+\t\tsocket_t maxfd;\n+\n+\t\ttimeout.tv_sec = 30;\n+\t\ttimeout.tv_usec = 0;\n+\t\tin_channels[0] = channel;\n+\t\tin_channels[1] = NULL;\n+\t\tFD_ZERO(&fds);\n+\t\tFD_SET(ssh_get_fd(sshs), &fds);\n+\t\tmaxfd = ssh_get_fd(sshs) + 1;\n+\n+#ifndef _WIN32\n+\t\tif (pipe_fds[0] >= 0) {\n+\t\t\tFD_SET(pipe_fds[0], &fds);\n+\t\t\tmaxfd = MAX(maxfd, pipe_fds[0] + 1);\n+\t\t}\n+#endif\n+\n+\t\tswitch (ssh_select(in_channels, out_channels, maxfd, &fds, &timeout)) {\n+\t\tcase SSH_EINTR:\n+\t\t\tws_debug(\"got a signal, try again\");\n+\t\t\tcontinue;\n+\t\tcase SSH_ERROR:\n+\t\t\tws_warning(\"Error from select\");\n+\t\t\tgoto end;\n+\t\tcase SSH_OK:\n+\t\tdefault:\n+\t\t\tbreak;\n+\t\t}\n+\n+\t\tif (out_channels[0] != NULL) {\n+\t\t\tnbytes = ssh_channel_read_nonblocking(channel, buffer, SSH_READ_BLOCK_SIZE, 0);\n+\t\t\tswitch(nbytes) {\n+\t\t\tcase SSH_AGAIN:\n+\t\t\t\tbreak;\n+\t\t\tcase SSH_EOF:\n+\t\t\t\tgoto read_stderr;\n+\t\t\tcase SSH_ERROR:\n+\t\t\t\tws_warning(\"Error reading from channel\");\n+\t\t\t\tgoto end;\n+\t\t\tdefault:\n+\t\t\t\tif (fwrite(buffer, 1, nbytes, fp) != (unsigned)nbytes) {\n+\t\t\t\t\tws_warning(\"Error writing to fifo\");\n+\t\t\t\t\tret = EXIT_FAILURE;\n+\t\t\t\t\tgoto end;\n+\t\t\t\t}\n+\t\t\t\tfflush(fp);\n+\t\t\t}\n+\t\t}\n+\n+#ifndef _WIN32\n+\t\tif (pipe_fds[0] >= 0 && FD_ISSET(pipe_fds[0], &fds)) {\n+\t\t\tchar buf[1];\n+\t\t\tif (ws_read(pipe_fds[0], buf, 1) == -1) {\n+\t\t\t\t/* We don't really care if cleaning the pipe\n+\t\t\t\t * fails because we're quitting anyway. */\n+\t\t\t}\n+\t\t\tgoto end;\n+\t\t}\n+#endif\n+\t}\n+\n+read_stderr:\n+\t/* read loop finished... maybe something wrong happened. Read from stderr */\n+\twhile (ssh_channel_is_open(channel) && !ssh_channel_is_eof(channel)) {\n+\t\tnbytes = ssh_channel_read(channel, buffer, SSH_READ_BLOCK_SIZE, 1);\n+\t\tif (nbytes < 0) {\n+\t\t\tws_warning(\"Error reading from channel\");\n+\t\t\tgoto end;\n+\t\t}\n+\t\tif (fwrite(buffer, 1, nbytes, stderr) != (unsigned)nbytes) {\n+\t\t\tws_warning(\"Error writing to stderr\");\n+\t\t\tbreak;\n+\t\t}\n+\t}\n+\n+end:\n+\tif (ssh_channel_send_eof(channel) != SSH_OK) {\n+\t\tws_warning(\"Error sending EOF in ssh channel\");\n+\t\tret = EXIT_FAILURE;\n+\t}\n+\treturn ret;\n+}\n+\n void ssh_cleanup(ssh_session* sshs, ssh_channel* channel)\n {\n \tif (*channel) {\n+\t\tssh_channel_request_send_signal(*channel, \"HUP\");\n \t\tssh_channel_send_eof(*channel);\n \t\tssh_channel_close(*channel);\n \t\tssh_channel_free(*channel);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "extcap/ssh-base.c",
+      "old_path": "extcap/ssh-base.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -121,6 +121,39 @@ ssh_session create_ssh_connection(const ssh_params_t* ssh_params, char** err_inf\n  */\n int ssh_channel_printf(ssh_channel channel, const char* fmt, ...);\n \n+/**\n+ * @brief Sets up ssh_async_loop_read to allow graceful shutdown\n+ *\n+ * Creates a self-pipe (eventually, on Windows, a SOCKET, but not\n+ * implemented yet) that allows ssh_async_loop_read to be interrupted\n+ * when a graceful shutdown is signaled for by the main application.\n+ * This is useful for, among other things, when SSH has EXEC'd a command\n+ * like dumpcap and tcpdump that might sit without attempting to read\n+ * from stdin or write to stdout or stderr indefinitely if, e.g., a\n+ * capture filter was given that excludes all packets, and thus will\n+ * not exit unless a SIGHUP is manually issued, such as by ssh_cleanup.\n+ *\n+ * @param extcap_conf Pointer to the extcap parameters structure.\n+ */\n+bool ssh_base_setup_graceful_shutdown(extcap_parameters *extcap_conf);\n+\n+/**\n+ * @brief Asynchronously reads the output of a single SSH command\n+ *\n+ * Loops to read the output of a single SSH command and write it to an open\n+ * FILE pointer. Calls ssh_select to wait on the channel and optionally the\n+ * graceful shutdown indication, if ssh_base_setup_graceful_shutdown was\n+ * called (non-Windows only). If the SSH channel's stdout reaches EOF, the\n+ * function then reads the channel's stderr and writes that to the current\n+ * process's stderr.\n+ *\n+ * @param sshs The SSH session\n+ * @param channel The SSH channel to read\n+ * @param fp The FILE to write the channel's stdout to\n+ * @return EXIT_SUCCESS if successful, EXIT_FAILURE otherwise.\n+ */\n+int ssh_async_loop_read(ssh_session sshs, ssh_channel channel, FILE* fp);\n+\n /* Clean the current ssh session and channel. */\n \n /**\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "extcap/ssh-base.h",
+      "old_path": "extcap/ssh-base.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -37,8 +37,6 @@ static char* sshdump_extcap_interface;\n #define SSHDUMP_VERSION_MINOR \"2\"\n #define SSHDUMP_VERSION_RELEASE \"0\"\n \n-#define SSH_READ_BLOCK_SIZE 256\n-\n enum {\n \tEXTCAP_BASE_OPTIONS_ENUM,\n \tOPT_HELP,\n@@ -69,51 +67,6 @@ static const struct ws_option longopts[] = {\n \n static char* interfaces_list_to_filter(GSList* if_list, unsigned int remote_port);\n \n-static int ssh_loop_read(ssh_channel channel, FILE* fp)\n-{\n-\tint nbytes;\n-\tint ret = EXIT_SUCCESS;\n-\tchar buffer[SSH_READ_BLOCK_SIZE];\n-\n-\t/* read from stdin until data are available */\n-\twhile (ssh_channel_is_open(channel) && !ssh_channel_is_eof(channel)) {\n-\t\tnbytes = ssh_channel_read(channel, buffer, SSH_READ_BLOCK_SIZE, 0);\n-\t\tif (nbytes < 0) {\n-\t\t\tws_warning(\"Error reading from channel\");\n-\t\t\tgoto end;\n-\t\t}\n-\t\tif (nbytes == 0) {\n-\t\t\tbreak;\n-\t\t}\n-\t\tif (fwrite(buffer, 1, nbytes, fp) != (unsigned)nbytes) {\n-\t\t\tws_warning(\"Error writing to fifo\");\n-\t\t\tret = EXIT_FAILURE;\n-\t\t\tgoto end;\n-\t\t}\n-\t\tfflush(fp);\n-\t}\n-\n-\t/* read loop finished... maybe something wrong happened. Read from stderr */\n-\twhile (ssh_channel_is_open(channel) && !ssh_channel_is_eof(channel)) {\n-\t\tnbytes = ssh_channel_read(channel, buffer, SSH_READ_BLOCK_SIZE, 1);\n-\t\tif (nbytes < 0) {\n-\t\t\tws_warning(\"Error reading from channel\");\n-\t\t\tgoto end;\n-\t\t}\n-\t\tif (fwrite(buffer, 1, nbytes, stderr) != (unsigned)nbytes) {\n-\t\t\tws_warning(\"Error writing to stderr\");\n-\t\t\tbreak;\n-\t\t}\n-\t}\n-\n-end:\n-\tif (ssh_channel_send_eof(channel) != SSH_OK) {\n-\t\tws_warning(\"Error sending EOF in ssh channel\");\n-\t\tret = EXIT_FAILURE;\n-\t}\n-\treturn ret;\n-}\n-\n static char* local_interfaces_to_filter(const uint16_t remote_port)\n {\n \tGSList* interfaces = local_interfaces_to_list();\n@@ -251,7 +204,7 @@ static int ssh_open_remote_connection(const ssh_params_t* params, const char* if\n \t}\n \n \t/* read from channel and write into fp */\n-\tif (ssh_loop_read(channel, fp) != EXIT_SUCCESS) {\n+\tif (ssh_async_loop_read(sshs, channel, fp) != EXIT_SUCCESS) {\n \t\tws_warning(\"Error in read loop.\");\n \t\tret = EXIT_FAILURE;\n \t\tgoto cleanup;\n@@ -463,6 +416,12 @@ int main(int argc, char *argv[])\n \t\tgoto end;\n \t}\n \n+\t// Do this before reading the options, which sets up the control pipe\n+\tif (!ssh_base_setup_graceful_shutdown(extcap_conf)) {\n+\t\tret = EXIT_FAILURE;\n+\t\tgoto end;\n+\t}\n+\n \twhile ((result = ws_getopt_long(argc, argv, \":\", longopts, &option_idx)) != -1) {\n \n \t\tswitch (result) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "extcap/sshdump.c",
+      "old_path": "extcap/sshdump.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "894e2f513bff2062c8bb23886967c13b63a4f4c7",
+      "short_id": "894e2f51",
+      "created_at": "2026-08-12T22:40:13.000-04:00",
+      "parent_ids": [
+        "f2d2df870d2deb7e601c5358495c33fd14f34a2f"
+      ],
+      "title": "extcap: sshdump: Terminate remote command if no packets captured",
+      "message": "extcap: sshdump: Terminate remote command if no packets captured\n\nDumpcap and tcpdump, when reading from a network interface and using a\ncapture filter that excludes all incoming packets, may sit indefinitely\nwithout reading from stdin or writing to stdout or stderr. They will\nclose if they receive a SIGHUP or other signals.\n\nHowever, when a remote SSH command is executed directly without a PTY,\nthe connection ends by default without a SIGHUP. OTOH, using a PTY is\na problem because stdout and stderr would be mixed, and the binary data\nwould be transformed (e.g., newlines to CRLF, which at least is obvious\nand fails capture immediately as it disturbs the pcapng SHB block type).\n\nThe SSH protocol does have support for sending signals over a channel[1],\nand libssh supports that, and OpenSSH's server has supported it since 7.9\n(October 2018)[2]. So we should send HUP when closing. In order to do\nthat, we need to have a graceful shutdown callback that will break out\nof the loop. If there is no data incoming, using a blocking read in the\nloop is a problem. libssh provides ssh_select to use instead, so use\nthat.\n\nOn non Win32, we can set up a self-pipe, monitor it along with the\nlibssh fd, and exit cleanly. This doesn't work on Win32 for multiple\nreasons - Windows can't select() on pipes, and what libssh provides\nis a wrapper around select(). We could setup a socketpair, using a\nloopback socket or (on recent Windows) a AF_UNIX socket, although again\nWindows doesn't provide socketpair() so we'd have to implement that.\nWe'd also need to set up sshdump to read the control in pipe, since the\ncurrent signaling method doesn't work on Windows (#17131).\n\nPing #14239. This still needs a non Win32 solution. Also the same\nsolution should be used for wifidump and sshdig (but not apparently\nciscodump).\n\n[1] - https://datatracker.ietf.org/doc/html/rfc4254#section-6.9\n[2] - https://www.openssh.org/txt/release-7.9\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2026-08-12T07:48:38.000-04:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2026-08-12T22:40:13.000-04:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/894e2f513bff2062c8bb23886967c13b63a4f4c7"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1959002228,
+      "head_commit_sha": "894e2f513bff2062c8bb23886967c13b63a4f4c7",
+      "base_commit_sha": "f2d2df870d2deb7e601c5358495c33fd14f34a2f",
+      "start_commit_sha": "f2d2df870d2deb7e601c5358495c33fd14f34a2f",
+      "created_at": "2026-08-13T02:40:32.528Z",
+      "merge_request_id": 518627484,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "9e9394da2fd81d29bd88c95b47bfd1d3d170f0cb"
+    },
+    {
+      "id": 1958064196,
+      "head_commit_sha": "07af892cf3c3b02b6cd98eea3584ad4d62446202",
+      "base_commit_sha": "f29bcaf658249d1f48f402acf3664cf3d0401bb7",
+      "start_commit_sha": "f29bcaf658249d1f48f402acf3664cf3d0401bb7",
+      "created_at": "2026-08-12T15:57:12.867Z",
+      "merge_request_id": 518627484,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "e749b337723a73cb8b17955a60f937e4551cf669"
+    },
+    {
+      "id": 1957793813,
+      "head_commit_sha": "3876ed8b1e9d8c50153beed113f62cc792cadd6f",
+      "base_commit_sha": "59945ddb194b03bff12392f7d5815fa6463588c2",
+      "start_commit_sha": "59945ddb194b03bff12392f7d5815fa6463588c2",
+      "created_at": "2026-08-12T14:14:38.615Z",
+      "merge_request_id": 518627484,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "a8da3ecd430fd39c658ec454423b07a0433b39e3"
+    },
+    {
+      "id": 1957757110,
+      "head_commit_sha": "457e7f6598b32f897779a1cacefc5341ea048dc0",
+      "base_commit_sha": "59945ddb194b03bff12392f7d5815fa6463588c2",
+      "start_commit_sha": "59945ddb194b03bff12392f7d5815fa6463588c2",
+      "created_at": "2026-08-12T14:00:28.434Z",
+      "merge_request_id": 518627484,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "9aa48968624c1af07be25b38f6b14f45221071f2"
+    },
+    {
+      "id": 1957694458,
+      "head_commit_sha": "dc60c5720fc2cb3b8bd589b60097ae88be6e7c30",
+      "base_commit_sha": "59945ddb194b03bff12392f7d5815fa6463588c2",
+      "start_commit_sha": "59945ddb194b03bff12392f7d5815fa6463588c2",
+      "created_at": "2026-08-12T13:38:09.257Z",
+      "merge_request_id": 518627484,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "cb349729e27e04d68fd6e33980cfb479a15a7949"
+    }
+  ]
+}

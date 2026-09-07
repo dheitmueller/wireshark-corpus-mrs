@@ -1,0 +1,355 @@
+{
+  "id": 519814452,
+  "iid": 26181,
+  "project_id": 7898047,
+  "title": "RTPS: Fix OOB write in DATA_BATCH sample info list",
+  "description": "dissect_RTPS_DATA_BATCH() allocates sample_info_flags[] and\nsample_info_length[] with sample_info_max entries, then fills them in the\nsample-info loop indexed by sample_info_count. The loop's bounds check\nonly fired when the max_batch_samples_dissected preference was > 0:\n\n  if (rtps_max_batch_samples_dissected > 0 && ... >= rtps_max_batch_samples_dissected)\n\nWhen the preference is set to 0 (a valid value meaning \"show up to 1024\"),\nsample_info_max is set to 1024 for the allocation, but the guard is\ndisabled entirely. A crafted DATA_BATCH submessage with many minimal\nsample-info records (~8 bytes each) then drives sample_info_count past\n1024, writing sample_info_flags[] and sample_info_length[] out of bounds\nin packet-scope (wmem) memory, and the stale entries are read again when\nthe batched samples are dissected.\n\nGuard on sample_info_max instead, which equals the preference when it is\n> 0 and 1024 when it is 0, so the loop can never exceed the allocation in\neither case.\n\nThis requires the non-default preference value of 0; with the default\n(16) the OOB write is not reachable.\n\nReported by Aisle Research.\n\nFixes #21508",
+  "state": "merged",
+  "created_at": "2026-08-15T21:57:40.663Z",
+  "updated_at": "2026-08-16T02:34:57.399Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2026-08-16T02:34:57.414Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "vuln_1_6_1_b",
+  "user_notes_count": 1,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7014716,
+    "username": "sahlberg",
+    "public_email": "",
+    "name": "Ronnie Sahlberg",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/88911e6cfe3dfc07b327385209d35a46898b5f12538fcb9fe0d5cf97dd7b94d2?s=80&d=identicon",
+    "web_url": "https://gitlab.com/sahlberg"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 21063613,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "3d0c9ca25695e1b6afc2ab58b767013b14f5f3e1",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-08-15T21:57:45.271Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26181",
+  "references": {
+    "short": "!26181",
+    "relative": "!26181",
+    "full": "wireshark/wireshark!26181"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26181",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-08-16T02:15:26.423Z",
+  "latest_build_finished_at": "2026-08-16T02:34:55.271Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2763287047,
+    "iid": 108320,
+    "project_id": 7898047,
+    "sha": "716a200295d2f91629211fd8660e8cce37c13884",
+    "ref": "refs/merge-requests/26181/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-16T02:15:25.333Z",
+    "updated_at": "2026-08-16T02:34:55.284Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2763287047"
+  },
+  "head_pipeline": {
+    "id": 2763287047,
+    "iid": 108320,
+    "project_id": 7898047,
+    "sha": "716a200295d2f91629211fd8660e8cce37c13884",
+    "ref": "refs/merge-requests/26181/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-16T02:15:25.333Z",
+    "updated_at": "2026-08-16T02:34:55.284Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2763287047",
+    "before_sha": "716a200295d2f91629211fd8660e8cce37c13884",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2026-08-16T02:15:26.423Z",
+    "finished_at": "2026-08-16T02:34:55.271Z",
+    "committed_at": null,
+    "duration": 1167,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2763287047",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "1c72f4438d4a6bbefb20187af7de9e1c88b4c608",
+    "head_sha": "3d0c9ca25695e1b6afc2ab58b767013b14f5f3e1",
+    "start_sha": "97fa4e31cc0166460a82e100f5ff73c3ae9d929c"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "57e48fcdde04dc5b84ba81e2d26031f54f8210d6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3690642219,
+          "type": null,
+          "body": "Don't think we need 4.4 or 4.6 as it depends on the user first changing an obscure prefs setting away from its default.",
+          "author": {
+            "id": 7014716,
+            "username": "sahlberg",
+            "public_email": "",
+            "name": "Ronnie Sahlberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/88911e6cfe3dfc07b327385209d35a46898b5f12538fcb9fe0d5cf97dd7b94d2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/sahlberg"
+          },
+          "created_at": "2026-08-15T21:59:39.414Z",
+          "updated_at": "2026-08-15T21:59:39.414Z",
+          "system": false,
+          "noteable_id": 519814452,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26181,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dea4e169693513a2012329674c91a58b762f82ec",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3690851360,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-08-16T02:15:18.851Z",
+          "updated_at": "2026-08-16T02:15:18.852Z",
+          "system": true,
+          "noteable_id": 519814452,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26181,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6f67e5e371f3ad5045dd1929af89666356090995",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3690851409,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-08-16T02:15:21.311Z",
+          "updated_at": "2026-08-16T02:15:21.340Z",
+          "system": true,
+          "noteable_id": 519814452,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26181,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "621de5e51f82e1d472493ea1b490b5b994f374b8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3690851419,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-08-16T02:15:21.967Z",
+          "updated_at": "2026-08-16T02:15:21.994Z",
+          "system": true,
+          "noteable_id": 519814452,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26181,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -16731,7 +16731,12 @@ static void dissect_RTPS_DATA_BATCH(tvbuff_t *tvb, packet_info *pinfo,\n       proto_tree *si_tree;\n       int offset_begin_sampleinfo = offset;\n \n-      if (rtps_max_batch_samples_dissected > 0 && (unsigned)sample_info_count >= rtps_max_batch_samples_dissected) {\n+      /* Never write past the sample_info_flags/sample_info_length arrays,\n+       * which are allocated with sample_info_max entries. When the\n+       * preference is 0, sample_info_max is 1024 (see above); otherwise it\n+       * equals the preference. Guarding on sample_info_max here (rather than\n+       * on the preference) keeps the 0 case bounded too. */\n+      if ((unsigned)sample_info_count >= (unsigned)sample_info_max) {\n         expert_add_info(pinfo, list_item, &ei_rtps_more_samples_available);\n         offset = sampleListOffset;\n         break;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-rtps.c",
+      "old_path": "epan/dissectors/packet-rtps.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "3d0c9ca25695e1b6afc2ab58b767013b14f5f3e1",
+      "short_id": "3d0c9ca2",
+      "created_at": "2026-08-16T07:56:39.000+10:00",
+      "parent_ids": [
+        "1c72f4438d4a6bbefb20187af7de9e1c88b4c608"
+      ],
+      "title": "RTPS: Fix OOB write in DATA_BATCH sample info list",
+      "message": "RTPS: Fix OOB write in DATA_BATCH sample info list\n\ndissect_RTPS_DATA_BATCH() allocates sample_info_flags[] and\nsample_info_length[] with sample_info_max entries, then fills them in the\nsample-info loop indexed by sample_info_count. The loop's bounds check\nonly fired when the max_batch_samples_dissected preference was > 0:\n\n  if (rtps_max_batch_samples_dissected > 0 && ... >= rtps_max_batch_samples_dissected)\n\nWhen the preference is set to 0 (a valid value meaning \"show up to 1024\"),\nsample_info_max is set to 1024 for the allocation, but the guard is\ndisabled entirely. A crafted DATA_BATCH submessage with many minimal\nsample-info records (~8 bytes each) then drives sample_info_count past\n1024, writing sample_info_flags[] and sample_info_length[] out of bounds\nin packet-scope (wmem) memory, and the stale entries are read again when\nthe batched samples are dissected.\n\nGuard on sample_info_max instead, which equals the preference when it is\n> 0 and 1024 when it is 0, so the loop can never exceed the allocation in\neither case.\n\nThis requires the non-default preference value of 0; with the default\n(16) the OOB write is not reachable.\n\nReported by Aisle Research.\n\nFixes #21508\n",
+      "author_name": "Ronnie Sahlberg",
+      "author_email": "ronniesahlberg@gmail.com",
+      "authored_date": "2026-08-16T07:52:46.000+10:00",
+      "committer_name": "Ronnie Sahlberg",
+      "committer_email": "ronniesahlberg@gmail.com",
+      "committed_date": "2026-08-16T07:56:39.000+10:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3d0c9ca25695e1b6afc2ab58b767013b14f5f3e1"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1964028695,
+      "head_commit_sha": "3d0c9ca25695e1b6afc2ab58b767013b14f5f3e1",
+      "base_commit_sha": "1c72f4438d4a6bbefb20187af7de9e1c88b4c608",
+      "start_commit_sha": "97fa4e31cc0166460a82e100f5ff73c3ae9d929c",
+      "created_at": "2026-08-15T21:57:43.926Z",
+      "merge_request_id": 519814452,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "67bbd37800f2f36ad0246569ac76679fdc50ab3c"
+    }
+  ]
+}

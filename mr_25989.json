@@ -1,0 +1,817 @@
+{
+  "id": 513157267,
+  "iid": 25989,
+  "project_id": 7898047,
+  "title": "UDX: add dissector for the UDX transport protocol",
+  "description": "Adds a built-in dissector for UDX, the reliable multiplexed transport used by the Holepunch peer-to-peer stack. Reference implementation: https://github.com/holepunchto/libudx\n\nDiscussed in #21453.\n\nUDX runs over UDP with a 20-byte little-endian header. This dissector decodes the header, its type flags, selective acknowledgement blocks, MTU probe padding and the payload, detected heuristically and available through Decode As.\n\nOn top of the decode it tracks each stream. Because a packet carries only the receiver's stream id, and the ids are exchanged in an encrypted handshake, a flow is matched with its reverse by correlating the acknowledgements it carries against the sequence numbers the candidate has sent, breaking ties on the order the flows appeared and how close together they started. When no reverse flow can be identified the packets are still fully decoded and the analysis subtree says so.\n\nWith both directions known, the dissector reports round-trip times, bytes and packets in flight, and the frames that link data to its acknowledgement, under udx.analysis.\\* names that mirror the TCP ones. Expert info covers lost, out-of-order and duplicate packets, fast, RTO, tail-loss-probe and spurious retransmissions, zero window and window update, MTU probes, keepalives, zero-window probes, and stream close. Keepalives and zero-window probes are identical on the wire, so they are told apart by the window the peer last advertised.\n\nFollow UDX Stream reassembles the payload of both directions in sequence order, holding packets that arrive early until the gap before them is filled and dropping retransmissions and duplicates.\n\nAll the analysis runs once, on the first pass, and is cached per packet, so revisiting a packet cannot change what it reports.\n\nTesting: eleven cases in test/suite_dissection.py over seven captures, covering the heuristic, header decode, SACK blocks, pairing three streams multiplexed on one socket pair, fast retransmission, keepalive versus zero-window probe, MTU probes, sequence numbers crossing 2^32, and follow reassembly, including a check that a capture with loss reassembles to the same payload as a clean one. The captures were produced by driving the reference implementation through a relay that drops, duplicates and reorders packets deterministically; the keepalive, zero-window, MTU probe and wraparound captures are hand-built from the wire format.\n\ncheckAPIs, checkhf, checkfiltername, check_typed_item_calls, check_tfs, check_val_to_str, check_col_apis and check_spelling are all clean, and the dissector has been run over a corpus of byte-mutated and truncated packets without error.\n\nAssisted-by: Claude\n\n![Screenshot 2026-07-30 at 12.04.26 AM.png](/uploads/2e2a698c530b87e6e4e450c1a0411142/Screenshot_2026-07-30_at_12.04.26_AM.png){width=900 height=582}\n\n_A data packet mid-transfer. The header decodes into its type flags, stream id, window, sequence and acknowledgement numbers, and the analysis subtree adds what the packet alone cannot say: it was acknowledged in frame 60, that took 946 microseconds, and 16 KB across 14 packets was in flight when it was sent. \"ACKed in frame 60\" is a link to that frame._\n\n![Screenshot 2026-07-30 at 12.11.57 AM.png](/uploads/ff26f570600256906227f46b5fed724e/Screenshot_2026-07-30_at_12.11.57_AM.png){width=900 height=582}\n\n![Screenshot_2026-07-30_at_12.11.57_AM.png](/uploads/f173215cb24e4518fe07ee8ddfaedef2/Screenshot_2026-07-30_at_12.11.57_AM.png){width=900 height=582}\n\n_Recovery after two packets were dropped, in one view. Frame 42 is a retransmission; frames 45–54 are the receiver repeating Ack=5 while it waits for the missing packet; at frame 55 the acknowledgement moves to 8, and by frame 60 it jumps to 24 as everything buffered behind the hole is delivered. Frames 63 and 64 resend packets that were already acknowledged, which the dissector reports as spurious._\n\n![Screenshot 2026-07-30 at 12.19.12 AM.png](/uploads/b4c64c527f2b7512da1c5bd8b9d43643/Screenshot_2026-07-30_at_12.19.12_AM.png){width=900 height=582}\n\n_Expert information for the same capture, grouped by severity with the frame numbers each verdict applies to. Retransmissions are classified rather than lumped together: frames 37 and 42 are reported as fast retransmissions, because the receiver had selectively acknowledged later packets while these were still missing, whereas frames 63, 64 and 129 resend packets the receiver had already acknowledged and are reported as spurious._\n\n![Screenshot 2026-07-30 at 12.23.08 AM.png](/uploads/4f964589234fa066d581ca1e3dce608d/Screenshot_2026-07-30_at_12.23.08_AM.png){width=900 height=582}\n\n_Follow UDX Stream on a 69 kB transfer. Payload is reassembled per direction in sequence order - client in orange, server in blue - holding packets that arrive early until the gap before them is filled and dropping retransmissions. The same transfer captured with packet loss reassembles to byte-identical payload; there is a test asserting that._",
+  "state": "merged",
+  "created_at": "2026-07-29T23:58:17.542Z",
+  "updated_at": "2026-08-13T07:14:23.787Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-08-13T07:14:23.814Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "udx-dissector",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 40756552,
+    "username": "frankolien",
+    "public_email": null,
+    "name": "Frank Olien",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+    "web_url": "https://gitlab.com/frankolien"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 84942639,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "b93fbf0de1de7e69e33a66dd244812d10e4b0e76",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-07-29T23:58:22.292Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!25989",
+  "references": {
+    "short": "!25989",
+    "relative": "!25989",
+    "full": "wireshark/wireshark!25989"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/25989",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "11",
+  "latest_build_started_at": "2026-08-13T06:42:31.118Z",
+  "latest_build_finished_at": "2026-08-13T07:14:21.116Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2756501726,
+    "iid": 108150,
+    "project_id": 7898047,
+    "sha": "27a642453b370e9e14c566bdf269b4872d966e2f",
+    "ref": "refs/merge-requests/25989/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-13T06:42:29.512Z",
+    "updated_at": "2026-08-13T07:14:21.128Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2756501726"
+  },
+  "head_pipeline": {
+    "id": 2756501726,
+    "iid": 108150,
+    "project_id": 7898047,
+    "sha": "27a642453b370e9e14c566bdf269b4872d966e2f",
+    "ref": "refs/merge-requests/25989/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-13T06:42:29.512Z",
+    "updated_at": "2026-08-13T07:14:21.128Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2756501726",
+    "before_sha": "27a642453b370e9e14c566bdf269b4872d966e2f",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-08-13T06:42:31.118Z",
+    "finished_at": "2026-08-13T07:14:21.116Z",
+    "committed_at": null,
+    "duration": 1908,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2756501726",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "3587ee87f990145265c2505e8b4c97457958202e",
+    "head_sha": "b93fbf0de1de7e69e33a66dd244812d10e4b0e76",
+    "start_sha": "3587ee87f990145265c2505e8b4c97457958202e"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "e0f74d33fe640f0bac0182e88fba3f2ffac954a8",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3621415940,
+          "type": "DiffNote",
+          "body": "I don't find the heuristic test particularly strong, therefore I suspect too many false positives in the real world. I would prefer this heuristic to be disabled by default, to not cause upset.",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2026-07-30T05:44:15.512Z",
+          "updated_at": "2026-08-06T05:48:30.376Z",
+          "system": false,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "b13d30afaaa7914f642dbeb4e5e9ee0fb5094bc1",
+          "position": {
+            "base_sha": "78d67418e8cfec6eb30a80bd399d8485f01efdd3",
+            "start_sha": "3f1daf1cfe1d42994a74a363918e63a35a0a428f",
+            "head_sha": "08e199740c635df4be37c6a29add19ad43e7862f",
+            "old_path": "epan/dissectors/packet-udx.c",
+            "new_path": "epan/dissectors/packet-udx.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1357,
+            "line_range": {
+              "start": {
+                "line_code": "d3cef676bf987e65b2b7b46ad80718946ddde77c_0_381",
+                "type": "new",
+                "old_line": null,
+                "new_line": 381
+              },
+              "end": {
+                "line_code": "d3cef676bf987e65b2b7b46ad80718946ddde77c_0_381",
+                "type": "new",
+                "old_line": null,
+                "new_line": 381
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-08-06T05:48:30.376Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        },
+        {
+          "id": 3622205101,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/25989/diffs?diff_id=1932587912&start_sha=08e199740c635df4be37c6a29add19ad43e7862f#d3cef676bf987e65b2b7b46ad80718946ddde77c_1357_1373)",
+          "author": {
+            "id": 40756552,
+            "username": "frankolien",
+            "public_email": null,
+            "name": "Frank Olien",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+            "web_url": "https://gitlab.com/frankolien"
+          },
+          "created_at": "2026-07-30T09:01:35.806Z",
+          "updated_at": "2026-07-30T09:01:35.806Z",
+          "system": true,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "b13d30afaaa7914f642dbeb4e5e9ee0fb5094bc1",
+          "position": {
+            "base_sha": "78d67418e8cfec6eb30a80bd399d8485f01efdd3",
+            "start_sha": "3f1daf1cfe1d42994a74a363918e63a35a0a428f",
+            "head_sha": "08e199740c635df4be37c6a29add19ad43e7862f",
+            "old_path": "epan/dissectors/packet-udx.c",
+            "new_path": "epan/dissectors/packet-udx.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1357,
+            "line_range": {
+              "start": {
+                "line_code": "d3cef676bf987e65b2b7b46ad80718946ddde77c_0_381",
+                "type": "new",
+                "old_line": null,
+                "new_line": 381
+              },
+              "end": {
+                "line_code": "d3cef676bf987e65b2b7b46ad80718946ddde77c_0_381",
+                "type": "new",
+                "old_line": null,
+                "new_line": 381
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        },
+        {
+          "id": 3622216413,
+          "type": "DiffNote",
+          "body": "Thanks on that jaap keuter, agreed on both counts, changed in the latest push.\n\n..now the  heuristic now registers with HEURISTIC_DISABLE, so nothing happens unless a user turns it on, and \"Decode As\" on a UDP port remains available for anyone who knows what they are looking at. This follows what Aeron and ACN do for the same reason.\n\nI also tightened the test itself, since a weak test was the underlying concern. Only DATA and MESSAGE packets carry a payload in UDX; everything else is the fixed header followed at most by selective acknowledgement blocks, so the length is known exactly. The check now rejects a packet whose length does not match its flags, on top of the magic byte, version, reserved flag bits and the data-offset bounds.\n\nTo put a number on it, I ran the heuristic over the 211 captures in test/captures/ that are not UDX: zero frames matched. All 1,019 frames across the UDX captures still decode.\n\nThere is also a new test asserting the heuristic is off by default, and the existing tests now enable it explicitly.",
+          "author": {
+            "id": 40756552,
+            "username": "frankolien",
+            "public_email": null,
+            "name": "Frank Olien",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+            "web_url": "https://gitlab.com/frankolien"
+          },
+          "created_at": "2026-07-30T09:04:05.974Z",
+          "updated_at": "2026-08-06T05:48:30.376Z",
+          "system": false,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "b13d30afaaa7914f642dbeb4e5e9ee0fb5094bc1",
+          "position": {
+            "base_sha": "78d67418e8cfec6eb30a80bd399d8485f01efdd3",
+            "start_sha": "3f1daf1cfe1d42994a74a363918e63a35a0a428f",
+            "head_sha": "08e199740c635df4be37c6a29add19ad43e7862f",
+            "old_path": "epan/dissectors/packet-udx.c",
+            "new_path": "epan/dissectors/packet-udx.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1357,
+            "line_range": {
+              "start": {
+                "line_code": "d3cef676bf987e65b2b7b46ad80718946ddde77c_0_381",
+                "type": "new",
+                "old_line": null,
+                "new_line": 381
+              },
+              "end": {
+                "line_code": "d3cef676bf987e65b2b7b46ad80718946ddde77c_0_381",
+                "type": "new",
+                "old_line": null,
+                "new_line": 381
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-08-06T05:48:30.376Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b3bb0f738943605ee98fda736ca5e2f4b49dcb04",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3622205122,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>851f01db - UDX: add dissector for the UDX transport protocol</li><li>f484cf6f - UDX: add sequence analysis, flow pairing and expert info</li><li>d8f20a83 - UDX: add Follow Stream support</li><li>01f5162e - UDX: add tests and release notes entry</li><li>a98d2b0c - UDX: reset stream numbering for each capture file</li><li>6aefd570 - UDX: disable the heuristic by default and tighten its test</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25989/diffs?diff_id=1932587912&start_sha=08e199740c635df4be37c6a29add19ad43e7862f)",
+          "author": {
+            "id": 40756552,
+            "username": "frankolien",
+            "public_email": null,
+            "name": "Frank Olien",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+            "web_url": "https://gitlab.com/frankolien"
+          },
+          "created_at": "2026-07-30T09:01:36.118Z",
+          "updated_at": "2026-07-30T09:01:36.120Z",
+          "system": true,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0324af7125c283750ec60dfa7c6d8b3483585b2a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3622462680,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>fe575066 - UDX: add dissector for the UDX transport protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25989/diffs?diff_id=1932715735&start_sha=6aefd57010eb9f0b956466f445a5b32ef4a7a2d2)",
+          "author": {
+            "id": 40756552,
+            "username": "frankolien",
+            "public_email": null,
+            "name": "Frank Olien",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+            "web_url": "https://gitlab.com/frankolien"
+          },
+          "created_at": "2026-07-30T09:52:39.011Z",
+          "updated_at": "2026-07-30T09:52:39.013Z",
+          "system": true,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c8a8003206b282684a870c34611848311696f1a5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3622466216,
+          "type": null,
+          "body": "added 9 commits\n\n<ul><li>fe575066...3587ee87 - 8 commits from branch <code>wireshark:master</code></li><li>b93fbf0d - UDX: add dissector for the UDX transport protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/25989/diffs?diff_id=1932717602&start_sha=fe575066a49407e58dd272073321dc00ba2df90e)",
+          "author": {
+            "id": 40756552,
+            "username": "frankolien",
+            "public_email": null,
+            "name": "Frank Olien",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+            "web_url": "https://gitlab.com/frankolien"
+          },
+          "created_at": "2026-07-30T09:53:25.287Z",
+          "updated_at": "2026-07-30T09:53:25.289Z",
+          "system": true,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "411fff7a93dd28fb0a92a238ec4890e3f16073bb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3650962274,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-06T05:48:30.434Z",
+          "updated_at": "2026-08-06T05:48:30.439Z",
+          "system": true,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3f41baf13067b12a00ad359f5d123e558c634612",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3680973014,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-13T06:42:22.655Z",
+          "updated_at": "2026-08-13T06:42:22.662Z",
+          "system": true,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9e926b15977ae732fed12a64cb41176e5d7d6438",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3680973183,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 5",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-13T06:42:27.395Z",
+          "updated_at": "2026-08-13T06:42:27.397Z",
+          "system": true,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5ac2fe58d1becfb3d5a92d9e251a1095b8cbbfc1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3697119532,
+          "type": null,
+          "body": "mentioned in merge request !26211",
+          "author": {
+            "id": 40756552,
+            "username": "frankolien",
+            "public_email": null,
+            "name": "Frank Olien",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b00ffecbf3f77a046ddc47c236cfce100c61d38fcf6cfd2ddde410b4624fc7f5?s=80&d=identicon",
+            "web_url": "https://gitlab.com/frankolien"
+          },
+          "created_at": "2026-08-17T23:18:12.114Z",
+          "updated_at": "2026-08-17T23:18:12.116Z",
+          "system": true,
+          "noteable_id": 513157267,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 25989,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -216,6 +216,7 @@ RDP Conctrl virtual channel Protocol (CONCTRL)\n RDP Video Capture Virtual Channel Extension (RDPECAM)\n Real-Time Tracking Protocol (RTTrP)\n TrueConf\n+UDX\n Ultra Ethernet Transport (UET)\n XGT\n ZigBee ZCL Generic Tunnel\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "doc/Wireshark_Release_Notes.adoc",
+      "old_path": "doc/Wireshark_Release_Notes.adoc",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1778,6 +1778,7 @@ set(DISSECTOR_SRC\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-udpcp.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-uds.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-udt.c\n+\t${CMAKE_CURRENT_SOURCE_DIR}/packet-udx.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-uet.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-uftp.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-uftp4.c\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/CMakeLists.txt",
+      "old_path": "epan/dissectors/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-udx.c",
+      "old_path": "epan/dissectors/packet-udx.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_clean.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_clean.pcap.gz",
+      "old_path": "test/captures/udx_clean.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_keepalive.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_keepalive.pcap.gz",
+      "old_path": "test/captures/udx_keepalive.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_loss.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_loss.pcap.gz",
+      "old_path": "test/captures/udx_loss.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_mtuprobe.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_mtuprobe.pcap.gz",
+      "old_path": "test/captures/udx_mtuprobe.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_multi.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_multi.pcap.gz",
+      "old_path": "test/captures/udx_multi.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_seqwrap.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_seqwrap.pcap.gz",
+      "old_path": "test/captures/udx_seqwrap.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/udx_zerowindow.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/udx_zerowindow.pcap.gz",
+      "old_path": "test/captures/udx_zerowindow.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1253,3 +1253,139 @@ class TestDissectUltraEthernet:\n                 '-Tfields', '-euet.crc.status',\n             ), encoding='utf-8', env=test_env)\n         assert stdout.strip().split() == (['1'] * 48)\n+\n+\n+# UDX ships its heuristic disabled, so the tests enable it explicitly.\n+UDX_HEUR = ('--enable-heuristic', 'udx_udp')\n+\n+\n+class TestDissectUdx:\n+    def test_udx_heuristic_disabled_by_default(self, cmd_tshark, capture_file, test_env):\n+        '''The heuristic is off unless the user asks for it.'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('udx_clean.pcap.gz'),\n+                '-Y', 'udx',\n+                '-Tfields', '-eframe.number',\n+            ), encoding='utf-8', env=test_env)\n+        assert count_output(stdout) == 0\n+\n+    def test_udx_heuristic(self, cmd_tshark, capture_file, test_env):\n+        '''Every packet of a UDX capture is recognised by the heuristic.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                '-r', capture_file('udx_clean.pcap.gz'),\n+                '-Y', 'udx',\n+                '-Tfields', '-eframe.number',\n+            ), encoding='utf-8', env=test_env)\n+        assert count_output(stdout) == 130\n+\n+    def test_udx_header_fields(self, cmd_tshark, capture_file, test_env):\n+        '''Header fields decode with the little-endian byte order UDX uses.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                '-r', capture_file('udx_clean.pcap.gz'),\n+                '-c', '1',\n+                '-Tfields', '-eudx.id', '-eudx.seq', '-eudx.ack', '-eudx.rwnd',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.strip() == '101\\t0\\t0\\t4194304'\n+\n+    def test_udx_sack_blocks(self, cmd_tshark, capture_file, test_env):\n+        '''Selective acknowledgement ranges are decoded as pairs.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                '-r', capture_file('udx_loss.pcap.gz'),\n+                '-Y', 'udx.sack.start',\n+                '-Tfields', '-eudx.sack.start', '-eudx.sack.end',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, r'^6\\t8')\n+\n+    def test_udx_stream_pairing(self, cmd_tshark, capture_file, test_env):\n+        '''Three streams multiplexed over one socket pair are told apart.\n+\n+        Packets carry only the receiver's stream id, so each flow has to be\n+        matched with its reverse by correlating acknowledgements.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_multi.pcap.gz'),\n+                '-Tfields', '-eudx.stream',\n+            ), encoding='utf-8', env=test_env)\n+        assert sorted(set(stdout.split())) == ['0', '1', '2']\n+\n+    def test_udx_fast_retransmission(self, cmd_tshark, capture_file, test_env):\n+        '''A packet resent while later ones were selectively acknowledged.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_loss.pcap.gz'),\n+                '-Y', 'udx.analysis.fast_retransmission',\n+                '-Tfields', '-eframe.number',\n+            ), encoding='utf-8', env=test_env)\n+        assert count_output(stdout) == 2\n+\n+    def test_udx_keepalive(self, cmd_tshark, capture_file, test_env):\n+        '''A bare heartbeat with the window open is a keepalive.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_keepalive.pcap.gz'),\n+                '-Y', 'udx.analysis.keepalive',\n+                '-Tfields', '-eframe.number',\n+            ), encoding='utf-8', env=test_env)\n+        assert count_output(stdout) == 3\n+\n+    def test_udx_zero_window_probe(self, cmd_tshark, capture_file, test_env):\n+        '''The same heartbeat is a probe once the peer closes its window.\n+\n+        Keepalives and zero-window probes are identical on the wire; only the\n+        window last advertised by the peer separates them.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_zerowindow.pcap.gz'),\n+                '-Y', 'udx.analysis.zero_window_probe',\n+                '-Tfields', '-eframe.number',\n+            ), encoding='utf-8', env=test_env)\n+        assert count_output(stdout) == 2\n+\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_zerowindow.pcap.gz'),\n+                '-Y', 'udx.analysis.window_update',\n+                '-Tfields', '-eframe.number',\n+            ), encoding='utf-8', env=test_env)\n+        assert count_output(stdout) == 1\n+\n+    def test_udx_mtu_probe(self, cmd_tshark, capture_file, test_env):\n+        '''Padding without SACK blocks marks a path MTU probe.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_mtuprobe.pcap.gz'),\n+                '-Y', 'udx.analysis.mtu_probe',\n+                '-Tfields', '-eframe.number', '-eudx.data_offset',\n+            ), encoding='utf-8', env=test_env)\n+        assert count_output(stdout) == 3\n+        assert grep_output(stdout, r'\\t32$')\n+\n+    def test_udx_sequence_wraparound(self, cmd_tshark, capture_file, test_env):\n+        '''Analysis survives sequence numbers crossing 2^32.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR, '-2',\n+                '-r', capture_file('udx_seqwrap.pcap.gz'),\n+                '-Tfields', '-eudx.stream', '-eudx.analysis.acks_frame',\n+            ), encoding='utf-8', env=test_env)\n+        assert sorted(set(stdout.split('\\n')[0].split('\\t'))) == ['', '0']\n+        assert grep_output(stdout, r'^0\\t1$')\n+\n+    def test_udx_follow_stream(self, cmd_tshark, capture_file, test_env):\n+        '''Following a stream yields the payload in both directions.'''\n+        stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                '-r', capture_file('udx_clean.pcap.gz'),\n+                '-q', '-z', 'follow,udx,ascii,0',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'Node 0: 10.0.0.1:40000')\n+        assert grep_output(stdout, 'Node 1: 10.0.0.2:40001')\n+\n+    def test_udx_follow_reassembly(self, cmd_tshark, capture_file, test_env):\n+        '''Loss and retransmission do not change the reassembled payload.\n+\n+        The same transfer is captured cleanly and with two packets lost; the\n+        payload handed to the application must be identical in both.\n+        '''\n+        def payload(name):\n+            stdout = subprocess.check_output((cmd_tshark, *UDX_HEUR,\n+                    '-r', capture_file(name),\n+                    '-q', '-z', 'follow,udx,ascii,0',\n+                ), encoding='utf-8', env=test_env)\n+            # Keep the data lines, dropping the header and the byte counts.\n+            return [l for l in stdout.splitlines() if l.strip() and not l.strip().isdigit()]\n+\n+        assert payload('udx_clean.pcap.gz')[-20:] == payload('udx_loss.pcap.gz')[-20:]\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissection.py",
+      "old_path": "test/suite_dissection.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "b93fbf0de1de7e69e33a66dd244812d10e4b0e76",
+      "short_id": "b93fbf0d",
+      "created_at": "2026-07-30T09:53:20.000+00:00",
+      "parent_ids": [
+        "3587ee87f990145265c2505e8b4c97457958202e"
+      ],
+      "title": "UDX: add dissector for the UDX transport protocol",
+      "message": "UDX: add dissector for the UDX transport protocol\n\nUDX is a reliable, multiplexed transport that runs over UDP. It is the\ntransport layer of the Holepunch peer-to-peer stack, and its reference\nimplementation is libudx: https://github.com/holepunchto/libudx\n\nThe dissector decodes the 20-byte little-endian header, its type flags,\nselective acknowledgement blocks, MTU probe padding and the payload. It is\ndetected by a heuristic over UDP, registered disabled by default, and is\nalso reachable through Decode As.\n\nA packet carries only the receiver's stream id, and the ids are exchanged in\nan encrypted handshake, so a flow is matched with its reverse by correlating\nthe acknowledgements it carries against the sequence numbers the candidate\nhas sent, breaking ties on the order the flows appeared and how close\ntogether they started. Where no reverse flow can be identified the packets\nare still fully decoded and the analysis subtree says so.\n\nWith both directions known the dissector reports round-trip times, bytes and\npackets in flight, and the frames linking data to its acknowledgement, under\nudx.analysis.* names that mirror the TCP ones. Expert info covers lost,\nout-of-order and duplicate packets, fast, RTO, tail-loss-probe and spurious\nretransmissions, zero window and window update, MTU probes, keepalives,\nzero-window probes, and stream close. Keepalives and zero-window probes are\nidentical on the wire, so they are told apart by the window the peer last\nadvertised.\n\nFollow UDX Stream reassembles the payload of both directions in sequence\norder, holding packets that arrive early until the gap before them is filled\nand dropping retransmissions and duplicates.\n\nAll of the analysis runs once, on the first pass, and is cached per packet,\nso revisiting a packet cannot change what it reports.\n\nTwelve tests in test/suite_dissection.py cover the heuristic and its\ndefault, the header, SACK blocks, pairing three streams multiplexed on one\nsocket pair, fast retransmission, keepalive versus zero-window probe, MTU\nprobes, sequence numbers crossing 2^32, and follow stream reassembly,\nincluding a check that a capture with loss reassembles to the same payload\nas a clean one.\n\nMentions #21453.\n\nAssisted-by: Claude\n",
+      "author_name": "Frank Olien",
+      "author_email": "frankolien123@gmail.com",
+      "authored_date": "2026-07-30T10:52:30.000+01:00",
+      "committer_name": "Frank Olien",
+      "committer_email": "frankolien123@gmail.com",
+      "committed_date": "2026-07-30T09:53:20.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/b93fbf0de1de7e69e33a66dd244812d10e4b0e76"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1932717602,
+      "head_commit_sha": "b93fbf0de1de7e69e33a66dd244812d10e4b0e76",
+      "base_commit_sha": "3587ee87f990145265c2505e8b4c97457958202e",
+      "start_commit_sha": "3587ee87f990145265c2505e8b4c97457958202e",
+      "created_at": "2026-07-30T09:53:24.878Z",
+      "merge_request_id": 513157267,
+      "state": "collected",
+      "real_size": "11",
+      "patch_id_sha": "ce1d48b47e21c9787aa3efe84a1efefd613324d4"
+    },
+    {
+      "id": 1932715735,
+      "head_commit_sha": "fe575066a49407e58dd272073321dc00ba2df90e",
+      "base_commit_sha": "78d67418e8cfec6eb30a80bd399d8485f01efdd3",
+      "start_commit_sha": "3587ee87f990145265c2505e8b4c97457958202e",
+      "created_at": "2026-07-30T09:52:38.563Z",
+      "merge_request_id": 513157267,
+      "state": "without_files",
+      "real_size": "11",
+      "patch_id_sha": "ce1d48b47e21c9787aa3efe84a1efefd613324d4"
+    },
+    {
+      "id": 1932587912,
+      "head_commit_sha": "6aefd57010eb9f0b956466f445a5b32ef4a7a2d2",
+      "base_commit_sha": "78d67418e8cfec6eb30a80bd399d8485f01efdd3",
+      "start_commit_sha": "3587ee87f990145265c2505e8b4c97457958202e",
+      "created_at": "2026-07-30T09:01:35.154Z",
+      "merge_request_id": 513157267,
+      "state": "without_files",
+      "real_size": "11",
+      "patch_id_sha": "ce1d48b47e21c9787aa3efe84a1efefd613324d4"
+    },
+    {
+      "id": 1931934831,
+      "head_commit_sha": "08e199740c635df4be37c6a29add19ad43e7862f",
+      "base_commit_sha": "78d67418e8cfec6eb30a80bd399d8485f01efdd3",
+      "start_commit_sha": "3f1daf1cfe1d42994a74a363918e63a35a0a428f",
+      "created_at": "2026-07-29T23:58:21.038Z",
+      "merge_request_id": 513157267,
+      "state": "without_files",
+      "real_size": "11",
+      "patch_id_sha": "55e87a29cb6b6fb0d3a04489d07b3c055fb67fc9"
+    }
+  ]
+}

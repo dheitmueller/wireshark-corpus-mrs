@@ -1,0 +1,375 @@
+{
+  "id": 517166670,
+  "iid": 26099,
+  "project_id": 7898047,
+  "title": "etwdump: Fix out-of-bounds access parsing LDAP ETW messages",
+  "description": "etw_dump_write_ldap_event() allocates the \"Message\" property at exactly\nthe size reported by TdhGetPropertySize(), then treats it as a\nNUL-terminated hexdump line that is at least 48 bytes long:\n\n - the strncmp() prefix checks read up to 11 bytes from a buffer that\n   may be shorter,\n - the decode loop reads Message[i * 3] up to offset 45 without\n   checking Length,\n - sscanf() scans forward from a buffer that need not be terminated,\n - the decoded bytes are written back into the same allocation at\n   Message[i] for up to 16 iterations, which is out of bounds when\n   Length < 16.\n\nA crafted ETL file with a short LDAP \"Message\" property triggers the\nout-of-bounds read, and depending on the heap contents the in-place\ndecode can also write past the allocation.\n\nThis is reachable with well-formed input too: a valid trailing hexdump\nline such as \"41 42\" gives Length == 6, and the loop reads Message[6],\none past the end. sscanf() then fails and the already decoded bytes are\ndiscarded, so short final lines were also being dropped from the\nreassembled buffer.\n\nBound every access by Length, use memcmp() for the prefix checks, and\ndecode into a local buffer with g_ascii_xdigit_value() instead of\noverwriting the property allocation. Also reject a zero-length property\nbefore g_malloc(), since g_malloc(0) returns NULL.\n\nReported by Aisle Research.\n\nFixes #21489\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\nSigned-off-by: Ronnie Sahlberg <ronniesahlberg@gmail.com>",
+  "state": "merged",
+  "created_at": "2026-08-09T06:42:34.275Z",
+  "updated_at": "2026-08-09T10:11:36.396Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-08-09T10:11:36.411Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "vuln_1_10_1",
+  "user_notes_count": 1,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7014716,
+    "username": "sahlberg",
+    "public_email": "",
+    "name": "Ronnie Sahlberg",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/88911e6cfe3dfc07b327385209d35a46898b5f12538fcb9fe0d5cf97dd7b94d2?s=80&d=identicon",
+    "web_url": "https://gitlab.com/sahlberg"
+  },
+  "assignees": [
+    {
+      "id": 7014716,
+      "username": "sahlberg",
+      "public_email": "",
+      "name": "Ronnie Sahlberg",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/88911e6cfe3dfc07b327385209d35a46898b5f12538fcb9fe0d5cf97dd7b94d2?s=80&d=identicon",
+      "web_url": "https://gitlab.com/sahlberg"
+    }
+  ],
+  "assignee": {
+    "id": 7014716,
+    "username": "sahlberg",
+    "public_email": "",
+    "name": "Ronnie Sahlberg",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/88911e6cfe3dfc07b327385209d35a46898b5f12538fcb9fe0d5cf97dd7b94d2?s=80&d=identicon",
+    "web_url": "https://gitlab.com/sahlberg"
+  },
+  "reviewers": [],
+  "source_project_id": 21063613,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "be813ede9d44624eb48e40d1e52fc094ca0c5c0b",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-08-09T06:42:39.179Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26099",
+  "references": {
+    "short": "!26099",
+    "relative": "!26099",
+    "full": "wireshark/wireshark!26099"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26099",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-08-09T09:48:22.561Z",
+  "latest_build_finished_at": "2026-08-09T10:11:35.111Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2745085891,
+    "iid": 107942,
+    "project_id": 7898047,
+    "sha": "be813ede9d44624eb48e40d1e52fc094ca0c5c0b",
+    "ref": "refs/merge-requests/26099/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-09T09:48:21.544Z",
+    "updated_at": "2026-08-09T10:11:35.123Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2745085891"
+  },
+  "head_pipeline": {
+    "id": 2745085891,
+    "iid": 107942,
+    "project_id": 7898047,
+    "sha": "be813ede9d44624eb48e40d1e52fc094ca0c5c0b",
+    "ref": "refs/merge-requests/26099/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-08-09T09:48:21.544Z",
+    "updated_at": "2026-08-09T10:11:35.123Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2745085891",
+    "before_sha": "be813ede9d44624eb48e40d1e52fc094ca0c5c0b",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-08-09T09:48:22.561Z",
+    "finished_at": "2026-08-09T10:11:35.111Z",
+    "committed_at": null,
+    "duration": 1391,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2745085891",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "030bf6ad011c6d87b30df6de4592301d49a970b1",
+    "head_sha": "be813ede9d44624eb48e40d1e52fc094ca0c5c0b",
+    "start_sha": "030bf6ad011c6d87b30df6de4592301d49a970b1"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "0a5138db7ea92ea95ff08ec4e7710aecdb5ed199",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3663632319,
+          "type": null,
+          "body": "assigned to @sahlberg",
+          "author": {
+            "id": 7014716,
+            "username": "sahlberg",
+            "public_email": "",
+            "name": "Ronnie Sahlberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/88911e6cfe3dfc07b327385209d35a46898b5f12538fcb9fe0d5cf97dd7b94d2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/sahlberg"
+          },
+          "created_at": "2026-08-09T06:42:34.526Z",
+          "updated_at": "2026-08-09T06:42:34.528Z",
+          "system": true,
+          "noteable_id": 517166670,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26099,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "75a10357c9ca28660881aca31e1d13c492e44489",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3663635070,
+          "type": null,
+          "body": "It is an obscure file format for Windows and it is unclear how exploitable it is.\nRegardless, any attack likely involves asking the end user to \"download this file and load into wireshark\" so ...\n\nI don't think it justifies backporting to other stable branches and master should be sufficient.",
+          "author": {
+            "id": 7014716,
+            "username": "sahlberg",
+            "public_email": "",
+            "name": "Ronnie Sahlberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/88911e6cfe3dfc07b327385209d35a46898b5f12538fcb9fe0d5cf97dd7b94d2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/sahlberg"
+          },
+          "created_at": "2026-08-09T06:47:14.760Z",
+          "updated_at": "2026-08-09T06:47:14.760Z",
+          "system": false,
+          "noteable_id": 517166670,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26099,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "228670f4135a7d19ebf23d1ef8451bc3e710e04f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3663801691,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-09T09:48:17.795Z",
+          "updated_at": "2026-08-09T09:48:17.800Z",
+          "system": true,
+          "noteable_id": 517166670,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26099,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f07ae7d4e585527b6c579288af832c4df61b58cd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3663801755,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-08-09T09:48:20.305Z",
+          "updated_at": "2026-08-09T09:48:20.306Z",
+          "system": true,
+          "noteable_id": 517166670,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26099,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1408,20 +1408,25 @@ static void etw_dump_write_ldap_event(PEVENT_RECORD ev, ULARGE_INTEGER timestamp\n     DataDescriptor.ArrayIndex = ULONG_MAX;\n     status = TdhGetPropertySize(ev, 0, NULL, 1, &DataDescriptor, &Length);\n     if (status != NO_ERROR) goto end;\n+    if (Length == 0) goto end;\n     Message = g_malloc(Length);\n     status = TdhGetProperty(ev, 0, NULL, 1, &DataDescriptor, Length, Message);\n     if (status != NO_ERROR) goto end;\n \n     // \"Message\" contains text and a hexdump of the data. We need to parse it\n     // and reassemble it. Let's use the ThreadId as the identifying key.\n+    // NOTE: a malformed event can make TDH return a \"Message\" that is shorter\n+    // than the prefixes below and that isn't NUL-terminated, so every access\n+    // must be bounded by 'Length'.\n \n-    if (strncmp(Message, \"Data\", 4) == 0 || strncmp(Message, \"Unencrypted\", 11) == 0)\n+    if ((Length >= 4 && memcmp(Message, \"Data\", 4) == 0) ||\n+        (Length >= 11 && memcmp(Message, \"Unencrypted\", 11) == 0))\n     {\n         // Beginning of the buffer\n \n         frag = etw_frag_get(ev, true);\n     }\n-    else if (strncmp(Message, \"End\", 3) == 0)\n+    else if (Length >= 3 && memcmp(Message, \"End\", 3) == 0)\n     {\n         // End of the buffer\n \n@@ -1444,18 +1449,29 @@ static void etw_dump_write_ldap_event(PEVENT_RECORD ev, ULARGE_INTEGER timestamp\n         frag = etw_frag_get(ev, false);\n         if (frag == NULL) goto end;\n \n-        // Replace \"Message\" in place\n-        int i = 0;\n-        while (i < 16)\n+        // Decode the hexdump (\"XX XX ... XX\") into a bounded local buffer\n+        BYTE decoded[16];\n+        int i;\n+\n+        for (i = 0; i < 16; i++)\n         {\n-            if (Message[i * 3] == 0x20)\n+            DWORD off = (DWORD)i * 3;\n+            int hi, lo;\n+\n+            if (off >= Length || Message[off] == 0x20)\n                 break;\n-            if (sscanf(&Message[i * 3], \"%2hhx\", &Message[i]) != 1)\n+            if (off + 1 >= Length)\n                 goto end;\n-            i++;\n+\n+            hi = g_ascii_xdigit_value((char)Message[off]);\n+            lo = g_ascii_xdigit_value((char)Message[off + 1]);\n+            if (hi < 0 || lo < 0)\n+                goto end;\n+\n+            decoded[i] = (BYTE)((hi << 4) | lo);\n         }\n \n-        g_byte_array_append(frag->buf, Message, i);\n+        g_byte_array_append(frag->buf, decoded, i);\n     }\n \n end:\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "extcap/etl.c",
+      "old_path": "extcap/etl.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "be813ede9d44624eb48e40d1e52fc094ca0c5c0b",
+      "short_id": "be813ede",
+      "created_at": "2026-08-09T16:41:23.000+10:00",
+      "parent_ids": [
+        "030bf6ad011c6d87b30df6de4592301d49a970b1"
+      ],
+      "title": "etwdump: Fix out-of-bounds access parsing LDAP ETW messages",
+      "message": "etwdump: Fix out-of-bounds access parsing LDAP ETW messages\n\netw_dump_write_ldap_event() allocates the \"Message\" property at exactly\nthe size reported by TdhGetPropertySize(), then treats it as a\nNUL-terminated hexdump line that is at least 48 bytes long:\n\n - the strncmp() prefix checks read up to 11 bytes from a buffer that\n   may be shorter,\n - the decode loop reads Message[i * 3] up to offset 45 without\n   checking Length,\n - sscanf() scans forward from a buffer that need not be terminated,\n - the decoded bytes are written back into the same allocation at\n   Message[i] for up to 16 iterations, which is out of bounds when\n   Length < 16.\n\nA crafted ETL file with a short LDAP \"Message\" property triggers the\nout-of-bounds read, and depending on the heap contents the in-place\ndecode can also write past the allocation.\n\nThis is reachable with well-formed input too: a valid trailing hexdump\nline such as \"41 42\" gives Length == 6, and the loop reads Message[6],\none past the end. sscanf() then fails and the already decoded bytes are\ndiscarded, so short final lines were also being dropped from the\nreassembled buffer.\n\nBound every access by Length, use memcmp() for the prefix checks, and\ndecode into a local buffer with g_ascii_xdigit_value() instead of\noverwriting the property allocation. Also reject a zero-length property\nbefore g_malloc(), since g_malloc(0) returns NULL.\n\nReported by Aisle Research.\n\nFixes #21489\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\nSigned-off-by: Ronnie Sahlberg <ronniesahlberg@gmail.com>\n",
+      "author_name": "Ronnie Sahlberg",
+      "author_email": "ronniesahlberg@gmail.com",
+      "authored_date": "2026-08-09T16:36:44.000+10:00",
+      "committer_name": "Ronnie Sahlberg",
+      "committer_email": "ronniesahlberg@gmail.com",
+      "committed_date": "2026-08-09T16:41:23.000+10:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/be813ede9d44624eb48e40d1e52fc094ca0c5c0b"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1950750994,
+      "head_commit_sha": "be813ede9d44624eb48e40d1e52fc094ca0c5c0b",
+      "base_commit_sha": "030bf6ad011c6d87b30df6de4592301d49a970b1",
+      "start_commit_sha": "030bf6ad011c6d87b30df6de4592301d49a970b1",
+      "created_at": "2026-08-09T06:42:37.639Z",
+      "merge_request_id": 517166670,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "8c755380abaf81064a03ae5c1d0e8f183a0e4210"
+    }
+  ]
+}
