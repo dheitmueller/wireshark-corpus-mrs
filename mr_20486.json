@@ -1,0 +1,541 @@
+{
+  "id": 397542681,
+  "iid": 20486,
+  "project_id": 7898047,
+  "title": "GSM A: Fix incorrect length for Direction of Altitude field in GAD parsing",
+  "description": "### Summary\n\nThis PR fixes an issue in the `dissect_geographical_description()` function in `packet-gsm_a_common.c`, where the **Direction of Altitude (D)** bit was being extracted using an incorrect length (`1` byte) instead of the correct `2` bytes.\n\nThis applies to:\n- `ELLIPSOID_POINT_WITH_ALT`\n- `ELLIPSOID_POINT_WITH_ALT_AND_UNCERT_ELLIPSOID`\n\nThe D flag resides in the **most significant bit (bit 15)** of a **2-byte** field shared with the Altitude value. Parsing only 1 byte causes incorrect interpretation of the flag and results in display errors such as showing `D: 0` when the actual bit is set.\n\n---\n\n### Root Cause\n\nPrevious code:\n```c\nproto_tree_add_item(tree, hf_gsm_a_geo_loc_D, tvb, offset, 1, ENC_BIG_ENDIAN);\n```\n\nCorrected to:\n```c\nproto_tree_add_item(tree, hf_gsm_a_geo_loc_D, tvb, offset, 2, ENC_BIG_ENDIAN);\n```\nThis ensures proper access to the 16-bit field where:\n* Bit 15: Direction of Altitude\n* Bits 14–0: Altitude in meters\n\nReference\n* [3GPP TS 23.032 version 17.2.0 Release 17, section 7.3.5](https://www.etsi.org/deliver/etsi_ts/123000_123099/123032/17.02.00_60/ts_123032v170200p.pdf)\n* Current issue, where `Direction of Altitude` presented as `0`, the byte was `0x83e8`:<br/>\n![Screenshot_from_2025-07-09_09-21-39](/uploads/8e53357f8645933a10e66d004f6a2a63/Screenshot_from_2025-07-09_09-21-39.png)\n* Expected result:\n```sh\n        1... .... .... .... = D: Direction of Altitude: Altitude expresses depth (1)\n        .000 0011 1110 1000 = Altitude in meters: 1000\n```",
+  "state": "merged",
+  "created_at": "2025-07-09T02:32:49.765Z",
+  "updated_at": "2025-07-14T08:57:02.605Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2025-07-12T07:04:05.774Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix-direction-altitude",
+  "user_notes_count": 3,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 1235563,
+    "username": "pandeka92",
+    "public_email": "",
+    "name": "Alex",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1235563/avatar.png?v=1788310129",
+    "web_url": "https://gitlab.com/pandeka92"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "c7ff9ab1a32d759cbf8af369125884f8b3124f21",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": false,
+  "prepared_at": "2025-07-09T02:32:56.781Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!20486",
+  "references": {
+    "short": "!20486",
+    "relative": "!20486",
+    "full": "wireshark/wireshark!20486"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/20486",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": {
+    "id": 1923156746,
+    "iid": 83956,
+    "project_id": 7898047,
+    "sha": "c7ff9ab1a32d759cbf8af369125884f8b3124f21",
+    "ref": "refs/merge-requests/20486/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2025-07-12T07:03:13.758Z",
+    "updated_at": "2025-07-12T07:03:13.758Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1923156746",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1923156746",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "5e8ac3a2014a6f018f0c9e6ecb907a0d6e12c785",
+    "head_sha": "c7ff9ab1a32d759cbf8af369125884f8b3124f21",
+    "start_sha": "5e8ac3a2014a6f018f0c9e6ecb907a0d6e12c785"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "536fdccac0fb22dc395359e5b117571a67d9452d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2613323253,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2025-07-09T07:08:00.399Z",
+          "updated_at": "2025-07-09T07:08:00.407Z",
+          "system": true,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c847125ad68c6d5e9fb6be483417144f4ba03718",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2613323349,
+          "type": null,
+          "body": "enabled an automatic merge when all merge checks for c4883019f1b416ebcf9da4ef6ca92c887f139367 pass",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2025-07-09T07:08:03.451Z",
+          "updated_at": "2025-07-09T07:08:03.458Z",
+          "system": true,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "be6bc2bd04f8d4fabdfec49132d495d657f85356",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2615022591,
+          "type": null,
+          "body": "aborted the automatic merge because target branch was updated",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-07-09T13:32:23.815Z",
+          "updated_at": "2025-07-09T13:32:23.821Z",
+          "system": true,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bd5b1027dd28865e1672adcc3917c5db0c73b894",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2615114840,
+          "type": null,
+          "body": "Can you edit the commit message to follow our [style](https://wiki.wireshark.org/Development/SubmittingPatches#writing-a-good-commit-message) (i.e., put the name of the dissector in the first line, followed by a colon)?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-07-09T13:50:08.543Z",
+          "updated_at": "2025-07-09T13:50:08.543Z",
+          "system": false,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "05f176f53188e05f138f0074cf436fd44f45bc4d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2616579251,
+          "type": null,
+          "body": "<p>changed title from <code class=\"idiff\">Fix incorrect length for Direction of Altitude field in GAD parsing</code> to <code class=\"idiff\"><span class=\"idiff left right addition\">GSM A: </span>Fix incorrect length for Direction of Altitude field in GAD parsing</code></p>",
+          "author": {
+            "id": 1235563,
+            "username": "pandeka92",
+            "public_email": "",
+            "name": "Alex",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1235563/avatar.png?v=1788310129",
+            "web_url": "https://gitlab.com/pandeka92"
+          },
+          "created_at": "2025-07-10T02:22:13.809Z",
+          "updated_at": "2025-07-10T02:22:13.815Z",
+          "system": true,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b0f0248bd5b2b6b74564bb4c2af94f4df3f32172",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2616591706,
+          "type": null,
+          "body": "added 9 commits\n\n<ul><li>c4883019...4c79f89e - 8 commits from branch <code>wireshark:master</code></li><li>07cd5828 - Fix incorrect offset and length in proto_tree_add_item for Diameter Altitude AVP</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20486/diffs?diff_id=1418588289&start_sha=c4883019f1b416ebcf9da4ef6ca92c887f139367)",
+          "author": {
+            "id": 1235563,
+            "username": "pandeka92",
+            "public_email": "",
+            "name": "Alex",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1235563/avatar.png?v=1788310129",
+            "web_url": "https://gitlab.com/pandeka92"
+          },
+          "created_at": "2025-07-10T02:44:59.104Z",
+          "updated_at": "2025-07-10T02:44:59.108Z",
+          "system": true,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5ec49ccf94ed5e1281a8db8923f5bc3fb62147a1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2623141147,
+          "type": null,
+          "body": "added 32 commits\n\n<ul><li>07cd5828...5e8ac3a2 - 31 commits from branch <code>wireshark:master</code></li><li>c7ff9ab1 - Fix incorrect offset and length in proto_tree_add_item for Diameter Altitude AVP</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20486/diffs?diff_id=1421621502&start_sha=07cd5828f1de7426bc78953f465542a8fbd1c3a1)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-07-12T07:03:12.513Z",
+          "updated_at": "2025-07-12T07:03:12.517Z",
+          "system": true,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "646b4da549136836df67e11fb0bf3d2a9bbd6d7e",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 2625142607,
+          "type": "DiscussionNote",
+          "body": "Hi @pandeka92 \n\nWhat your full name ? for AUTHORS",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2025-07-14T08:46:35.713Z",
+          "updated_at": "2025-07-14T08:57:02.634Z",
+          "system": false,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        },
+        {
+          "id": 2625162861,
+          "type": "DiscussionNote",
+          "body": "Hi @alagoutte ,\nMy full name: Alex Sandra.\nThanks, and best regards :).",
+          "author": {
+            "id": 1235563,
+            "username": "pandeka92",
+            "public_email": "",
+            "name": "Alex",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1235563/avatar.png?v=1788310129",
+            "web_url": "https://gitlab.com/pandeka92"
+          },
+          "created_at": "2025-07-14T08:57:02.551Z",
+          "updated_at": "2025-07-14T08:57:02.551Z",
+          "system": false,
+          "noteable_id": 397542681,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20486,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -938,13 +938,13 @@ dissect_geographical_description(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tr\n         }else if (type_of_shape == ELLIPSOID_POINT_WITH_ALT) {\n             /* Ellipsoid Point with Altitude */\n             /*D: Direction of Altitude */\n-            proto_tree_add_item(tree, hf_gsm_a_geo_loc_D, tvb, offset, 1, ENC_BIG_ENDIAN);\n+            proto_tree_add_item(tree, hf_gsm_a_geo_loc_D, tvb, offset, 2, ENC_BIG_ENDIAN);\n             /* Altitude */\n             proto_tree_add_item(tree, hf_gsm_a_geo_loc_altitude, tvb, offset, 2, ENC_BIG_ENDIAN);\n         }else if (type_of_shape == ELLIPSOID_POINT_WITH_ALT_AND_UNCERT_ELLIPSOID) {\n             /* Ellipsoid Point with altitude and uncertainty ellipsoid */\n             /*D: Direction of Altitude octet 8,9 */\n-            proto_tree_add_item(tree, hf_gsm_a_geo_loc_D, tvb, offset, 1, ENC_BIG_ENDIAN);\n+            proto_tree_add_item(tree, hf_gsm_a_geo_loc_D, tvb, offset, 2, ENC_BIG_ENDIAN);\n             /* Altitude Octet 8,9*/\n             proto_tree_add_item(tree, hf_gsm_a_geo_loc_altitude, tvb, offset, 2, ENC_BIG_ENDIAN);\n             offset = offset +2;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-gsm_a_common.c",
+      "old_path": "epan/dissectors/packet-gsm_a_common.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "c7ff9ab1a32d759cbf8af369125884f8b3124f21",
+      "short_id": "c7ff9ab1",
+      "created_at": "2025-07-12T09:03:07.000+02:00",
+      "parent_ids": [
+        "5e8ac3a2014a6f018f0c9e6ecb907a0d6e12c785"
+      ],
+      "title": "Fix incorrect offset and length in proto_tree_add_item for Diameter Altitude AVP",
+      "message": "Fix incorrect offset and length in proto_tree_add_item for Diameter Altitude AVP",
+      "author_name": "Alex",
+      "author_email": "alextc92@gmail.com",
+      "authored_date": "2025-07-09T02:03:27.000+00:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2025-07-12T09:03:07.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c7ff9ab1a32d759cbf8af369125884f8b3124f21"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1421621502,
+      "head_commit_sha": "c7ff9ab1a32d759cbf8af369125884f8b3124f21",
+      "base_commit_sha": "5e8ac3a2014a6f018f0c9e6ecb907a0d6e12c785",
+      "start_commit_sha": "5e8ac3a2014a6f018f0c9e6ecb907a0d6e12c785",
+      "created_at": "2025-07-12T07:03:11.666Z",
+      "merge_request_id": 397542681,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "0e2775ddff57998c61ab5d278c91ec738a585d22"
+    },
+    {
+      "id": 1418588289,
+      "head_commit_sha": "07cd5828f1de7426bc78953f465542a8fbd1c3a1",
+      "base_commit_sha": "4c79f89e783e162259475e4338856885f2bda907",
+      "start_commit_sha": "4c79f89e783e162259475e4338856885f2bda907",
+      "created_at": "2025-07-10T02:44:58.405Z",
+      "merge_request_id": 397542681,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "0e2775ddff57998c61ab5d278c91ec738a585d22"
+    },
+    {
+      "id": 1416904982,
+      "head_commit_sha": "c4883019f1b416ebcf9da4ef6ca92c887f139367",
+      "base_commit_sha": "b7b3ab239ec115ec4edd182861ba39a11a5719a5",
+      "start_commit_sha": "b7b3ab239ec115ec4edd182861ba39a11a5719a5",
+      "created_at": "2025-07-09T02:32:51.582Z",
+      "merge_request_id": 397542681,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "0e2775ddff57998c61ab5d278c91ec738a585d22"
+    }
+  ]
+}

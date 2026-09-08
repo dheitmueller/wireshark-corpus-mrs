@@ -1,0 +1,309 @@
+{
+  "id": 410783729,
+  "iid": 21083,
+  "project_id": 7898047,
+  "title": "BT HCI: Revert separating Commands and Events payload tables",
+  "description": "Currently, the registered Bluetooh HCI vendor tables handle both\nCommands and Events, using the value of pinfo->p2p_dir to determine\nwhether the tvbuff passed in is a Command packet or an Event packet, as:\n\n\"HCI Command packets can only be sent to the Bluetooth controller,\nHCI Event packets can only be sent from the Bluetooth controller...\"\n[Bluetooth Core Specification Vol 4, Part A, 2 Protocol, et passim]\n\nNote that in the case of certain Events, Command Complete and\nCommand Status, the vendor dissector is not (necessarily) called\nunless the Command Opcode embedded later in the Event turns out to\nbe a Vendor-Specific opcode. In each case, the entire Event (or\nCommand) packet is handed to the vendor dissector, so that the vendor\ndissector can see the Event Code and handle Vendor-Specific, Command\nComplete, and Command Status events differently. Similarly, the\nentire Command packet beginning with opcode is handed to the vendor\ndissector.  This causes adding the event code (or command opcode) and\nparameter length multiple times to the tree.\n\nNot all capture files and link-layer encapsulations necessarily have\na way to indicate direction, and not all might do so correctly.\nSo we might want to have multiple dissectors for each vendor, such as\none that always dissect as an Event and one that always dissects as a\nCommand. Or we might want to override the value of pinfo->p2p_dir before\ncalling the dissector tables. The beginnings of the former was done\nby commit 55a739a67128080dd3998bc3430208860408fa1c, but it didn't\nchange the vendor dissectors distributed with Wireshark (and it\nskipped the Event Code and parameter length when handing events\nto the vendor Event dissector, which doesn't work to distinguish\nthe three event codes it can receive.)\n\nRevert that commit change unless and until the vendor dissectors shipped\nwith are changed to match it.\n\nAdd comments because this is confusing.",
+  "state": "merged",
+  "created_at": "2025-08-28T12:23:17.568Z",
+  "updated_at": "2025-08-28T14:41:43.417Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2025-08-28T14:41:33.860Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "bthci_vendor_tables",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "78cf333c011a97e0cbf1a446680a41e3c580ebdb",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-08-28T12:23:23.094Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!21083",
+  "references": {
+    "short": "!21083",
+    "relative": "!21083",
+    "full": "wireshark/wireshark!21083"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/21083",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2025-08-28T14:08:54.430Z",
+  "latest_build_finished_at": "2025-08-28T14:32:02.513Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2009159659,
+    "iid": 86063,
+    "project_id": 7898047,
+    "sha": "78cf333c011a97e0cbf1a446680a41e3c580ebdb",
+    "ref": "refs/merge-requests/21083/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-08-28T13:51:25.546Z",
+    "updated_at": "2025-08-28T14:32:02.529Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2009159659"
+  },
+  "head_pipeline": {
+    "id": 2009159659,
+    "iid": 86063,
+    "project_id": 7898047,
+    "sha": "78cf333c011a97e0cbf1a446680a41e3c580ebdb",
+    "ref": "refs/merge-requests/21083/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-08-28T13:51:25.546Z",
+    "updated_at": "2025-08-28T14:32:02.529Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2009159659",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2025-08-28T14:08:54.430Z",
+    "finished_at": "2025-08-28T14:32:02.513Z",
+    "committed_at": null,
+    "duration": 1387,
+    "queued_duration": 1048,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2009159659",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "918d04867fcd425f548289aca1a8dfa143e2826b",
+    "head_sha": "78cf333c011a97e0cbf1a446680a41e3c580ebdb",
+    "start_sha": "918d04867fcd425f548289aca1a8dfa143e2826b"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "45eedce90a92a615eb997bbb6aa5e9532cfb83ea",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2715706485,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>918d0486 - 1 commit from branch <code>wireshark:master</code></li><li>78cf333c - BT HCI: Revert separating Commands and Events payload tables</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/21083/diffs?diff_id=1473511402&start_sha=270703846ff1498140fc4015477a6b3f0a275d01)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-08-28T13:51:23.319Z",
+          "updated_at": "2025-08-28T13:51:23.323Z",
+          "system": true,
+          "noteable_id": 410783729,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21083,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "67a940b01495a4ed4a73ab27f7748f3fda64807f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2715872704,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-08-28T14:41:26.598Z",
+          "updated_at": "2025-08-28T14:41:26.611Z",
+          "system": true,
+          "noteable_id": 410783729,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21083,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1209,7 +1209,7 @@ static expert_field ei_command_undecoded;\n static expert_field ei_command_unknown_command;\n static expert_field ei_command_parameter_unexpected;\n \n-static dissector_table_t vendor_dissector_table;\n+static dissector_table_t hci_vendor_payload_table;\n static dissector_table_t hci_vendor_table;\n \n /* Zigbee Direct specific definitions. */\n@@ -6784,6 +6784,14 @@ dissect_bthci_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat\n             break;\n     }\n \n+    /* These *should* be P2P_DIR_SENT, and the vendor dissectors expect\n+     * pinfo->p2p_dir to be set to that to dissect correctly. Not all\n+     * link-layer and file types may set the direction correctly. Should\n+     * we add an expert info if not? Note we set the addresses assuming\n+     * the direction. Should we set pinfo->p2p_dir before calling the\n+     * vendor dissectors?\n+     */\n+\n     set_address(&pinfo->src,     AT_STRINGZ,  5, \"host\");\n     set_address(&pinfo->dst,     AT_STRINGZ, 11, \"controller\");\n     set_address(&pinfo->net_src, AT_STRINGZ,  5, \"host\");\n@@ -6874,7 +6882,7 @@ dissect_bthci_cmd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat\n     if (ogf == HCI_OGF_VENDOR_SPECIFIC) {\n         col_append_fstr(pinfo->cinfo, COL_INFO, \"Vendor Command 0x%04X (opcode 0x%04X)\", ocf, opcode);\n \n-        if (!dissector_try_payload_with_data(vendor_dissector_table, tvb, pinfo, tree, true, bluetooth_data)) {\n+        if (!dissector_try_payload_with_data(hci_vendor_payload_table, tvb, pinfo, tree, true, bluetooth_data)) {\n             if (bluetooth_data) {\n                 hci_vendor_data_t  *hci_vendor_data;\n \n@@ -11103,8 +11111,47 @@ proto_register_bthci_cmd(void)\n             \"Bluetooth HCI version: 4.0 (Core)\",\n             \"Version of protocol supported by this dissector.\");\n \n-    vendor_dissector_table = register_decode_as_next_proto(proto_bthci_cmd, \"bthci_cmd.vendor\",\n-                                                           \"BT HCI Command Vendor\", bthci_cmd_vendor_prompt);\n+    /* There are two tables that contain the same HCI vendor dissectors.\n+     * The first table is a \"Decode As Next Proto\" table that is used to\n+     * choose one dissector to use for all Vendor-Specific Commands and\n+     * Events. The second table is registered by the unique 16-bit\n+     * company identifier, and is used when the manufacturer of the local\n+     * Controller is known from a Read Local Version Information command.\n+     * The first table's setting by Decode As takes precedence.\n+     *\n+     * \"HCI Command packets can only be sent to the Bluetooth controller,\n+     * HCI Event packets can only be sent from the Bluetooth controller...\"\n+     * [Bluetooth Core Specification Vol 4, Part A, 2 Protocol, et passim]\n+     *\n+     * The vendor dissectors therefore examine pinfo->p2p_dir and dissect\n+     * the tvbuff as a HCI Command packet [Bluetooth Spec Vol 4, Part E,\n+     * 5.4.1] in the case of P2P_DIR_SENT and as a HCI Event packet\n+     * [Ibid., 5.4.4] in the case of P2P_DIR_RECV. They are called whenever\n+     * a vendor-specific Command Opcode or Event Code is encountered; that\n+     * includes when a vendor-specific Command Opcode is found in a Commmand\n+     * Complete or Command Status event. The entire HCI Event packet is sent\n+     * to the vendor dissector, which must read the Event Code to handle\n+     * the Vendor-Specific, Command Complete, and Command Status events\n+     * differently. That means that the opcodes, events, and lengths can\n+     * be added to the tree multiple times, once by the generic dissector\n+     * and once by the vendor dissector.\n+     *\n+     * We might want to have separate tables so that dissectors don't have\n+     * handle more cases, which could mean 4 tables (2 CMD tables, one payload\n+     * and one manuf, 2 EVT tables) or could mean 8 tables (2 CMD tables, and\n+     * 6 EVT tables, 2 each for the 3 event codes that can be Vendor-Specific).\n+     * We also instead might want to use register_dissector_with_data to make\n+     * it easier to avoid adding multiple items for the same bytes to the tree.\n+     */\n+    /* XXX - This table is also used by proto_bthci_evt, but because it's\n+     * registered to this protocol, it doesn't get shown at top by the\n+     * Decode As dialog for proto_bthci_evt. Perhaps it should be\n+     * registered in packet-bluetooth.c, since that protocol is generally\n+     * present when dissecting either Commands or Events?\n+     */\n+\n+    hci_vendor_payload_table = register_decode_as_next_proto(proto_bthci_cmd, \"bthci_cmd.vendor\",\n+                                                           \"BT HCI Vendor\", bthci_cmd_vendor_prompt);\n \n     register_external_value_string(\"bthci_cmd_scan_enable_values\", bthci_cmd_scan_enable_values);\n     register_external_value_string(\"bthci_cmd_encrypt_mode_vals\", bthci_cmd_encrypt_mode_vals);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-bthci_cmd.c",
+      "old_path": "epan/dissectors/packet-bthci_cmd.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -982,8 +982,7 @@ static expert_field ei_hci_revision_changed;\n static expert_field ei_lmp_subversion_changed;\n static expert_field ei_bad_link_type;\n \n-static dissector_table_t hci_cmd_vendor_dissector_table;\n-static dissector_table_t hci_evt_vendor_dissector_table;\n+static dissector_table_t hci_vendor_payload_table;\n static dissector_table_t hci_vendor_table;\n \n static int hf_bthci_evt_ext_advts_event_type;\n@@ -2757,7 +2756,7 @@ dissect_bthci_evt_command_status(tvbuff_t *tvb, int offset, packet_info *pinfo,\n     if (ogf == HCI_OGF_VENDOR_SPECIFIC) {\n         col_append_fstr(pinfo->cinfo, COL_INFO, \" (Vendor Command 0x%04X [(opcode 0x%04X])\", opcode & 0x03ff, opcode);\n \n-        if (!dissector_try_payload_with_data(hci_cmd_vendor_dissector_table, tvb, pinfo, main_tree, true, bluetooth_data)) {\n+        if (!dissector_try_payload_with_data(hci_vendor_payload_table, tvb, pinfo, main_tree, true, bluetooth_data)) {\n             if (bluetooth_data) {\n                 hci_vendor_data_t  *hci_vendor_data;\n                 wmem_tree_key_t     key[3];\n@@ -4633,7 +4632,7 @@ dissect_bthci_evt_command_complete(tvbuff_t *tvb, int offset,\n     if (ogf == HCI_OGF_VENDOR_SPECIFIC) {\n         col_append_fstr(pinfo->cinfo, COL_INFO, \" (Vendor Command 0x%04X [opcode 0x%04X])\", opcode & 0x03ff, opcode);\n \n-        if (!dissector_try_payload_with_data(hci_cmd_vendor_dissector_table, tvb, pinfo, main_tree, true, bluetooth_data)) {\n+        if (!dissector_try_payload_with_data(hci_vendor_payload_table, tvb, pinfo, main_tree, true, bluetooth_data)) {\n             if (bluetooth_data) {\n                 hci_vendor_data_t  *hci_vendor_data;\n \n@@ -7208,6 +7207,14 @@ dissect_bthci_evt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat\n             break;\n     }\n \n+    /* These *should* be P2P_DIR_RECV, and the vendor dissectors expect\n+     * pinfo->p2p_dir to be set to that to dissect correctly. Not all\n+     * link-layer and file types may set the direction correctly. Should\n+     * we add an expert info if not? Note we set the addresses assuming\n+     * the direction. Should we set pinfo->p2p_dir before calling the\n+     * vendor dissectors?\n+     */\n+\n     set_address(&pinfo->src, AT_STRINGZ,     11, \"controller\");\n     set_address(&pinfo->dst, AT_STRINGZ,      5, \"host\");\n     set_address(&pinfo->net_src, AT_STRINGZ, 11, \"controller\");\n@@ -7681,11 +7688,7 @@ dissect_bthci_evt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat\n             break;\n \n         case 0xff: /* Vendor-Specific */\n-        {\n-            tvbuff_t *vendor_payload_tvb;\n-            vendor_payload_tvb = tvb_new_subset_remaining(tvb, 2); // Bytes after length byte.\n-\n-            if (!dissector_try_payload_with_data(hci_evt_vendor_dissector_table, vendor_payload_tvb, pinfo, tree, true, bluetooth_data)) {\n+            if (!dissector_try_payload_with_data(hci_vendor_payload_table, tvb, pinfo, tree, true, bluetooth_data)) {\n                 if (bluetooth_data) {\n                     hci_vendor_data_t  *hci_vendor_data;\n                     wmem_tree_key_t     key[3];\n@@ -7720,7 +7723,6 @@ dissect_bthci_evt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat\n             proto_tree_add_expert(bthci_evt_tree, pinfo, &ei_event_undecoded, tvb, offset, tvb_captured_length_remaining(tvb, offset));\n \n             return tvb_captured_length(tvb);\n-        }\n         default:\n             proto_tree_add_expert(bthci_evt_tree, pinfo, &ei_event_unknown_event, tvb, offset, tvb_captured_length_remaining(tvb, offset));\n             offset += tvb_reported_length_remaining(tvb, offset);\n@@ -11832,7 +11834,11 @@ proto_register_bthci_evt(void)\n \n     /* Decode As handling\n        This doesn't use register_decode_as_next_proto because it shares a dissector table\n-       with \"bthci_cmd.vendor\" */\n+       with \"bthci_cmd.vendor\"\n+       XXX - Since this table is registered to proto_bthci_cmd it doesn't get\n+       put at the top of the table combobox by the Decode As dialog for BTHCI\n+       EVT packets.\n+      */\n     static build_valid_func bthci_evt_vendor_da_build_value[1] = {bthci_evt_vendor_value};\n     static decode_as_value_t bthci_evt_vendor_da_values = {bthci_evt_vendor_prompt, 1, bthci_evt_vendor_da_build_value};\n     static decode_as_t bthci_evt_vendor_da = {\"bthci_cmd\", \"bthci_cmd.vendor\", 1, 0, &bthci_evt_vendor_da_values, NULL, NULL,\n@@ -11858,9 +11864,6 @@ proto_register_bthci_evt(void)\n \n     register_decode_as(&bthci_evt_vendor_da);\n \n-    hci_evt_vendor_dissector_table = register_decode_as_next_proto(proto_bthci_evt, \"bthci_evt.vendor\",\n-                                                           \"BT HCI Event Vendor\", bthci_evt_vendor_prompt);\n-\n     register_external_value_string(\"bthci_evt_lmp_version\", bthci_evt_lmp_version);\n     register_external_value_string(\"bthci_evt_hci_version\", bthci_evt_hci_version);\n }\n@@ -11869,7 +11872,8 @@ proto_register_bthci_evt(void)\n void\n proto_reg_handoff_bthci_evt(void)\n {\n-    hci_cmd_vendor_dissector_table = find_dissector_table(\"bthci_cmd.vendor\");\n+    /* See the comments in packet-bthci_cmd.c about these two tables. */\n+    hci_vendor_payload_table = find_dissector_table(\"bthci_cmd.vendor\");\n     hci_vendor_table = find_dissector_table(\"bluetooth.vendor\");\n \n     dissector_add_uint(\"hci_h4.type\", HCI_H4_TYPE_EVT, bthci_evt_handle);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-bthci_evt.c",
+      "old_path": "epan/dissectors/packet-bthci_evt.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "78cf333c011a97e0cbf1a446680a41e3c580ebdb",
+      "short_id": "78cf333c",
+      "created_at": "2025-08-28T13:51:19.000+00:00",
+      "parent_ids": [
+        "918d04867fcd425f548289aca1a8dfa143e2826b"
+      ],
+      "title": "BT HCI: Revert separating Commands and Events payload tables",
+      "message": "BT HCI: Revert separating Commands and Events payload tables\n\nCurrently, the registered Bluetooth HCI vendor tables handle both\nCommands and Events, using the value of pinfo->p2p_dir to determine\nwhether the tvbuff passed in is a Command packet or an Event packet, as:\n\n\"HCI Command packets can only be sent to the Bluetooth controller,\nHCI Event packets can only be sent from the Bluetooth controller...\"\n[Bluetooth Core Specification Vol 4, Part A, 2 Protocol, et passim]\n\nNote that in the case of certain Events, Command Complete and\nCommand Status, the vendor dissector is not (necessarily) called\nunless the Command Opcode embedded later in the Event turns out to\nbe a Vendor-Specific opcode. In each case, the entire Event (or\nCommand) packet is handed to the vendor dissector, so that the vendor\ndissector can see the Event Code and handle Vendor-Specific, Command\nComplete, and Command Status events differently. Similarly, the\nentire Command packet beginning with opcode is handed to the vendor\ndissector.  This causes adding the event code (or command opcode) and\nparameter length multiple times to the tree.\n\nNot all capture files and link-layer encapsulations necessarily have\na way to indicate direction, and not all might do so correctly.\nSo we might want to have multiple dissectors for each vendor, such as\none that always dissect as an Event and one that always dissects as a\nCommand. Or we might want to override the value of pinfo->p2p_dir before\ncalling the dissector tables. The beginnings of the former was done\nby commit 55a739a67128080dd3998bc3430208860408fa1c, but it didn't\nchange the vendor dissectors distributed with Wireshark (and it\nskipped the Event Code and parameter length when handing events\nto the vendor Event dissector, which doesn't work to distinguish\nthe three event codes it can receive.)\n\nRevert that commit change unless and until the vendor dissectors shipped\nwith are changed to match it. Right now they don't work with the new\ntable and handling.\n\nAdd comments because this is confusing.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2025-08-28T08:11:51.000-04:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2025-08-28T13:51:19.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/78cf333c011a97e0cbf1a446680a41e3c580ebdb"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1473511402,
+      "head_commit_sha": "78cf333c011a97e0cbf1a446680a41e3c580ebdb",
+      "base_commit_sha": "918d04867fcd425f548289aca1a8dfa143e2826b",
+      "start_commit_sha": "918d04867fcd425f548289aca1a8dfa143e2826b",
+      "created_at": "2025-08-28T13:51:22.617Z",
+      "merge_request_id": 410783729,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "fb97c421c14352098eaf21e3e04580762747695e"
+    },
+    {
+      "id": 1473350445,
+      "head_commit_sha": "270703846ff1498140fc4015477a6b3f0a275d01",
+      "base_commit_sha": "7e9f89fa62d4e2090bc076e988a9d5d7de48fdf5",
+      "start_commit_sha": "7e9f89fa62d4e2090bc076e988a9d5d7de48fdf5",
+      "created_at": "2025-08-28T12:23:19.070Z",
+      "merge_request_id": 410783729,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "fb97c421c14352098eaf21e3e04580762747695e"
+    }
+  ]
+}

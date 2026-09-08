@@ -1,0 +1,565 @@
+{
+  "id": 422370367,
+  "iid": 21759,
+  "project_id": 7898047,
+  "title": "Lua: Create Lua threads to fix exception handling for nested calls",
+  "description": "Lua, when compiled for C, uses setjmp and longjmp for exception\nhandling, and creates a linked list L->errorJmp of struct lua_longjmp\nthat is added to by every lua_pcall and similar function (ultimately\nby luaD_rawrunprotected.) The kazlib portable exception handling used\nin epan for Wireshark exceptions also uses setjmp and longjmp for\nexception handling.\n\nDissection of a frame occurs within a Wireshark TRY block. In the case\nof nested Lua dissector calls, a Wireshark exception that is unhandled\nby the inner Lua call but caught in the outer Lua call can result in\na lua_error that longjmps to the most recent entry in the L->errorJmp list.\nIf the two calls share lua_State, then that means longjmping to the\njmp_buf that was setjmped in a luaD_rawrunprotected that has already\nexited (because of the longjmp caused by the uncaught Wireshark\nexception). That is undefined behavior and likely a crash.\n\nTo address this, use lua_newthread in order to create lua_States for\neach call that share global variables but have a separate execution\nstack and list of errorJmps. We then must ensure that the newly\ncreated thread is closed and garbage collected regardless of Wireshark\nexception.\n\nThis probably allows #15655 to be addressed without having to\nstick TRY..EXCEPT wrappers everywhere.\n\nFix #20767.",
+  "state": "merged",
+  "created_at": "2025-10-09T13:11:36.980Z",
+  "updated_at": "2025-10-20T14:22:21.149Z",
+  "merged_by": {
+    "id": 8399509,
+    "username": "mmann78",
+    "public_email": "",
+    "name": "Michael Mann",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+    "web_url": "https://gitlab.com/mmann78"
+  },
+  "merge_user": {
+    "id": 8399509,
+    "username": "mmann78",
+    "public_email": "",
+    "name": "Michael Mann",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+    "web_url": "https://gitlab.com/mmann78"
+  },
+  "merged_at": "2025-10-10T16:45:20.986Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "lua_exception_thread",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "326c7ab4b236e09fa415d90d636faf4a647fdaf2",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-10-09T13:11:48.009Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!21759",
+  "references": {
+    "short": "!21759",
+    "relative": "!21759",
+    "full": "wireshark/wireshark!21759"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/21759",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2025-10-10T16:31:07.834Z",
+  "latest_build_finished_at": "2025-10-10T16:45:18.668Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2093187124,
+    "iid": 88835,
+    "project_id": 7898047,
+    "sha": "eb2a59a3628c52a53b1e2eeba38d1a5f412101d7",
+    "ref": "refs/merge-requests/21759/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-10-10T16:31:05.970Z",
+    "updated_at": "2025-10-10T16:45:18.686Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2093187124"
+  },
+  "head_pipeline": {
+    "id": 2093187124,
+    "iid": 88835,
+    "project_id": 7898047,
+    "sha": "eb2a59a3628c52a53b1e2eeba38d1a5f412101d7",
+    "ref": "refs/merge-requests/21759/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-10-10T16:31:05.970Z",
+    "updated_at": "2025-10-10T16:45:18.686Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2093187124",
+    "before_sha": "eb2a59a3628c52a53b1e2eeba38d1a5f412101d7",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 8399509,
+      "username": "mmann78",
+      "public_email": "",
+      "name": "Michael Mann",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+      "web_url": "https://gitlab.com/mmann78"
+    },
+    "started_at": "2025-10-10T16:31:07.834Z",
+    "finished_at": "2025-10-10T16:45:18.668Z",
+    "committed_at": null,
+    "duration": 850,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2093187124",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "63dc61bf810c9ab37b86eab3cb503932c0edabde",
+    "head_sha": "326c7ab4b236e09fa415d90d636faf4a647fdaf2",
+    "start_sha": "63dc61bf810c9ab37b86eab3cb503932c0edabde"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "21ef95aa4e3d08024ffcce451049aec541437bb2",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2810157045,
+          "type": "DiscussionNote",
+          "body": "@stigbjorlykke, this avoids crashing for me even without 63dc61bf810c9ab37b86eab3cb503932c0edabde. I've tried several of the other (currently closed) Lua crashers, large files, reloading Lua plugins and this works for me.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-10-09T13:13:09.316Z",
+          "updated_at": "2025-10-10T16:31:03.655Z",
+          "system": false,
+          "noteable_id": 422370367,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "resolved_at": "2025-10-10T16:31:03.655Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21759,
+          "commands_changes": {}
+        },
+        {
+          "id": 2812641192,
+          "type": "DiscussionNote",
+          "body": "This works for me.",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2025-10-10T10:17:59.870Z",
+          "updated_at": "2025-10-10T16:31:03.655Z",
+          "system": false,
+          "noteable_id": 422370367,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "resolved_at": "2025-10-10T16:31:03.655Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21759,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "537d731542c29f87d774d132fb4a39189c8e1f0d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2813671561,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2025-10-10T16:30:58.487Z",
+          "updated_at": "2025-10-10T16:30:58.492Z",
+          "system": true,
+          "noteable_id": 422370367,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21759,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7599cfc28a010fb0ab9b70d228eaf0adb2fba1c4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2813671703,
+          "type": null,
+          "body": "enabled automatic add to merge train when checks pass",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2025-10-10T16:31:01.387Z",
+          "updated_at": "2025-10-10T16:31:01.392Z",
+          "system": true,
+          "noteable_id": 422370367,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21759,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f1f162f4efc6933efebe0d43c090e6a475756ca0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2813671835,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2025-10-10T16:31:03.679Z",
+          "updated_at": "2025-10-10T16:31:03.687Z",
+          "system": true,
+          "noteable_id": 422370367,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21759,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "10511f9a0d2553daca301f60857dacd0f4c771c8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2813671884,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 3",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2025-10-10T16:31:04.502Z",
+          "updated_at": "2025-10-10T16:31:04.510Z",
+          "system": true,
+          "noteable_id": 422370367,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21759,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "235cbc38cb0b92c6f5775558f8e169c649eb4976",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 2831007756,
+          "type": "DiffNote",
+          "body": "`lua_resetthread` was added in Lua5.4, but we still support Lua5.3",
+          "author": {
+            "id": 6524193,
+            "username": "oakimk",
+            "public_email": "",
+            "name": "Joakim Karlsson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6524193/avatar.png?v=1787702414",
+            "web_url": "https://gitlab.com/oakimk"
+          },
+          "created_at": "2025-10-20T08:20:33.184Z",
+          "updated_at": "2025-10-20T08:53:27.682Z",
+          "system": false,
+          "noteable_id": 422370367,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "63dc61bf810c9ab37b86eab3cb503932c0edabde",
+            "start_sha": "63dc61bf810c9ab37b86eab3cb503932c0edabde",
+            "head_sha": "326c7ab4b236e09fa415d90d636faf4a647fdaf2",
+            "old_path": "epan/wslua/init_wslua.c",
+            "new_path": "epan/wslua/init_wslua.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 282,
+            "line_range": {
+              "start": {
+                "line_code": "550aa889f41245ffe8ac02ee23e59733ab9f282a_275_282",
+                "type": "new",
+                "old_line": null,
+                "new_line": 282
+              },
+              "end": {
+                "line_code": "550aa889f41245ffe8ac02ee23e59733ab9f282a_275_282",
+                "type": "new",
+                "old_line": null,
+                "new_line": 282
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21759,
+          "commands_changes": {}
+        },
+        {
+          "id": 2831907835,
+          "type": "DiffNote",
+          "body": "!21946",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-10-20T14:22:21.114Z",
+          "updated_at": "2025-10-20T14:22:21.114Z",
+          "system": false,
+          "noteable_id": 422370367,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "63dc61bf810c9ab37b86eab3cb503932c0edabde",
+            "start_sha": "63dc61bf810c9ab37b86eab3cb503932c0edabde",
+            "head_sha": "326c7ab4b236e09fa415d90d636faf4a647fdaf2",
+            "old_path": "epan/wslua/init_wslua.c",
+            "new_path": "epan/wslua/init_wslua.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 282,
+            "line_range": {
+              "start": {
+                "line_code": "550aa889f41245ffe8ac02ee23e59733ab9f282a_275_282",
+                "type": "new",
+                "old_line": null,
+                "new_line": 282
+              },
+              "end": {
+                "line_code": "550aa889f41245ffe8ac02ee23e59733ab9f282a_275_282",
+                "type": "new",
+                "old_line": null,
+                "new_line": 282
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21759,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -272,6 +272,22 @@ static int dissector_error_handler(lua_State *LS) {\n     return -2;\n }\n \n+static void lua_resetthread_cb(void *user_data) {\n+\n+    lua_State *L1 = (lua_State*)user_data;\n+\n+    ws_debug(\"freeing thread: %p\", L1);\n+    // lua_closethread(..., NULL) was introduced in 5.4.6 to replace\n+    // lua_resetthread() but it's not mandatory yet (maybe in 5.5?)\n+    lua_resetthread(L1);\n+    // The thread was pushed onto the global stack when created. Each thread\n+    // should be taken off the stack in order.\n+    lua_State *L2 = lua_tothread(L, -1);\n+    ws_assert(L1 == L2);\n+    // Now remove the thread from the global state stack, which will allow it\n+    // to be garbage collected.\n+    lua_pop(L, 1);\n+}\n \n int dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data _U_) {\n     int consumed_bytes = tvb_captured_length(tvb);\n@@ -286,49 +302,64 @@ int dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data\n      * dissectors[current_proto](tvb,pinfo,tree)\n      */\n \n-    // set the stack top be index 0\n-    lua_settop(L,0);\n+    // Create a new thread with an independent execution stack and,\n+    // importantly, an independent errorJmp linked list. This avoids\n+    // issues with nested lua_pcalls, where a Wireshark exception\n+    // can longjmp out of the inner pcall's luaD_rawunprotected function,\n+    // and a lua_error from the outer pcall then tries to longjmp to\n+    // the exited no longer valid inner setjmp, which is undefined\n+    // behavior and likely crashes.\n+    // This pushes the new thread onto the global stack (which\n+    // prevents the new thread from being garbage collected.)\n+    lua_State *L1 = lua_newthread(L);\n+    ws_debug(\"new Lua thread: %p\", L1);\n+\n+    // Make sure that even in the case of an uncaught Wireshark exception\n+    // that the thread is reset and garbage collected. (This could possibly\n+    // be a TRY..FINALLY block that also does some handling to put the\n+    // Lua call stack in the tree.)\n+    CLEANUP_PUSH(lua_resetthread_cb, L1);\n \n     // After call, stack: [ error_handler_func ]\n-    lua_pushcfunction(L, dissector_error_handler);\n+    lua_pushcfunction(L1, dissector_error_handler);\n \n     // Push the dissectors table onto the the stack\n     // After call, stack: [ error_handler_func, dissectors_table ]\n-    lua_rawgeti(L, LUA_REGISTRYINDEX, lua_dissectors_table_ref);\n+    lua_rawgeti(L1, LUA_REGISTRYINDEX, lua_dissectors_table_ref);\n \n     // Push a copy of the current_proto string onto the stack\n     // After call, stack: [ error_handler_func, dissectors_table, current_proto ]\n-    lua_pushstring(L, pinfo->current_proto);\n+    lua_pushstring(L1, pinfo->current_proto);\n \n     // dissectors_table[current_proto], a dissector, goes into the stack\n     // The key (current_proto) is popped off the stack.\n     // After call, stack: [ error_handler_func, dissectors_table, dissector ]\n-    lua_gettable(L, -2);\n+    lua_gettable(L1, -2);\n \n     // We don't need the dissectors_table in the stack\n     // After call, stack: [ error_handler_func, dissector ]\n-    lua_remove(L,2);\n+    lua_remove(L1,2);\n \n     // Is the dissector a function?\n-    if (lua_isfunction(L,2)) {\n+    if (lua_isfunction(L1,2)) {\n \n         // After call, stack: [ error_handler_func, dissector, tvb ]\n-        push_Tvb(L,tvb);\n+        push_Tvb(L1,tvb);\n         // After call, stack: [ error_handler_func, dissector, tvb, pinfo ]\n-        push_Pinfo(L,pinfo);\n+        push_Pinfo(L1,pinfo);\n         // After call, stack: [ error_handler_func, dissector, tvb, pinfo, TreeItem ]\n-        lua_tree = push_TreeItem(L, tree, proto_tree_add_item(tree, hf_wslua_fake, tvb, 0, 0, ENC_NA));\n+        lua_tree = push_TreeItem(L1, tree, proto_tree_add_item(tree, hf_wslua_fake, tvb, 0, 0, ENC_NA));\n         proto_item_set_hidden(lua_tree->item);\n \n-        if  ( lua_pcall(L, /*num_args=*/3, /*num_results=*/1, /*error_handler_func_stack_position=*/1) ) {\n+        if  ( lua_pcall(L1, /*num_args=*/3, /*num_results=*/1, /*error_handler_func_stack_position=*/1) ) {\n             // do nothing; the traceback error message handler function does everything\n         } else {\n \n             /* if the Lua dissector reported the consumed bytes, pass it to our caller */\n-            if (lua_isnumber(L, -1)) {\n+            if (lua_isnumber(L1, -1)) {\n                 /* we got the consumed bytes or the missing bytes as a negative number */\n-                consumed_bytes = wslua_toint(L, -1);\n-                lua_pop(L, 1);\n+                consumed_bytes = wslua_toint(L1, -1);\n+                lua_pop(L1, 1);\n             }\n         }\n \n@@ -337,8 +368,13 @@ int dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data\n                     \"Lua Error: did not find the %s dissector in the dissectors table\", pinfo->current_proto);\n     }\n \n+    // XXX - Should this be registered before the lua_pcall, in case there's\n+    // an exception? Also, as there can be nested dissector calls, should we\n+    // try to avoid registering it more than once?\n     wmem_register_callback(pinfo->pool, lua_pinfo_end, NULL);\n \n+    CLEANUP_CALL_AND_POP;\n+\n     lua_pinfo = saved_lua_pinfo;\n     lua_tree = saved_lua_tree;\n     lua_tvb = saved_lua_tvb;\n@@ -377,66 +413,78 @@ bool heur_dissect_lua(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void*\n      * So it's like registry[table_ref][heur_list_name][proto_name] = func\n      */\n \n-    lua_settop(L,0);\n+    // Create a new thread with an independent execution stack and,\n+    // importantly, a independent linked list errorJmp of lua_longjmp.\n+    // This pushes the new thread onto the global stack (which\n+    // prevents the new thread from being garbage collected.)\n+    lua_State *L1 = lua_newthread(L);\n+    ws_debug(\"new Lua thread: %p\", L1);\n+\n+    CLEANUP_PUSH(lua_resetthread_cb, L1);\n \n     /* get the table of all lua heuristic dissector lists */\n-    lua_rawgeti(L, LUA_REGISTRYINDEX, lua_heur_dissectors_table_ref);\n+    lua_rawgeti(L1, LUA_REGISTRYINDEX, lua_heur_dissectors_table_ref);\n \n     /* get the table inside that, for the lua heuristic dissectors of the requested heur list */\n-    if (!wslua_get_table(L, -1, pinfo->heur_list_name)) {\n+    if (!wslua_get_table(L1, -1, pinfo->heur_list_name)) {\n         /* this shouldn't happen */\n-        lua_settop(L,0);\n         proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,\n                 \"internal error in heur_dissect_lua: no %s heur list table\", pinfo->heur_list_name);\n-        return false;\n+        result = false;\n+        goto end;\n     }\n \n     /* get the table inside that, for the specific lua heuristic dissector */\n-    if (!wslua_get_field(L,-1,pinfo->current_proto)) {\n+    if (!wslua_get_field(L1,-1,pinfo->current_proto)) {\n         /* this shouldn't happen */\n-        lua_settop(L,0);\n         proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,\n                 \"internal error in heur_dissect_lua: no %s heuristic dissector for list %s\",\n                         pinfo->current_proto, pinfo->heur_list_name);\n-        return false;\n+        result = false;\n+        goto end;\n     }\n \n     /* remove the table of all lists (the one in the registry) */\n-    lua_remove(L,1);\n+    lua_remove(L1,1);\n     /* remove the heur_list_name heur list table */\n-    lua_remove(L,1);\n+    lua_remove(L1,1);\n \n-    if (!lua_isfunction(L,-1)) {\n+    if (!lua_isfunction(L1,-1)) {\n         /* this shouldn't happen */\n-        lua_settop(L,0);\n         proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,\n                 \"internal error in heur_dissect_lua: %s heuristic dissector is not a function\", pinfo->current_proto);\n-        return false;\n+        result = false;\n+        goto end;\n     }\n \n-    push_Tvb(L,tvb);\n-    push_Pinfo(L,pinfo);\n-    lua_tree = push_TreeItem(L, tree, proto_tree_add_item(tree, hf_wslua_fake, tvb, 0, 0, ENC_NA));\n+    push_Tvb(L1,tvb);\n+    push_Pinfo(L1,pinfo);\n+    lua_tree = push_TreeItem(L1, tree, proto_tree_add_item(tree, hf_wslua_fake, tvb, 0, 0, ENC_NA));\n     proto_item_set_hidden(lua_tree->item);\n \n-    if  ( lua_pcall(L,3,1,0) ) {\n+    if  ( lua_pcall(L1,3,1,0) ) {\n         proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,\n-                \"Lua Error: error calling %s heuristic dissector: %s\", pinfo->current_proto, lua_tostring(L,-1));\n-        lua_settop(L,0);\n+                \"Lua Error: error calling %s heuristic dissector: %s\", pinfo->current_proto, lua_tostring(L1,-1));\n     } else {\n-        if (lua_isboolean(L, -1) || lua_isnil(L, -1)) {\n-            result = lua_toboolean(L, -1);\n-        } else if (lua_type(L, -1) == LUA_TNUMBER) {\n-            result = lua_tointeger(L,-1) != 0 ? true : false;\n+        if (lua_isboolean(L1, -1) || lua_isnil(L1, -1)) {\n+            result = lua_toboolean(L1, -1);\n+        } else if (lua_type(L1, -1) == LUA_TNUMBER) {\n+            result = lua_tointeger(L1,-1) != 0 ? true : false;\n         } else {\n             proto_tree_add_expert_format(tree, pinfo, &ei_lua_error, tvb, 0, 0,\n                     \"Lua Error: invalid return value from Lua %s heuristic dissector\", pinfo->current_proto);\n         }\n-        lua_pop(L, 1);\n+        lua_pop(L1, 1);\n     }\n \n+end:\n+    // XXX - Should this be registered before the lua_pcall, in case there's\n+    // an exception? Also, as there can be nested dissector calls, should we\n+    // try to avoid registering it more than once?\n     wmem_register_callback(pinfo->pool, lua_pinfo_end, NULL);\n \n+    CLEANUP_CALL_AND_POP;\n+\n     lua_pinfo = saved_lua_pinfo;\n     lua_tree = saved_lua_tree;\n     lua_tvb = saved_lua_tvb;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/init_wslua.c",
+      "old_path": "epan/wslua/init_wslua.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "326c7ab4b236e09fa415d90d636faf4a647fdaf2",
+      "short_id": "326c7ab4",
+      "created_at": "2025-10-09T09:08:34.000-04:00",
+      "parent_ids": [
+        "63dc61bf810c9ab37b86eab3cb503932c0edabde"
+      ],
+      "title": "Lua: Create Lua threads to fix exception handling for nested calls",
+      "message": "Lua: Create Lua threads to fix exception handling for nested calls\n\nLua, when compiled for C, uses setjmp and longjmp for exception\nhandling, and creates a linked list L->errorJmp of struct lua_longjmp\nthat is added to by every lua_pcall and similar function (ultimately\nby luaD_rawrunprotected.) The kazlib portable exception handling used\nin epan for Wireshark exceptions also uses setjmp and longjmp for\nexception handling.\n\nDissection of a frame occurs within a Wireshark TRY block. In the case\nof nested Lua dissector calls, a Wireshark exception that is unhandled\nby the inner Lua call but caught in the outer Lua call can result in\na lua_error that longjmps to the most recent entry in the L->errorJmp list.\nIf the two calls share lua_State, then that means longjmping to the\njmp_buf that was setjmped in a luaD_rawrunprotected that has already\nexited (because of the longjmp caused by the uncaught Wireshark\nexception). That is undefined behavior and likely a crash.\n\nTo address this, use lua_newthread in order to create lua_States for\neach call that share global variables but have a separate execution\nstack and list of errorJmps. We then must ensure that the newly\ncreated thread is closed and garbage collected regardless of Wireshark\nexception.\n\nThis probably allows #15655 to be addressed without having to\nstick TRY..EXCEPT wrappers everywhere.\n\nFix #20767.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2025-10-09T08:45:21.000-04:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2025-10-09T09:08:34.000-04:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/326c7ab4b236e09fa415d90d636faf4a647fdaf2"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1522075617,
+      "head_commit_sha": "326c7ab4b236e09fa415d90d636faf4a647fdaf2",
+      "base_commit_sha": "63dc61bf810c9ab37b86eab3cb503932c0edabde",
+      "start_commit_sha": "63dc61bf810c9ab37b86eab3cb503932c0edabde",
+      "created_at": "2025-10-09T13:11:39.209Z",
+      "merge_request_id": 422370367,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "4a13cd605d91f074147a9ed83f98309e52aee8a9"
+    }
+  ]
+}

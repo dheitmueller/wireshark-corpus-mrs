@@ -1,0 +1,379 @@
+{
+  "id": 346368356,
+  "iid": 18298,
+  "project_id": 7898047,
+  "title": "dfilter: Don't crash on multiple relations with unary functions",
+  "description": "Don't assume in oper_dup that an operation is binary. Unary minus\nexists in the grammar. Trying to duplicate the null second operand\nwill cause a null dereference, which can happen in chained comparisons:\n\nChange:\n```shell\n$ ./run/dftest -s '1 < -_ws.ftypes.int8 <= 2'\nFilter:\n 1 < -_ws.ftypes.int8 <= 2\n\nAddressSanitizer:DEADLYSIGNAL\n=================================================================\n==637745==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000010 (pc 0x7f8c9408a5d2 bp 0x7ffe701aebf0 sp 0x7ffe701aead0 T0)\n==637745==The signal is caused by a READ memory access.\n==637745==Hint: address points to the zero page.\n    #0 0x7f8c9408a5d2 in stnode_dup /home/johnthacker/wireshark/epan/dfilter/syntax-tree.c:280:20\n    #1 0x7f8c940883a7 in oper_dup /home/johnthacker/wireshark/epan/dfilter/sttype-op.c:51:15\n```\n\nInto:\n```shell\n$ ./run/dftest -s '1 < -_ws.ftypes.int8 <= 2'\nFilter:\n 1 < -_ws.ftypes.int8 <= 2\n\nSyntax tree:\n 0 TEST_AND:\n   1 TEST_LT:\n     2 FVALUE(1 <FT_INT8>)\n     2 OP_UNARY_MINUS:\n       3 FIELD(_ws.ftypes.int8 <FT_INT8>)\n   1 TEST_LE:\n     2 OP_UNARY_MINUS:\n       3 FIELD(_ws.ftypes.int8 <FT_INT8>)\n     2 FVALUE(2 <FT_INT8>)\n\nInstructions:\n 0000 READ_TREE        _ws.ftypes.int8  -> R0\n 0001 IF_FALSE_GOTO    9\n 0002 UNARY_MINUS      -R0              -> R1\n 0003 ANY_LT           1 < R1\n 0004 IF_FALSE_GOTO    9\n 0005 READ_TREE        _ws.ftypes.int8  -> R0\n 0006 IF_FALSE_GOTO    9\n 0007 UNARY_MINUS      -R0              -> R2\n 0008 ANY_LE           R2 <= 2\n 0009 RETURN\n```",
+  "state": "merged",
+  "created_at": "2024-12-01T23:08:31.290Z",
+  "updated_at": "2024-12-01T23:39:44.152Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2024-12-01T23:39:44.176Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "dfilter_unary_minus_dup",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "129565f0efb8587d44c0c7f6c262ac72a88d7aab",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-12-01T23:08:36.435Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!18298",
+  "references": {
+    "short": "!18298",
+    "relative": "!18298",
+    "full": "wireshark/wireshark!18298"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/18298",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2024-12-01T23:21:25.426Z",
+  "latest_build_finished_at": "2024-12-01T23:39:42.790Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1568255821,
+    "iid": 75112,
+    "project_id": 7898047,
+    "sha": "129565f0efb8587d44c0c7f6c262ac72a88d7aab",
+    "ref": "refs/merge-requests/18298/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-12-01T23:21:24.378Z",
+    "updated_at": "2024-12-01T23:39:42.801Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1568255821"
+  },
+  "head_pipeline": {
+    "id": 1568255821,
+    "iid": 75112,
+    "project_id": 7898047,
+    "sha": "129565f0efb8587d44c0c7f6c262ac72a88d7aab",
+    "ref": "refs/merge-requests/18298/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-12-01T23:21:24.378Z",
+    "updated_at": "2024-12-01T23:39:42.801Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1568255821",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2024-12-01T23:21:25.426Z",
+    "finished_at": "2024-12-01T23:39:42.790Z",
+    "committed_at": null,
+    "duration": 1096,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1568255821",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "10e9024c12ba35fcd213f8b8aa6d68ef9dd802c2",
+    "head_sha": "129565f0efb8587d44c0c7f6c262ac72a88d7aab",
+    "start_sha": "10e9024c12ba35fcd213f8b8aa6d68ef9dd802c2"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "7727dc3d64040df273aae37aa0a53eff56966865",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2235341429,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-12-01T23:09:09.757Z",
+          "updated_at": "2024-12-01T23:09:09.763Z",
+          "system": true,
+          "noteable_id": 346368356,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 18298,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "88a3e7746f0754b2439be4c55cb94a2be2626ae4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2235344767,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>10e9024c - 1 commit from branch <code>wireshark:master</code></li><li>129565f0 - dfilter: Don&#39;t crash on multiple relations with unary functions</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/18298/diffs?diff_id=1198160174&start_sha=d2d45206b17ea648d9f1f44732278e107432a520)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-12-01T23:21:21.403Z",
+          "updated_at": "2024-12-01T23:21:21.410Z",
+          "system": true,
+          "noteable_id": 346368356,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 18298,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8ac9ae7fab2bc15783e9b394dd5f56b89021fbd9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2235346139,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-12-01T23:27:54.927Z",
+          "updated_at": "2024-12-01T23:27:54.936Z",
+          "system": true,
+          "noteable_id": 346368356,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 18298,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7a5be7890acb38d81cdc308aa72b132fdc8ada14",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2235346146,
+          "type": null,
+          "body": "enabled an automatic merge when all merge checks for 129565f0efb8587d44c0c7f6c262ac72a88d7aab pass",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-12-01T23:27:55.929Z",
+          "updated_at": "2024-12-01T23:27:55.932Z",
+          "system": true,
+          "noteable_id": 346368356,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 18298,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -48,7 +48,8 @@ oper_dup(const void *data)\n \toper->op = org->op;\n \toper->how = org->how;\n \toper->val1 = stnode_dup(org->val1);\n-\toper->val2 = stnode_dup(org->val2);\n+\tif (org->val2)\n+\t\toper->val2 = stnode_dup(org->val2);\n \n \treturn oper;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dfilter/sttype-op.c",
+      "old_path": "epan/dfilter/sttype-op.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -155,6 +155,10 @@ class TestDfilterInteger:\n         dfilter = \"ntp.precision <= -10\"\n         checkDFilterCount(dfilter, 1)\n \n+    def test_s_chained(self, checkDFilterCount):\n+        dfilter = \"-12 < ntp.precision < -2 < ntp.ppoll < 8\"\n+        checkDFilterCount(dfilter, 1)\n+\n     def test_bool_eq_1(self, checkDFilterCount):\n         dfilter = \"ip.flags.df == 0\"\n         checkDFilterCount(dfilter, 1)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dfilter/group_integer.py",
+      "old_path": "test/suite_dfilter/group_integer.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "129565f0efb8587d44c0c7f6c262ac72a88d7aab",
+      "short_id": "129565f0",
+      "created_at": "2024-12-01T23:21:17.000+00:00",
+      "parent_ids": [
+        "10e9024c12ba35fcd213f8b8aa6d68ef9dd802c2"
+      ],
+      "title": "dfilter: Don't crash on multiple relations with unary functions",
+      "message": "dfilter: Don't crash on multiple relations with unary functions\n\nDon't assume in oper_dup that an operation is binary. Unary minus\nexists in the grammar. Trying to duplicate the null second operand\nwill cause a null dereference, which can happen in chained comparisons:\n\nChange:\n$ ./run/dftest -s '1 < -_ws.ftypes.int8 <= 2'\nFilter:\n 1 < -_ws.ftypes.int8 <= 2\n\nAddressSanitizer:DEADLYSIGNAL\n=================================================================\n==637745==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000010 (pc 0x7f8c9408a5d2 bp 0x7ffe701aebf0 sp 0x7ffe701aead0 T0)\n==637745==The signal is caused by a READ memory access.\n==637745==Hint: address points to the zero page.\n    #0 0x7f8c9408a5d2 in stnode_dup /home/johnthacker/wireshark/epan/dfilter/syntax-tree.c:280:20\n    #1 0x7f8c940883a7 in oper_dup /home/johnthacker/wireshark/epan/dfilter/sttype-op.c:51:15\n\nInto:\n$ ./run/dftest -s '1 < -_ws.ftypes.int8 <= 2'\nFilter:\n 1 < -_ws.ftypes.int8 <= 2\n\nSyntax tree:\n 0 TEST_AND:\n   1 TEST_LT:\n     2 FVALUE(1 <FT_INT8>)\n     2 OP_UNARY_MINUS:\n       3 FIELD(_ws.ftypes.int8 <FT_INT8>)\n   1 TEST_LE:\n     2 OP_UNARY_MINUS:\n       3 FIELD(_ws.ftypes.int8 <FT_INT8>)\n     2 FVALUE(2 <FT_INT8>)\n\nInstructions:\n 0000 READ_TREE        _ws.ftypes.int8  -> R0\n 0001 IF_FALSE_GOTO    9\n 0002 UNARY_MINUS      -R0              -> R1\n 0003 ANY_LT           1 < R1\n 0004 IF_FALSE_GOTO    9\n 0005 READ_TREE        _ws.ftypes.int8  -> R0\n 0006 IF_FALSE_GOTO    9\n 0007 UNARY_MINUS      -R0              -> R2\n 0008 ANY_LE           R2 <= 2\n 0009 RETURN\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-12-01T17:09:47.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2024-12-01T23:21:17.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/129565f0efb8587d44c0c7f6c262ac72a88d7aab"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1198160174,
+      "head_commit_sha": "129565f0efb8587d44c0c7f6c262ac72a88d7aab",
+      "base_commit_sha": "10e9024c12ba35fcd213f8b8aa6d68ef9dd802c2",
+      "start_commit_sha": "10e9024c12ba35fcd213f8b8aa6d68ef9dd802c2",
+      "created_at": "2024-12-01T23:21:20.197Z",
+      "merge_request_id": 346368356,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "bddccda7928ee7e19ecfaf89b484619818f61679"
+    },
+    {
+      "id": 1198158246,
+      "head_commit_sha": "d2d45206b17ea648d9f1f44732278e107432a520",
+      "base_commit_sha": "c979cf1e3a06a9d9c5e5f48fde33634143e70aa9",
+      "start_commit_sha": "c979cf1e3a06a9d9c5e5f48fde33634143e70aa9",
+      "created_at": "2024-12-01T23:08:32.576Z",
+      "merge_request_id": 346368356,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "bddccda7928ee7e19ecfaf89b484619818f61679"
+    }
+  ]
+}

@@ -1,0 +1,1675 @@
+{
+  "id": 391477358,
+  "iid": 20234,
+  "project_id": 7898047,
+  "title": "Draft: Add new dissector API for non-heuristic dissectors returning bool.",
+  "description": "A \"new-style\" dissector returns true if it recognized the packet as one\nfor its protocol and false if not, regardless of whether it was handed\nan empty tvbuff or not.\n\nThe dissector is passed, as the data argument, a pointer to a\ndissector_data_t. That is a structure that currently contains:\n\n* a void * that points to data that the calling dissector wants to pass\n  to it - that's the equivalent of the old void * data argument;\n* a void * that points to data associated with the dissector handle when\n  the handle is created - that's the equivalent of the old void * cb_data\n  argument;\n* an int that's initialized to the captured length of the packet being\n  handed to the disssector and that the dissector should, if it doesn't\n  dissect the entire tvbuff, set to the number of bytes that it did\n  dissect.\n\nThis allows a new-style dissector to independently indicate whether it\naccepted the packet and how much of that packet was dissected, so that,\nif the tvbuff is empty, and that's a valid packet (as it is with sme\nprotocols, such as the Echo and Time protocols), and the dissector\naccepts it, it can indicate that it did so.\n\nNew APIs are added for *calling* dissectors as well; they return a bool\nthat indicates whether the dissector accepted the packet, and also take\na possibly-null int * that, if not null, points to a variable that will\nbe set to the number of bytes dissected.  Most dissector calls appear\nnot to care about the number of bytes dissected, they just care whether\nthe packet was dissected or not, so those calls, if converted to the new\nAPIs, would just pass NULL; the few that do would pass a pointer to a\nvariable that will be set to the amount dissected.\n\nThe existing APIs for calling dissectors can handle all three types of\ndissector; they will return the number of bytes dissected, so they can't\ndistinguish, even with a new-style dissector, between \"not accepted by\nthe dissector\" and \"accepted by the dissector but the tvbuff is empty\".\n\nThe new APIs for calling dissectors can handle all three types of\ndissector; for old-style dissectors, they will return true if the\ndissector returns a non-zero value and false if it returns zero, and, if\nthe pointer to the \"amount dissected\" variable is non-null, set the\nvalue of that variable to the return value of the old-style dissector.\n\nThis should allow dissectors to be converted over time to be new-style\ndissectors and to use the new APIs without having a giant \"flag day\".\n\nAt some point, we should introduce new-style heuristic dissectors that\nhave the same signature as new-style non-heuristic dissectors, with a\nsimilar mechanism to allow conversion to be done over time. This would\nallow heuristic dissectors to get callback data and to indicate how much\ndata they dissected, and would also allow the same dissector function to\nbe used as a heuristic dissector and a non-heuristic dissector.\n\nFixes #12368.\n\nIs a useful step towards fixing some bugs mentioned in {transitive\nclosure of \"mentioned in that bug\"}.",
+  "state": "opened",
+  "created_at": "2025-06-16T19:23:49.989Z",
+  "updated_at": "2025-06-24T12:41:58.823Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "new-api-with-dissectors-returning-bool",
+  "user_notes_count": 14,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 25236512,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": true,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": true,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged_recheck",
+  "detailed_merge_status": "draft_status",
+  "merge_after": null,
+  "sha": "99d592cac8030799cf306c212800e368a29d3215",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-06-16T19:23:58.121Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!20234",
+  "references": {
+    "short": "!20234",
+    "relative": "!20234",
+    "full": "wireshark/wireshark!20234"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/20234",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2025-06-17T09:35:56.297Z",
+  "latest_build_finished_at": "2025-06-17T10:07:53.241Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1873875388,
+    "iid": 82890,
+    "project_id": 7898047,
+    "sha": "99d592cac8030799cf306c212800e368a29d3215",
+    "ref": "refs/merge-requests/20234/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-06-17T09:35:53.946Z",
+    "updated_at": "2025-06-17T10:07:53.255Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1873875388"
+  },
+  "head_pipeline": {
+    "id": 1873875388,
+    "iid": 82890,
+    "project_id": 7898047,
+    "sha": "99d592cac8030799cf306c212800e368a29d3215",
+    "ref": "refs/merge-requests/20234/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-06-17T09:35:53.946Z",
+    "updated_at": "2025-06-17T10:07:53.255Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1873875388",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 5636682,
+      "username": "guyharris",
+      "public_email": "",
+      "name": "Guy Harris",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+      "web_url": "https://gitlab.com/guyharris"
+    },
+    "started_at": "2025-06-17T09:35:56.297Z",
+    "finished_at": "2025-06-17T10:07:53.241Z",
+    "committed_at": null,
+    "duration": 1917,
+    "queued_duration": 2,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1873875388",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+    "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+    "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "a65071a5532f2cd3abedb32f44d9544c649e11ca",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565688421,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>d4f48c89 - 1 commit from branch <code>wireshark:master</code></li><li>75abace7 - Add new dissector API for non-heuristic dissectors returning bool.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20234/diffs?diff_id=1392024766&start_sha=21ceade6706e515a4cfc8d391e91aa4b3981a4f9)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-16T19:24:26.987Z",
+          "updated_at": "2025-06-16T19:24:27.116Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "84e5970328760a7c61223decb6cb0aa17e616897",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565718961,
+          "type": null,
+          "body": "mentioned in issue #19989",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-16T19:44:07.111Z",
+          "updated_at": "2025-06-16T19:44:07.114Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ae5c089112a4ae4203daa3c0f713850b5385aba7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565728699,
+          "type": null,
+          "body": "mentioned in issue #20582",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-16T19:51:48.026Z",
+          "updated_at": "2025-06-16T19:51:48.031Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5d5aeeebbba7e827dc705830a403c172144ee60c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565791864,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>75abace7...d115cf3c - 2 commits from branch <code>wireshark:master</code></li><li>5dd3ef6f - Add new dissector API for non-heuristic dissectors returning bool.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20234/diffs?diff_id=1392086646&start_sha=75abace7ef2ceaac0fcda28694d4368ade7dcb4a)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-16T20:30:57.347Z",
+          "updated_at": "2025-06-16T20:30:57.370Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "71ce837969da4b5178584ab07b44131ec4418aba",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565921723,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>cb832f54 - 1 commit from branch <code>wireshark:master</code></li><li>288e5d35 - Add new dissector API for non-heuristic dissectors returning bool.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20234/diffs?diff_id=1392164964&start_sha=5dd3ef6f8cd6bfc9d96bacf5ebfe6197fb112c4f)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-16T22:07:15.390Z",
+          "updated_at": "2025-06-16T22:07:15.396Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c56c0802ac8e8a33d51ddcdcff0deb2992ed172d",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 2565973613,
+          "type": "DiffNote",
+          "body": "\"new-style\" here refers to the current style (called new-style a couple decades ago) not the new-new-style being introduced in this MR. This comment might need to be updated, I suppose, now that the old-old-style doesn't exist and the old-new-style is about to become the new-old-style.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-06-16T22:51:06.703Z",
+          "updated_at": "2025-06-16T22:51:06.703Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 703,
+            "new_line": 862,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_700_857",
+                "type": "expanded",
+                "old_line": 700,
+                "new_line": 857
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_703_860",
+                "type": "expanded",
+                "old_line": 703,
+                "new_line": 860
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        },
+        {
+          "id": 2566691564,
+          "type": "DiffNote",
+          "body": "I also would strongly suggest to stay away from naming conventions based on temporal order, since these always trend their significance diluting over time.",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2025-06-17T06:03:35.380Z",
+          "updated_at": "2025-06-17T06:03:35.380Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 703,
+            "new_line": 862,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_700_857",
+                "type": "expanded",
+                "old_line": 700,
+                "new_line": 857
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_703_860",
+                "type": "expanded",
+                "old_line": 703,
+                "new_line": 860
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        },
+        {
+          "id": 2566699405,
+          "type": "DiffNote",
+          "body": "> \"new-style\" here refers to the current style (called new-style a couple decades ago) not the new-new-style being introduced in this MR.No, \"new-style\" here refers to the style introduced in this MR.  The only remnant of \"new-style\" referring to the current style that I found with a quick search for \"new-\" preceded by a * (to eliminate constructs such as `new->frobozz`) was in the packet-pana.c dissector; I fixed that (which was confusingly using \"new-style\" to mean \"non-heuristic\").\n\n> This comment might need to be updated,\n\nThe comment in question was introduce in this commit, so it should be up-to-date.\n\nI *did* remove some comments using \"new-style\" in the old-style sense. :-)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T06:08:20.721Z",
+          "updated_at": "2025-06-17T06:08:20.721Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 703,
+            "new_line": 862,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_700_857",
+                "type": "expanded",
+                "old_line": 700,
+                "new_line": 857
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_703_860",
+                "type": "expanded",
+                "old_line": 703,
+                "new_line": 860
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        },
+        {
+          "id": 2566701287,
+          "type": "DiffNote",
+          "body": "> I also would strongly suggest to stay away from naming conventions based on temporal order, since these always trend their significance diluting over time.\n\nOnce the last old-style dissector and the last old-style dissector call are removed, the old-style dissector call routines will be removed, and he `new_` will e removed from all the routines.  The intent is *not* to have the old-style stuff remain forever.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T06:09:34.967Z",
+          "updated_at": "2025-06-17T06:09:34.967Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 703,
+            "new_line": 862,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_700_857",
+                "type": "expanded",
+                "old_line": 700,
+                "new_line": 857
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_703_860",
+                "type": "expanded",
+                "old_line": 703,
+                "new_line": 860
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        },
+        {
+          "id": 2567137865,
+          "type": "DiffNote",
+          "body": "> I _did_ remove some comments using \"new-style\" in the old-style sense. :-)\n\nAnd decided to do so in a separate merge request, !20240, as the comment isn't even correct for the *current* version of the code, for more reasons than just using \"new-style\" in a now out-of-date sense - the distinction isn't between \"new-style\" and heuristic, it's between non-heuristic and heuristic, and the heuristic dissection is done by a wrapper around the non-heuristic dissector.\n\nWith this change plus the suggested fix for #20582, it would be possible to use the same function for both purposes.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:25:24.641Z",
+          "updated_at": "2025-06-17T09:25:24.641Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 703,
+            "new_line": 862,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_700_857",
+                "type": "expanded",
+                "old_line": 700,
+                "new_line": 857
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_703_860",
+                "type": "expanded",
+                "old_line": 703,
+                "new_line": 860
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        },
+        {
+          "id": 2567162175,
+          "type": "DiffNote",
+          "body": "The problem is that the comment got the two dissector types backwards, as those routines are old-style caller routines, so they call *old*-style dissectors and return their return value, and call *new*-style dissectors and return the amount of data consumed by the dissector if the dissector returns `true` and return 0 if the dissector returns `false`.\n\nBut there need to be new-style *direct* callers as well as the new-style *indirect* `new_dissector_try...` routines.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:33:43.475Z",
+          "updated_at": "2025-06-17T09:33:54.945Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 703,
+            "new_line": 862,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_700_857",
+                "type": "expanded",
+                "old_line": 700,
+                "new_line": 857
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_703_860",
+                "type": "expanded",
+                "old_line": 703,
+                "new_line": 860
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dea00ac776c3b148ef93b80b47bd313937c2f7d1",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 2565974181,
+          "type": "DiffNote",
+          "body": "Same as above.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-06-16T22:51:24.946Z",
+          "updated_at": "2025-06-16T22:51:24.946Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "bb5942762e08526898a33ef6407790c690291058",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 722,
+            "new_line": 879,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_720_877",
+                "type": "expanded",
+                "old_line": 720,
+                "new_line": 877
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_722_879",
+                "type": "expanded",
+                "old_line": 722,
+                "new_line": 879
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        },
+        {
+          "id": 2566701905,
+          "type": "DiffNote",
+          "body": "Same answer - those are brand-new comments in which \"new-style\" refers to the style introduced in this MR.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T06:10:01.241Z",
+          "updated_at": "2025-06-17T06:10:01.241Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "bb5942762e08526898a33ef6407790c690291058",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 722,
+            "new_line": 879,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_720_877",
+                "type": "expanded",
+                "old_line": 720,
+                "new_line": 877
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_722_879",
+                "type": "expanded",
+                "old_line": 722,
+                "new_line": 879
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        },
+        {
+          "id": 2567155822,
+          "type": "DiffNote",
+          "body": "changed this line in [version 7 of the diff](/wireshark/wireshark/-/merge_requests/20234/diffs?diff_id=1392686251&start_sha=bb5942762e08526898a33ef6407790c690291058#821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_879_878)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:31:04.664Z",
+          "updated_at": "2025-06-17T09:31:04.664Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "bb5942762e08526898a33ef6407790c690291058",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 722,
+            "new_line": 879,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_720_877",
+                "type": "expanded",
+                "old_line": 720,
+                "new_line": 877
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_722_879",
+                "type": "expanded",
+                "old_line": 722,
+                "new_line": 879
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        },
+        {
+          "id": 2567164200,
+          "type": "DiffNote",
+          "body": "Same followup - they got the two dissector type switched.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:34:21.739Z",
+          "updated_at": "2025-06-17T09:34:21.739Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "bb5942762e08526898a33ef6407790c690291058",
+            "old_path": "epan/packet.h",
+            "new_path": "epan/packet.h",
+            "position_type": "text",
+            "old_line": 722,
+            "new_line": 879,
+            "line_range": {
+              "start": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_720_877",
+                "type": "expanded",
+                "old_line": 720,
+                "new_line": 877
+              },
+              "end": {
+                "line_code": "821dfed598fc3f0703f6a9fe1d8ffcfa3529b9eb_722_879",
+                "type": "expanded",
+                "old_line": 722,
+                "new_line": 879
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b5437730e462f41c916c5e8279f91babab6c73d7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2566688884,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>92e83a0d - 1 commit from branch <code>wireshark:master</code></li><li>4bc2091a - Add new dissector API for non-heuristic dissectors returning bool.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20234/diffs?diff_id=1392394121&start_sha=288e5d351db66306bc1a9c2e8ce43be273af97af)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T06:01:47.273Z",
+          "updated_at": "2025-06-17T06:01:47.277Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6084ec0bb877ec48c8f271666e9bf2324c45fa73",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2566690393,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T06:02:45.267Z",
+          "updated_at": "2025-06-17T06:02:45.272Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cdeb1e5003909cd5e34699fe1f16b8e11a231a7f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2567125538,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>a3c0e318 - 1 commit from branch <code>wireshark:master</code></li><li>bb594276 - Add new dissector API for non-heuristic dissectors returning bool.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20234/diffs?diff_id=1392668768&start_sha=4bc2091a185733c640fe1350ff4c8a7c0a3d3589)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:20:56.176Z",
+          "updated_at": "2025-06-17T09:20:56.183Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "78ecaed3cef5cb9a40e2866b1d1374e295958e00",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2567126914,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:21:26.803Z",
+          "updated_at": "2025-06-17T09:21:26.808Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "76714a077082f2e4669dfaa3270c019291c4af2e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2567127221,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:21:34.558Z",
+          "updated_at": "2025-06-17T09:21:34.568Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c030cb9bcf6d4137b002409e7252e44e9e6ea468",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2567127312,
+          "type": null,
+          "body": "unapproved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:21:37.298Z",
+          "updated_at": "2025-06-17T09:21:37.312Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "082d26a79c8e1a226fd21256fc1c15495b30d10e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2567155830,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>90b8ed6d - Add new dissector API for non-heuristic dissectors returning bool.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20234/diffs?diff_id=1392686251&start_sha=bb5942762e08526898a33ef6407790c690291058)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:31:05.020Z",
+          "updated_at": "2025-06-17T09:31:05.027Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "930170abcb7ed2b52982d1acdbb8f844d90587ef",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2567168463,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>99d592ca - Add new dissector API for non-heuristic dissectors returning bool.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20234/diffs?diff_id=1392694637&start_sha=90b8ed6dbfad052b7659e928c522503b8017bb50)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2025-06-17T09:35:50.980Z",
+          "updated_at": "2025-06-17T09:35:50.988Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b486f13ef545a90e9b5f86a36f18739dfcd1d72e",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 2581500919,
+          "type": "DiffNote",
+          "body": "This comment can be removed, as this MR addresses the problem it describes.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2025-06-24T12:41:58.515Z",
+          "updated_at": "2025-06-24T12:41:58.515Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.c",
+            "new_path": "epan/packet.c",
+            "position_type": "text",
+            "old_line": 867,
+            "new_line": 869,
+            "line_range": {
+              "start": {
+                "line_code": "b11af466bb764503db871cd032cd8fb9233f5d4c_864_866",
+                "type": null,
+                "old_line": 864,
+                "new_line": 866
+              },
+              "end": {
+                "line_code": "b11af466bb764503db871cd032cd8fb9233f5d4c_867_869",
+                "type": null,
+                "old_line": 867,
+                "new_line": 869
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "783842a6bc598e8dca68322b390efa663fda59b7",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 2581500931,
+          "type": "DiffNote",
+          "body": "Echoing other concerns of the \"new\" label outliving its actual newness, perhaps a more descriptive label such as `DISSECTOR_TYPE_CALLBACK_AND_LENGTH`? Or if brevity is a concern, `DISSECTOR_TYPE_CB_AND_LEN`?",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2025-06-24T12:41:58.800Z",
+          "updated_at": "2025-06-24T12:41:58.800Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.c",
+            "new_path": "epan/packet.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 790,
+            "line_range": {
+              "start": {
+                "line_code": "b11af466bb764503db871cd032cd8fb9233f5d4c_790_790",
+                "type": "new",
+                "old_line": null,
+                "new_line": 790
+              },
+              "end": {
+                "line_code": "b11af466bb764503db871cd032cd8fb9233f5d4c_790_790",
+                "type": "new",
+                "old_line": null,
+                "new_line": 790
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ad2bed413f5861fb3ea342220fcf66fb04cb6b44",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 2581500937,
+          "type": "DiffNote",
+          "body": "Perhaps:\n\n```suggestion:-0+0\n\t\t    dissector_cb_len_t dissector_type_cb_and_length;\n```",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2025-06-24T12:41:59.027Z",
+          "updated_at": "2025-06-24T12:41:59.027Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.c",
+            "new_path": "epan/packet.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 804,
+            "line_range": {
+              "start": {
+                "line_code": "b11af466bb764503db871cd032cd8fb9233f5d4c_803_804",
+                "type": "new",
+                "old_line": null,
+                "new_line": 804
+              },
+              "end": {
+                "line_code": "b11af466bb764503db871cd032cd8fb9233f5d4c_803_804",
+                "type": "new",
+                "old_line": null,
+                "new_line": 804
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [
+            {
+              "id": 10958834,
+              "from_line": 804,
+              "to_line": 804,
+              "appliable": true,
+              "applied": false,
+              "from_content": "\t\tnew_dissector_t\tdissector_type_new;\n",
+              "to_content": "\t\t    dissector_cb_len_t dissector_type_cb_and_length;\n"
+            }
+          ],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e89aed43693cf75ee39795fd0a918ef829f9dd82",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 2581500942,
+          "type": "DiffNote",
+          "body": "The comment is a bit misleading, since the function's return value is a bool, not a number.\n\n```suggestion:-2+0\n/* Use the currently assigned payload dissector for the dissector table and,\n   if any, call the dissector with the arguments supplied, and set\n   *dissected_length to the number of bytes consumed. */\n```",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2025-06-24T12:41:59.223Z",
+          "updated_at": "2025-06-24T12:41:59.223Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "start_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+            "head_sha": "99d592cac8030799cf306c212800e368a29d3215",
+            "old_path": "epan/packet.c",
+            "new_path": "epan/packet.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2209,
+            "line_range": {
+              "start": {
+                "line_code": "b11af466bb764503db871cd032cd8fb9233f5d4c_2167_2207",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2207
+              },
+              "end": {
+                "line_code": "b11af466bb764503db871cd032cd8fb9233f5d4c_2167_2209",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2209
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [
+            {
+              "id": 10958835,
+              "from_line": 2207,
+              "to_line": 2209,
+              "appliable": true,
+              "applied": false,
+              "from_content": "/* Use the currently assigned payload dissector for the dissector table and,\n   if any, call the dissector with the arguments supplied, and return the\n   number of bytes consumed, otherwise return 0. */\n",
+              "to_content": "/* Use the currently assigned payload dissector for the dissector table and,\n   if any, call the dissector with the arguments supplied, and set\n   *dissected_length to the number of bytes consumed. */\n"
+            }
+          ],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "006262780317afd3d7665db86d5c67c9e5da13a1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2581500962,
+          "type": null,
+          "body": "This is more elegant than !8926, so I can see why it took a while to cook. Nice approach.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2025-06-24T12:41:59.650Z",
+          "updated_at": "2025-06-24T12:41:59.650Z",
+          "system": false,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bf4568270f9c57138f29049efcf94fa0196184bf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2581500966,
+          "type": null,
+          "body": "left review comments",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2025-06-24T12:41:59.727Z",
+          "updated_at": "2025-06-24T12:41:59.732Z",
+          "system": true,
+          "noteable_id": 391477358,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20234,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/packet.c",
+      "old_path": "epan/packet.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -63,6 +63,25 @@ typedef struct dissector_handle *dissector_handle_t;\n struct dissector_table;\n typedef struct dissector_table *dissector_table_t;\n \n+/* Structure passed (by address) to new-style dissectors.\n+\n+   data points to arbitrary data passed to the dissector; it corresponds\n+   to the data argument of old-style dissectors.\n+\n+   cb_data points to arbitrary data passed to \"callback\" dissectors;\n+   it's set to the callback data pointer provided when the dissector\n+   was registered.\n+\n+   dissector_length is initially set to the total amount of data\n+   present in the tvbuff handed to the dissector; if the dissector\n+   stops before dissecting all the data, it must set dissector_length\n+   to the amount dissected, so the calling dissector knows what remains. */\n+typedef struct {\n+\tvoid *data;\n+\tvoid *cb_data;\n+\tint dissected_length;\n+} dissector_data_t;\n+\n /*\n  * Dissector that returns:\n  *\n@@ -74,12 +93,25 @@ typedef struct dissector_table *dissector_table_t;\n  *\tThe negative of the amount of additional data needed, if\n  *\twe need more data (e.g., from subsequent TCP segments) to\n  *\tdissect the entire PDU.\n+ *\n+ * New elements should be added to the end; that allows older\n+ * plugin dissectors to continue to work.\n  */\n typedef int (*dissector_t)(tvbuff_t *, packet_info *, proto_tree *, void *);\n \n /* Same as dissector_t with an extra parameter for callback pointer */\n typedef int (*dissector_cb_t)(tvbuff_t *, packet_info *, proto_tree *, void *, void *);\n \n+/*\n+ * Dissector that returns true if the tvbuff contains a PDU for that\n+ * protocol and false if it doesn't and, if it contains a PDU for that\n+ * protocol, and there's additional information at the end of the tvbuff\n+ * not dissected by the dissector or any subdissectors it calls, sets\n+ * the dissected_length member of the dissector_data_t structure pointed\n+ * by its argument.\n+ */\n+typedef bool (*new_dissector_t)(tvbuff_t *, packet_info *, proto_tree *, dissector_data_t *);\n+\n /** Type of a heuristic dissector, used in heur_dissector_add().\n  *\n  * @param tvb the tvbuff with the (remaining) packet data\n@@ -268,6 +300,13 @@ WS_DLL_PUBLIC int dissector_try_uint(dissector_table_t sub_dissectors,\n WS_DLL_PUBLIC int dissector_try_uint_with_data(dissector_table_t sub_dissectors,\n     const uint32_t uint_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data);\n \n+/** Look for a given value in a given uint dissector table and, if found,\n+   call the dissector with the arguments supplied, and return its return\n+   value, otherwise return false. */\n+WS_DLL_PUBLIC bool new_dissector_try_uint(dissector_table_t sub_dissectors,\n+    const uint32_t uint_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data,\n+    int *dissected_length);\n+\n WS_DEPRECATED_X(\"Use dissector_try_uint_with_data instead\")\n static inline int dissector_try_uint_new(dissector_table_t sub_dissectors,\n \tconst uint32_t uint_val, tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, const bool add_proto_name, void* data) \\\n@@ -338,6 +377,15 @@ dissector_try_string_new(dissector_table_t sub_dissectors, const char* string, \\\n \ttvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, const bool add_proto_name, void* data) \\\n { return dissector_try_string_with_data(sub_dissectors, string, tvb, pinfo, tree, add_proto_name, data); }\n \n+/** Look for a given string in a given dissector table and, if found, call\n+   the dissector with the arguments supplied, and return true and set\n+   *disected_length to the number of bytes consumed by the dissector,\n+   otherwise return false. */\n+WS_DLL_PUBLIC bool new_dissector_try_string(dissector_table_t sub_dissectors,\n+\tconst char* string, tvbuff_t* tvb, packet_info* pinfo,\n+\tproto_tree* tree, const bool add_proto_name, void* data,\n+\tint *dissected_length);\n+\n \n /** Look for a given value in a given string dissector table and, if found,\n  * return the current dissector handle for that value.\n@@ -384,12 +432,20 @@ typedef struct _guid_key {\n WS_DLL_PUBLIC void dissector_add_guid(const char *name, guid_key* guid_val,\n     dissector_handle_t handle);\n \n-/** Look for a given value in a given guid dissector table and, if found,\n-   call the dissector with the arguments supplied, and return true,\n-   otherwise return false. */\n+/* Look for a given string in a given guid dissector table and, if found,\n+   call the dissector with the arguments supplied, and return the number\n+   of bytes consumed, otherwise return 0. */\n WS_DLL_PUBLIC int dissector_try_guid_with_data(dissector_table_t sub_dissectors,\n     guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data);\n \n+/** Look for a given value in a given guid dissector table and, if found,\n+   call the dissector with the arguments supplied, and return true and\n+   set *disected_length to the number of bytes consumed by the dissector,\n+   otherwise return false. */\n+WS_DLL_PUBLIC bool new_dissector_try_guid(dissector_table_t sub_dissectors,\n+    guid_key* guid_val, tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n+    const bool add_proto_name, void *data, int *dissected_length);\n+\n /* Delete a GUID from a dissector table. */\n WS_DLL_PUBLIC void dissector_delete_guid(const char *name, guid_key* guid_val,\n     dissector_handle_t handle);\n@@ -410,6 +466,14 @@ WS_DLL_PUBLIC dissector_handle_t dissector_get_guid_handle(\n WS_DLL_PUBLIC int dissector_try_payload_with_data(dissector_table_t sub_dissectors,\n     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, const bool add_proto_name, void *data);\n \n+/** Use the currently assigned payload dissector for the dissector table and,\n+   if any, call the dissector with the arguments supplied, and return true\n+   and set *disected_length to the number of bytes consumed by the dissector,\n+   otherwise return false. */\n+WS_DLL_PUBLIC bool new_dissector_try_payload(dissector_table_t sub_dissectors,\n+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n+    const bool add_proto_name, void *data, int *dissected_length);\n+\n WS_DEPRECATED_X(\"Use dissector_try_payload_with_data instead\")\n static inline int dissector_try_payload_new(dissector_table_t sub_dissectors,\n \ttvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, const bool add_proto_name, void* data){ \\\n@@ -606,6 +670,15 @@ WS_DLL_PUBLIC dissector_handle_t register_dissector_with_description(const char\n /** Register a new dissector with a callback pointer. */\n WS_DLL_PUBLIC dissector_handle_t register_dissector_with_data(const char *name, dissector_cb_t dissector, const int proto, void *cb_data);\n \n+/** Register a new new-style dissector. */\n+WS_DLL_PUBLIC dissector_handle_t new_register_dissector(const char *name, new_dissector_t dissector, const int proto);\n+\n+/** Register a new new-style dissector with a description. */\n+WS_DLL_PUBLIC dissector_handle_t new_register_dissector_with_description(const char *name, const char *description, new_dissector_t dissector, const int proto);\n+\n+/** Register a new new-style dissector with a callback pointer. */\n+WS_DLL_PUBLIC dissector_handle_t new_register_dissector_with_data(const char *name, new_dissector_t dissector, const int proto, void *cb_data);\n+\n /** Deregister a dissector. */\n void deregister_dissector(const char *name);\n \n@@ -682,9 +755,93 @@ WS_DLL_PUBLIC dissector_handle_t create_dissector_handle_with_name(dissector_t d\n  */\n WS_DLL_PUBLIC dissector_handle_t create_dissector_handle_with_name_and_description(dissector_t dissector,\n     const int proto, const char* name, const char* description);\n+\n+/** Create an anonymous, unregistered dissector handle that includes a\n+ * pointer value to be passed to the dissector.\n+ *\n+ * @param dissector The dissector the handle will call\n+ * @param proto The value obtained when registering the protocol\n+ * @param cb_data The pointer to be passed when the dissector is called\n+ *\n+ * @note The protocol short name will be used as the user-visible description.\n+ */\n WS_DLL_PUBLIC dissector_handle_t create_dissector_handle_with_data(dissector_cb_t dissector,\n     const int proto, void* cb_data);\n \n+/** Create an named, unregistered dissector handle that includes a\n+ * pointer value to be passed to the dissector.\n+ * A non-NULL name is needed for dissector_add_for_decode_add_with_preference().\n+ *\n+ * @param dissector The dissector the handle will call\n+ * @param proto The value obtained when registering the protocol\n+ * @param name a short, machine-friendly name for the dissector. Does not have\n+ * to be globally unique, but should be unique for any table the handle will be\n+ * registered to. Can be NULL, which creates an anonymous dissector.\n+ * @param cb_data The pointer to be passed when the dissector is called\n+ *\n+ * @note The protocol short name will be used as the user-visible description.\n+ */\n+WS_DLL_PUBLIC dissector_handle_t create_dissector_handle_with_name_and_data(dissector_cb_t dissector,\n+    const int proto, const char* name, void* cb_data);\n+\n+/** Create an anonymous, unregistered new-style dissector handle.\n+ *\n+ * @param dissector The new-style dissector the handle will call\n+ * @param proto The value obtained when registering the protocol\n+ *\n+ * @note The protocol short name will be used as the user-visible description.\n+ */\n+WS_DLL_PUBLIC dissector_handle_t new_create_dissector_handle(new_dissector_t dissector,\n+    const int proto);\n+\n+/** Create an named, unregistered new-style dissector handle.\n+ * A non-NULL name is needed for dissector_add_for_decode_add_with_preference().\n+ *\n+ * @param dissector The new-style dissector the handle will call\n+ * @param proto The value obtained when registering the protocol\n+ * @param name a short, machine-friendly name for the dissector. Does not have\n+ * to be globally unique, but should be unique for any table the handle will be\n+ * registered to. Can be NULL, which creates an anonymous dissector.\n+ *\n+ * @note The protocol short name will be used as the user-visible description.\n+ */\n+WS_DLL_PUBLIC dissector_handle_t new_create_dissector_handle_with_name(new_dissector_t dissector,\n+    const int proto, const char* name);\n+\n+/** Create an named, unregistered handle new-style dissector handle with a\n+ * description.\n+ * A non-NULL name is needed for dissector_add_for_decode_add_with_preference().\n+ * The description is used to allow a user to distinguish dissectors for the\n+ * same protocol, e.g. when registered to the same table.\n+ *\n+ * @param dissector The dissector the handle will call\n+ * @param proto The value obtained when registering the protocol\n+ * @param name a short, machine-friendly name for the dissector. Does not have\n+ * to be globally unique, but should be unique for any table the handle will be\n+ * registered to. Can be NULL, which creates an anonymous dissector.\n+ * @param description Freeform text designed to be shown to a user. Must be\n+ * unique for any table the dissector is registered in. Can be NULL, in which\n+ * case the protocol short name is used as the user-visible description.\n+ */\n+WS_DLL_PUBLIC dissector_handle_t new_create_dissector_handle_with_name_and_description(new_dissector_t dissector,\n+    const int proto, const char* name, const char* description);\n+\n+/** Create an named, unregistered dissector handle that includes a\n+ * pointer value to be passed to the dissector.\n+ * A non-NULL name is needed for dissector_add_for_decode_add_with_preference().\n+ *\n+ * @param dissector The dissector the handle will call\n+ * @param proto The value obtained when registering the protocol\n+ * @param name a short, machine-friendly name for the dissector. Does not have\n+ * to be globally unique, but should be unique for any table the handle will be\n+ * registered to. Can be NULL, which creates an anonymous dissector.\n+ * @param cb_data The pointer to be passed when the dissector is called\n+ *\n+ * @note The protocol short name will be used as the user-visible description.\n+ */\n+WS_DLL_PUBLIC dissector_handle_t new_create_dissector_handle_with_name_and_data(new_dissector_t dissector,\n+    const int proto, const char* name, void* cb_data);\n+\n /* Dump all registered dissectors to the standard output */\n WS_DLL_PUBLIC void dissector_dump_dissectors(void);\n \n@@ -698,8 +855,10 @@ WS_DLL_PUBLIC void dissector_dump_dissectors(void);\n  *   @param  data parameter to pass to dissector\n  *   @return  If the protocol for that handle isn't enabled call the data\n  *   dissector. Otherwise, if the handle refers to a new-style\n- *   dissector, call the dissector and return its return value, otherwise call\n- *   it and return the length of the tvbuff pointed to by the argument.\n+ *   dissector, call the dissector and return the amount of data the\n+ *   dissector reports that it consumed if the return value of the dissector\n+ *   is true and 0 if the return value is false, otherwise call the\n+ *   dissector and return its return value.\n  */\n WS_DLL_PUBLIC int call_dissector_with_data(dissector_handle_t handle, tvbuff_t *tvb,\n     packet_info *pinfo, proto_tree *tree, void *data);\n@@ -716,10 +875,12 @@ WS_DLL_PUBLIC int call_data_dissector(tvbuff_t *tvb, packet_info *pinfo, proto_t\n  *   @param  pinfo Packet Info.\n  *   @param  tree The protocol tree.\n  *   @param  data parameter to pass to dissector\n- *   @return  If the protocol for that handle isn't enabled, return 0 without\n- *   calling the dissector. Otherwise, if the handle refers to a new-style\n- *   dissector, call the dissector and return its return value, otherwise call\n- *   it and return the length of the tvbuff pointed to by the argument.\n+ *   @return  If the protocol for that handle isn't enabled call the data\n+ *   dissector. Otherwise, if the handle refers to a new-style\n+ *   dissector, call the dissector and return the amount of data the\n+ *   dissector reports that it consumed if the return value of the dissector\n+ *   is true and 0 if the return value is false, otherwise call the\n+ *   dissector and return its return value.\n  */\n WS_DLL_PUBLIC int call_dissector_only(dissector_handle_t handle, tvbuff_t *tvb,\n     packet_info *pinfo, proto_tree *tree, void *data);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/packet.h",
+      "old_path": "epan/packet.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "99d592cac8030799cf306c212800e368a29d3215",
+      "short_id": "99d592ca",
+      "created_at": "2025-06-17T02:35:27.000-07:00",
+      "parent_ids": [
+        "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d"
+      ],
+      "title": "Add new dissector API for non-heuristic dissectors returning bool.",
+      "message": "Add new dissector API for non-heuristic dissectors returning bool.\n\nA \"new-style\" dissector returns true if it recognized the packet as one\nfor its protocol and false if not, regardless of whether it was handed\nan empty tvbuff or not.\n\nThe dissector is passed, as the data argument, a pointer to a\ndissector_data_t. That is a structure that currently contains:\n\n* a void * that points to data that the calling dissector wants to pass\n  to it - that's the equivalent of the old void * data argument;\n* a void * that points to data associated with the dissector handle when\n  the handle is created - that's the equivalent of the old void * cb_data\n  argument;\n* an int that's initialized to the captured length of the packet being\n  handed to the disssector and that the dissector should, if it doesn't\n  dissect the entire tvbuff, set to the number of bytes that it did\n  dissect.\n\nThis allows a new-style dissector to independently indicate whether it\naccepted the packet and how much of that packet was dissected, so that,\nif the tvbuff is empty, and that's a valid packet (as it is with sme\nprotocols, such as the Echo and Time protocols), and the dissector\naccepts it, it can indicate that it did so.\n\nNew APIs are added for *calling* dissectors as well; they return a bool\nthat indicates whether the dissector accepted the packet, and also take\na possibly-null int * that, if not null, points to a variable that will\nbe set to the number of bytes dissected.  Most dissector calls appear\nnot to care about the number of bytes dissected, they just care whether\nthe packet was dissected or not, so those calls, if converted to the new\nAPIs, would just pass NULL; the few that do would pass a pointer to a\nvariable that will be set to the amount dissected.\n\nThe existing APIs for calling dissectors can handle all three types of\ndissector; they will return the number of bytes dissected, so they can't\ndistinguish, even with a new-style dissector, between \"not accepted by\nthe dissector\" and \"accepted by the dissector but the tvbuff is empty\".\n\nThe new APIs for calling dissectors can handle all three types of\ndissector; for old-style dissectors, they will return true if the\ndissector returns a non-zero value and false if it returns zero, and, if\nthe pointer to the \"amount dissected\" variable is non-null, set the\nvalue of that variable to the return value of the old-style dissector.\n\nThis should allow dissectors to be converted over time to be new-style\ndissectors and to use the new APIs without having a giant \"flag day\".\n\nAt some point, we should introduce new-style heuristic dissectors that\nhave the same signature as new-style non-heuristic dissectors, with a\nsimilar mechanism to allow conversion to be done over time. This would\nallow heuristic dissectors to get callback data and to indicate how much\ndata they dissected, and would also allow the same dissector function to\nbe used as a heuristic dissector and a non-heuristic dissector.\n\nFixes #12368.\n\nIs a useful step towards fixing some bugs mentioned in {transitive\nclosure of \"mentioned in that bug\"}.\n",
+      "author_name": "Guy Harris",
+      "author_email": "gharris@sonic.net",
+      "authored_date": "2025-06-16T12:16:30.000-07:00",
+      "committer_name": "Guy Harris",
+      "committer_email": "gharris@sonic.net",
+      "committed_date": "2025-06-17T02:35:27.000-07:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/99d592cac8030799cf306c212800e368a29d3215"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1392694637,
+      "head_commit_sha": "99d592cac8030799cf306c212800e368a29d3215",
+      "base_commit_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+      "start_commit_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+      "created_at": "2025-06-17T09:35:48.722Z",
+      "merge_request_id": 391477358,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "9ccda979f4b0dba2fe5c26e242e2f2aaa55bdac7"
+    },
+    {
+      "id": 1392686251,
+      "head_commit_sha": "90b8ed6dbfad052b7659e928c522503b8017bb50",
+      "base_commit_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+      "start_commit_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+      "created_at": "2025-06-17T09:31:03.202Z",
+      "merge_request_id": 391477358,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "664473f2b08a258cf37bd2d2be939bdf1122de36"
+    },
+    {
+      "id": 1392668768,
+      "head_commit_sha": "bb5942762e08526898a33ef6407790c690291058",
+      "base_commit_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+      "start_commit_sha": "a3c0e318bc1f646fd11c98026fcc90e18d96bd6d",
+      "created_at": "2025-06-17T09:20:54.406Z",
+      "merge_request_id": 391477358,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "1fbabe240395fa246103a23734a5037d4a8f2ca1"
+    },
+    {
+      "id": 1392394121,
+      "head_commit_sha": "4bc2091a185733c640fe1350ff4c8a7c0a3d3589",
+      "base_commit_sha": "92e83a0d58bc16a29da7c78061789b58846a3828",
+      "start_commit_sha": "92e83a0d58bc16a29da7c78061789b58846a3828",
+      "created_at": "2025-06-17T06:01:45.972Z",
+      "merge_request_id": 391477358,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "14d053489a03d12d191bc7057dd1cea43adbc6aa"
+    },
+    {
+      "id": 1392164964,
+      "head_commit_sha": "288e5d351db66306bc1a9c2e8ce43be273af97af",
+      "base_commit_sha": "cb832f540c719ade31c991c47ca97d231dc4056d",
+      "start_commit_sha": "cb832f540c719ade31c991c47ca97d231dc4056d",
+      "created_at": "2025-06-16T22:07:14.405Z",
+      "merge_request_id": 391477358,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "1fbabe240395fa246103a23734a5037d4a8f2ca1"
+    },
+    {
+      "id": 1392086646,
+      "head_commit_sha": "5dd3ef6f8cd6bfc9d96bacf5ebfe6197fb112c4f",
+      "base_commit_sha": "d115cf3ca772625f96efbe63846681c7849037ee",
+      "start_commit_sha": "d115cf3ca772625f96efbe63846681c7849037ee",
+      "created_at": "2025-06-16T20:30:55.667Z",
+      "merge_request_id": 391477358,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "1fbabe240395fa246103a23734a5037d4a8f2ca1"
+    },
+    {
+      "id": 1392024766,
+      "head_commit_sha": "75abace7ef2ceaac0fcda28694d4368ade7dcb4a",
+      "base_commit_sha": "d4f48c897c065ddc2773802a0956249f4afdcf4b",
+      "start_commit_sha": "d4f48c897c065ddc2773802a0956249f4afdcf4b",
+      "created_at": "2025-06-16T19:24:25.542Z",
+      "merge_request_id": 391477358,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "1fbabe240395fa246103a23734a5037d4a8f2ca1"
+    },
+    {
+      "id": 1392024174,
+      "head_commit_sha": "21ceade6706e515a4cfc8d391e91aa4b3981a4f9",
+      "base_commit_sha": "cf1acfcfeaa0d3e0333e852d0eeab246b9c1263f",
+      "start_commit_sha": "d4f48c897c065ddc2773802a0956249f4afdcf4b",
+      "created_at": "2025-06-16T19:23:51.696Z",
+      "merge_request_id": 391477358,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "1fbabe240395fa246103a23734a5037d4a8f2ca1"
+    }
+  ]
+}

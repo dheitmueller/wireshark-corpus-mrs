@@ -1,0 +1,370 @@
+{
+  "id": 395073755,
+  "iid": 20397,
+  "project_id": 7898047,
+  "title": "sharkd: Expose max_packets and max_bytes to the load RPC",
+  "description": "This MR adds two new optional parameters to sharkd's `load` RPC that allow callers to control how much memory is used when opening a file.\n\n## Background\n\nSharkd's `load` RPC can now accept `max_packets` and `max_bytes` parameters that control how much of the PCAP file is loaded into memory. The internal `load_cap_file` function already had arguments for `max_packet_count` and `max_byte_count`, but these were not plumbed through to the JSONRPC request.\n\nThis MR completes the RPC by adding the two new params to the JSONRPC and creating a new `load_cap_file_with_limits` function to explicitly load with either a packet count limit or a maximum number of bytes.\n\n## Why this matters\n\nThis capability allows sharkd to be run on arbitrarily large files without worrying about running out of memory, or taking too long. Previously you had to load the entire file regardless of size. Since these options are already present in `load_cap_file()` it was a small change to complete this functionality.\n\n## What changed\n\n- Added `max_packets` and `max_bytes` as optional parameters to the load RPC\n- Created `sharkd_load_cap_file_with_limits()` function that wraps the existing `load_cap_file()` with the limit parameters\n- Added parameter parsing and validation in `sharkd_session_process_load()`\n- The load function now calls the appropriate version based on whether limits are provided\n\n## Usage\n\nYou can now limit loading like this:\n\n```\n{\"jsonrpc\":\"2.0\", \"id\":1, \"method\":\"load\", \"params\":{\"file\":\"big_capture.pcap\", \"max_packets\":1000}}\n{\"jsonrpc\":\"2.0\", \"id\":1, \"method\":\"load\", \"params\":{\"file\":\"big_capture.pcap\", \"max_bytes\":50000}}\n{\"jsonrpc\":\"2.0\", \"id\":1, \"method\":\"load\", \"params\":{\"file\":\"big_capture.pcap\", \"max_bytes\":50000, \"max_packets\":1000}}\n```\n\nBoth parameters are optional and default to unlimited (existing behavior).\n\n## Testing\n\nNew unit tests were added to `suite_sharkd.py` to exercise and test the new options. The tests verify that the limits work correctly and that analysis results reflect the constrained loading.",
+  "state": "merged",
+  "created_at": "2025-06-30T16:38:45.366Z",
+  "updated_at": "2025-07-01T14:46:40.440Z",
+  "merged_by": {
+    "id": 8399509,
+    "username": "mmann78",
+    "public_email": "",
+    "name": "Michael Mann",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+    "web_url": "https://gitlab.com/mmann78"
+  },
+  "merge_user": {
+    "id": 8399509,
+    "username": "mmann78",
+    "public_email": "",
+    "name": "Michael Mann",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+    "web_url": "https://gitlab.com/mmann78"
+  },
+  "merged_at": "2025-07-01T14:46:40.484Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "sharkd-limit-load-cap-file",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 4502906,
+    "username": "zachad",
+    "public_email": "zachad@qacafe.com",
+    "name": "Zach Chadwick",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/4502906/avatar.png?v=1788757341",
+    "web_url": "https://gitlab.com/zachad"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 34167955,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-06-30T16:38:52.081Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!20397",
+  "references": {
+    "short": "!20397",
+    "relative": "!20397",
+    "full": "wireshark/wireshark!20397"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/20397",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "4",
+  "latest_build_started_at": "2025-07-01T14:24:41.349Z",
+  "latest_build_finished_at": "2025-07-01T14:46:37.248Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1900383218,
+    "iid": 83517,
+    "project_id": 7898047,
+    "sha": "fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5",
+    "ref": "refs/merge-requests/20397/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-07-01T14:24:39.042Z",
+    "updated_at": "2025-07-01T14:46:37.263Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1900383218"
+  },
+  "head_pipeline": {
+    "id": 1900383218,
+    "iid": 83517,
+    "project_id": 7898047,
+    "sha": "fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5",
+    "ref": "refs/merge-requests/20397/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-07-01T14:24:39.042Z",
+    "updated_at": "2025-07-01T14:46:37.263Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1900383218",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 8399509,
+      "username": "mmann78",
+      "public_email": "",
+      "name": "Michael Mann",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+      "web_url": "https://gitlab.com/mmann78"
+    },
+    "started_at": "2025-07-01T14:24:41.349Z",
+    "finished_at": "2025-07-01T14:46:37.248Z",
+    "committed_at": null,
+    "duration": 1314,
+    "queued_duration": 2,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1900383218",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "1121a14269bbd9df5327225ac4379d0c961e3d6f",
+    "head_sha": "fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5",
+    "start_sha": "1121a14269bbd9df5327225ac4379d0c961e3d6f"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "d748d1652e89a2491735f842168399b1479e6e92",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2596767245,
+          "type": null,
+          "body": "added 19 commits\n\n<ul><li>2d76a983...1121a142 - 18 commits from branch <code>wireshark:master</code></li><li>fe6fb389 - sharkd: Expose max_packets and max_bytes to the load RPC</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20397/diffs?diff_id=1408553216&start_sha=2d76a98346dbad1cde80381af278e3d19bd6bf8c)",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2025-07-01T14:24:35.226Z",
+          "updated_at": "2025-07-01T14:24:35.238Z",
+          "system": true,
+          "noteable_id": 395073755,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20397,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5ed2aba5b4863aac6110781b1f515f40b4d8bead",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2596771487,
+          "type": null,
+          "body": "enabled an automatic merge when all merge checks for fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5 pass",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2025-07-01T14:25:53.752Z",
+          "updated_at": "2025-07-01T14:25:53.756Z",
+          "system": true,
+          "noteable_id": 395073755,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20397,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "da662da516a7ae09b36d157aa4e9c4e6b607a27c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2596772078,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2025-07-01T14:26:03.176Z",
+          "updated_at": "2025-07-01T14:26:03.198Z",
+          "system": true,
+          "noteable_id": 395073755,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20397,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -71,6 +71,111 @@ class TestSharkd:\n             {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"Less data was read than was expected\",\"err\":-12}},\n         ))\n \n+    def test_sharkd_req_load_with_no_limits(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng')}\n+             },\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+        ))\n+\n+    def test_sharkd_req_load_with_zero_limits_is_error(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng'), \"max_packets\":0, \"max_bytes\":0}\n+             },\n+        ), (\n+           {\"jsonrpc\":\"2.0\", \"id\":1, \"error\": {\"code\": -32600, \"message\": \"The value for max_packets must be a positive integer\"}},\n+        ))\n+\n+    def test_sharkd_req_load_with_packet_limit(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng'), \"max_packets\":10}\n+             },\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+        ))\n+    \n+    def test_sharkd_req_load_with_byte_limit(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng'), \"max_bytes\":8000}\n+             },\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+        ))\n+\n+    def test_sharkd_req_load_with_byte_and_packet_limit(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng'), \"max_packets\":10, \"max_bytes\":8000}\n+             },\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+        ))\n+\n+    def test_sharkd_req_load_and_analyse_with_no_limits(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng')}\n+             },\n+             {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"analyse\"},\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+            {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"frames\": 562, \"protocols\": [\"frame\", \"eth\", \"ethertype\", \"ip\", \"udp\",\n+                                        \"sip\", \"sdp\", \"rtp\"], \"first\":1105725482.965944, \"last\": 1105725515.56937}},\n+        ))\n+\n+    def test_sharkd_req_load_and_analyse_with_packet_limit(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng'), \"max_packets\":10}\n+             },\n+             {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"analyse\"},\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+            {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"frames\": 10, \"protocols\": [\"frame\", \"eth\", \"ethertype\", \"ip\", \"udp\",\n+                                        \"sip\", \"sdp\", \"rtp\"], \"first\":1105725482.965944, \"last\": 1105725491.490081}},\n+        ))\n+    \n+    def test_sharkd_req_load_with_byte_limit(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng'), \"max_bytes\":8000}\n+             },\n+             {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"analyse\"},\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+            {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"frames\": 23, \"protocols\": [\"frame\", \"eth\", \"ethertype\", \"ip\", \"udp\",\n+                                        \"sip\", \"sdp\", \"rtp\"], \"first\":1105725482.965944, \"last\": 1105725492.747414}},\n+        ))\n+\n+    def test_sharkd_req_load_and_analyse_with_byte_and_packet_limit(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng'), \"max_packets\":10, \"max_bytes\":8000}\n+             },\n+             {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"analyse\"},\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+            {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"frames\": 10, \"protocols\": [\"frame\", \"eth\", \"ethertype\", \"ip\", \"udp\",\n+                                        \"sip\", \"sdp\", \"rtp\"], \"first\":1105725482.965944, \"last\": 1105725491.490081}},\n+        ))\n+    \n+    def test_sharkd_req_load_and_analyse_with_single_byte_limit(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\": 1, \"method\":\"load\",\n+             \"params\":{\"file\":capture_file('sip-rtp.pcapng'), \"max_bytes\":5}\n+             },\n+            {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"analyse\"},\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+            {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"frames\": 1, \"protocols\": [\"frame\", \"eth\", \"ethertype\", \"ip\", \"udp\",\n+                                        \"sip\",\"sdp\"], \"first\":1105725482.965944, \"last\": 1105725482.965944}},\n+        ))\n+\n     def test_sharkd_req_status_no_pcap(self, check_sharkd_session):\n         check_sharkd_session((\n             {\"jsonrpc\":\"2.0\", \"id\":1, \"method\":\"status\"},\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_sharkd.py",
+      "old_path": "test/suite_sharkd.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -475,6 +475,12 @@ sharkd_load_cap_file(void)\n     return load_cap_file(&cfile, 0, 0);\n }\n \n+int\n+sharkd_load_cap_file_with_limits(int max_packet_count, int64_t max_byte_count)\n+{\n+    return load_cap_file(&cfile, max_packet_count, max_byte_count);\n+}\n+\n frame_data *\n sharkd_get_frame(uint32_t framenum)\n {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd.c",
+      "old_path": "sharkd.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -33,6 +33,7 @@ typedef void (*sharkd_dissect_func_t)(epan_dissect_t *edt, proto_tree *tree, str\n /* sharkd.c */\n cf_status_t sharkd_cf_open(const char *fname, unsigned int type, bool is_tempfile, int *err);\n int sharkd_load_cap_file(void);\n+int sharkd_load_cap_file_with_limits(int max_packet_count, int64_t max_byte_count);\n int sharkd_retap(void);\n int sharkd_filter(const char *dftext, uint8_t **result);\n frame_data *sharkd_get_frame(uint32_t framenum);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd.h",
+      "old_path": "sharkd.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -451,6 +451,8 @@ json_prep(char* buf, const jsmntok_t* tokens, int count)\n         {\"iograph\",    \"aot8\",           2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  SHARKD_OPTIONAL},\n         {\"iograph\",    \"aot9\",           2, JSMN_PRIMITIVE,    SHARKD_JSON_BOOLEAN,  SHARKD_OPTIONAL},\n         {\"load\",       \"file\",           2, JSMN_STRING,       SHARKD_JSON_STRING,   SHARKD_MANDATORY},\n+        {\"load\",       \"max_packets\",    2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, SHARKD_OPTIONAL},\n+        {\"load\",       \"max_bytes\",      2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, SHARKD_OPTIONAL},\n         {\"setcomment\", \"frame\",          2, JSMN_PRIMITIVE,    SHARKD_JSON_UINTEGER, SHARKD_MANDATORY},\n         {\"setcomment\", \"comment\",        2, JSMN_STRING,       SHARKD_JSON_STRING,   SHARKD_OPTIONAL},\n         {\"setconf\",    \"name\",           2, JSMN_STRING,       SHARKD_JSON_STRING,   SHARKD_MANDATORY},\n@@ -1293,12 +1295,44 @@ static void\n sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)\n {\n     const char *tok_file = json_find_attr(buf, tokens, count, \"file\");\n+    const char *tok_max_packets = json_find_attr(buf, tokens, count, \"max_packets\");\n+    const char *tok_max_bytes = json_find_attr(buf, tokens, count, \"max_bytes\");\n     int err = 0;\n \n+    uint32_t max_packets = 0;  /* 0 means unlimited */\n+    uint64_t max_bytes = 0;    /* 0 means unlimited */\n+\n     if (!tok_file)\n         return;\n \n-    fprintf(stderr, \"load: filename=%s\\n\", tok_file);\n+    /* Parse optional max_packets parameter */\n+    if (tok_max_packets)\n+    {\n+        if (!ws_strtou32(tok_max_packets, NULL, &max_packets))\n+        {\n+            sharkd_json_error(\n+                    rpcid, -32602, NULL,\n+                    \"Invalid max_packets parameter\"\n+                    );\n+            return;\n+        }\n+    }\n+\n+    /* Parse optional max_bytes parameter */\n+    if (tok_max_bytes)\n+    {\n+        if (!ws_strtou64(tok_max_bytes, NULL, &max_bytes))\n+        {\n+            sharkd_json_error(\n+                    rpcid, -32602, NULL,\n+                    \"Invalid max_bytes parameter\"\n+                    );\n+            return;\n+        }\n+    }\n+\n+    fprintf(stderr, \"load: filename=%s, max_packets=%u, max_bytes=%\" PRIu64 \"\\n\",\n+            tok_file, max_packets, max_bytes);\n \n     if (sharkd_cf_open(tok_file, WTAP_TYPE_AUTO, false, &err) != CF_OK)\n     {\n@@ -1311,7 +1345,14 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)\n \n     TRY\n     {\n-        err = sharkd_load_cap_file();\n+        if (max_packets > 0 || max_bytes > 0)\n+        {\n+            err = sharkd_load_cap_file_with_limits((int)max_packets, (int64_t)max_bytes);\n+        }\n+        else\n+        {\n+            err = sharkd_load_cap_file();\n+        }\n     }\n     CATCH(OutOfMemoryError)\n     {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd_session.c",
+      "old_path": "sharkd_session.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5",
+      "short_id": "fe6fb389",
+      "created_at": "2025-07-01T14:24:28.000+00:00",
+      "parent_ids": [
+        "1121a14269bbd9df5327225ac4379d0c961e3d6f"
+      ],
+      "title": "sharkd: Expose max_packets and max_bytes to the load RPC",
+      "message": "sharkd: Expose max_packets and max_bytes to the load RPC\n\nSharkd's `load` RPC can accept two new optional parameters called\n`max_packets` and `max_bytes` that control how much of the PCAP file is\nloaded into memory. This allows callers to control how much memory is\nused when opening a file.\n\nSharkd's internal `load_cap_file` function _already had arguments_ for the\n`max_packet_count` and `max_byte_count`. These howere were not plumbed\nthrough to the JSONRPC request.\n\nThis MR completes the RPC by adding two new params to the JSONRPC and\ncreating a new load_cap_file_with_limits function to explicitly load\nwith either a packet count limit or a maximum number of bytes.\n\nThis capability allows sharkd to be run on arbitrarily large files\nwithout worrying about running out of memory, or taking too long.\n\nNew unit tests are added to suite_sharkd.py to exercise and test the new\noptions.\n",
+      "author_name": "Zach Chadwick",
+      "author_email": "zachad@qacafe.com",
+      "authored_date": "2025-06-26T12:52:20.000-04:00",
+      "committer_name": "Michael Mann",
+      "committer_email": "mmann78@netscape.net",
+      "committed_date": "2025-07-01T14:24:28.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1408553216,
+      "head_commit_sha": "fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5",
+      "base_commit_sha": "1121a14269bbd9df5327225ac4379d0c961e3d6f",
+      "start_commit_sha": "1121a14269bbd9df5327225ac4379d0c961e3d6f",
+      "created_at": "2025-07-01T14:24:32.879Z",
+      "merge_request_id": 395073755,
+      "state": "collected",
+      "real_size": "4",
+      "patch_id_sha": "3b2d1cdd9c14c939606ee2e0be1cd7c766f205b2"
+    },
+    {
+      "id": 1407248245,
+      "head_commit_sha": "2d76a98346dbad1cde80381af278e3d19bd6bf8c",
+      "base_commit_sha": "cfd51d2381d125a01f2cb5148ac6cf6e42edbd58",
+      "start_commit_sha": "cfd51d2381d125a01f2cb5148ac6cf6e42edbd58",
+      "created_at": "2025-06-30T16:38:47.040Z",
+      "merge_request_id": 395073755,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "3b2d1cdd9c14c939606ee2e0be1cd7c766f205b2"
+    }
+  ]
+}

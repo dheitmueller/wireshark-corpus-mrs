@@ -1,0 +1,613 @@
+{
+  "id": 424758312,
+  "iid": 21922,
+  "project_id": 7898047,
+  "title": "wiretap: reduce padding for some structures",
+  "description": "Save some memory for structures by reordering their members\n\nBelow are before/after numbers:\n```C\nstruct wtap {\n        FILE_T                     fh;                   /*     0     8 */\n        FILE_T                     random_fh;            /*     8     8 */\n        _Bool                      ispipe;               /*    16     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        int                        file_type_subtype;    /*    20     4 */\n        unsigned int               snapshot_length;      /*    24     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        GArray *                   shb_hdrs;             /*    32     8 */\n        GArray *                   shb_iface_to_global;  /*    40     8 */\n        GArray *                   interface_data;       /*    48     8 */\n        unsigned int               next_interface_data;  /*    56     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        GArray *                   nrbs;                 /*    64     8 */\n        GArray *                   dsbs;                 /*    72     8 */\n        GArray *                   meta_events;          /*    80     8 */\n        GArray *                   dpibs;                /*    88     8 */\n        unsigned int               next_dpib_id;         /*    96     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        char *                     pathname;             /*   104     8 */\n        void *                     priv;                 /*   112     8 */\n        void *                     wslua_data;           /*   120     8 */\n        /* --- cacheline 2 boundary (128 bytes) --- */\n        subtype_read_func          subtype_read;         /*   128     8 */\n        subtype_seek_read_func     subtype_seek_read;    /*   136     8 */\n        void                       (*subtype_sequential_close)(struct wtap *); /*   144     8 */\n        void                       (*subtype_close)(struct wtap *); /*   152     8 */\n        int                        file_encap;           /*   160     4 */\n        int                        file_tsprec;          /*   164     4 */\n        nstime_t                   file_start_ts;        /*   168    16 */\n        nstime_t                   file_end_ts;          /*   184    16 */\n        /* --- cacheline 3 boundary (192 bytes) was 8 bytes ago --- */\n        wtap_new_ipv4_callback_t   add_new_ipv4;         /*   200     8 */\n        wtap_new_ipv6_callback_t   add_new_ipv6;         /*   208     8 */\n        wtap_new_secrets_callback_t add_new_secrets;     /*   216     8 */\n        GPtrArray *                fast_seek;            /*   224     8 */\n\n        /* size: 232, cachelines: 4, members: 29 */\n        /* sum members: 217, holes: 4, sum holes: 15 */\n        /* last cacheline: 40 bytes */\n};\n```\n```\nstruct wtap {\n        FILE_T                     fh;                   /*     0     8 */\n        FILE_T                     random_fh;            /*     8     8 */\n        int                        file_type_subtype;    /*    16     4 */\n        unsigned int               snapshot_length;      /*    20     4 */\n        GArray *                   shb_hdrs;             /*    24     8 */\n        GArray *                   shb_iface_to_global;  /*    32     8 */\n        GArray *                   interface_data;       /*    40     8 */\n        GArray *                   nrbs;                 /*    48     8 */\n        GArray *                   dsbs;                 /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        GArray *                   meta_events;          /*    64     8 */\n        GArray *                   dpibs;                /*    72     8 */\n        unsigned int               next_dpib_id;         /*    80     4 */\n        unsigned int               next_interface_data;  /*    84     4 */\n        char *                     pathname;             /*    88     8 */\n        void *                     priv;                 /*    96     8 */\n        void *                     wslua_data;           /*   104     8 */\n        subtype_read_func          subtype_read;         /*   112     8 */\n        subtype_seek_read_func     subtype_seek_read;    /*   120     8 */\n        /* --- cacheline 2 boundary (128 bytes) --- */\n        void                       (*subtype_sequential_close)(struct wtap *); /*   128     8 */\n        void                       (*subtype_close)(struct wtap *); /*   136     8 */\n        int                        file_encap;           /*   144     4 */\n        int                        file_tsprec;          /*   148     4 */\n        nstime_t                   file_start_ts;        /*   152    16 */\n        nstime_t                   file_end_ts;          /*   168    16 */\n        wtap_new_ipv4_callback_t   add_new_ipv4;         /*   184     8 */\n        /* --- cacheline 3 boundary (192 bytes) --- */\n        wtap_new_ipv6_callback_t   add_new_ipv6;         /*   192     8 */\n        wtap_new_secrets_callback_t add_new_secrets;     /*   200     8 */\n        GPtrArray *                fast_seek;            /*   208     8 */\n        _Bool                      ispipe;               /*   216     1 */\n\n        /* size: 224, cachelines: 4, members: 29 */\n        /* padding: 7 */\n        /* last cacheline: 32 bytes */\n};\n```\n\n```\nstruct wtap_rec {\n        unsigned int               rec_type;             /*     0     4 */\n        uint32_t                   presence_flags;       /*     4     4 */\n        unsigned int               section_number;       /*     8     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        nstime_t                   ts;                   /*    16    16 */\n        int                        tsprec;               /*    32     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        const char  *              rec_type_name;        /*    40     8 */\n        union {\n                wtap_packet_header packet_header;        /*    48   168 */\n                wtap_ft_specific_header ft_specific_header; /*    48   168 */\n                wtap_syscall_header syscall_header;      /*    48    56 */\n                wtap_systemd_journal_export_header systemd_journal_export_header; /*    48     4 */\n                wtap_custom_block_header custom_block_header; /*    48    12 */\n        } rec_header;                                    /*    48   168 */\n        /* --- cacheline 3 boundary (192 bytes) was 24 bytes ago --- */\n        wtap_block_t               block;                /*   216     8 */\n        _Bool                      block_was_modified;   /*   224     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        Buffer                     options_buf;          /*   232    32 */\n        /* --- cacheline 4 boundary (256 bytes) was 8 bytes ago --- */\n        Buffer                     data;                 /*   264    32 */\n\n        /* size: 296, cachelines: 5, members: 11 */\n        /* sum members: 281, holes: 3, sum holes: 15 */\n        /* last cacheline: 40 bytes */\n};\n```\n\n```\nstruct wtap_rec {\n        unsigned int               rec_type;             /*     0     4 */\n        uint32_t                   presence_flags;       /*     4     4 */\n        unsigned int               section_number;       /*     8     4 */\n        int                        tsprec;               /*    12     4 */\n        nstime_t                   ts;                   /*    16    16 */\n        const char  *              rec_type_name;        /*    32     8 */\n        union {\n                wtap_packet_header packet_header;        /*    40   168 */\n                wtap_ft_specific_header ft_specific_header; /*    40   168 */\n                wtap_syscall_header syscall_header;      /*    40    56 */\n                wtap_systemd_journal_export_header systemd_journal_export_header; /*    40     4 */\n                wtap_custom_block_header custom_block_header; /*    40    12 */\n        } rec_header;                                    /*    40   168 */\n        /* --- cacheline 3 boundary (192 bytes) was 16 bytes ago --- */\n        wtap_block_t               block;                /*   208     8 */\n        Buffer                     options_buf;          /*   216    32 */\n        Buffer                     data;                 /*   248    32 */\n        /* --- cacheline 4 boundary (256 bytes) was 24 bytes ago --- */\n        _Bool                      block_was_modified;   /*   280     1 */\n\n        /* size: 288, cachelines: 5, members: 11 */\n        /* padding: 7 */\n        /* last cacheline: 32 bytes */\n};\n```\n```\nstruct wtapng_if_descr_mandatory_s {\n        int                        wtap_encap;           /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        uint64_t                   time_units_per_second; /*     8     8 */\n        int                        tsprecision;          /*    16     4 */\n        uint32_t                   snap_len;             /*    20     4 */\n        uint8_t                    num_stat_entries;     /*    24     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        GArray *                   interface_statistics; /*    32     8 */\n\n        /* size: 40, cachelines: 1, members: 6 */\n        /* sum members: 29, holes: 2, sum holes: 11 */\n        /* last cacheline: 40 bytes */\n};\n```\n\n```\nstruct wtapng_if_descr_mandatory_s {\n        int                        wtap_encap;           /*     0     4 */\n        int                        tsprecision;          /*     4     4 */\n        uint64_t                   time_units_per_second; /*     8     8 */\n        uint32_t                   snap_len;             /*    16     4 */\n        uint8_t                    num_stat_entries;     /*    20     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        GArray *                   interface_statistics; /*    24     8 */\n\n        /* size: 32, cachelines: 1, members: 6 */\n        /* sum members: 29, holes: 1, sum holes: 3 */\n        /* last cacheline: 32 bytes */\n};\n```\n\n```\nstruct pcapng_block_type_information_t {\n        unsigned int               type;                 /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        block_reader               reader;               /*     8     8 */\n        block_processor            processor;            /*    16     8 */\n        block_writer               writer;               /*    24     8 */\n        _Bool                      internal;             /*    32     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        GHashTable *               option_handlers;      /*    40     8 */\n\n        /* size: 48, cachelines: 1, members: 6 */\n        /* sum members: 37, holes: 2, sum holes: 11 */\n        /* last cacheline: 48 bytes */\n};\n```\nAdded FIXME - I did not change it, as it needed a change across multiple files. Not a big deal, but perhaps for a follow-up.\n\n\n```\nstruct hashipv4 {\n        unsigned int               addr;                 /*     0     4 */\n        uint8_t                    flags;                /*     4     1 */\n        char                       ip[16];               /*     5    16 */\n        char                       name[256];            /*    21   256 */\n        /* --- cacheline 4 boundary (256 bytes) was 21 bytes ago --- */\n        char                       cidr_addr[19];        /*   277    19 */\n\n        /* size: 296, cachelines: 5, members: 5 */\n        /* last cacheline: 40 bytes */\n};\n```\n\n```\nstruct hashipv4 {\n        unsigned int               addr;                 /*     0     4 */\n        uint8_t                    flags;                /*     4     1 */\n        char                       ip[16];               /*     5    16 */\n        char                       cidr_addr[19];        /*    21    19 */\n        char                       name[256];            /*    40   256 */\n\n        /* size: 296, cachelines: 5, members: 5 */\n        /* last cacheline: 40 bytes */\n};\n```\nNo change - just made most variables available in the first cacheline.\n\n```\nstruct interface_info_s {\n        int                        wtap_encap;           /*     0     4 */\n        uint32_t                   snap_len;             /*     4     4 */\n        uint64_t                   time_units_per_second; /*     8     8 */\n        int                        tsprecision;          /*    16     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        int64_t                    tsoffset;             /*    24     8 */\n        int                        fcslen;               /*    32     4 */\n        uint8_t                    tsresol_binary;       /*    36     1 */\n\n        /* size: 40, cachelines: 1, members: 7 */\n        /* sum members: 33, holes: 1, sum holes: 4 */\n        /* padding: 3 */\n        /* last cacheline: 40 bytes */\n};\n```\n\n```\nstruct interface_info_s {\n        int                        wtap_encap;           /*     0     4 */\n        uint32_t                   snap_len;             /*     4     4 */\n        uint64_t                   time_units_per_second; /*     8     8 */\n        int64_t                    tsoffset;             /*    16     8 */\n        int                        tsprecision;          /*    24     4 */\n        int                        fcslen;               /*    28     4 */\n        uint8_t                    tsresol_binary;       /*    32     1 */\n\n        /* size: 40, cachelines: 1, members: 7 */\n        /* padding: 7 */\n        /* last cacheline: 40 bytes */\n};\n```\nNo change, but future variables can be put in place to reduce tail padding.\n\n```\nstruct wtap_dump_params {\n        int                        encap;                /*     0     4 */\n        int                        snaplen;              /*     4     4 */\n        int                        tsprec;               /*     8     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        GArray *                   shb_hdrs;             /*    16     8 */\n        const GArray  *            shb_iface_to_global;  /*    24     8 */\n        wtapng_iface_descriptions_t * idb_inf;           /*    32     8 */\n        const GArray  *            nrbs_growing;         /*    40     8 */\n        GArray *                   dsbs_initial;         /*    48     8 */\n        const GArray  *            dsbs_growing;         /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        const GArray  *            mevs_growing;         /*    64     8 */\n        const GArray  *            dpibs_growing;        /*    72     8 */\n        _Bool                      dont_copy_idbs;       /*    80     1 */\n\n        /* size: 88, cachelines: 2, members: 12 */\n        /* sum members: 77, holes: 1, sum holes: 4 */\n        /* padding: 7 */\n        /* last cacheline: 24 bytes */\n};\n```\n\n```\nstruct wtap_dump_params {\n        int                        encap;                /*     0     4 */\n        int                        snaplen;              /*     4     4 */\n        int                        tsprec;               /*     8     4 */\n        _Bool                      dont_copy_idbs;       /*    12     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        GArray *                   shb_hdrs;             /*    16     8 */\n        const GArray  *            shb_iface_to_global;  /*    24     8 */\n        wtapng_iface_descriptions_t * idb_inf;           /*    32     8 */\n        const GArray  *            nrbs_growing;         /*    40     8 */\n        GArray *                   dsbs_initial;         /*    48     8 */\n        const GArray  *            dsbs_growing;         /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        const GArray  *            mevs_growing;         /*    64     8 */\n        const GArray  *            dpibs_growing;        /*    72     8 */\n\n        /* size: 80, cachelines: 2, members: 12 */\n        /* sum members: 77, holes: 1, sum holes: 3 */\n        /* last cacheline: 16 bytes */\n};\n```\n\n```\nstruct wtap_reader {\n        int                        fd;                   /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        int64_t                    raw_pos;              /*     8     8 */\n        int64_t                    pos;                  /*    16     8 */\n        unsigned int               size;                 /*    24     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        struct wtap_reader_buf     in;                   /*    32    24 */\n\n        /* XXX last struct has 4 bytes of padding */\n\n        struct wtap_reader_buf     out;                  /*    56    24 */\n\n        /* XXX last struct has 4 bytes of padding */\n\n        /* --- cacheline 1 boundary (64 bytes) was 16 bytes ago --- */\n        _Bool                      eof;                  /*    80     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        int64_t                    start;                /*    88     8 */\n        int64_t                    raw;                  /*    96     8 */\n        compression_t              compression;          /*   104     4 */\n        compression_t              last_compression;     /*   108     4 */\n        _Bool                      is_compressed;        /*   112     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        int64_t                    skip;                 /*   120     8 */\n        /* --- cacheline 2 boundary (128 bytes) --- */\n        _Bool                      seek_pending;         /*   128     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        int                        err;                  /*   132     4 */\n        const char  *              err_info;             /*   136     8 */\n        zlib_stream                strm;                 /*   144   112 */\n        /* --- cacheline 4 boundary (256 bytes) --- */\n        _Bool                      dont_check_crc;       /*   256     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        ZSTD_DCtx *                zstd_dctx;            /*   264     8 */\n        LZ4F_dctx *                lz4_dctx;             /*   272     8 */\n        LZ4F_frameInfo_t           lz4_info;             /*   280    32 */\n        unsigned char              lz4_hdr[19];          /*   312    19 */\n\n        /* XXX 5 bytes hole, try to pack */\n\n        /* --- cacheline 5 boundary (320 bytes) was 16 bytes ago --- */\n        GPtrArray *                fast_seek;            /*   336     8 */\n        void *                     fast_seek_cur;        /*   344     8 */\n\n        /* size: 352, cachelines: 6, members: 24 */\n        /* sum members: 315, holes: 7, sum holes: 37 */\n        /* paddings: 2, sum paddings: 8 */\n        /* last cacheline: 32 bytes */\n};\n```\n\n```\nstruct wtap_reader {\n        int                        fd;                   /*     0     4 */\n        unsigned int               size;                 /*     4     4 */\n        int64_t                    raw_pos;              /*     8     8 */\n        int64_t                    pos;                  /*    16     8 */\n        struct wtap_reader_buf     in;                   /*    24    24 */\n\n        /* XXX last struct has 4 bytes of padding */\n\n        struct wtap_reader_buf     out;                  /*    48    24 */\n\n        /* XXX last struct has 4 bytes of padding */\n\n        /* --- cacheline 1 boundary (64 bytes) was 8 bytes ago --- */\n        int64_t                    start;                /*    72     8 */\n        int64_t                    raw;                  /*    80     8 */\n        compression_t              compression;          /*    88     4 */\n        compression_t              last_compression;     /*    92     4 */\n        int64_t                    skip;                 /*    96     8 */\n        const char  *              err_info;             /*   104     8 */\n        int                        err;                  /*   112     4 */\n        _Bool                      eof;                  /*   116     1 */\n        _Bool                      is_compressed;        /*   117     1 */\n        _Bool                      seek_pending;         /*   118     1 */\n        _Bool                      dont_check_crc;       /*   119     1 */\n        zlib_stream                strm;                 /*   120   112 */\n        /* --- cacheline 3 boundary (192 bytes) was 40 bytes ago --- */\n        ZSTD_DCtx *                zstd_dctx;            /*   232     8 */\n        LZ4F_dctx *                lz4_dctx;             /*   240     8 */\n        LZ4F_frameInfo_t           lz4_info;             /*   248    32 */\n        /* --- cacheline 4 boundary (256 bytes) was 24 bytes ago --- */\n        unsigned char              lz4_hdr[19];          /*   280    19 */\n\n        /* XXX 5 bytes hole, try to pack */\n\n        GPtrArray *                fast_seek;            /*   304     8 */\n        void *                     fast_seek_cur;        /*   312     8 */\n\n        /* size: 320, cachelines: 5, members: 24 */\n        /* sum members: 315, holes: 1, sum holes: 5 */\n        /* paddings: 2, sum paddings: 8 */\n};\n```\n\n```\nstruct wtap_writer {\n        int                        fd;                   /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        int64_t                    pos;                  /*     8     8 */\n        unsigned int               size;                 /*    16     4 */\n        unsigned int               want;                 /*    20     4 */\n        unsigned char *            in;                   /*    24     8 */\n        unsigned char *            out;                  /*    32     8 */\n        unsigned char *            next;                 /*    40     8 */\n        int                        level;                /*    48     4 */\n        int                        strategy;             /*    52     4 */\n        int                        err;                  /*    56     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        const char  *              err_info;             /*    64     8 */\n        zlib_stream                strm;                 /*    72   112 */\n\n        /* size: 184, cachelines: 3, members: 12 */\n        /* sum members: 176, holes: 2, sum holes: 8 */\n        /* last cacheline: 56 bytes */\n};\n```\n\n```\nstruct wtap_writer {\n        int                        fd;                   /*     0     4 */\n        int                        err;                  /*     4     4 */\n        int64_t                    pos;                  /*     8     8 */\n        unsigned int               size;                 /*    16     4 */\n        unsigned int               want;                 /*    20     4 */\n        unsigned char *            in;                   /*    24     8 */\n        unsigned char *            out;                  /*    32     8 */\n        unsigned char *            next;                 /*    40     8 */\n        int                        level;                /*    48     4 */\n        int                        strategy;             /*    52     4 */\n        const char  *              err_info;             /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        zlib_stream                strm;                 /*    64   112 */\n\n        /* size: 176, cachelines: 3, members: 12 */\n        /* last cacheline: 48 bytes */\n};\n\n```\n\n```\nstruct lz4_writer {\n        int                        fd;                   /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        int64_t                    pos;                  /*     8     8 */\n        int64_t                    pos_out;              /*    16     8 */\n        size_t                     size_out;             /*    24     8 */\n        size_t                     want;                 /*    32     8 */\n        size_t                     want_out;             /*    40     8 */\n        unsigned char *            out;                  /*    48     8 */\n        int                        err;                  /*    56     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        const char  *              err_info;             /*    64     8 */\n        LZ4F_preferences_t         lz4_prefs;            /*    72    56 */\n        /* --- cacheline 2 boundary (128 bytes) --- */\n        LZ4F_cctx *                lz4_cctx;             /*   128     8 */\n\n        /* size: 136, cachelines: 3, members: 11 */\n        /* sum members: 128, holes: 2, sum holes: 8 */\n        /* last cacheline: 8 bytes */\n};\n```\n\n```\nstruct lz4_writer {\n        int                        fd;                   /*     0     4 */\n        int                        err;                  /*     4     4 */\n        int64_t                    pos;                  /*     8     8 */\n        int64_t                    pos_out;              /*    16     8 */\n        size_t                     size_out;             /*    24     8 */\n        size_t                     want;                 /*    32     8 */\n        size_t                     want_out;             /*    40     8 */\n        unsigned char *            out;                  /*    48     8 */\n        const char  *              err_info;             /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        LZ4F_preferences_t         lz4_prefs;            /*    64    56 */\n        LZ4F_cctx *                lz4_cctx;             /*   120     8 */\n\n        /* size: 128, cachelines: 2, members: 11 */\n};\n```\n\n```\nstruct compression_type {\n        wtap_compression_type      type;                 /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        const char  *              extension;            /*     8     8 */\n        const char  *              description;          /*    16     8 */\n        const char  *              name;                 /*    24     8 */\n        const _Bool                can_write_compressed; /*    32     1 */\n\n        /* size: 40, cachelines: 1, members: 5 */\n        /* sum members: 29, holes: 1, sum holes: 4 */\n        /* padding: 7 */\n        /* last cacheline: 40 bytes */\n};\n```\n\n```\nstruct compression_type {\n        wtap_compression_type      type;                 /*     0     4 */\n        const _Bool                can_write_compressed; /*     4     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        const char  *              extension;            /*     8     8 */\n        const char  *              description;          /*    16     8 */\n        const char  *              name;                 /*    24     8 */\n\n        /* size: 32, cachelines: 1, members: 5 */\n        /* sum members: 29, holes: 1, sum holes: 3 */\n        /* last cacheline: 32 bytes */\n};\n```\n\n```\nstruct merge_in_file_s {\n        const char  *              filename;             /*     0     8 */\n        wtap *                     wth;                  /*     8     8 */\n        wtap_rec                   rec;                  /*    16   296 */\n        /* --- cacheline 4 boundary (256 bytes) was 56 bytes ago --- */\n        in_file_state_e            state;                /*   312     4 */\n        uint32_t                   packet_num;           /*   316     4 */\n        /* --- cacheline 5 boundary (320 bytes) --- */\n        int64_t                    size;                 /*   320     8 */\n        GArray *                   idb_index_map;        /*   328     8 */\n        unsigned int               nrbs_seen;            /*   336     4 */\n        unsigned int               dsbs_seen;            /*   340     4 */\n\n        /* size: 344, cachelines: 6, members: 9 */\n        /* last cacheline: 24 bytes */\n};\n```\n```C\nstruct merge_in_file_s {\n        const char  *              filename;             /*     0     8 */\n        wtap *                     wth;                  /*     8     8 */\n        in_file_state_e            state;                /*    16     4 */\n        uint32_t                   packet_num;           /*    20     4 */\n        int64_t                    size;                 /*    24     8 */\n        GArray *                   idb_index_map;        /*    32     8 */\n        unsigned int               nrbs_seen;            /*    40     4 */\n        unsigned int               dsbs_seen;            /*    44     4 */\n        wtap_rec                   rec;                  /*    48   288 */\n\n        /* size: 336, cachelines: 6, members: 9 */\n        /* last cacheline: 16 bytes */\n};\n```\nSigned-off-by: Yaniv Kaul <mykaul@gmail.com>",
+  "state": "opened",
+  "created_at": "2025-10-19T06:09:47.444Z",
+  "updated_at": "2025-10-27T11:22:33.928Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "padding_wtap",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 13365655,
+    "username": "mykaul",
+    "public_email": null,
+    "name": "Yaniv Kaul",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/340d1153cebf56524876f4aaad6e6898f0cb7eeee0d65d1ab2ea1b021a73714f?s=80&d=identicon",
+    "web_url": "https://gitlab.com/mykaul"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 42225385,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged_recheck",
+  "detailed_merge_status": "not_approved",
+  "merge_after": null,
+  "sha": "599b395dd7adbc4a97f101a0d99993243eec978d",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-10-19T06:09:56.347Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!21922",
+  "references": {
+    "short": "!21922",
+    "relative": "!21922",
+    "full": "wireshark/wireshark!21922"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/21922",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2025-10-19T06:09:52.480Z",
+  "latest_build_finished_at": "2025-10-19T06:49:33.048Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2107669068,
+    "iid": 187,
+    "project_id": 42225385,
+    "sha": "599b395dd7adbc4a97f101a0d99993243eec978d",
+    "ref": "padding_wtap",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-10-19T06:09:51.025Z",
+    "updated_at": "2025-10-19T06:49:33.063Z",
+    "web_url": "https://gitlab.com/mykaul/wireshark/-/pipelines/2107669068"
+  },
+  "head_pipeline": {
+    "id": 2107669068,
+    "iid": 187,
+    "project_id": 42225385,
+    "sha": "599b395dd7adbc4a97f101a0d99993243eec978d",
+    "ref": "padding_wtap",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-10-19T06:09:51.025Z",
+    "updated_at": "2025-10-19T06:49:33.063Z",
+    "web_url": "https://gitlab.com/mykaul/wireshark/-/pipelines/2107669068",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 13365655,
+      "username": "mykaul",
+      "public_email": null,
+      "name": "Yaniv Kaul",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/340d1153cebf56524876f4aaad6e6898f0cb7eeee0d65d1ab2ea1b021a73714f?s=80&d=identicon",
+      "web_url": "https://gitlab.com/mykaul"
+    },
+    "started_at": "2025-10-19T06:09:52.480Z",
+    "finished_at": "2025-10-19T06:49:33.048Z",
+    "committed_at": null,
+    "duration": 2380,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/mykaul/wireshark/-/pipelines/2107669068",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "8ded5ea9e4b53d751b4ca1814e0bbd2a5c896329",
+    "head_sha": "599b395dd7adbc4a97f101a0d99993243eec978d",
+    "start_sha": "653c35ddaa357d29b890c5c36bd7cd50d3384408"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "fbbdc7cc6a6ca6b218d078492ab3b1a244e73d82",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2830219390,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 13365655,
+            "username": "mykaul",
+            "public_email": null,
+            "name": "Yaniv Kaul",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/340d1153cebf56524876f4aaad6e6898f0cb7eeee0d65d1ab2ea1b021a73714f?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mykaul"
+          },
+          "created_at": "2025-10-19T06:12:46.875Z",
+          "updated_at": "2025-10-19T06:12:46.881Z",
+          "system": true,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "87a1c3a733f57541533599df790d4eec02921fa9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2830219613,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 13365655,
+            "username": "mykaul",
+            "public_email": null,
+            "name": "Yaniv Kaul",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/340d1153cebf56524876f4aaad6e6898f0cb7eeee0d65d1ab2ea1b021a73714f?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mykaul"
+          },
+          "created_at": "2025-10-19T06:13:09.295Z",
+          "updated_at": "2025-10-19T06:13:09.299Z",
+          "system": true,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5cc53f5f2db337b8516c828f6bff359fd7363950",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2830795722,
+          "type": null,
+          "body": "Needs to be rebased.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-10-20T06:08:52.086Z",
+          "updated_at": "2025-10-20T06:08:52.086Z",
+          "system": false,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6dfbcfa79031815391b1ade5df1fe1d7c756a642",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2833477550,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-10-21T05:37:24.865Z",
+          "updated_at": "2025-10-21T05:37:24.869Z",
+          "system": true,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a463b4a9c3317412771493fedb69a8558ec9ed3a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2833479065,
+          "type": null,
+          "body": "unapproved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-10-21T05:38:20.369Z",
+          "updated_at": "2025-10-21T05:38:20.375Z",
+          "system": true,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bda72fd9caf986ec4cb9428981da94040937ca59",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2846202930,
+          "type": "DiscussionNote",
+          "body": "Needs rebase.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-10-27T06:14:09.704Z",
+          "updated_at": "2025-10-27T11:22:33.825Z",
+          "system": false,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2025-10-27T11:22:33.825Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        },
+        {
+          "id": 2846308801,
+          "type": "DiscussionNote",
+          "body": "I know, I know. It'll take me some time to get to it, hopefully over the weekend.",
+          "author": {
+            "id": 13365655,
+            "username": "mykaul",
+            "public_email": null,
+            "name": "Yaniv Kaul",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/340d1153cebf56524876f4aaad6e6898f0cb7eeee0d65d1ab2ea1b021a73714f?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mykaul"
+          },
+          "created_at": "2025-10-27T07:34:31.783Z",
+          "updated_at": "2025-10-27T11:22:33.825Z",
+          "system": false,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2025-10-27T11:22:33.825Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        },
+        {
+          "id": 2846341135,
+          "type": "DiscussionNote",
+          "body": "No worries, was not sure the message went trough.\n\nDen mån 27 okt. 2025 08:34Yaniv Kaul (@mykaul) <gitlab@mg.gitlab.com> skrev:",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-10-27T07:52:55.804Z",
+          "updated_at": "2025-10-27T11:22:33.825Z",
+          "system": false,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2025-10-27T11:22:33.825Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c7f559703434e990bc2df8d34b13862d6b7bc3c5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2846871727,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2025-10-27T11:22:33.871Z",
+          "updated_at": "2025-10-27T11:22:33.877Z",
+          "system": true,
+          "noteable_id": 424758312,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 21922,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -45,22 +45,22 @@\n  */\n static const struct compression_type {\n     wtap_compression_type  type;\n+    const bool            can_write_compressed;\n     const char            *extension;\n     const char            *description;\n     const char            *name;\n-    const bool            can_write_compressed;\n } compression_types[] = {\n #ifdef USE_ZLIB_OR_ZLIBNG\n-    { WTAP_GZIP_COMPRESSED, \"gz\", \"gzip compressed\", \"gzip\", true },\n+    { WTAP_GZIP_COMPRESSED, true, \"gz\", \"gzip compressed\", \"gzip\" },\n #endif /* USE_ZLIB_OR_ZLIBNG */\n #ifdef HAVE_ZSTD\n-    { WTAP_ZSTD_COMPRESSED, \"zst\", \"zstd compressed\", \"zstd\", false },\n+    { WTAP_ZSTD_COMPRESSED, false, \"zst\", \"zstd compressed\", \"zstd\" },\n #endif /* HAVE_ZSTD */\n #ifdef HAVE_LZ4FRAME_H\n-    { WTAP_LZ4_COMPRESSED, \"lz4\", \"lz4 compressed\", \"lz4\", true },\n+    { WTAP_LZ4_COMPRESSED, true, \"lz4\", \"lz4 compressed\", \"lz4\" },\n #endif /* HAVE_LZ4FRAME_H */\n-    { WTAP_UNCOMPRESSED, NULL, NULL, \"none\", true },\n-    { WTAP_UNKNOWN_COMPRESSION, NULL, NULL, NULL, false },\n+    { WTAP_UNCOMPRESSED, true, NULL, \"none\", \"none\" },\n+    { WTAP_UNKNOWN_COMPRESSION, false, NULL, NULL, NULL },\n };\n \n static wtap_compression_type file_get_compression_type(FILE_T stream);\n@@ -214,27 +214,27 @@ struct wtap_reader_buf {\n \n struct wtap_reader {\n     int fd;                     /* file descriptor */\n+    unsigned size;              /* buffer size */\n     int64_t raw_pos;            /* current position in file (just to not call lseek()) */\n     int64_t pos;                /* current position in uncompressed data */\n-    unsigned size;              /* buffer size */\n \n     struct wtap_reader_buf in;  /* input buffer, containing compressed data */\n     struct wtap_reader_buf out; /* output buffer, containing uncompressed data */\n \n-    bool eof;                   /* true if end of input file reached */\n     int64_t start;              /* where the gzip data started, for rewinding */\n     int64_t raw;                /* where the raw data started, for seeking */\n     compression_t compression;  /* type of compression, if any */\n     compression_t last_compression; /* last known compression type */\n-    bool is_compressed;         /* false if completely uncompressed, true otherwise */\n \n     /* seek request */\n     int64_t skip;               /* amount to skip (already rewound if backwards) */\n-    bool seek_pending;          /* true if seek request pending */\n \n     /* error information */\n-    int err;                    /* error code */\n     const char *err_info;       /* additional error information string for some errors */\n+    int err;                    /* error code */\n+    bool eof;                   /* true if end of input file reached */\n+    bool is_compressed;         /* false if completely uncompressed, true otherwise */\n+    bool seek_pending;          /* true if seek request pending */\n \n     /*\n      * Decompression stream information.\n@@ -243,8 +243,8 @@ struct wtap_reader {\n      */\n #ifdef USE_ZLIB_OR_ZLIBNG\n     /* zlib inflate stream */\n-    zlib_stream strm;           /* stream structure in-place (not a pointer) */\n     bool dont_check_crc;        /* true if we aren't supposed to check the CRC */\n+    zlib_stream strm;           /* stream structure in-place (not a pointer) */\n #endif /* USE_ZLIB_OR_ZLIBNG */\n #ifdef HAVE_ZSTD\n     ZSTD_DCtx *zstd_dctx;\n@@ -2567,6 +2567,7 @@ file_close(FILE_T file)\n /* internal gzip file state data structure for writing */\n struct wtap_writer {\n     int fd;                 /* file descriptor */\n+    int err;                /* error code */\n     int64_t pos;            /* current position in uncompressed data */\n     unsigned size;          /* buffer size, zero if not allocated yet */\n     unsigned want;          /* requested buffer size, default is GZBUFSIZE */\n@@ -2575,7 +2576,6 @@ struct wtap_writer {\n     unsigned char *next;    /* next output data to deliver or write */\n     int level;              /* compression level */\n     int strategy;           /* compression strategy */\n-    int err;                /* error code */\n     const char *err_info;   /* additional error information string for some errors */\n     /* zlib deflate stream */\n     zlib_stream strm;          /* stream structure in-place (not a pointer) */\n@@ -2855,13 +2855,13 @@ gzwfile_geterr(GZWFILE_T state)\n /* internal lz4 file state data structure for writing */\n struct lz4_writer {\n     int fd;                 /* file descriptor */\n+    int err;                /* error code */\n     int64_t pos;            /* current position in uncompressed data */\n     int64_t pos_out;\n     size_t size_out;      /* buffer size, zero if not allocated yet */\n     size_t want;          /* requested buffer size, default is LZ4BUFSIZE */\n     size_t want_out;      /* requested output buffer size, determined from want */\n     unsigned char *out; /* output buffer, containing uncompressed data */\n-    int err;                /* error code */\n     const char *err_info;   /* additional error information string for some errors */\n     LZ4F_preferences_t lz4_prefs;\n     LZ4F_cctx *lz4_cctx;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/file_wrappers.c",
+      "old_path": "wiretap/file_wrappers.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -30,13 +30,13 @@ typedef enum {\n typedef struct merge_in_file_s {\n     const char     *filename;\n     wtap           *wth;\n-    wtap_rec        rec;\n     in_file_state_e state;\n     uint32_t        packet_num;     /* current packet number */\n     int64_t         size;           /* file size */\n     GArray         *idb_index_map;  /* used for mapping the old phdr interface_id values to new during merge */\n     unsigned        nrbs_seen;      /* number of elements processed so far from wth->nrbs */\n     unsigned        dsbs_seen;      /* number of elements processed so far from wth->dsbs */\n+    wtap_rec        rec;\n } merge_in_file_t;\n \n /** Merge events, used as an arg in the callback function - indicates when the callback was invoked. */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/merge.h",
+      "old_path": "wiretap/merge.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -209,8 +209,8 @@ typedef struct interface_info_s {\n     int wtap_encap;\n     uint32_t snap_len;\n     uint64_t time_units_per_second;\n-    int tsprecision;\n     int64_t tsoffset;\n+    int tsprecision;\n     int fcslen;\n     uint8_t tsresol_binary;\n } interface_info_t;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/pcapng.c",
+      "old_path": "wiretap/pcapng.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -111,6 +111,8 @@ typedef bool (*block_processor)(wtap* wth, section_info_t* section_info _U_,\n                                 wtapng_block_t* wblock);\n \n \n+/* FIXME: this struct can be better packed, but it requires change of all (40+) declarations across the code base.\n+   Can reduce from 48 bytes to 40 bytes */\n typedef struct pcapng_block_type_information_t {\n     unsigned     type;             /* block_type as defined by pcapng */\n     block_reader reader;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/pcapng_module.h",
+      "old_path": "wiretap/pcapng_module.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -37,18 +37,17 @@ typedef bool (*subtype_seek_read_func)(struct wtap*, int64_t, wtap_rec *,\n struct wtap {\n     FILE_T                      fh;                     /**< Primary FILE_T for sequential reads */\n     FILE_T                      random_fh;              /**< Secondary FILE_T for random access */\n-    bool                        ispipe;                 /**< true if the file is a pipe */\n     int                         file_type_subtype;\n     unsigned                    snapshot_length;\n     GArray                      *shb_hdrs;\n     GArray                      *shb_iface_to_global;   /**< An array mapping the per-section interface numbers to global IDs */\n     GArray                      *interface_data;        /**< An array holding the interface data from pcapng IDB:s or equivalent(?)*/\n-    unsigned                    next_interface_data;    /**< Next interface data that wtap_get_next_interface_description() will show */\n     GArray                      *nrbs;                  /**< Holds the Name Res Blocks, or NULL */\n     GArray                      *dsbs;                  /**< An array of DSBs (of type wtap_block_t), or NULL if not supported. */\n     GArray                      *meta_events;           /**< An array of meta events (of type wtap_block_t), or NULL if not supported. */\n     GArray                      *dpibs;                 /**< An array of DPIBs (of type wtap_block_t), or NULL if not supported. */\n     unsigned                    next_dpib_id;           /**< Next DPIB id  */\n+    unsigned                    next_interface_data;    /**< Next interface data that wtap_get_next_interface_description() will show */\n     char                        *pathname;              /**< File pathname; might just be \"-\" */\n \n     void                        *priv;                  /**< Stores per-file state and is free'd automatically by wtap_close() */\n@@ -90,6 +89,7 @@ struct wtap {\n     wtap_new_ipv6_callback_t    add_new_ipv6;\n     wtap_new_secrets_callback_t add_new_secrets;\n     GPtrArray                   *fast_seek;\n+    bool                        ispipe;                 /**< true if the file is a pipe */\n };\n \n struct wtap_dumper;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap-int.h",
+      "old_path": "wiretap/wtap-int.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -491,9 +491,9 @@ struct atm_phdr {\n     uint8_t aal;        /* AAL of the traffic */\n     uint8_t type;       /* traffic type */\n     uint8_t subtype;    /* traffic subtype */\n+    uint8_t aal2_cid;   /* channel id */\n     uint16_t vpi;        /* virtual path identifier */\n     uint16_t vci;        /* virtual circuit identifier */\n-    uint8_t aal2_cid;   /* channel id */\n     uint16_t channel;    /* link: 0 for DTE->DCE, 1 for DCE->DTE */\n     uint16_t cells;      /* number of cells */\n     uint16_t aal5t_u2u;  /* user-to-user indicator */\n@@ -1443,8 +1443,8 @@ typedef struct wtap_rec {\n     unsigned  rec_type;          /* what type of record is this? */\n     uint32_t  presence_flags;    /* what stuff do we have? */\n     unsigned  section_number;    /* section, within file, containing this record */\n-    nstime_t  ts;                /* time stamp */\n     int       tsprec;            /* WTAP_TSPREC_ value for this record */\n+    nstime_t  ts;                /* time stamp */\n     const char *rec_type_name;   /* name of this record type */\n     union {\n         wtap_packet_header packet_header;\n@@ -1465,7 +1465,6 @@ typedef struct wtap_rec {\n      * It's null for some record types.\n      */\n     wtap_block_t block;          /* block information */\n-    bool block_was_modified;     /* true if ANY aspect of the block has been modified */\n \n     /*\n      * We use a Buffer so that we don't have to allocate and free\n@@ -1475,6 +1474,7 @@ typedef struct wtap_rec {\n \n     /* Buffer for the record data. */\n     Buffer    data;\n+    bool block_was_modified;     /* true if ANY aspect of the block has been modified */\n } wtap_rec;\n \n /*\n@@ -1521,8 +1521,8 @@ typedef struct hashipv4 {\n     unsigned          addr;\n     uint8_t           flags;          /* B0 dummy_entry, B1 resolve, B2 If the address is used in the trace */\n     char              ip[WS_INET_ADDRSTRLEN];\n-    char              name[MAXDNSNAMELEN];\n     char              cidr_addr[WS_INET_CIDRADDRSTRLEN];\n+    char              name[MAXDNSNAMELEN];\n } hashipv4_t;\n \n typedef struct hashipv6 {\n@@ -1560,6 +1560,7 @@ typedef struct wtap_dump_params {\n     int         encap;                      /**< Per-file packet encapsulation, or WTAP_ENCAP_PER_PACKET */\n     int         snaplen;                    /**< Per-file snapshot length (what if it's per-interface?) */\n     int         tsprec;                     /**< Per-file time stamp precision */\n+    bool        dont_copy_idbs;             /**< XXX - don't copy IDBs; this should eventually always be the case. */\n     GArray     *shb_hdrs;                   /**< The section header block(s) information, or NULL. */\n     const GArray *shb_iface_to_global;      /**< An array mapping the per-section interface numbers to global IDs\n                                                  This array may grow after the dumper is opened if a new\n@@ -1578,7 +1579,6 @@ typedef struct wtap_dump_params {\n     const GArray *dpibs_growing;            /**< DPIBs that will be written while writing packets, or NULL.\n                                                  This array may grow since the dumper was opened and will subsequently\n                                                  be written before newer packets are written in wtap_dump. */\n-    bool        dont_copy_idbs;             /**< XXX - don't copy IDBs; this should eventually always be the case. */\n } wtap_dump_params;\n \n /* Zero-initializer for wtap_dump_params. */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap.h",
+      "old_path": "wiretap/wtap.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -314,8 +314,8 @@ typedef struct wtapng_iface_descriptions_s {\n  */\n typedef struct wtapng_if_descr_mandatory_s {\n     int                    wtap_encap;            /**< link_type translated to wtap_encap */\n-    uint64_t               time_units_per_second;\n     int                    tsprecision;           /**< WTAP_TSPREC_ value for this interface */\n+    uint64_t               time_units_per_second;\n \n     uint32_t               snap_len;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap_opttypes.h",
+      "old_path": "wiretap/wtap_opttypes.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "599b395dd7adbc4a97f101a0d99993243eec978d",
+      "short_id": "599b395d",
+      "created_at": "2025-10-18T12:47:42.000+03:00",
+      "parent_ids": [
+        "8ded5ea9e4b53d751b4ca1814e0bbd2a5c896329"
+      ],
+      "title": "wiretap: reduce padding for some structures",
+      "message": "wiretap: reduce padding for some structures\n\nSave some memory for structures by reordering their members\n\nBelow are before/after numbers:\n\nstruct wtap {\n        FILE_T                     fh;                   /*     0     8 */\n        FILE_T                     random_fh;            /*     8     8 */\n        _Bool                      ispipe;               /*    16     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        int                        file_type_subtype;    /*    20     4 */\n        unsigned int               snapshot_length;      /*    24     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        GArray *                   shb_hdrs;             /*    32     8 */\n        GArray *                   shb_iface_to_global;  /*    40     8 */\n        GArray *                   interface_data;       /*    48     8 */\n        unsigned int               next_interface_data;  /*    56     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        GArray *                   nrbs;                 /*    64     8 */\n        GArray *                   dsbs;                 /*    72     8 */\n        GArray *                   meta_events;          /*    80     8 */\n        GArray *                   dpibs;                /*    88     8 */\n        unsigned int               next_dpib_id;         /*    96     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        char *                     pathname;             /*   104     8 */\n        void *                     priv;                 /*   112     8 */\n        void *                     wslua_data;           /*   120     8 */\n        /* --- cacheline 2 boundary (128 bytes) --- */\n        subtype_read_func          subtype_read;         /*   128     8 */\n        subtype_seek_read_func     subtype_seek_read;    /*   136     8 */\n        void                       (*subtype_sequential_close)(struct wtap *); /*   144     8 */\n        void                       (*subtype_close)(struct wtap *); /*   152     8 */\n        int                        file_encap;           /*   160     4 */\n        int                        file_tsprec;          /*   164     4 */\n        nstime_t                   file_start_ts;        /*   168    16 */\n        nstime_t                   file_end_ts;          /*   184    16 */\n        /* --- cacheline 3 boundary (192 bytes) was 8 bytes ago --- */\n        wtap_new_ipv4_callback_t   add_new_ipv4;         /*   200     8 */\n        wtap_new_ipv6_callback_t   add_new_ipv6;         /*   208     8 */\n        wtap_new_secrets_callback_t add_new_secrets;     /*   216     8 */\n        GPtrArray *                fast_seek;            /*   224     8 */\n\n        /* size: 232, cachelines: 4, members: 29 */\n        /* sum members: 217, holes: 4, sum holes: 15 */\n        /* last cacheline: 40 bytes */\n};\n\nstruct wtap {\n        FILE_T                     fh;                   /*     0     8 */\n        FILE_T                     random_fh;            /*     8     8 */\n        int                        file_type_subtype;    /*    16     4 */\n        unsigned int               snapshot_length;      /*    20     4 */\n        GArray *                   shb_hdrs;             /*    24     8 */\n        GArray *                   shb_iface_to_global;  /*    32     8 */\n        GArray *                   interface_data;       /*    40     8 */\n        GArray *                   nrbs;                 /*    48     8 */\n        GArray *                   dsbs;                 /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        GArray *                   meta_events;          /*    64     8 */\n        GArray *                   dpibs;                /*    72     8 */\n        unsigned int               next_dpib_id;         /*    80     4 */\n        unsigned int               next_interface_data;  /*    84     4 */\n        char *                     pathname;             /*    88     8 */\n        void *                     priv;                 /*    96     8 */\n        void *                     wslua_data;           /*   104     8 */\n        subtype_read_func          subtype_read;         /*   112     8 */\n        subtype_seek_read_func     subtype_seek_read;    /*   120     8 */\n        /* --- cacheline 2 boundary (128 bytes) --- */\n        void                       (*subtype_sequential_close)(struct wtap *); /*   128     8 */\n        void                       (*subtype_close)(struct wtap *); /*   136     8 */\n        int                        file_encap;           /*   144     4 */\n        int                        file_tsprec;          /*   148     4 */\n        nstime_t                   file_start_ts;        /*   152    16 */\n        nstime_t                   file_end_ts;          /*   168    16 */\n        wtap_new_ipv4_callback_t   add_new_ipv4;         /*   184     8 */\n        /* --- cacheline 3 boundary (192 bytes) --- */\n        wtap_new_ipv6_callback_t   add_new_ipv6;         /*   192     8 */\n        wtap_new_secrets_callback_t add_new_secrets;     /*   200     8 */\n        GPtrArray *                fast_seek;            /*   208     8 */\n        _Bool                      ispipe;               /*   216     1 */\n\n        /* size: 224, cachelines: 4, members: 29 */\n        /* padding: 7 */\n        /* last cacheline: 32 bytes */\n};\n\nstruct wtap_rec {\n        unsigned int               rec_type;             /*     0     4 */\n        uint32_t                   presence_flags;       /*     4     4 */\n        unsigned int               section_number;       /*     8     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        nstime_t                   ts;                   /*    16    16 */\n        int                        tsprec;               /*    32     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        const char  *              rec_type_name;        /*    40     8 */\n        union {\n                wtap_packet_header packet_header;        /*    48   168 */\n                wtap_ft_specific_header ft_specific_header; /*    48   168 */\n                wtap_syscall_header syscall_header;      /*    48    56 */\n                wtap_systemd_journal_export_header systemd_journal_export_header; /*    48     4 */\n                wtap_custom_block_header custom_block_header; /*    48    12 */\n        } rec_header;                                    /*    48   168 */\n        /* --- cacheline 3 boundary (192 bytes) was 24 bytes ago --- */\n        wtap_block_t               block;                /*   216     8 */\n        _Bool                      block_was_modified;   /*   224     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        Buffer                     options_buf;          /*   232    32 */\n        /* --- cacheline 4 boundary (256 bytes) was 8 bytes ago --- */\n        Buffer                     data;                 /*   264    32 */\n\n        /* size: 296, cachelines: 5, members: 11 */\n        /* sum members: 281, holes: 3, sum holes: 15 */\n        /* last cacheline: 40 bytes */\n};\n\nstruct wtap_rec {\n        unsigned int               rec_type;             /*     0     4 */\n        uint32_t                   presence_flags;       /*     4     4 */\n        unsigned int               section_number;       /*     8     4 */\n        int                        tsprec;               /*    12     4 */\n        nstime_t                   ts;                   /*    16    16 */\n        const char  *              rec_type_name;        /*    32     8 */\n        union {\n                wtap_packet_header packet_header;        /*    40   168 */\n                wtap_ft_specific_header ft_specific_header; /*    40   168 */\n                wtap_syscall_header syscall_header;      /*    40    56 */\n                wtap_systemd_journal_export_header systemd_journal_export_header; /*    40     4 */\n                wtap_custom_block_header custom_block_header; /*    40    12 */\n        } rec_header;                                    /*    40   168 */\n        /* --- cacheline 3 boundary (192 bytes) was 16 bytes ago --- */\n        wtap_block_t               block;                /*   208     8 */\n        Buffer                     options_buf;          /*   216    32 */\n        Buffer                     data;                 /*   248    32 */\n        /* --- cacheline 4 boundary (256 bytes) was 24 bytes ago --- */\n        _Bool                      block_was_modified;   /*   280     1 */\n\n        /* size: 288, cachelines: 5, members: 11 */\n        /* padding: 7 */\n        /* last cacheline: 32 bytes */\n};\n\nstruct wtapng_if_descr_mandatory_s {\n        int                        wtap_encap;           /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        uint64_t                   time_units_per_second; /*     8     8 */\n        int                        tsprecision;          /*    16     4 */\n        uint32_t                   snap_len;             /*    20     4 */\n        uint8_t                    num_stat_entries;     /*    24     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        GArray *                   interface_statistics; /*    32     8 */\n\n        /* size: 40, cachelines: 1, members: 6 */\n        /* sum members: 29, holes: 2, sum holes: 11 */\n        /* last cacheline: 40 bytes */\n};\n\nstruct wtapng_if_descr_mandatory_s {\n        int                        wtap_encap;           /*     0     4 */\n        int                        tsprecision;          /*     4     4 */\n        uint64_t                   time_units_per_second; /*     8     8 */\n        uint32_t                   snap_len;             /*    16     4 */\n        uint8_t                    num_stat_entries;     /*    20     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        GArray *                   interface_statistics; /*    24     8 */\n\n        /* size: 32, cachelines: 1, members: 6 */\n        /* sum members: 29, holes: 1, sum holes: 3 */\n        /* last cacheline: 32 bytes */\n};\n\nstruct pcapng_block_type_information_t {\n        unsigned int               type;                 /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        block_reader               reader;               /*     8     8 */\n        block_processor            processor;            /*    16     8 */\n        block_writer               writer;               /*    24     8 */\n        _Bool                      internal;             /*    32     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        GHashTable *               option_handlers;      /*    40     8 */\n\n        /* size: 48, cachelines: 1, members: 6 */\n        /* sum members: 37, holes: 2, sum holes: 11 */\n        /* last cacheline: 48 bytes */\n};\n\nAdded FIXME - I did not change it, as it needed a change across multiple files. Not a big deal, but perhaps for a follow-up.\n\nstruct hashipv4 {\n        unsigned int               addr;                 /*     0     4 */\n        uint8_t                    flags;                /*     4     1 */\n        char                       ip[16];               /*     5    16 */\n        char                       name[256];            /*    21   256 */\n        /* --- cacheline 4 boundary (256 bytes) was 21 bytes ago --- */\n        char                       cidr_addr[19];        /*   277    19 */\n\n        /* size: 296, cachelines: 5, members: 5 */\n        /* last cacheline: 40 bytes */\n};\n\nstruct hashipv4 {\n        unsigned int               addr;                 /*     0     4 */\n        uint8_t                    flags;                /*     4     1 */\n        char                       ip[16];               /*     5    16 */\n        char                       cidr_addr[19];        /*    21    19 */\n        char                       name[256];            /*    40   256 */\n\n        /* size: 296, cachelines: 5, members: 5 */\n        /* last cacheline: 40 bytes */\n};\n\nNo change - just made most variables available in the first cacheline.\n\nstruct interface_info_s {\n        int                        wtap_encap;           /*     0     4 */\n        uint32_t                   snap_len;             /*     4     4 */\n        uint64_t                   time_units_per_second; /*     8     8 */\n        int                        tsprecision;          /*    16     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        int64_t                    tsoffset;             /*    24     8 */\n        int                        fcslen;               /*    32     4 */\n        uint8_t                    tsresol_binary;       /*    36     1 */\n\n        /* size: 40, cachelines: 1, members: 7 */\n        /* sum members: 33, holes: 1, sum holes: 4 */\n        /* padding: 3 */\n        /* last cacheline: 40 bytes */\n};\n\nstruct interface_info_s {\n        int                        wtap_encap;           /*     0     4 */\n        uint32_t                   snap_len;             /*     4     4 */\n        uint64_t                   time_units_per_second; /*     8     8 */\n        int64_t                    tsoffset;             /*    16     8 */\n        int                        tsprecision;          /*    24     4 */\n        int                        fcslen;               /*    28     4 */\n        uint8_t                    tsresol_binary;       /*    32     1 */\n\n        /* size: 40, cachelines: 1, members: 7 */\n        /* padding: 7 */\n        /* last cacheline: 40 bytes */\n};\n\nNo change, but future variables can be put in place to reduce tail padding.\n\nstruct wtap_dump_params {\n        int                        encap;                /*     0     4 */\n        int                        snaplen;              /*     4     4 */\n        int                        tsprec;               /*     8     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        GArray *                   shb_hdrs;             /*    16     8 */\n        const GArray  *            shb_iface_to_global;  /*    24     8 */\n        wtapng_iface_descriptions_t * idb_inf;           /*    32     8 */\n        const GArray  *            nrbs_growing;         /*    40     8 */\n        GArray *                   dsbs_initial;         /*    48     8 */\n        const GArray  *            dsbs_growing;         /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        const GArray  *            mevs_growing;         /*    64     8 */\n        const GArray  *            dpibs_growing;        /*    72     8 */\n        _Bool                      dont_copy_idbs;       /*    80     1 */\n\n        /* size: 88, cachelines: 2, members: 12 */\n        /* sum members: 77, holes: 1, sum holes: 4 */\n        /* padding: 7 */\n        /* last cacheline: 24 bytes */\n};\n\nstruct wtap_dump_params {\n        int                        encap;                /*     0     4 */\n        int                        snaplen;              /*     4     4 */\n        int                        tsprec;               /*     8     4 */\n        _Bool                      dont_copy_idbs;       /*    12     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        GArray *                   shb_hdrs;             /*    16     8 */\n        const GArray  *            shb_iface_to_global;  /*    24     8 */\n        wtapng_iface_descriptions_t * idb_inf;           /*    32     8 */\n        const GArray  *            nrbs_growing;         /*    40     8 */\n        GArray *                   dsbs_initial;         /*    48     8 */\n        const GArray  *            dsbs_growing;         /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        const GArray  *            mevs_growing;         /*    64     8 */\n        const GArray  *            dpibs_growing;        /*    72     8 */\n\n        /* size: 80, cachelines: 2, members: 12 */\n        /* sum members: 77, holes: 1, sum holes: 3 */\n        /* last cacheline: 16 bytes */\n};\n\nstruct wtap_reader {\n        int                        fd;                   /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        int64_t                    raw_pos;              /*     8     8 */\n        int64_t                    pos;                  /*    16     8 */\n        unsigned int               size;                 /*    24     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        struct wtap_reader_buf     in;                   /*    32    24 */\n\n        /* XXX last struct has 4 bytes of padding */\n\n        struct wtap_reader_buf     out;                  /*    56    24 */\n\n        /* XXX last struct has 4 bytes of padding */\n\n        /* --- cacheline 1 boundary (64 bytes) was 16 bytes ago --- */\n        _Bool                      eof;                  /*    80     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        int64_t                    start;                /*    88     8 */\n        int64_t                    raw;                  /*    96     8 */\n        compression_t              compression;          /*   104     4 */\n        compression_t              last_compression;     /*   108     4 */\n        _Bool                      is_compressed;        /*   112     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        int64_t                    skip;                 /*   120     8 */\n        /* --- cacheline 2 boundary (128 bytes) --- */\n        _Bool                      seek_pending;         /*   128     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        int                        err;                  /*   132     4 */\n        const char  *              err_info;             /*   136     8 */\n        zlib_stream                strm;                 /*   144   112 */\n        /* --- cacheline 4 boundary (256 bytes) --- */\n        _Bool                      dont_check_crc;       /*   256     1 */\n\n        /* XXX 7 bytes hole, try to pack */\n\n        ZSTD_DCtx *                zstd_dctx;            /*   264     8 */\n        LZ4F_dctx *                lz4_dctx;             /*   272     8 */\n        LZ4F_frameInfo_t           lz4_info;             /*   280    32 */\n        unsigned char              lz4_hdr[19];          /*   312    19 */\n\n        /* XXX 5 bytes hole, try to pack */\n\n        /* --- cacheline 5 boundary (320 bytes) was 16 bytes ago --- */\n        GPtrArray *                fast_seek;            /*   336     8 */\n        void *                     fast_seek_cur;        /*   344     8 */\n\n        /* size: 352, cachelines: 6, members: 24 */\n        /* sum members: 315, holes: 7, sum holes: 37 */\n        /* paddings: 2, sum paddings: 8 */\n        /* last cacheline: 32 bytes */\n};\n\nstruct wtap_reader {\n        int                        fd;                   /*     0     4 */\n        unsigned int               size;                 /*     4     4 */\n        int64_t                    raw_pos;              /*     8     8 */\n        int64_t                    pos;                  /*    16     8 */\n        struct wtap_reader_buf     in;                   /*    24    24 */\n\n        /* XXX last struct has 4 bytes of padding */\n\n        struct wtap_reader_buf     out;                  /*    48    24 */\n\n        /* XXX last struct has 4 bytes of padding */\n\n        /* --- cacheline 1 boundary (64 bytes) was 8 bytes ago --- */\n        int64_t                    start;                /*    72     8 */\n        int64_t                    raw;                  /*    80     8 */\n        compression_t              compression;          /*    88     4 */\n        compression_t              last_compression;     /*    92     4 */\n        int64_t                    skip;                 /*    96     8 */\n        const char  *              err_info;             /*   104     8 */\n        int                        err;                  /*   112     4 */\n        _Bool                      eof;                  /*   116     1 */\n        _Bool                      is_compressed;        /*   117     1 */\n        _Bool                      seek_pending;         /*   118     1 */\n        _Bool                      dont_check_crc;       /*   119     1 */\n        zlib_stream                strm;                 /*   120   112 */\n        /* --- cacheline 3 boundary (192 bytes) was 40 bytes ago --- */\n        ZSTD_DCtx *                zstd_dctx;            /*   232     8 */\n        LZ4F_dctx *                lz4_dctx;             /*   240     8 */\n        LZ4F_frameInfo_t           lz4_info;             /*   248    32 */\n        /* --- cacheline 4 boundary (256 bytes) was 24 bytes ago --- */\n        unsigned char              lz4_hdr[19];          /*   280    19 */\n\n        /* XXX 5 bytes hole, try to pack */\n\n        GPtrArray *                fast_seek;            /*   304     8 */\n        void *                     fast_seek_cur;        /*   312     8 */\n\n        /* size: 320, cachelines: 5, members: 24 */\n        /* sum members: 315, holes: 1, sum holes: 5 */\n        /* paddings: 2, sum paddings: 8 */\n};\n\nstruct wtap_writer {\n        int                        fd;                   /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        int64_t                    pos;                  /*     8     8 */\n        unsigned int               size;                 /*    16     4 */\n        unsigned int               want;                 /*    20     4 */\n        unsigned char *            in;                   /*    24     8 */\n        unsigned char *            out;                  /*    32     8 */\n        unsigned char *            next;                 /*    40     8 */\n        int                        level;                /*    48     4 */\n        int                        strategy;             /*    52     4 */\n        int                        err;                  /*    56     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        const char  *              err_info;             /*    64     8 */\n        zlib_stream                strm;                 /*    72   112 */\n\n        /* size: 184, cachelines: 3, members: 12 */\n        /* sum members: 176, holes: 2, sum holes: 8 */\n        /* last cacheline: 56 bytes */\n};\n\nstruct wtap_writer {\n        int                        fd;                   /*     0     4 */\n        int                        err;                  /*     4     4 */\n        int64_t                    pos;                  /*     8     8 */\n        unsigned int               size;                 /*    16     4 */\n        unsigned int               want;                 /*    20     4 */\n        unsigned char *            in;                   /*    24     8 */\n        unsigned char *            out;                  /*    32     8 */\n        unsigned char *            next;                 /*    40     8 */\n        int                        level;                /*    48     4 */\n        int                        strategy;             /*    52     4 */\n        const char  *              err_info;             /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        zlib_stream                strm;                 /*    64   112 */\n\n        /* size: 176, cachelines: 3, members: 12 */\n        /* last cacheline: 48 bytes */\n};\n\nstruct lz4_writer {\n        int                        fd;                   /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        int64_t                    pos;                  /*     8     8 */\n        int64_t                    pos_out;              /*    16     8 */\n        size_t                     size_out;             /*    24     8 */\n        size_t                     want;                 /*    32     8 */\n        size_t                     want_out;             /*    40     8 */\n        unsigned char *            out;                  /*    48     8 */\n        int                        err;                  /*    56     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        const char  *              err_info;             /*    64     8 */\n        LZ4F_preferences_t         lz4_prefs;            /*    72    56 */\n        /* --- cacheline 2 boundary (128 bytes) --- */\n        LZ4F_cctx *                lz4_cctx;             /*   128     8 */\n\n        /* size: 136, cachelines: 3, members: 11 */\n        /* sum members: 128, holes: 2, sum holes: 8 */\n        /* last cacheline: 8 bytes */\n};\n\nstruct lz4_writer {\n        int                        fd;                   /*     0     4 */\n        int                        err;                  /*     4     4 */\n        int64_t                    pos;                  /*     8     8 */\n        int64_t                    pos_out;              /*    16     8 */\n        size_t                     size_out;             /*    24     8 */\n        size_t                     want;                 /*    32     8 */\n        size_t                     want_out;             /*    40     8 */\n        unsigned char *            out;                  /*    48     8 */\n        const char  *              err_info;             /*    56     8 */\n        /* --- cacheline 1 boundary (64 bytes) --- */\n        LZ4F_preferences_t         lz4_prefs;            /*    64    56 */\n        LZ4F_cctx *                lz4_cctx;             /*   120     8 */\n\n        /* size: 128, cachelines: 2, members: 11 */\n};\n\nstruct compression_type {\n        wtap_compression_type      type;                 /*     0     4 */\n\n        /* XXX 4 bytes hole, try to pack */\n\n        const char  *              extension;            /*     8     8 */\n        const char  *              description;          /*    16     8 */\n        const char  *              name;                 /*    24     8 */\n        const _Bool                can_write_compressed; /*    32     1 */\n\n        /* size: 40, cachelines: 1, members: 5 */\n        /* sum members: 29, holes: 1, sum holes: 4 */\n        /* padding: 7 */\n        /* last cacheline: 40 bytes */\n};\n\nstruct compression_type {\n        wtap_compression_type      type;                 /*     0     4 */\n        const _Bool                can_write_compressed; /*     4     1 */\n\n        /* XXX 3 bytes hole, try to pack */\n\n        const char  *              extension;            /*     8     8 */\n        const char  *              description;          /*    16     8 */\n        const char  *              name;                 /*    24     8 */\n\n        /* size: 32, cachelines: 1, members: 5 */\n        /* sum members: 29, holes: 1, sum holes: 3 */\n        /* last cacheline: 32 bytes */\n};\n\nstruct merge_in_file_s {\n        const char  *              filename;             /*     0     8 */\n        wtap *                     wth;                  /*     8     8 */\n        wtap_rec                   rec;                  /*    16   296 */\n        /* --- cacheline 4 boundary (256 bytes) was 56 bytes ago --- */\n        in_file_state_e            state;                /*   312     4 */\n        uint32_t                   packet_num;           /*   316     4 */\n        /* --- cacheline 5 boundary (320 bytes) --- */\n        int64_t                    size;                 /*   320     8 */\n        GArray *                   idb_index_map;        /*   328     8 */\n        unsigned int               nrbs_seen;            /*   336     4 */\n        unsigned int               dsbs_seen;            /*   340     4 */\n\n        /* size: 344, cachelines: 6, members: 9 */\n        /* last cacheline: 24 bytes */\n};\n\nstruct merge_in_file_s {\n        const char  *              filename;             /*     0     8 */\n        wtap *                     wth;                  /*     8     8 */\n        in_file_state_e            state;                /*    16     4 */\n        uint32_t                   packet_num;           /*    20     4 */\n        int64_t                    size;                 /*    24     8 */\n        GArray *                   idb_index_map;        /*    32     8 */\n        unsigned int               nrbs_seen;            /*    40     4 */\n        unsigned int               dsbs_seen;            /*    44     4 */\n        wtap_rec                   rec;                  /*    48   288 */\n\n        /* size: 336, cachelines: 6, members: 9 */\n        /* last cacheline: 16 bytes */\n};\n\nSigned-off-by: Yaniv Kaul <mykaul@gmail.com>\n",
+      "author_name": "Yaniv Michael Kaul",
+      "author_email": "yaniv.kaul@scylladb.com",
+      "authored_date": "2025-10-18T12:47:42.000+03:00",
+      "committer_name": "Yaniv Michael Kaul",
+      "committer_email": "yaniv.kaul@scylladb.com",
+      "committed_date": "2025-10-18T12:47:42.000+03:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/599b395dd7adbc4a97f101a0d99993243eec978d"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1532705794,
+      "head_commit_sha": "599b395dd7adbc4a97f101a0d99993243eec978d",
+      "base_commit_sha": "8ded5ea9e4b53d751b4ca1814e0bbd2a5c896329",
+      "start_commit_sha": "653c35ddaa357d29b890c5c36bd7cd50d3384408",
+      "created_at": "2025-10-19T06:09:49.274Z",
+      "merge_request_id": 424758312,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": "745e62b22930b2070912b17aec22f418f28d64b5"
+    }
+  ]
+}

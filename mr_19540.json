@@ -1,0 +1,366 @@
+{
+  "id": 376227063,
+  "iid": 19540,
+  "project_id": 7898047,
+  "title": "Fix buffer overrun when applying prefs with command line prefs present",
+  "description": "Saving preferences in Qt caused a buffer overrun (read) crash with ASAN\nwith `wireshark -otls.keylog_file:/dev/null`. It would try to compare:\n\n    \"tls.keylog_file:/dev/null\" (overflow with 4 bytes in this case)\n    \"capture.devices_monitor_mode:\"\n\nFixes: v3.5.1rc0-146-g84a0141683 (\"[#12331] Persist cmd-line prefs on reloading Lua\")\n___\nConfirmed with Wireshark 4.0, 4.2, 4.4, master.\n\nBefore this fix, this crash can be observed:\n<details>\n<summary>AddressSanitizer trace for heap-buffer-overflow READ in memcmp</summary>\n\n```\n$ wireshark -otls.keylog_file:/dev/null\n=================================================================\n==674309==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x50300028dffa at pc 0x5c397ab57205 bp 0x7fffff5e4060 sp 0x7fffff5e3820\nREAD of size 29 at 0x50300028dffa thread T0\n    #0 0x5c397ab57204 in MemcmpInterceptorCommon(void*, int (*)(void const*, void const*, unsigned long), void const*, void const*, unsigned long) (run/wireshark+0x27d9204) (BuildId: 2a8341596d37634cffcc0e6b231d08e3844d3930)\n    #1 0x5c397ab5775d in memcmp (run/wireshark+0x27d975d) (BuildId: 2a8341596d37634cffcc0e6b231d08e3844d3930)\n    #2 0x5c397d184372 in cl_find_custom ui/commandline.c:820:12\n    #3 0x7960d328fbe1 in g_slist_find_custom (/usr/lib/libglib-2.0.so.0+0x7bbe1) (BuildId: e4bd01eeb0e5db4cf4b89e861b1e931c9c4aa850)\n    #4 0x5c397d1841be in commandline_options_drop ui/commandline.c:834:28\n    #5 0x5c397bb38fb1 in module_prefs_unstash(pref_module*, void*) ui/qt/preferences_dialog.cpp:58:9\n    #6 0x7960c8bf72bc in call_foreach_cb epan/prefs.c:866:26\n    #7 0x7960b4991604 in wmem_tree_foreach_nodes wsutil/wmem/wmem_tree.c:1059:25\n    #8 0x7960b4991227 in wmem_tree_foreach_nodes wsutil/wmem/wmem_tree.c:1049:13\n    #9 0x7960b4991227 in wmem_tree_foreach_nodes wsutil/wmem/wmem_tree.c:1049:13\n    #10 0x7960b4991227 in wmem_tree_foreach_nodes wsutil/wmem/wmem_tree.c:1049:13\n    #11 0x7960b498b402 in wmem_tree_foreach wsutil/wmem/wmem_tree.c:1082:12\n    #12 0x7960c8bbce60 in prefs_module_list_foreach epan/prefs.c:884:5\n    #13 0x7960c8bc4d36 in prefs_modules_foreach_submodules epan/prefs.c:933:12\n    #14 0x5c397bb3709f in PreferencesDialog::apply() ui/qt/preferences_dialog.cpp:380:5\n    #15 0x5c397bb39310 in PreferencesDialog::on_buttonBox_accepted() ui/qt/preferences_dialog.cpp:459:5\n    #16 0x5c397acafd7b in PreferencesDialog::qt_static_metacall(QObject*, QMetaObject::Call, int, void**) ui/qt/qtui_autogen/EWIEGA46WW/moc_preferences_dialog.cpp:156:21\n    #17 0x5c397acb096a in PreferencesDialog::qt_metacall(QMetaObject::Call, int, void**) ui/qt/qtui_autogen/EWIEGA46WW/moc_preferences_dialog.cpp:186:13\n    #18 0x7960d2db1ad3  (/usr/lib/libQt6Core.so.6+0x1b1ad3) (BuildId: 7edeff7d7ca0f2ebdcccdf8062e68ffce2bb4327)\n    #19 0x7960d40fa652  (/usr/lib/libQt6Widgets.so.6+0x2fa652) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #20 0x7960d2db1a48  (/usr/lib/libQt6Core.so.6+0x1b1a48) (BuildId: 7edeff7d7ca0f2ebdcccdf8062e68ffce2bb4327)\n    #21 0x7960d401f34a  (/usr/lib/libQt6Widgets.so.6+0x21f34a) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #22 0x7960d401f847  (/usr/lib/libQt6Widgets.so.6+0x21f847) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #23 0x7960d402ce7d in QAbstractButton::mouseReleaseEvent(QMouseEvent*) (/usr/lib/libQt6Widgets.so.6+0x22ce7d) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #24 0x7960d3f51675 in QWidget::event(QEvent*) (/usr/lib/libQt6Widgets.so.6+0x151675) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #25 0x7960d3eff0c9 in QApplicationPrivate::notify_helper(QObject*, QEvent*) (/usr/lib/libQt6Widgets.so.6+0xff0c9) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #26 0x7960d3f00f49 in QApplication::notify(QObject*, QEvent*) (/usr/lib/libQt6Widgets.so.6+0x100f49) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #27 0x7960d2d55aff in QCoreApplication::notifyInternal2(QObject*, QEvent*) (/usr/lib/libQt6Core.so.6+0x155aff) (BuildId: 7edeff7d7ca0f2ebdcccdf8062e68ffce2bb4327)\n    #28 0x7960d3ef6775 in QApplicationPrivate::sendMouseEvent(QWidget*, QMouseEvent*, QWidget*, QWidget*, QWidget**, QPointer<QWidget>&, bool, bool) (/usr/lib/libQt6Widgets.so.6+0xf6775) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #29 0x7960d3f6a155  (/usr/lib/libQt6Widgets.so.6+0x16a155) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #30 0x7960d3f6b56f  (/usr/lib/libQt6Widgets.so.6+0x16b56f) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #31 0x7960d3eff0c9 in QApplicationPrivate::notify_helper(QObject*, QEvent*) (/usr/lib/libQt6Widgets.so.6+0xff0c9) (BuildId: 6d93daa50bcebf6a60280ff664472e42efdab1b5)\n    #32 0x7960d2d55aff in QCoreApplication::notifyInternal2(QObject*, QEvent*) (/usr/lib/libQt6Core.so.6+0x155aff) (BuildId: 7edeff7d7ca0f2ebdcccdf8062e68ffce2bb4327)\n    #33 0x7960d35865ca in QGuiApplicationPrivate::processMouseEvent(QWindowSystemInterfacePrivate::MouseEvent*) (/usr/lib/libQt6Gui.so.6+0x1865ca) (BuildId: e8465c3f1ff13605fe9d74fbf2f369d725e48210)\n    #34 0x7960d3601f43 in QWindowSystemInterface::sendWindowSystemEvents(QFlags<QEventLoop::ProcessEventsFlag>) (/usr/lib/libQt6Gui.so.6+0x201f43) (BuildId: e8465c3f1ff13605fe9d74fbf2f369d725e48210)\n    #35 0x7960d3a61d73  (/usr/lib/libQt6Gui.so.6+0x661d73) (BuildId: e8465c3f1ff13605fe9d74fbf2f369d725e48210)\n    #36 0x7960d3272103  (/usr/lib/libglib-2.0.so.0+0x5e103) (BuildId: e4bd01eeb0e5db4cf4b89e861b1e931c9c4aa850)\n    #37 0x7960d32d5d56  (/usr/lib/libglib-2.0.so.0+0xc1d56) (BuildId: e4bd01eeb0e5db4cf4b89e861b1e931c9c4aa850)\n    #38 0x7960d3271534 in g_main_context_iteration (/usr/lib/libglib-2.0.so.0+0x5d534) (BuildId: e4bd01eeb0e5db4cf4b89e861b1e931c9c4aa850)\n    #39 0x7960d2fc5781 in QEventDispatcherGlib::processEvents(QFlags<QEventLoop::ProcessEventsFlag>) (/usr/lib/libQt6Core.so.6+0x3c5781) (BuildId: 7edeff7d7ca0f2ebdcccdf8062e68ffce2bb4327)\n    #40 0x7960d2d606a5 in QEventLoop::exec(QFlags<QEventLoop::ProcessEventsFlag>) (/usr/lib/libQt6Core.so.6+0x1606a5) (BuildId: 7edeff7d7ca0f2ebdcccdf8062e68ffce2bb4327)\n    #41 0x7960d2d591d5 in QCoreApplication::exec() (/usr/lib/libQt6Core.so.6+0x1591d5) (BuildId: 7edeff7d7ca0f2ebdcccdf8062e68ffce2bb4327)\n    #42 0x5c397b9c46bf in main ui/qt/main.cpp:1109:15\n    #43 0x7960b4235487 in __libc_start_call_main /usr/src/debug/glibc/glibc/csu/../sysdeps/nptl/libc_start_call_main.h:58:16\n    #44 0x7960b423554b in __libc_start_main /usr/src/debug/glibc/glibc/csu/../csu/libc-start.c:360:3\n    #45 0x5c397aa968e4 in _start (run/wireshark+0x27188e4) (BuildId: 2a8341596d37634cffcc0e6b231d08e3844d3930)\n\n0x50300028dffa is located 0 bytes after 26-byte region [0x50300028dfe0,0x50300028dffa)\nallocated by thread T0 here:\n    #0 0x5c397ab89499 in malloc (run/wireshark+0x280b499) (BuildId: 2a8341596d37634cffcc0e6b231d08e3844d3930)\n    #1 0x7960d3277d0a in g_malloc (/usr/lib/libglib-2.0.so.0+0x63d0a) (BuildId: e4bd01eeb0e5db4cf4b89e861b1e931c9c4aa850)\n    #2 0x7960d328e51a in g_strdup (/usr/lib/libglib-2.0.so.0+0x7a51a) (BuildId: e4bd01eeb0e5db4cf4b89e861b1e931c9c4aa850)\n    #3 0x5c397d182803 in g_strdup_inline /usr/include/glib-2.0/glib/gstrfuncs.h:321:10\n    #4 0x5c397d182803 in commandline_override_prefs ui/commandline.c:451:41\n    #5 0x5c397b9c080c in main ui/qt/main.cpp:811:5\n    #6 0x7960b4235487 in __libc_start_call_main /usr/src/debug/glibc/glibc/csu/../sysdeps/nptl/libc_start_call_main.h:58:16\n    #7 0x7960b423554b in __libc_start_main /usr/src/debug/glibc/glibc/csu/../csu/libc-start.c:360:3\n    #8 0x5c397aa968e4 in _start (run/wireshark+0x27188e4) (BuildId: 2a8341596d37634cffcc0e6b231d08e3844d3930)\n\nSUMMARY: AddressSanitizer: heap-buffer-overflow (run/wireshark+0x27d9204) (BuildId: 2a8341596d37634cffcc0e6b231d08e3844d3930) in MemcmpInterceptorCommon(void*, int (*)(void const*, void const*, unsigned long), void const*, void const*, unsigned long)\nShadow bytes around the buggy address:\n  0x50300028dd00: fa fa fd fd fd fd fa fa fd fd fd fa fa fa fd fd\n  0x50300028dd80: fd fd fa fa fd fd fd fd fa fa fd fd fd fa fa fa\n  0x50300028de00: fd fd fd fa fa fa fd fd fd fd fa fa fd fd fd fd\n  0x50300028de80: fa fa fa fa fa fa fa fa fd fd fd fa fa fa fd fd\n  0x50300028df00: fd fa fa fa fd fd fd fa fa fa fd fd fd fa fa fa\n=>0x50300028df80: fd fd fd fa fa fa fd fd fd fa fa fa 00 00 00[02]\n  0x50300028e000: fa fa 00 00 01 fa fa fa 00 00 01 fa fa fa fd fd\n  0x50300028e080: fd fd fa fa fd fd fd fa fa fa fd fd fd fa fa fa\n  0x50300028e100: fd fd fd fa fa fa fd fd fd fa fa fa fa fa fa fa\n  0x50300028e180: fa fa 00 00 00 02 fa fa fd fd fd fa fa fa 00 00\n  0x50300028e200: 04 fa fa fa 00 00 00 00 fa fa 00 00 04 fa fa fa\nShadow byte legend (one shadow byte represents 8 application bytes):\n  Addressable:           00\n  Partially addressable: 01 02 03 04 05 06 07 \n  Heap left redzone:       fa\n  Freed heap region:       fd\n  Stack left redzone:      f1\n  Stack mid redzone:       f2\n  Stack right redzone:     f3\n  Stack after return:      f5\n  Stack use after scope:   f8\n  Global redzone:          f9\n  Global init order:       f6\n  Poisoned by user:        f7\n  Container overflow:      fc\n  Array cookie:            ac\n  Intra object redzone:    bb\n  ASan internal:           fe\n  Left alloca redzone:     ca\n  Right alloca redzone:    cb\n==674309==ABORTING\n```\n</details>",
+  "state": "merged",
+  "created_at": "2025-04-13T21:44:56.034Z",
+  "updated_at": "2025-04-13T23:26:41.785Z",
+  "merged_by": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "merge_user": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "merged_at": "2025-04-13T22:14:48.011Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix-cl-opts-overflow-on-prefs-apply",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 2415432,
+    "username": "Lekensteyn",
+    "public_email": "",
+    "name": "Peter Wu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Lekensteyn"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6020526,
+      "username": "boolean263",
+      "public_email": "",
+      "name": "David Perry",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+      "web_url": "https://gitlab.com/boolean263"
+    }
+  ],
+  "source_project_id": 20728671,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0cae98570ebc235d0ad2ad776529197244416667",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-04-13T21:45:01.988Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!19540",
+  "references": {
+    "short": "!19540",
+    "relative": "!19540",
+    "full": "wireshark/wireshark!19540"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/19540",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2025-04-13T21:45:01.075Z",
+  "latest_build_finished_at": "2025-04-13T22:05:39.180Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1766491051,
+    "iid": 80042,
+    "project_id": 7898047,
+    "sha": "0cae98570ebc235d0ad2ad776529197244416667",
+    "ref": "refs/merge-requests/19540/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-04-13T21:44:59.862Z",
+    "updated_at": "2025-04-13T22:05:39.193Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1766491051"
+  },
+  "head_pipeline": {
+    "id": 1766491051,
+    "iid": 80042,
+    "project_id": 7898047,
+    "sha": "0cae98570ebc235d0ad2ad776529197244416667",
+    "ref": "refs/merge-requests/19540/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-04-13T21:44:59.862Z",
+    "updated_at": "2025-04-13T22:05:39.193Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1766491051",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 2415432,
+      "username": "Lekensteyn",
+      "public_email": "",
+      "name": "Peter Wu",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+      "web_url": "https://gitlab.com/Lekensteyn"
+    },
+    "started_at": "2025-04-13T21:45:01.075Z",
+    "finished_at": "2025-04-13T22:05:39.180Z",
+    "committed_at": null,
+    "duration": 1237,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1766491051",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "ae72411677d7c12a71124acc810ff9cc75bdd124",
+    "head_sha": "0cae98570ebc235d0ad2ad776529197244416667",
+    "start_sha": "ae72411677d7c12a71124acc810ff9cc75bdd124"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "4d959c1be55b8b80f0fb87a31f7a3b094369ac94",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2448765991,
+          "type": null,
+          "body": "requested review from @boolean263",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2025-04-13T21:44:56.286Z",
+          "updated_at": "2025-04-13T21:44:56.291Z",
+          "system": true,
+          "noteable_id": 376227063,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19540,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cbcedd0198b653ae153acc2c6c1d83b2ae343203",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2448772798,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1788830706",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2025-04-13T22:14:38.036Z",
+          "updated_at": "2025-04-13T22:14:38.041Z",
+          "system": true,
+          "noteable_id": 376227063,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19540,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e372479c044c18e7cacdf9cffc93a3ed4b72cc92",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2448791976,
+          "type": null,
+          "body": "mentioned in merge request !19542",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2025-04-13T23:24:27.602Z",
+          "updated_at": "2025-04-13T23:24:27.606Z",
+          "system": true,
+          "noteable_id": 376227063,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19540,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1181a8f2550c2f6137f4841bd1549e9029882a0d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2448792509,
+          "type": null,
+          "body": "mentioned in merge request !19543",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2025-04-13T23:26:41.757Z",
+          "updated_at": "2025-04-13T23:26:41.761Z",
+          "system": true,
+          "noteable_id": 376227063,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19540,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -817,7 +817,10 @@ void commandline_other_options(int argc, char *argv[], bool opt_reset)\n \n /* Local function used by commandline_options_drop */\n static int cl_find_custom(const void *elem_data, const void *search_data) {\n-    return memcmp(elem_data, search_data, strlen((char *)search_data));\n+    const char *prefix = (const char *)search_data;\n+    const char *opt_and_val = (const char *)elem_data;\n+\n+    return strncmp(opt_and_val, prefix, strlen(prefix));\n }\n \n /* Drop any options the user specified on the command line with `-o`\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/commandline.c",
+      "old_path": "ui/commandline.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "0cae98570ebc235d0ad2ad776529197244416667",
+      "short_id": "0cae9857",
+      "created_at": "2025-04-13T23:35:28.000+02:00",
+      "parent_ids": [
+        "ae72411677d7c12a71124acc810ff9cc75bdd124"
+      ],
+      "title": "Fix buffer overrun when applying prefs with command line prefs present",
+      "message": "Fix buffer overrun when applying prefs with command line prefs present\n\nSaving preferences in Qt caused a buffer overrun (read) crash with ASAN\nwith `wireshark -otls.keylog_file:/dev/null`. It would try to compare:\n\n    \"tls.keylog_file:/dev/null\" (overflow with 4 bytes in this case)\n    \"capture.devices_monitor_mode:\"\n\nFixes: v3.5.1rc0-146-g84a0141683 (\"[#12331] Persist cmd-line prefs on reloading Lua\")\n",
+      "author_name": "Peter Wu",
+      "author_email": "peter@lekensteyn.nl",
+      "authored_date": "2025-04-13T23:35:28.000+02:00",
+      "committer_name": "Peter Wu",
+      "committer_email": "peter@lekensteyn.nl",
+      "committed_date": "2025-04-13T23:35:28.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0cae98570ebc235d0ad2ad776529197244416667"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1326370318,
+      "head_commit_sha": "0cae98570ebc235d0ad2ad776529197244416667",
+      "base_commit_sha": "ae72411677d7c12a71124acc810ff9cc75bdd124",
+      "start_commit_sha": "ae72411677d7c12a71124acc810ff9cc75bdd124",
+      "created_at": "2025-04-13T21:44:57.706Z",
+      "merge_request_id": 376227063,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "3a22aaef33b6b6bcecffa0bd1fb7f6801f5edc1b"
+    }
+  ]
+}

@@ -1,0 +1,1110 @@
+{
+  "id": 376426636,
+  "iid": 19547,
+  "project_id": 7898047,
+  "title": "PROFINET: add support for displaying PNIO payload without AR",
+  "description": "For a full dissection of the PROFINET IO payload in Wireshark, it is\nnecessary to capture the entire PROFINET connection setup – specifically,\nthe complete Application Relation (AR) . In practice, capture files often\nconsist of only a partial recoding of a complete communication cycle,\nwhich means that the payload can’t be shown. This issue is resolved with the\nproposed solution.\n\nInstead of relying on the Data from the AR the required information is now\nextracted from the Generic Station Description (GSD) using the GMarkup parser.\nThe GMarkup parser doesn’t create any new external dependencies! The parser\nimplements two callback functions, one for opening and one for closing\nmarkup elements. When a key element is opened, its attributes are iterated\nthrough and saved into a ParserState object. Upon closing, these values are\ntransferred into corresponding objects stored in a list within the ParserState.\nLater, these objects are used to generate the definitive IOData objects, as\nwell as IOCS and IOPS objects.\n\n**Distinction between manual and heuristic approaches**\n\n**Heuristic method (applicable only to the Wireshark UI)**:\nFor an accurate display of the PNIO payload, it is essential to determine which\nMAC address belongs to the controller and which to the device. In the\nheuristic approach, this information is extracted from the acyclic frames, as\nthese frames are always initiated by the controller. In the appropriate\ndissector functions, the MAC addresses are saved into a global list. Before\nextracting the GSD, it iterates over this global list to verify whether each\npacket is an input or an output packet. Based on this, an appropriate\nconversation and station_info object are created. All the extracted Data\nfrom the GSD is used to generate the corresponding objects for representing\nthe PNIO payload, and these objects are stored within the station_info.\n\n**Manual method**:\nThe manual approach is divided into two use cases:\n\n**First scenario**:\nThere are no acyclic frames in the capture or if you using tshark.\n\nIn this case, an XML configuration file must be created to manually specify all\nconversations, detailing the MAC addresses of both the controller and the\ndevice. For example:\n```xml\n<conversationList>\n    <conversation device=\"XX:XX:XX:XX:XX:XX\" controller=\"XX:XX:XX:XX:XX:XX\"/>\n    <conversation device=\"XX:XX:XX:XX:XX:XX\" controller=\"XX:XX:XX:XX:XX:XX\"/>\n</conversationList>\n``` \n**Second scenario**:\nThe GSD includes only the AllowedInSlots attribute.\nThe number of modules for a station can be defined using three attributes.\nWith the FixedInSlots and UsedInSlots attributes, the number is clearly\ndescribed and unambiguous. When using the AllowedInSlots attribute, the number\nis not fixed; it only shows a possible slot assignment. Only during the AR the\nactual number and position of the modules are communicated. This means that\nit is not possible to generate the necessary information from the GSDs with\nonly AllowedInSlots attributes.\n\nFor this purpose, the user should only transfer the information from the GSD to\nthe Config file that is contained in the PNIO network traffic. The GSD\nstructure should be retained and modules should then be described using\nFixedInSlots, in which they are actually located. The solution now extracts all\nthe data from this config file instead from the GSD.\n\nIt is necessary to create a “current_fake_aruuid” to distinguish the conversation\nand station info from a possible AR related conversation.",
+  "state": "merged",
+  "created_at": "2025-04-14T15:45:55.675Z",
+  "updated_at": "2025-06-18T11:11:20.801Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2025-05-14T20:08:17.320Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "pnio-data-without-ar",
+  "user_notes_count": 6,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 24576659,
+    "username": "NilsNCodewerk",
+    "public_email": null,
+    "name": "Nils  Nowag",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/NilsNCodewerk"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 68158714,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-04-14T15:46:07.009Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!19547",
+  "references": {
+    "short": "!19547",
+    "relative": "!19547",
+    "full": "wireshark/wireshark!19547"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/19547",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2025-05-14T11:37:03.409Z",
+  "latest_build_finished_at": "2025-05-14T12:11:23.009Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1817042584,
+    "iid": 42,
+    "project_id": 68158714,
+    "sha": "87559191e068d31b53a89c30c5743371cb3d608e",
+    "ref": "pnio-data-without-ar",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-05-14T11:37:01.551Z",
+    "updated_at": "2025-05-14T12:11:23.033Z",
+    "web_url": "https://gitlab.com/NilsNCodewerk/wireshark/-/pipelines/1817042584"
+  },
+  "head_pipeline": {
+    "id": 1817931348,
+    "iid": 81363,
+    "project_id": 7898047,
+    "sha": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+    "ref": "refs/merge-requests/19547/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2025-05-14T20:07:58.018Z",
+    "updated_at": "2025-05-14T20:07:58.018Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1817931348",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1817931348",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+    "head_sha": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+    "start_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b5e8fcdcc6c639abbcded1968b4b63316fedf29c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2453955079,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>9f930d52 - Cast unused parameters to void to suppress warnings</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1329616295&start_sha=406866c3aa5db965f0bf9dce3093d996eafc67dd)",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-04-16T09:07:43.036Z",
+          "updated_at": "2025-04-16T09:07:43.056Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "68d9c43f9744bd7cbb5791fdefbc6a3f0990762e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2453985802,
+          "type": null,
+          "body": "added 13 commits\n\n<ul><li>9f930d52...d7e51498 - 11 commits from branch <code>wireshark:master</code></li><li>a8c106a9 - PROFINET: add support for displaying PNIO Data without AR</li><li>1ca2ea49 - Cast unused parameters to void to suppress warnings</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1329637890&start_sha=9f930d5258c0c875a383b5b65d8870d1037a31e5)",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-04-16T09:20:49.296Z",
+          "updated_at": "2025-04-16T09:20:49.301Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8e9bd5a1d777b8821d411bc510f306e4ca541d41",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2454042467,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>9e485e59 - PROFINET: add support for displaying PNIO Data without AR</li><li>14e34a18 - Merge branch &#39;pnio-data-without-ar&#39; of gitlab.com:NilsNCodewerk/wireshark into pnio-data-without-ar</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1329671811&start_sha=1ca2ea498b55bd3ebe62424c8972e25ef8e93562)",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-04-16T09:42:06.960Z",
+          "updated_at": "2025-04-16T09:42:06.964Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9c38b808f12dbfc2fdc0c3691b9c44e8d73a06e0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2454402847,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>299e40b8 - PROFINET: add support for displaying PNIO Data without AR</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1329873588&start_sha=14e34a18073b5dba06fc22bc355668e9135cb0f3)",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-04-16T11:56:18.007Z",
+          "updated_at": "2025-04-16T11:56:18.012Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4b93873f73310aa3b40312bf7e912d80614e2dc5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2459940258,
+          "type": null,
+          "body": "Check pipeline result:\n\nError: Found prohibited APIs in packet-dcerpc-pn-io.c: isdigit",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-04-21T05:48:25.482Z",
+          "updated_at": "2025-04-21T05:48:25.482Z",
+          "system": false,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7b3d042cb941a3858029e811a19deebe34cf9805",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2460140992,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>50176d40 - PROFINET: add support for displaying PNIO Data without AR</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1333317990&start_sha=299e40b81220eddb65141d5a0f684cb938b4a186)",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-04-21T09:39:33.234Z",
+          "updated_at": "2025-04-21T09:39:33.244Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "88051ca032460274d4c63af7ef9bf892e58ce857",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2460235912,
+          "type": null,
+          "body": "added 34 commits\n\n<ul><li>50176d40...e6e27ae3 - 33 commits from branch <code>wireshark:master</code></li><li>1d0c1c70 - PROFINET: add support for displaying PNIO Data without AR</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1333387612&start_sha=50176d4052452f72f1723dd21fb669db7d5baa0a)",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-04-21T11:30:48.242Z",
+          "updated_at": "2025-04-21T11:30:48.247Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "825c42978cbd0951e71d20d9dd13b1bb36fde7d3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2498078064,
+          "type": null,
+          "body": "added 161 commits\n\n<ul><li>1d0c1c70...2cbe4df4 - 160 commits from branch <code>wireshark:master</code></li><li>ee5caa91 - PROFINET: add support for displaying PNIO Data without AR</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1353860651&start_sha=1d0c1c703547d4c95a19570826631bd644b8e2d1)",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-05-12T09:22:21.419Z",
+          "updated_at": "2025-05-12T09:22:21.424Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2424eda17842825e4d4d392c5349efc8d353bdc3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2503648219,
+          "type": null,
+          "body": "added 18 commits\n\n<ul><li>ee5caa91...5d58b175 - 17 commits from branch <code>wireshark:master</code></li><li>87559191 - PROFINET: add support for displaying PNIO Data without AR</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1357004426&start_sha=ee5caa91eaafefa1eb89bd546e2fbf44613ffaa8)",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-05-14T11:36:55.639Z",
+          "updated_at": "2025-05-14T11:36:55.657Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "abc998b3a97a997eb9c3ef54daee0396f7473334",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2503738012,
+          "type": null,
+          "body": "Hi, is there anything blocking this from being merged?",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-05-14T12:17:57.876Z",
+          "updated_at": "2025-05-14T12:17:57.876Z",
+          "system": false,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6b20475fb2fcda53de73f052ddd4b8dac3c4bf26",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2504913326,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>87559191...2475d6a5 - 7 commits from branch <code>wireshark:master</code></li><li>6d1dab03 - PROFINET: add support for displaying PNIO Data without AR</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19547/diffs?diff_id=1357718178&start_sha=87559191e068d31b53a89c30c5743371cb3d608e)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-05-14T20:07:56.001Z",
+          "updated_at": "2025-05-14T20:07:56.006Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5836f530b159d5a7bcde1263d57dc5de4ada2c8d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2504913525,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-05-14T20:08:01.117Z",
+          "updated_at": "2025-05-14T20:08:01.123Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a8beaf320e9f2a87caa3576a1e1a1a335b703dbb",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2512337181,
+          "type": "DiffNote",
+          "body": "This ParserState object has many elements that are `char *` that you fill with `g_strdup`. If you're going to do that, then the last parameter of `g_markup_parse_context_new`, the GDestroyNotify, needs to free those strings. (Another option is to allocate them in a wmem scope.)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-05-19T13:45:25.014Z",
+          "updated_at": "2025-06-18T11:12:03.157Z",
+          "system": false,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+            "start_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+            "head_sha": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+            "old_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+            "new_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 5187,
+            "line_range": {
+              "start": {
+                "line_code": "1b36b7bfc776219d717795216f2f236f9cff3255_4379_5187",
+                "type": "new",
+                "old_line": null,
+                "new_line": 5187
+              },
+              "end": {
+                "line_code": "1b36b7bfc776219d717795216f2f236f9cff3255_4379_5187",
+                "type": "new",
+                "old_line": null,
+                "new_line": 5187
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "resolved_at": "2025-06-18T11:12:03.157Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        },
+        {
+          "id": 2570345224,
+          "type": "DiffNote",
+          "body": "Looks like this has already been done in !19938",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-06-18T11:11:20.765Z",
+          "updated_at": "2025-06-18T11:12:03.157Z",
+          "system": false,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+            "start_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+            "head_sha": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+            "old_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+            "new_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 5187,
+            "line_range": {
+              "start": {
+                "line_code": "1b36b7bfc776219d717795216f2f236f9cff3255_4379_5187",
+                "type": "new",
+                "old_line": null,
+                "new_line": 5187
+              },
+              "end": {
+                "line_code": "1b36b7bfc776219d717795216f2f236f9cff3255_4379_5187",
+                "type": "new",
+                "old_line": null,
+                "new_line": 5187
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "resolved_at": "2025-06-18T11:12:03.157Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f8f1fe32c2f0ddb42fccdb73335e6809f44be6ef",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2512341940,
+          "type": "DiffNote",
+          "body": "This `extract_pnio_objects_withoutAR` function is called per-packet, by `dissect_PNIO_heur`. The `ParserState state` object is declared on the stack here, and the related `GMarkupParseContext` is freed here. Why are these members being declared in `wmem_file_scope()` instead of `pinfo->pool` scope or similar?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-05-19T13:47:15.824Z",
+          "updated_at": "2025-06-18T11:11:58.494Z",
+          "system": false,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+            "start_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+            "head_sha": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+            "old_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+            "new_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 5095,
+            "line_range": {
+              "start": {
+                "line_code": "1b36b7bfc776219d717795216f2f236f9cff3255_4379_5095",
+                "type": "new",
+                "old_line": null,
+                "new_line": 5095
+              },
+              "end": {
+                "line_code": "1b36b7bfc776219d717795216f2f236f9cff3255_4379_5095",
+                "type": "new",
+                "old_line": null,
+                "new_line": 5095
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "resolved_at": "2025-06-18T11:11:58.494Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        },
+        {
+          "id": 2570345128,
+          "type": "DiffNote",
+          "body": "Looks like this has already been done in !19908 and !19938",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-06-18T11:11:19.757Z",
+          "updated_at": "2025-06-18T11:11:58.494Z",
+          "system": false,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+            "start_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+            "head_sha": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+            "old_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+            "new_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 5095,
+            "line_range": {
+              "start": {
+                "line_code": "1b36b7bfc776219d717795216f2f236f9cff3255_4379_5095",
+                "type": "new",
+                "old_line": null,
+                "new_line": 5095
+              },
+              "end": {
+                "line_code": "1b36b7bfc776219d717795216f2f236f9cff3255_4379_5095",
+                "type": "new",
+                "old_line": null,
+                "new_line": 5095
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "resolved_at": "2025-06-18T11:11:58.494Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e463e34b2b23588c0e9ba1e0cced7d58a53e1d43",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2570345242,
+          "type": null,
+          "body": "left review comments",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-06-18T11:11:21.041Z",
+          "updated_at": "2025-06-18T11:11:21.046Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f05562512ce67da629ad112776c20f520308e95f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2570348399,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 24576659,
+            "username": "NilsNCodewerk",
+            "public_email": null,
+            "name": "Nils  Nowag",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/eeb8ee6b263b4b969dc90caf1427c49a96b87cb89da0ec6cb81199624602220a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/NilsNCodewerk"
+          },
+          "created_at": "2025-06-18T11:12:03.184Z",
+          "updated_at": "2025-06-18T11:12:03.191Z",
+          "system": true,
+          "noteable_id": 376426636,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19547,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+      "old_path": "plugins/epan/profinet/packet-dcerpc-pn-io.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -485,6 +485,7 @@ dissect_PNIO_C_SDU_RTC1(tvbuff_t *tvb, int offset,\n     wmem_list_frame_t  *aruuid_frame;\n     ARUUIDFrame        *current_aruuid_frame = NULL;\n     uint32_t            current_aruuid = 0;\n+    uint32_t            current_fake_aruuid = 4126751477;\n \n     col_set_str(pinfo->cinfo, COL_PROTOCOL, \"PNIO\");            /* set protocol name */\n \n@@ -525,6 +526,9 @@ dissect_PNIO_C_SDU_RTC1(tvbuff_t *tvb, int offset,\n         }\n \n         station_info = (stationInfo*)conversation_get_proto_data(conversation, current_aruuid);\n+        if (station_info == NULL) {\n+            station_info = (stationInfo*)conversation_get_proto_data(conversation, current_fake_aruuid);\n+        }\n \n         if (station_info != NULL) {\n             pn_find_dcp_station_info(station_info, conversation);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "plugins/epan/profinet/packet-pn-rtc-one.c",
+      "old_path": "plugins/epan/profinet/packet-pn-rtc-one.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -54,6 +54,8 @@ typedef struct tagStationInfo {\n     wmem_list_t *ioobject_data_out;\n     /* Different ModuleIdentnumber */\n     wmem_list_t *diff_module;\n+    /* Flag for the extraction of PNIO Objects without AR */\n+    bool filled_with_objects;\n } stationInfo;\n \n typedef struct tagApduStatusSwitch\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "plugins/epan/profinet/packet-pn.h",
+      "old_path": "plugins/epan/profinet/packet-pn.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+      "short_id": "6d1dab03",
+      "created_at": "2025-05-14T22:07:52.000+02:00",
+      "parent_ids": [
+        "2475d6a587df7d9ae429cd92af739fde3fafe435"
+      ],
+      "title": "PROFINET: add support for displaying PNIO Data without AR",
+      "message": "PROFINET: add support for displaying PNIO Data without AR\n\nFor a full dissection of the PROFINET IO payload in Wireshark, it is\nnecessary to capture the entire PROFINET connection setup – specifically,\nthe complete Application Relation (AR) . In practice, capture files often\nconsist of only a partial recoding of a complete communication cycle,\nwhich means that the payload can’t be shown. This issue is resolved with the\nproposed solution.\n\nInstead of relying on the Data from the AR the required information is now\nextracted from the Generic Station Description (GSD) using the GMarkup parser.\nThe GMarkup parser doesn’t create any new external dependencies! The parser\nimplements two callback functions, one for opening and one for closing\nmarkup elements. When a key element is opened, its attributes are iterated\nthrough and saved into a ParserState object. Upon closing, these values are\ntransferred into corresponding objects stored in a list within the ParserState.\nLater, these objects are used to generate the definitive IOData objects, as\nwell as IOCS and IOPS objects.\n\nDistinction Between Manual and Heuristic Approaches:\n\nHeuristic Method (applicable only to the Wireshark UI):\nFor an accurate display of the PNIO payload, it is essential to determine which\nMAC address belongs to the controller and which to the device. In the\nheuristic approach, this information is extracted from the acyclic frames, as\nthese frames are always initiated by the controller. In the appropriate\ndissector functions, the MAC addresses are saved into a global list. Before\nextracting the GSD, it iterates over this global list to verify whether each\npacket is an input or an output packet. Based on this, an appropriate\nconversation and station_info object are created. All the extracted Data\nfrom the GSD is used to generate the corresponding objects for representing\nthe PNIO payload, and these objects are stored within the station_info.\n\nManual Method:\nThe manual approach is divided into two use cases:\n\nFirst Scenario:\nThere are no acyclic frames in the capture or if you using tshark.\nIn this case, an XML configuration file must be created to manually specify all\nconversations, detailing the MAC addresses of both the controller and the\ndevice. For example:\n<conversationList>\n    <conversation device=\"XX:XX:XX:XX:XX:XX\" controller=\"XX:XX:XX:XX:XX:XX\"/>\n    <conversation device=\"XX:XX:XX:XX:XX:XX\" controller=\"XX:XX:XX:XX:XX:XX\"/>\n</conversationList>\n\nSecond Scenario:\nThe GSD includes only the AllowedInSlots attribute.\nThe number of modules for a station can be defined using three attributes.\nWith the FixedInSlots and UsedInSlots attributes, the number is clearly\ndescribed and unambiguous. When using the AllowedInSlots attribute, the number\nis not fixed; it only shows a possible slot assignment. Only during the AR the\nactual number and position of the modules are communicated. This means that\nit is not possible to generate the necessary information from the GSDs with\nonly AllowedInSlots attributes.\n\nFor this purpose, the user should only transfer the information from the GSD to\nthe Config file that is contained in the PNIO network traffic. The GSD\nstructure should be retained and modules should then be described using\nFixedInSlots, in which they are actually located. The solution now extracts all\nthe data from this config file instead from the GSD.\n\nIt is necessary to create a “current_fake_aruuid” to distinguish the conversation\nand station info from a possible AR related conversation.\n\nCast unused parameters to void to suppress warnings\n\nCast unused parameters to void to suppress warnings\n",
+      "author_name": "Nils",
+      "author_email": "nils.nowag@codewerk.de",
+      "authored_date": "2025-04-14T17:24:11.000+02:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2025-05-14T22:07:52.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/6d1dab030a25e021eb2b01f934c801c4665c7521"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1357718178,
+      "head_commit_sha": "6d1dab030a25e021eb2b01f934c801c4665c7521",
+      "base_commit_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+      "start_commit_sha": "2475d6a587df7d9ae429cd92af739fde3fafe435",
+      "created_at": "2025-05-14T20:07:55.265Z",
+      "merge_request_id": 376426636,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "bab13548a99eeb6b8f1527b7da3a24e97e2c473c"
+    },
+    {
+      "id": 1357004426,
+      "head_commit_sha": "87559191e068d31b53a89c30c5743371cb3d608e",
+      "base_commit_sha": "5d58b175e802ea225831f74b182ade9303e18601",
+      "start_commit_sha": "5d58b175e802ea225831f74b182ade9303e18601",
+      "created_at": "2025-05-14T11:36:53.569Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "bab13548a99eeb6b8f1527b7da3a24e97e2c473c"
+    },
+    {
+      "id": 1353860651,
+      "head_commit_sha": "ee5caa91eaafefa1eb89bd546e2fbf44613ffaa8",
+      "base_commit_sha": "2cbe4df41a504385e3024fb181aafc5a1b912e99",
+      "start_commit_sha": "2cbe4df41a504385e3024fb181aafc5a1b912e99",
+      "created_at": "2025-05-12T09:22:20.575Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "bab13548a99eeb6b8f1527b7da3a24e97e2c473c"
+    },
+    {
+      "id": 1333387612,
+      "head_commit_sha": "1d0c1c703547d4c95a19570826631bd644b8e2d1",
+      "base_commit_sha": "e6e27ae309ecb3ae97e5c1985ad4e6e14e98d592",
+      "start_commit_sha": "e6e27ae309ecb3ae97e5c1985ad4e6e14e98d592",
+      "created_at": "2025-04-21T11:30:47.155Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "bab13548a99eeb6b8f1527b7da3a24e97e2c473c"
+    },
+    {
+      "id": 1333317990,
+      "head_commit_sha": "50176d4052452f72f1723dd21fb669db7d5baa0a",
+      "base_commit_sha": "d7e514982a24381c4be3342bd3384ead19c68677",
+      "start_commit_sha": "a37b6c166929141a9044abe1520f13bc4894a893",
+      "created_at": "2025-04-21T09:39:32.243Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "bab13548a99eeb6b8f1527b7da3a24e97e2c473c"
+    },
+    {
+      "id": 1329873588,
+      "head_commit_sha": "299e40b81220eddb65141d5a0f684cb938b4a186",
+      "base_commit_sha": "d7e514982a24381c4be3342bd3384ead19c68677",
+      "start_commit_sha": "7172eb78c8395aa8344e80e1c28654ea3519349a",
+      "created_at": "2025-04-16T11:56:16.865Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "b2805f677a7da5e3b45223522141c3472f16ec9b"
+    },
+    {
+      "id": 1329671811,
+      "head_commit_sha": "14e34a18073b5dba06fc22bc355668e9135cb0f3",
+      "base_commit_sha": "d7e514982a24381c4be3342bd3384ead19c68677",
+      "start_commit_sha": "d7e514982a24381c4be3342bd3384ead19c68677",
+      "created_at": "2025-04-16T09:42:06.094Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "b2805f677a7da5e3b45223522141c3472f16ec9b"
+    },
+    {
+      "id": 1329637890,
+      "head_commit_sha": "1ca2ea498b55bd3ebe62424c8972e25ef8e93562",
+      "base_commit_sha": "d7e514982a24381c4be3342bd3384ead19c68677",
+      "start_commit_sha": "d7e514982a24381c4be3342bd3384ead19c68677",
+      "created_at": "2025-04-16T09:20:48.516Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "b2805f677a7da5e3b45223522141c3472f16ec9b"
+    },
+    {
+      "id": 1329616295,
+      "head_commit_sha": "9f930d5258c0c875a383b5b65d8870d1037a31e5",
+      "base_commit_sha": "0cae98570ebc235d0ad2ad776529197244416667",
+      "start_commit_sha": "d7e514982a24381c4be3342bd3384ead19c68677",
+      "created_at": "2025-04-16T09:07:40.914Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "b2805f677a7da5e3b45223522141c3472f16ec9b"
+    },
+    {
+      "id": 1327344429,
+      "head_commit_sha": "406866c3aa5db965f0bf9dce3093d996eafc67dd",
+      "base_commit_sha": "0cae98570ebc235d0ad2ad776529197244416667",
+      "start_commit_sha": "14524646b92649409869dfb627977b0ffca46bb4",
+      "created_at": "2025-04-14T15:45:58.358Z",
+      "merge_request_id": 376426636,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "637c3f025be9cfb0aa495111ba10f4ad23d04487"
+    }
+  ]
+}

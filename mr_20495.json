@@ -1,0 +1,513 @@
+{
+  "id": 398025139,
+  "iid": 20495,
+  "project_id": 7898047,
+  "title": "x11, asterix, erf: Delay field registration",
+  "description": "Asterix, X11, and ERF all register a large number of entries in the gpa_name_map GHashTable (currently 10124, 8328, and 5790, respectively), which takes a significant amount of time at initial startup for TShark. All of them register only fields with the same prefix as the protocol, and have common entry points into dissection, allowing delayed registration to occur upon dissection. (Other protocols with lots of registration time either register additional handoffs based on configuration files, like XML, or have many entry points that require lots of possible places to force registration, like nr-rrc, lte-rrc, and rrc.)\n\nIn addition, note that GHashTable, unlike some implementations, has no facility to reserve a certain amount of space and so does a moderately expensive copying of the table each time it reaches 15/16 capacity when adding fields. Since the capacity is always a power of 2, this means that one such expansion and copying occurs at 15*2^14=245760 entries. Not counting Diameter and RADIUS (which are already delayed registration due to reading from text configuration files), there are approximately 252166 fields (depending on the number of columns) in the hash table currently, but only 227924 with this change. That means that an initial GHashTable doubling and copy is saved.\n\nThis saves, according to callgrind, cachegrind, and real world testing, a little over 10% of time to run `tshark -r test/captures/empty.pcap` due to decreased startup time. It's a fairly small savings in absolute terms, but adds up over running TShark many times over a lot of (possibly small) files.",
+  "state": "merged",
+  "created_at": "2025-07-09T23:33:31.039Z",
+  "updated_at": "2025-07-12T07:01:13.991Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2025-07-12T07:01:14.051Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "delay_field_registration",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "65d2bda69563621062e5a888a56eb45017c0669f",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-07-09T23:33:39.517Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!20495",
+  "references": {
+    "short": "!20495",
+    "relative": "!20495",
+    "full": "wireshark/wireshark!20495"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/20495",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "4",
+  "latest_build_started_at": "2025-07-09T23:33:36.281Z",
+  "latest_build_finished_at": "2025-07-09T23:56:34.923Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1917675802,
+    "iid": 83829,
+    "project_id": 7898047,
+    "sha": "7b7bf9c124ff34ca02ceb03b134e0910ba071164",
+    "ref": "refs/merge-requests/20495/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-07-09T23:33:34.614Z",
+    "updated_at": "2025-07-09T23:56:34.935Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1917675802"
+  },
+  "head_pipeline": {
+    "id": 1923151039,
+    "iid": 83951,
+    "project_id": 7898047,
+    "sha": "65d2bda69563621062e5a888a56eb45017c0669f",
+    "ref": "refs/merge-requests/20495/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2025-07-12T07:00:53.547Z",
+    "updated_at": "2025-07-12T07:00:53.547Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1923151039",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1923151039",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "9b67b71b4bbe7a1b1ce6a75bb6a0571ec55bfa93",
+    "head_sha": "65d2bda69563621062e5a888a56eb45017c0669f",
+    "start_sha": "9b67b71b4bbe7a1b1ce6a75bb6a0571ec55bfa93"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "584bc318cc835da06b9660a2d47122882f63039e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2618476233,
+          "type": null,
+          "body": "Would it be useful to do a hastable implementation(add to the glib one) with the possibility to pre set size and possible the extension factor. Maybe a glib mr.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-07-10T18:23:44.941Z",
+          "updated_at": "2025-07-10T18:23:44.941Z",
+          "system": false,
+          "noteable_id": 398025139,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20495,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a8d8c2486d4c3dd5b92f87815c2e9119b9e9cf93",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2618492313,
+          "type": null,
+          "body": "They have a really old, closed, unimplemented issue for it - https://gitlab.gnome.org/GNOME/glib/-/issues/12\n\nWhere they closed it a couple of years ago saying that no one had asked for in a decade since the original person.\n\nI don't have an account on their GitLab, I recall at one point when I tried they made it somewhat difficult to get an account because of an influx of spam (maybe especially from GMail accounts.)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-07-10T18:33:47.590Z",
+          "updated_at": "2025-07-10T18:33:47.590Z",
+          "system": false,
+          "noteable_id": 398025139,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20495,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0841edb8fa2445e61428edd231c54d3a3b7e656d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2618520555,
+          "type": null,
+          "body": "We also could implement the minimum capacity on wmem_map and switch to using that in epan scope.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-07-10T18:52:47.973Z",
+          "updated_at": "2025-07-10T18:52:47.973Z",
+          "system": false,
+          "noteable_id": 398025139,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20495,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3b4cdcde768f3905729bd5d0679d3808e7166724",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2618561713,
+          "type": null,
+          "body": "I can add a comment to the GLib issue, but I'm not sure if our data point would warrant significant work on their part. It probably makes more sense to use wmem_map since it's something we directly control.\n\nIt also might be useful to look at using a more modern hashing algorithm for wmem_strong_hash such as xxHash.",
+          "author": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1788825804",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "created_at": "2025-07-10T19:18:48.889Z",
+          "updated_at": "2025-07-10T19:18:48.889Z",
+          "system": false,
+          "noteable_id": 398025139,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20495,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c03310229f5cc4c12b96a3f2e6acd736b3963878",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2623140823,
+          "type": null,
+          "body": "added 31 commits\n\n<ul><li>7b7bf9c1...9b67b71b - 28 commits from branch <code>wireshark:master</code></li><li>7dd97e39 - erf: Delay field registration</li><li>9008a085 - X11: Delay field registration</li><li>65d2bda6 - Asterix: delay field registration</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20495/diffs?diff_id=1421620767&start_sha=7b7bf9c124ff34ca02ceb03b134e0910ba071164)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-07-12T07:00:52.162Z",
+          "updated_at": "2025-07-12T07:00:52.166Z",
+          "system": true,
+          "noteable_id": 398025139,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20495,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cc8d530a6a4abff453f9ffee5bf8ea60b744d75b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2623140857,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-07-12T07:01:06.607Z",
+          "updated_at": "2025-07-12T07:01:06.627Z",
+          "system": true,
+          "noteable_id": 398025139,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20495,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -61159,6 +61159,10 @@ static int dissect_asterix (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n     col_set_str (pinfo->cinfo, COL_PROTOCOL, \"ASTERIX\");\n     col_clear (pinfo->cinfo, COL_INFO);\n \n+    if (hf_asterix_category <= 0) {\n+        proto_registrar_get_byname(\"asterix.category\");\n+    }\n+\n     if (tree) { /* we are being asked for details */\n         dissect_asterix_packet (tvb, pinfo, tree);\n     }\n@@ -61176,6 +61180,7 @@ get_asterix_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *dat\n \n static int dissect_asterix_tcp (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n+    /* We do delayed field registration if needed in dissect_asterix. */\n     tcp_dissect_pdus(tvb, pinfo, tree, true, 3, get_asterix_pdu_len, dissect_asterix, data);\n     return tvb_reported_length (tvb);\n }\n@@ -61570,7 +61575,7 @@ static int asterix_message_length (tvbuff_t *tvb, packet_info *pinfo, unsigned o\n     return 0;\n }\n \n-void proto_register_asterix (void)\n+static void register_asterix_fields(const char* unused _U_)\n {\n     static hf_register_info hf[] = {\n         { &hf_asterix_category, { \"Category\", \"asterix.category\", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },\n@@ -71710,12 +71715,18 @@ void proto_register_asterix (void)\n         &ett_asterix_subtree\n     };\n \n+    proto_register_field_array (proto_asterix, hf, array_length (hf));\n+    proto_register_subtree_array (ett, array_length (ett));\n+}\n+\n+void proto_register_asterix (void)\n+{\n     module_t *asterix_prefs_module;\n \n     proto_asterix = proto_register_protocol (\"ASTERIX packet\", \"ASTERIX\", \"asterix\");\n \n-    proto_register_field_array (proto_asterix, hf, array_length (hf));\n-    proto_register_subtree_array (ett, array_length (ett));\n+    /* Delay registration of ASTERIX fields */\n+    proto_register_prefix(\"asterix\", register_asterix_fields);\n \n     asterix_handle = register_dissector (\"asterix\", dissect_asterix, proto_asterix);\n     asterix_tcp_handle = register_dissector (\"asterix-tcp\", dissect_asterix_tcp, proto_asterix);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-asterix.c",
+      "old_path": "epan/dissectors/packet-asterix.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -2214,6 +2214,10 @@ dissect_erf_pseudo_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)\n   proto_tree *flags_tree, *rectype_tree;\n   bool has_flags = false;\n \n+  if (hf_erf_ts <= 0) {\n+    proto_registrar_get_byname(\"erf.ts\");\n+  }\n+\n   proto_tree_add_uint64(tree, hf_erf_ts, tvb, 0, 0, pinfo->pseudo_header->erf.phdr.ts);\n \n   rectype_item = proto_tree_add_uint_format_value(tree, hf_erf_rectype, tvb, 0, 0, pinfo->pseudo_header->erf.phdr.type,\n@@ -3346,10 +3350,8 @@ static void erf_init_dissection(void)\n   /* Old map is freed automatically */\n }\n \n-void\n-proto_register_erf(void)\n+static void register_erf_fields(const char* unused _U_)\n {\n-\n   static hf_register_info hf[] = {\n     /* ERF Header */\n     { &hf_erf_ts,\n@@ -3849,22 +3851,6 @@ proto_register_erf(void)\n     &ett_erf_entropy_value\n   };\n \n-  static const enum_val_t erf_hdlc_options[] = {\n-    { \"chdlc\",  \"Cisco HDLC\",       ERF_HDLC_CHDLC },\n-    { \"ppp\",    \"PPP serial\",       ERF_HDLC_PPP },\n-    { \"frelay\", \"Frame Relay\",      ERF_HDLC_FRELAY },\n-    { \"mtp2\",   \"SS7 MTP2\",         ERF_HDLC_MTP2 },\n-    { \"guess\",  \"Attempt to guess\", ERF_HDLC_GUESS },\n-    { NULL, NULL, 0 }\n-  };\n-\n-  static const enum_val_t erf_aal5_options[] = {\n-    { \"guess\", \"Attempt to guess\", ERF_AAL5_GUESS },\n-    { \"llc\",   \"LLC multiplexed\",  ERF_AAL5_LLC },\n-    { \"unspec\", \"Unspecified\", ERF_AAL5_UNSPEC },\n-    { NULL, NULL, 0 }\n-  };\n-\n   static ei_register_info ei[] = {\n       { &ei_erf_mc_hdlc_checksum_error, { \"erf.mchdlc.checksum.error\", PI_CHECKSUM, PI_ERROR, \"ERF MC HDLC FCS Error\", EXPFILL }},\n       { &ei_erf_mc_hdlc_short_error, { \"erf.mchdlc.short.error\", PI_RECEIVE, PI_ERROR, \"ERF MC HDLC Short Record Error, <5 bytes\", EXPFILL }},\n@@ -3884,12 +3870,8 @@ proto_register_erf(void)\n       { &ei_erf_meta_reset, { \"erf.meta.metadata_reset\", PI_PROTOCOL, PI_WARN, \"Provenance metadata reset\", EXPFILL }}\n   };\n \n-  module_t *erf_module;\n   expert_module_t* expert_erf;\n \n-  proto_erf = proto_register_protocol(\"Extensible Record Format\", \"ERF\", \"erf\");\n-  erf_handle = register_dissector(\"erf\", dissect_erf, proto_erf);\n-\n   init_meta_tags();\n \n   proto_register_field_array(proto_erf, hf, array_length(hf));\n@@ -3900,6 +3882,34 @@ proto_register_erf(void)\n   /* Register per-section Provenance fields */\n   proto_register_field_array(proto_erf, (hf_register_info*) wmem_array_get_raw(erf_meta_index.hfri), (int) wmem_array_get_count(erf_meta_index.hfri));\n   proto_register_subtree_array((int**) wmem_array_get_raw(erf_meta_index.ett), (int) wmem_array_get_count(erf_meta_index.ett));\n+}\n+\n+void\n+proto_register_erf(void)\n+{\n+  static const enum_val_t erf_hdlc_options[] = {\n+    { \"chdlc\",  \"Cisco HDLC\",       ERF_HDLC_CHDLC },\n+    { \"ppp\",    \"PPP serial\",       ERF_HDLC_PPP },\n+    { \"frelay\", \"Frame Relay\",      ERF_HDLC_FRELAY },\n+    { \"mtp2\",   \"SS7 MTP2\",         ERF_HDLC_MTP2 },\n+    { \"guess\",  \"Attempt to guess\", ERF_HDLC_GUESS },\n+    { NULL, NULL, 0 }\n+  };\n+\n+  static const enum_val_t erf_aal5_options[] = {\n+    { \"guess\", \"Attempt to guess\", ERF_AAL5_GUESS },\n+    { \"llc\",   \"LLC multiplexed\",  ERF_AAL5_LLC },\n+    { \"unspec\", \"Unspecified\", ERF_AAL5_UNSPEC },\n+    { NULL, NULL, 0 }\n+  };\n+\n+  module_t *erf_module;\n+  proto_erf = proto_register_protocol(\"Extensible Record Format\", \"ERF\", \"erf\");\n+\n+  erf_handle = register_dissector(\"erf\", dissect_erf, proto_erf);\n+\n+  /* Delay registration of ERF fields */\n+  proto_register_prefix(\"erf\", register_erf_fields);\n \n   erf_module = prefs_register_protocol(proto_erf, NULL);\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-erf.c",
+      "old_path": "epan/dissectors/packet-erf.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -6221,6 +6221,10 @@ dissect_x11(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n {\n       col_set_str(pinfo->cinfo, COL_PROTOCOL, \"X11\");\n \n+      if (hf_x11_errorcode <= 0) {\n+            proto_registrar_get_byname(\"x11.errorcode\");\n+      }\n+\n       if (pinfo->match_uint == pinfo->srcport)\n             dissect_x11_replies(tvb, pinfo, tree);\n       else\n@@ -6229,8 +6233,7 @@ dissect_x11(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n       return tvb_captured_length(tvb);\n }\n \n-/* Register the protocol with Wireshark */\n-void proto_register_x11(void)\n+static void register_x11_fields(const char* unused _U_)\n {\n \n /* Setup list of header fields */\n@@ -6288,18 +6291,26 @@ void proto_register_x11(void)\n             { &ei_x11_keycode_value_out_of_range, { \"x11.keycode_value_out_of_range\", PI_PROTOCOL, PI_WARN, \"keycode value is out of range\", EXPFILL }},\n       };\n \n-      module_t *x11_module;\n       expert_module_t* expert_x11;\n \n-/* Register the protocol name and description */\n-      proto_x11 = proto_register_protocol(\"X11\", \"X11\", \"x11\");\n-      x11_handle = register_dissector(\"x11\", dissect_x11, proto_x11);\n-\n /* Required function calls to register the header fields and subtrees used */\n       proto_register_field_array(proto_x11, hf, array_length(hf));\n       proto_register_subtree_array(ett, array_length(ett));\n       expert_x11 = expert_register_protocol(proto_x11);\n       expert_register_field_array(expert_x11, ei, array_length(ei));\n+}\n+\n+/* Register the protocol with Wireshark */\n+void proto_register_x11(void)\n+{\n+      module_t *x11_module;\n+\n+/* Register the protocol name and description */\n+      proto_x11 = proto_register_protocol(\"X11\", \"X11\", \"x11\");\n+      x11_handle = register_dissector(\"x11\", dissect_x11, proto_x11);\n+\n+      /* Delay registration of X11 fields */\n+      proto_register_prefix(\"x11\", register_x11_fields);\n \n       extension_table = wmem_map_new(wmem_epan_scope(), wmem_str_hash, g_str_equal);\n       error_table = wmem_map_new(wmem_epan_scope(), wmem_str_hash, g_str_equal);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-x11.c",
+      "old_path": "epan/dissectors/packet-x11.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -420,6 +420,10 @@ static int dissect_asterix (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n     col_set_str (pinfo->cinfo, COL_PROTOCOL, \"ASTERIX\");\n     col_clear (pinfo->cinfo, COL_INFO);\n \n+    if (hf_asterix_category <= 0) {\n+        proto_registrar_get_byname(\"asterix.category\");\n+    }\n+\n     if (tree) { /* we are being asked for details */\n         dissect_asterix_packet (tvb, pinfo, tree);\n     }\n@@ -437,6 +441,7 @@ get_asterix_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *dat\n \n static int dissect_asterix_tcp (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n+    /* We do delayed field registration if needed in dissect_asterix. */\n     tcp_dissect_pdus(tvb, pinfo, tree, true, 3, get_asterix_pdu_len, dissect_asterix, data);\n     return tvb_reported_length (tvb);\n }\n@@ -831,7 +836,7 @@ static int asterix_message_length (tvbuff_t *tvb, packet_info *pinfo, unsigned o\n     return 0;\n }\n \n-void proto_register_asterix (void)\n+static void register_asterix_fields(const char* unused _U_)\n {\n     static hf_register_info hf[] = {\n         { &hf_asterix_category, { \"Category\", \"asterix.category\", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },\n@@ -856,12 +861,18 @@ void proto_register_asterix (void)\n         &ett_asterix_subtree\n     };\n \n+    proto_register_field_array (proto_asterix, hf, array_length (hf));\n+    proto_register_subtree_array (ett, array_length (ett));\n+}\n+\n+void proto_register_asterix (void)\n+{\n     module_t *asterix_prefs_module;\n \n     proto_asterix = proto_register_protocol (\"ASTERIX packet\", \"ASTERIX\", \"asterix\");\n \n-    proto_register_field_array (proto_asterix, hf, array_length (hf));\n-    proto_register_subtree_array (ett, array_length (ett));\n+    /* Delay registration of ASTERIX fields */\n+    proto_register_prefix(\"asterix\", register_asterix_fields);\n \n     asterix_handle = register_dissector (\"asterix\", dissect_asterix, proto_asterix);\n     asterix_tcp_handle = register_dissector (\"asterix-tcp\", dissect_asterix_tcp, proto_asterix);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/asterix/packet-asterix-template.c",
+      "old_path": "tools/asterix/packet-asterix-template.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "65d2bda69563621062e5a888a56eb45017c0669f",
+      "short_id": "65d2bda6",
+      "created_at": "2025-07-12T09:00:48.000+02:00",
+      "parent_ids": [
+        "9008a08507bb36470a3e776e46341d7ecf75c453"
+      ],
+      "title": "Asterix: delay field registration",
+      "message": "Asterix: delay field registration\n\nThe Asterix dissector registers 10124 header_field_info and expert_info,\nall of which have a common prefix \"asterix,\" and there is a common entry\npoint into the dissector. Thus we can safely delay registration of\nfields in order to hasten startup (especially on TShark.)\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2025-07-08T23:24:01.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2025-07-12T09:00:48.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/65d2bda69563621062e5a888a56eb45017c0669f"
+    },
+    {
+      "id": "9008a08507bb36470a3e776e46341d7ecf75c453",
+      "short_id": "9008a085",
+      "created_at": "2025-07-12T09:00:48.000+02:00",
+      "parent_ids": [
+        "7dd97e39815518d955afad967c40870fc29ccad0"
+      ],
+      "title": "X11: Delay field registration",
+      "message": "X11: Delay field registration\n\nThe X11 dissector registers 8328 header_field_info and expert_info,\nall of which have the \"x11.\" prefix, and has only a single entry\npoint. Therefore we can safely delay registration of the fields in\norder to hasten startup (especially on TShark.)\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2025-07-08T21:46:24.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2025-07-12T09:00:48.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9008a08507bb36470a3e776e46341d7ecf75c453"
+    },
+    {
+      "id": "7dd97e39815518d955afad967c40870fc29ccad0",
+      "short_id": "7dd97e39",
+      "created_at": "2025-07-12T09:00:48.000+02:00",
+      "parent_ids": [
+        "9b67b71b4bbe7a1b1ce6a75bb6a0571ec55bfa93"
+      ],
+      "title": "erf: Delay field registration",
+      "message": "erf: Delay field registration\n\nThe ERF dissector registers 5790 header_field_info and expert_info,\nall beginning with the \"erf.\" prefix, and has a single entry point to\nthe dissector. Thus, we can safely delay registering the fields under\nthe prefix to improve startup time (especially on TShark.)\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2025-07-08T20:58:19.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2025-07-12T09:00:48.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/7dd97e39815518d955afad967c40870fc29ccad0"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1421620767,
+      "head_commit_sha": "65d2bda69563621062e5a888a56eb45017c0669f",
+      "base_commit_sha": "9b67b71b4bbe7a1b1ce6a75bb6a0571ec55bfa93",
+      "start_commit_sha": "9b67b71b4bbe7a1b1ce6a75bb6a0571ec55bfa93",
+      "created_at": "2025-07-12T07:00:51.402Z",
+      "merge_request_id": 398025139,
+      "state": "collected",
+      "real_size": "4",
+      "patch_id_sha": "b3614d3909d94b9bb284573caffd30d6d55d0f82"
+    },
+    {
+      "id": 1418512255,
+      "head_commit_sha": "7b7bf9c124ff34ca02ceb03b134e0910ba071164",
+      "base_commit_sha": "25496bd90f6c920126792b2b4a385f82a600dba8",
+      "start_commit_sha": "25496bd90f6c920126792b2b4a385f82a600dba8",
+      "created_at": "2025-07-09T23:33:32.926Z",
+      "merge_request_id": 398025139,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "b3614d3909d94b9bb284573caffd30d6d55d0f82"
+    }
+  ]
+}

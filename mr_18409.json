@@ -1,0 +1,357 @@
+{
+  "id": 348975783,
+  "iid": 18409,
+  "project_id": 7898047,
+  "title": "in_cksum: Prefer returning 0x0000 to 0xFFFF from in_cksum_shouldbe",
+  "description": "The one's complement math in in_cksum_shouldbe can't distinguish\nbetween the two zero representations +0 (0x0000) and -0 (0xFFFF).\nThe current algorithm is one that favors producing 0xFFFF, but\nfor nearly all protocols and situations 0x0000 is what the checksum\n\"should be.\"\n\n0xFFFF is only the preferred result when all other bits over which\nthe checksum is calculated (except the checksum itself) are zero.\nUnfortunately in_cksum_shouldbe doesn't know that; fortunately, all\nzero is not a valid packet for most protocols that use the checksum,\nwhether because of a version field, length field, or something else\nin the packet (or pseudoheader.) So prefer 0x0000, which is generally\nthe correct answer.\n\nOne of the few exceptions is ICMP, where a legal Echo Reply with ID\n0, sequence number 0, and no or all zero data is legal. Perform\nthe ICMP checksum processing in a different way that allows us to\ndistinguish the cases. Note this also will produce an expert info\nfor cases where 0xFFFF is substituted for 0x0000 - ICMP probably\nisn't subject to incremental updates as mentioned by RFC 1624, but\nwe probably want to flag those cases in some way anyway. We will\nstill match those in request-reply tracking because negative zero\nis mapped to positive zero in the match key.\n\nNote there are networking stacks that insert the opposite zero in both\ncases. (Linux currently does for all zero ICMP Echo Requests.) Our\nnormal method of performing Internet checksums always accepts 0xFFFF\nwhere 0x0000 is correct (but not vice versa) due to verifying by including\nthe checksum bits in the check. For TCP we have a special expert warning\nfor this referencing RFC 1624; we could do this in more generality.\n\nFix #16334",
+  "state": "merged",
+  "created_at": "2024-12-11T15:21:34.855Z",
+  "updated_at": "2024-12-16T13:43:17.162Z",
+  "merged_by": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merge_user": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merged_at": "2024-12-16T13:43:17.192Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "icmp_cksum",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "ef54f13c43fd90c9a820004932892ac5c68cbe1d",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-12-11T15:21:44.381Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!18409",
+  "references": {
+    "short": "!18409",
+    "relative": "!18409",
+    "full": "wireshark/wireshark!18409"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/18409",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2024-12-16T13:09:48.463Z",
+  "latest_build_finished_at": "2024-12-16T13:43:15.183Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1590744458,
+    "iid": 75721,
+    "project_id": 7898047,
+    "sha": "ef54f13c43fd90c9a820004932892ac5c68cbe1d",
+    "ref": "refs/merge-requests/18409/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-12-16T13:09:47.508Z",
+    "updated_at": "2024-12-16T13:43:15.193Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1590744458"
+  },
+  "head_pipeline": {
+    "id": 1590744458,
+    "iid": 75721,
+    "project_id": 7898047,
+    "sha": "ef54f13c43fd90c9a820004932892ac5c68cbe1d",
+    "ref": "refs/merge-requests/18409/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-12-16T13:09:47.508Z",
+    "updated_at": "2024-12-16T13:43:15.193Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1590744458",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 279822,
+      "username": "alagoutte",
+      "public_email": "",
+      "name": "Alexis La Goutte",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+      "web_url": "https://gitlab.com/alagoutte"
+    },
+    "started_at": "2024-12-16T13:09:48.463Z",
+    "finished_at": "2024-12-16T13:43:15.183Z",
+    "committed_at": null,
+    "duration": 2006,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1590744458",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "c9d8247a4a743a9d0199e3a81a25d8660f210fa8",
+    "head_sha": "ef54f13c43fd90c9a820004932892ac5c68cbe1d",
+    "start_sha": "c9d8247a4a743a9d0199e3a81a25d8660f210fa8"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "2a62aa31b1aa7189c2e36290dc7ad0fb266a05d1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2261054359,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2024-12-16T13:09:35.082Z",
+          "updated_at": "2024-12-16T13:09:35.096Z",
+          "system": true,
+          "noteable_id": 348975783,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 18409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a9c7c48705917a1496253d3f26e0f9c668b27cfd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2261054688,
+          "type": null,
+          "body": "added 51 commits\n\n<ul><li>acd7fbe3...c9d8247a - 50 commits from branch <code>wireshark:master</code></li><li>ef54f13c - in_cksum: Prefer returning 0x0000 to 0xFFFF from in_cksum_shouldbe</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/18409/diffs?diff_id=1212887519&start_sha=acd7fbe3adc8527260e4339589900dd4a09bd0fe)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2024-12-16T13:09:45.015Z",
+          "updated_at": "2024-12-16T13:09:45.020Z",
+          "system": true,
+          "noteable_id": 348975783,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 18409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "74b7bdf9a105c5d1d3761ac1aed95c6920a294e8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2261054781,
+          "type": null,
+          "body": "enabled an automatic merge when all merge checks for ef54f13c43fd90c9a820004932892ac5c68cbe1d pass",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2024-12-16T13:09:48.194Z",
+          "updated_at": "2024-12-16T13:09:48.200Z",
+          "system": true,
+          "noteable_id": 348975783,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 18409,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1620,8 +1620,21 @@ dissect_icmp(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data)\n \t\t/* The packet isn't part of a fragmented datagram, isn't\n \t\t   truncated, and isn't the payload of an error packet, so we can checksum\n \t\t   it. */\n-\t\tproto_tree_add_checksum(icmp_tree, tvb, 2, hf_icmp_checksum, hf_icmp_checksum_status, &ei_icmp_checksum, pinfo, ip_checksum_tvb(tvb, 0, reported_length),\n-\t\t\t\t\t\t\t\tENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_IN_CKSUM);\n+\t\t/* Since ICMP, unlike most protocols that use the Internet checksum,\n+\t\t * can be all zeros except for the checksum, don't verify the checksum\n+\t\t * by including the checksum field itself as RFCs 1071 and 1624\n+\t\t * recommend, but compute it and compare against the header checksum\n+\t\t * field. This also means that we won't accept 0xffff where 0x0000\n+\t\t * is correct (Postel's Law is less appropriate here). We'll use\n+\t\t * the standard \"checksum incorrect\" expert info warning for now\n+\t\t * (we could have special handling like TCP), but handle it in the\n+\t\t * request-reply matching specially. (See #5770, #16334). */\n+\t\tvec_t cksum_vec[2];\n+\t\tSET_CKSUM_VEC_TVB(cksum_vec[0], tvb, 0, 2);\n+\t\tSET_CKSUM_VEC_TVB(cksum_vec[1], tvb, 4, tvb_reported_length_remaining(tvb, 4));\n+\t\tuint16_t computed_cksum = g_ntohs(in_cksum(&cksum_vec[0], 2));\n+\t\tproto_tree_add_checksum(icmp_tree, tvb, 2, hf_icmp_checksum, hf_icmp_checksum_status, &ei_icmp_checksum, pinfo, computed_cksum,\n+\t\t\t\t\t\t\t\tENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY);\n \t} else {\n \t\tchecksum_item = proto_tree_add_checksum(icmp_tree, tvb, 2, hf_icmp_checksum, hf_icmp_checksum_status, &ei_icmp_checksum, pinfo, 0,\n \t\t\t\t\t\t\t\tENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-icmp.c",
+      "old_path": "epan/dissectors/packet-icmp.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -170,6 +170,11 @@ ip_checksum_tvb(tvbuff_t *tvb, int offset, int len)\n  * header, and the network-byte-order computed checksum of the data\n  * that the checksum covers (including the checksum itself), compute\n  * what the checksum field *should* have been.\n+ *\n+ * This always returns +0 (0x0000) not -0 (0xffff). The few protocols,\n+ * like ICMP, that can have an all zero packet (aside from the checksum\n+ * field) such that 0xffff is the correct result should test for that\n+ * case before, after, or instead of calling this method.\n  */\n uint16_t\n in_cksum_shouldbe(uint16_t sum, uint16_t computed_sum)\n@@ -194,7 +199,21 @@ in_cksum_shouldbe(uint16_t sum, uint16_t computed_sum)\n \t * doing the arithmetic in 32 bits (with no sign-extension),\n \t * and then adding the upper 16 bits of the sum, which contain\n \t * the carry, to the lower 16 bits of the sum, and then do it\n-\t * again in case *that* sum produced a carry.\n+\t * again in case *that* sum produced a carry. (XXX - It won't.\n+\t * It can't be any larger than 0xFFFF + 0xFFFF = 0x1FFFE,\n+\t * which only carries once back to 0xFFFF.)\n+\t *\n+\t * Also, since all the arithmetic is one's complement, +0 (0x0000)\n+\t * and -0 (0xFFFF) are indistinguishable. (Different ways of\n+\t * performing the calculation can yield one zero or the other for\n+\t * different inputs.) Between the two, +0 is the representation we\n+\t * want unless all the bits of the packet except for the checksum\n+\t * field are zero, but we can't know that from our inputs here.\n+\t * Most protocols which use this checksum require at least some\n+\t * nonzero bits (a version, a length field, something either directly\n+\t * or in a pseudoheader), and so +0 is correct. Despite this, some\n+\t * networking stacks put 0xFFFF when 0x0000 is appropriate, see RFC\n+\t * 1624.\n \t *\n \t * As RFC 1071 notes, the checksum can be computed without\n \t * byte-swapping the 16-bit words; summing 16-bit words\n@@ -213,8 +232,13 @@ in_cksum_shouldbe(uint16_t sum, uint16_t computed_sum)\n \tshouldbe = sum;\n \tshouldbe += g_ntohs(computed_sum);\n \tshouldbe = (shouldbe & 0xFFFF) + (shouldbe >> 16);\n-\tshouldbe = (shouldbe & 0xFFFF) + (shouldbe >> 16);\n-\treturn shouldbe;\n+\tshouldbe = (shouldbe & 0xFFFF) + (shouldbe >> 16); // XXX - Unneeded.\n+\t/* Always return +0, not -0.\n+\t * There are some other ways to always return +0, such as\n+\t * calculating -(-computed_sum + -sum) instead; the fastest\n+\t * approach is likely CPU and compiler dependent.\n+\t */\n+\treturn shouldbe == 0xFFFF ? 0 : shouldbe;\n }\n \n /*\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/in_cksum.c",
+      "old_path": "epan/in_cksum.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -13918,6 +13918,14 @@ proto_tree_add_checksum(proto_tree *tree, tvbuff_t *tvb, const unsigned offset,\n \t\t\t\t\tincorrect_checksum = false;\n \t\t\t\t} else if (flags & PROTO_CHECKSUM_IN_CKSUM) {\n \t\t\t\t\tcomputed_checksum = in_cksum_shouldbe(checksum, computed_checksum);\n+\t\t\t\t\t/* XXX - This can't distinguish between \"shouldbe\"\n+\t\t\t\t\t * 0x0000 and 0xFFFF unless we know whether there\n+\t\t\t\t\t * were any nonzero bits (other than the checksum).\n+\t\t\t\t\t * Protocols should not use this path if they might\n+\t\t\t\t\t * have an all zero packet.\n+\t\t\t\t\t * Some implementations put the wrong zero; maybe\n+\t\t\t\t\t * we should have a special expert info for that?\n+\t\t\t\t\t */\n \t\t\t\t}\n \t\t\t} else {\n \t\t\t\tif (checksum == computed_checksum) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/proto.c",
+      "old_path": "epan/proto.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "ef54f13c43fd90c9a820004932892ac5c68cbe1d",
+      "short_id": "ef54f13c",
+      "created_at": "2024-12-16T13:09:41.000+00:00",
+      "parent_ids": [
+        "c9d8247a4a743a9d0199e3a81a25d8660f210fa8"
+      ],
+      "title": "in_cksum: Prefer returning 0x0000 to 0xFFFF from in_cksum_shouldbe",
+      "message": "in_cksum: Prefer returning 0x0000 to 0xFFFF from in_cksum_shouldbe\n\nThe one's complement math in in_cksum_shouldbe can't distinguish\nbetween the two zero representations +0 (0x0000) and -0 (0xFFFF).\nThe current algorithm is one that favors producing 0xFFFF, but\nfor nearly all protocols and situations 0x0000 is what the checksum\n\"should be.\"\n\n0xFFFF is only the preferred result when all other bits over which\nthe checksum is calculated (except the checksum itself) are zero.\nUnfortunately in_cksum_shouldbe doesn't know that; fortunately, all\nzero is not a valid packet for most protocols that use the checksum,\nwhether because of a version field, length field, or something else\nin the packet (or pseudoheader.) So prefer 0x0000, which is generally\nthe correct answer.\n\nOne of the few exceptions is ICMP, where a legal Echo Reply with ID\n0, sequence number 0, and no or all zero data is legal. Perform\nthe ICMP checksum processing in a different way that allows us to\ndistinguish the cases. Note this also will produce an expert info\nfor cases where 0xFFFF is substituted for 0x0000 - ICMP probably\nisn't subject to incremental updates as mentioned by RFC 1624, but\nwe probably want to flag those cases in some way anyway. We will\nstill match those in request-reply tracking because negative zero\nis mapped to positive zero in the match key.\n\nNote there are networking stacks that insert the opposite zero in both\ncases. (Linux currently does for all zero ICMP Echo Requests.) Our\nnormal method of performing Internet checksums always accepts 0xFFFF\nwhere 0x0000 is correct (but not vice versa) due to verifying by including\nthe checksum bits in the check. For TCP we have a special expert warning\nfor this referencing RFC 1624; we could do this in more generality.\n\nFix #16334\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-12-10T21:27:38.000-05:00",
+      "committer_name": "Alexis La Goutte",
+      "committer_email": "alexis.lagoutte@gmail.com",
+      "committed_date": "2024-12-16T13:09:41.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ef54f13c43fd90c9a820004932892ac5c68cbe1d"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1212887519,
+      "head_commit_sha": "ef54f13c43fd90c9a820004932892ac5c68cbe1d",
+      "base_commit_sha": "c9d8247a4a743a9d0199e3a81a25d8660f210fa8",
+      "start_commit_sha": "c9d8247a4a743a9d0199e3a81a25d8660f210fa8",
+      "created_at": "2024-12-16T13:09:44.118Z",
+      "merge_request_id": 348975783,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "a579aefbb020f80db968444e0a712d36308d3b78"
+    },
+    {
+      "id": 1208836464,
+      "head_commit_sha": "acd7fbe3adc8527260e4339589900dd4a09bd0fe",
+      "base_commit_sha": "9161d615769441fe7964a49a65165d6044fedc6a",
+      "start_commit_sha": "9161d615769441fe7964a49a65165d6044fedc6a",
+      "created_at": "2024-12-11T15:21:36.138Z",
+      "merge_request_id": 348975783,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "a579aefbb020f80db968444e0a712d36308d3b78"
+    }
+  ]
+}

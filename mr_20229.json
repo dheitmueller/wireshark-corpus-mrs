@@ -1,0 +1,2821 @@
+{
+  "id": 391428705,
+  "iid": 20229,
+  "project_id": 7898047,
+  "title": "[SSH]  add TShark ssh.textonly field for \"exec\" and \"shell\" request",
+  "description": "**EDIT following to !20248 !20249 !20273 and !20283 - 2026-03-22**  \n## This MR add a new field to TShark which print ASCII / UTF-8 part of decrypted payload for \"exec\" and \"shell\"  request\nThis MR to solve issue: https://gitlab.com/wireshark/wireshark/-/issues/20580 (which is more a **feature request** than an issue... )   \n\nThe idea of this MR is to let TShark print the 'data-text-lines' dissector when it's used to display UTF-8 decrypted text in Wireshark, as today TShark only display hexencoded decrypted payload which is perfect to print binaries but not user friendly when printing UTF-8 text   \n\n\n### New added field: \n```bash\n -e ssh.textonly \n```\n  \nThis MR can be used to easily follow command and command results in an interactive ssh terminal session:  \n- on the left `ssh` command \n- on the right `tshark` decryption command using `-T fields -e ssh.textonly -E aggregator=$'\\n' -E escape=n`  \n  (aggregator is used to avoid `sed` or other terminal postprocessing) \n  \n![image](/uploads/96ef496bf1ce4ffc0a302f0b00fad799/image.png){width=900 height=271}\n  \nThe idea is to make UTF-8 becomes human readable in the same way it's displayed in Wireshark UI:  \n  \n![Capture_d_écran_du_2026-03-22_11-17-27](/uploads/18b19dec34c2be81770aae36d2929653/Capture_d_écran_du_2026-03-22_11-17-27.png){width=900 height=475}\n\n**END EDIT**   \n\n---------------------------\n---------------------------   \n\n\nOriginal MR description:\n## ASCII FIELD ADDITION\n\n**All captures and traces of the issue had been provides directly in the issues.**  \n\n**Here will only be posted a final capture where ascii part of decrypted payload is directly printed and readable by the user.**     \n\n### Captures:  \n\n#### Capture command\n\n```bash\n/usr/src/build/wireshark/build/run/tshark \\\n        -i enp0s3 \\\n        -n \\\n        -o ssh.keylog_file:/home/nba/ascii_field.keylog \\\n        -o ssh.debug_file:/home/nba/ascii_field.debug \\\n        -o ssh.desegment_buffers:TRUE \\\n        -o tcp.desegment_tcp_streams:TRUE \\\n        -o tcp.reassemble_out_of_order:TRUE \\\n        -t ad \\\n        -l \\\n        -f '(host 10.0.50.78 or host 10.0.50.91) and (host 10.0.50.77 or host 10.0.50.75) and port 22' \\\n        -T fields \\\n        -e frame.number \\\n        -e frame.time_relative \\\n        -e ip.src \\\n        -e ip.dst \\\n        -e tcp.srcport \\\n        -e tcp.dstport \\\n        -e tcp.len \\\n        -e _ws.col.Protocol \\\n        -e _ws.col.Info  \\\n        -e ssh.cookie \\\n        -e ssh.message_code \\\n        -e ssh.ascii_decrypted_payload \\\n        --log-level noisy \\\n        --log-domain packet-ssh \n        -w ascii_field.pcap\n\n\n```\n\n#### Test command\n\n```bash\n/usr/src/build/openssh-portable/ssh -F none -o KexAlgorithms=mlkem768x25519-sha256 -o Ciphers=chacha20-poly1305@openssh.com  nba@10.0.50.77 ls / 2>&1 >/dev/null\n```\n\n\n#### Sample result (no debug + no TCP packet)\n\n```bash\nCapturing on 'enp0s3'\n4\t0.001125702\t10.0.50.91\t10.0.50.77\t58666\t22\t22\tSSH\tClient: Protocol (SSH-2.0-OpenSSH_10.0)\t\t\t\n6\t0.017670860\t10.0.50.77\t10.0.50.91\t22\t58666\t41\tSSHv2\tServer: Protocol (SSH-2.0-OpenSSH_10.0p2 Debian-5~bpo12+2)\t\t\t\n8\t0.018430720\t10.0.50.91\t10.0.50.77\t58666\t22\t1128\tSSHv2\tClient: Key Exchange Init\t31b5e78c6c33270a20315aef9f400ea2\t20\t\n9\t0.032532154\t10.0.50.77\t10.0.50.91\t22\t58666\t1040\tSSHv2\tServer: Key Exchange Init\t352517c6cb01d00d9437a77a1ed626e3\t20\t\n ** (tshark:182946) 17:28:43.277208 [packet-ssh WARNING] epan/dissectors/packet-ssh.c:1760 -- ssh_dissect_kex_pq_hybrid(): POST-QUANTUM KEX_HYBRID detected: KEX = mlkem768x25519-sha256\n ** (tshark:182946) 17:28:43.277295 [packet-ssh WARNING] epan/dissectors/packet-ssh.c:1761 -- ssh_dissect_kex_pq_hybrid(): SHARED_SECRET decryption is supported - PRIVATE_KEY decryption is not supported\n10\t0.037395533\t10.0.50.91\t10.0.50.77\t58666\t22\t1232\tSSHv2\tClient: PQ/T Hybrid Key Exchange Init\t\t30\t\n11\t0.046199408\t10.0.50.77\t10.0.50.91\t22\t58666\t1580\tSSHv2\tServer: PQ/T Hybrid Key Exchange Reply, New Keys, Encrypted packet (plaintext_len=268), Extension Information\t\t31,21,7\t server-sig-algs....ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256....publickey-hostbound@openssh.com....0....ping@openssh.com....0 (msg_code=7; total_len=268; skipped_bytes=25; non_printable_char=20; ascii_char=223)\n13\t0.054171950\t10.0.50.91\t10.0.50.77\t58666\t22\t84\tSSHv2\tClient: New Keys, Encrypted packet (plaintext_len=52), Extension Information\t\t21,7\t ext-info-in-auth@openssh.com....0 (msg_code=7; total_len=52; skipped_bytes=19; non_printable_char=4; ascii_char=29)\n14\t0.259594504\t10.0.50.91\t10.0.50.77\t58666\t22\t44\tSSHv2\tClient: Encrypted packet (plaintext_len=28), Service Request\t\t5\t ssh-userauth (msg_code=5; total_len=28; skipped_bytes=16; non_printable_char=0; ascii_char=12)\n16\t0.260439118\t10.0.50.77\t10.0.50.91\t22\t58666\t44\tSSHv2\tServer: Encrypted packet (plaintext_len=28), Service Accept\t\t6\t ssh-userauth (msg_code=6; total_len=28; skipped_bytes=16; non_printable_char=0; ascii_char=12)\n17\t0.260687381\t10.0.50.91\t10.0.50.77\t58666\t22\t60\tSSHv2\tClient: Encrypted packet (plaintext_len=44), User Authentication Request\t\t50\t nba....ssh-connection....none (msg_code=50; total_len=44; skipped_bytes=15; non_printable_char=8; ascii_char=21)\n18\t0.263779626\t10.0.50.77\t10.0.50.91\t22\t58666\t264\tSSHv2\tServer: Encrypted packet (plaintext_len=196), Extension Information, Encrypted packet (plaintext_len=36), User Authentication Failure\t\t7,51\t server-sig-algs....ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256 (msg_code=7; total_len=196; skipped_bytes=18; non_printable_char=4; ascii_char=174), publickey,password. (msg_code=51; total_len=36; skipped_bytes=17; non_printable_char=1; ascii_char=18)\n21\t0.283930550\t10.0.50.91\t10.0.50.77\t58666\t22\t140\tSSHv2\tClient: Encrypted packet (plaintext_len=124), User Authentication Request\t\t50\t nba....ssh-connection....publickey.....ssh-ed25519...3....ssh-ed25519... .....)..H.?...l.+Z...3..z...v..# (msg_code=50; total_len=124; skipped_bytes=19; non_printable_char=45; ascii_char=60)\n22\t0.287063188\t10.0.50.77\t10.0.50.91\t22\t58666\t100\tSSHv2\tServer: Encrypted packet (plaintext_len=84), Public Key algorithm accepted\t\t60\t ssh-ed25519...3....ssh-ed25519... .....)..H.?...l.+Z...3..z...v..# (msg_code=60; total_len=84; skipped_bytes=18; non_printable_char=32; ascii_char=34)\n23\t0.290090157\t10.0.50.91\t10.0.50.77\t58666\t22\t308\tSSHv2\tClient: Encrypted packet (plaintext_len=292), User Authentication Request\t\t50\t nba....ssh-connection...#publickey-hostbound-v00@openssh.com.....ssh-ed25519...3....ssh-ed25519... .....)..H.?...l.+Z...3..z...v..#...3....ssh-ed25519... .r*..|JU..A.I.X.+..U.C....E..>m....S....ssh-ed25519...@....\\\\B....3.=.h..u.B_......n.}... .N...Q..5......`\\\\..,-:..a..... (msg_code=50; total_len=292; skipped_bytes=19; non_printable_char=125; ascii_char=148)\n25\t0.515553642\t10.0.50.77\t10.0.50.91\t22\t58666\t28\tSSHv2\tServer: Encrypted packet (plaintext_len=12), User Authentication Success\t\t52\t  (msg_code=52; total_len=12; skipped_bytes=12; non_printable_char=0; ascii_char=0)\n26\t0.516349062\t10.0.50.91\t10.0.50.77\t58666\t22\t112\tSSHv2\tClient: Encrypted packet (plaintext_len=36), Channel Open, Encrypted packet (plaintext_len=44), Global Request\t\t90,80\t session..... ...... (msg_code=90; total_len=36; skipped_bytes=17; non_printable_char=11; ascii_char=8), no-more-sessions@openssh.com. (msg_code=80; total_len=44; skipped_bytes=15; non_printable_char=1; ascii_char=28)\n28\t0.606194784\t10.0.50.77\t10.0.50.91\t22\t58666\t648\tSSHv2\tServer: Encrypted packet (plaintext_len=484), Global Request, Encrypted packet (plaintext_len=132), Debug\t\t80,4\t hostkeys-00@openssh.com.........ssh-rsa..............I.....M.+.UM./.r.w|....57._2gL...m.t.....2.R...K`..4...j.q....Ao]........x\"..HGWm.d.!4.._.[]...U.P0I..O.t.s..r,o........F.]XNj.......f....0../z...@.....R.V)c;.r....A.\\\\t...r...r...v...E...,o ......)...&.d8.....].[..))...@.....(..Q....@...&..,........I..Ka...h....ecdsa-sha2-nistp256....nistp256...A.k...<..(.a.-Et...-.t...)l...V.~.l.5.*}...<dM.M.q.....H....8V..E....3....ssh-ed25519... .r*..|JU..A.I.X.+..U.C....E..>m. (msg_code=80; total_len=484; skipped_bytes=14; non_printable_char=265; ascii_char=205), /home/nba/.ssh/authorized_keys:4: key options: agent-forwarding port-forwarding pty user-rc x11-forwarding.... (msg_code=4; total_len=132; skipped_bytes=22; non_printable_char=4; ascii_char=106)\n29\t0.614232199\t10.0.50.91\t10.0.50.77\t58666\t22\t1100\tSSHv2\tClient: Encrypted packet (plaintext_len=1084), Key Exchange Init\t7ee513067340f3c6185ce9ec1d26f76e\t20\t mlkem768x25519-sha256....ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256....chacha20-poly1305@openssh.com....chacha20-poly1305@openssh.com....umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1....umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1....none,zlib@openssh.com....none,zlib@openssh.com............. (msg_code=20; total_len=1084; skipped_bytes=33; non_printable_char=41; ascii_char=1010)\n30\t0.614854121\t10.0.50.77\t10.0.50.91\t22\t58666\t192\tSSHv2\tServer: Encrypted packet (plaintext_len=132), Debug, Encrypted packet (plaintext_len=28), Channel Open Confirmation\t\t4,91\t /home/nba/.ssh/authorized_keys:4: key options: agent-forwarding port-forwarding pty user-rc x11-forwarding.... (msg_code=4; total_len=132; skipped_bytes=22; non_printable_char=4; ascii_char=106),  (msg_code=91; total_len=28; skipped_bytes=28; non_printable_char=0; ascii_char=0)\n32\t0.656137062\t10.0.50.77\t10.0.50.91\t22\t58666\t1012\tSSHv2\tServer: Encrypted packet (plaintext_len=996), Key Exchange Init\t52d17f5bf2866139831d48163ecabe24\t20\t mlkem768x25519-sha256,sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521...9rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256,ssh-ed25519...lchacha20-poly1305@openssh.com,aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr...lchacha20-poly1305@openssh.com,aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr....umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1....umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1....none,zlib@openssh.com....none,zlib@openssh.com............. (msg_code=20; total_len=996; skipped_bytes=31; non_printable_char=38; ascii_char=927)\n ** (tshark:182946) 17:28:43.795837 [packet-ssh WARNING] epan/dissectors/packet-ssh.c:1760 -- ssh_dissect_kex_pq_hybrid(): POST-QUANTUM KEX_HYBRID detected: KEX = mlkem768x25519-sha256\n ** (tshark:182946) 17:28:43.795992 [packet-ssh WARNING] epan/dissectors/packet-ssh.c:1761 -- ssh_dissect_kex_pq_hybrid(): SHARED_SECRET decryption is supported - PRIVATE_KEY decryption is not supported\n34\t0.661304886\t10.0.50.91\t10.0.50.77\t58666\t22\t1252\tSSHv2\tClient: Encrypted packet (plaintext_len=1236), PQ/T Hybrid Key Exchange Init\t\t30\t ..4.b9..Y.J0`U...^.UY..+..........ZZ.f.SY.4..n...5.e'.....i.3`..d.....l...TA.(.ba..[..hO..p...$pn.\" .E/..HP...Tz<..Z6....$a.\\\\.9._....<.....a.zY}....8.;..B..\".r=k.7.rn.V,.....^B..|..WA..V&..+w..{....Q.....z./^...K..5...7...l...[c.4s..R..@.\\\\^p.\\\\gd/....6....../.v.@3...v..p6$....J#..\\\\.......N...|.3G.j............Jy.._..cS.].c........da.4....4GP. .....g*yX..(pz.'.a*...+a{.&W/s.....)m....L ...W.!.rzwH....;.J..]i24...]....:..E....L......h...m......q...I.l'..1....cZ..,..6i6....@...L.4.-..K2..t.hQ...F.@4.....98;t|......I.`....RM.WE.'.7 ...bB.O...#P.D.,..C^c..7y.G.u....9 <8..S..iU...c........z...r....|)U)....0.0..@.6...I.5...s.a+9E5}..wg..,...N..l.Y..|eT.....O.]....E.h.FRL...H......a..'`.K..20_)..k. 4&o...dW.@....D....e....dA.?..N..*.#E..S....T1....+`....SJ........2.....;....M.|.K:...!.*.nj'?... .....%.....E3...yzM/.7\\\\3.....1..y.....1J..S.0..'p\"CX.*g.Js.qe..1x..o.tu<..A2..).._..........V.m%..D.....G.MFj.. PG....:Pc..W7....u...|...Q....9.w...W!.......T.].K..%..w..P.1`.....<%.....]<Px.b.]......GaB.J....v....i9).4..;.k6 .lW^.Q...:.M..r@|rZ&X.K..5t....._3.7.....r..9Z.b.1.03N..ZyP..r....;.L`j=..........s.d.\\\\L.... r,...@ ..{..w..vCy=s..kaN5%..W.vw..S......t_.J.l......#..}...(..%......;Y.E....m<o.6......V.l^..Ek8f (msg_code=30; total_len=1236; skipped_bytes=20; non_printable_char=727; ascii_char=489)\n35\t0.673827768\t10.0.50.77\t10.0.50.91\t22\t58666\t1320\tSSHv2\tServer: Encrypted packet (plaintext_len=1276), PQ/T Hybrid Key Exchange Reply, Encrypted packet (plaintext_len=12), New Keys\t\t31,21\t ....ssh-ed25519... .r*..|JU..A.I.X.+..U.C....E..>m....`..~{{W.Q...Z_.!;.....U.....z.I....@...;..........j.`.bV)..ku..i.k3..~...{.\"d...k\"z....[...>.C..D.-.d.ycj.u.....=......Na)..i/}.'.$$\".......9(.......f.../gP.L.x...F..GP..Wl.*.....mG>R...\\\\.o.H...p....H....~I....].....k..!.......)..C..h..(.!......h.g.L..;E...M.^....8.....[.W..A.>{.`....9....|..........(.%....~.......H.1D.,LK..M3....T..J...o.)........y%L...DWl{..q...a`..A.ek.*1.(..L.......o .pP..,.....?.F.&..3...AED.5v...8-..L?~0h.....|qfAP...[.x=..<..R..(...c...4..y.@3...)..-....K......c..V.sx...|6R4..?.J..#2.D..'.Y...YME...d+.p...Bq...c.-..O............C.Q....,...6.\".TA+V....1..V2`.........V.....E..h.?T.u......G.Ja.....$.e.'=mm.)...>..a.:..}:Z.C..4K.N..}.h..s......V.... 1..|...R.Z+.....e..J.tM...$O...8........\\\\ee......O.a....f.*..........e........{Sc8.hf4..M.iGY.........6Ec@.\\\\i.n......=.G..N.j.%.PQ.l..$V..~2...].l.3.f...$j7.LC_Im....V..E...Btt...B.........`\"j.d2..cc5....`e....#..L.P....Z........]_..P...a..X...&....Efpk.......mq_0...\\\\..S........w.;!R.j(.B.C\"...v.......B.R.K../..k.XGX.......#...(.`.o....o#_\\\\....<]FH......-:.U.z~(KHh...9C..~m..d.&.i.ws...J.%:...o.........bl 7..........t.3.4.p.....W.R%...JoyC...S....ssh-ed25519...@..^..^.Mx....m.%.....-.z.].y...i%7.....iU#....hMWV....'._(Q..... (msg_code=31; total_len=1276; skipped_bytes=14; non_printable_char=785; ascii_char=477),  (msg_code=21; total_len=12; skipped_bytes=12; non_printable_char=0; ascii_char=0)\n36\t0.683231411\t10.0.50.91\t10.0.50.77\t58666\t22\t80\tSSHv2\tClient: Encrypted packet (plaintext_len=12), New Keys, Encrypted packet (plaintext_len=36), Channel Request\t\t21,98\t  (msg_code=21; total_len=12; skipped_bytes=12; non_printable_char=0; ascii_char=0), exec.....ls / (msg_code=98; total_len=36; skipped_bytes=23; non_printable_char=5; ascii_char=8)\n37\t0.684894159\t10.0.50.77\t10.0.50.91\t22\t58666\t72\tSSHv2\tServer: Encrypted packet (plaintext_len=20), Window Adjust, Encrypted packet (plaintext_len=20), Channel Success\t\t93,99\t  (msg_code=93; total_len=20; skipped_bytes=20; non_printable_char=0; ascii_char=0),  (msg_code=99; total_len=20; skipped_bytes=20; non_printable_char=0; ascii_char=0)\n38\t0.691146585\t10.0.50.77\t10.0.50.91\t22\t58666\t276\tSSHv2\tServer: Encrypted packet (plaintext_len=156), Channel Data, Encrypted packet (plaintext_len=36), Channel Request, Encrypted packet (plaintext_len=36), Channel Request\t\t94,98,98\t bin.boot.dev.etc.home.initrd.img.initrd.img.old.lib.lib64.media.mnt.opt.proc.root.run.sbin.srv.sys.tmp.usr.var.vmlinuz.vmlinuz.old. (msg_code=94; total_len=156; skipped_bytes=25; non_printable_char=23; ascii_char=108), exit-status..... (msg_code=98; total_len=36; skipped_bytes=20; non_printable_char=5; ascii_char=11), eow@openssh.com. (msg_code=98; total_len=36; skipped_bytes=20; non_printable_char=1; ascii_char=15)\n39\t0.691222088\t10.0.50.77\t10.0.50.91\t22\t58666\t72\tSSHv2\tServer: Encrypted packet (plaintext_len=20), Channel EOF, Encrypted packet (plaintext_len=20), Channel Close\t\t96,97\t  (msg_code=96; total_len=20; skipped_bytes=20; non_printable_char=0; ascii_char=0),  (msg_code=97; total_len=20; skipped_bytes=20; non_printable_char=0; ascii_char=0)\n41\t0.691513805\t10.0.50.91\t10.0.50.77\t58666\t22\t36\tSSHv2\tClient: Encrypted packet (plaintext_len=20), Channel Close\t\t97\t  (msg_code=97; total_len=20; skipped_bytes=20; non_printable_char=0; ascii_char=0)\n42\t0.691550702\t10.0.50.91\t10.0.50.77\t58666\t22\t60\tSSHv2\tClient: Encrypted packet (plaintext_len=44), Disconnect\t\t1\t disconnected by user.... (msg_code=1; total_len=44; skipped_bytes=20; non_printable_char=4; ascii_char=20)\n28 packets captured\n```\n\n### Sample capture: \n\nUsing mlkem768x25519-sha256/sntrup761x25519-sha512 + chacha20-poly1305 (also working with other algorithms + ciphers) :  \n- keylog: [ascii_field.keylog](/uploads/3d891f3056b86e8cbde65e505c4b461a/ascii_field.keylog)\n- pcap (no keys): [ascii_field.pcap](/uploads/150214749bd85985d1b60e3f8ab78ea4/ascii_field.pcap)\n- pcapng (with injected keys): [ascii_field.pcapng](/uploads/389581bab58e02f930ddda48f0a6e1ce/ascii_field.pcapng)\n- ssh dissector debug log: [ascii_field.debug](/uploads/2a20fa942c87faeeaf9fff5f74704a51/ascii_field.debug)   \n- tshark live output: [ascii_field.tshark](/uploads/0a978cbe0445c9f26c50bbcc664ea77d/ascii_field.tshark) \n- tshark live output no debug: [ascii_field_nodebug.tshark](/uploads/b83c61cda4777894ced728cd0e9e6d43/ascii_field_nodebug.tshark)\n\n\n\n\n### Screenshots:\n\n\n\n\n\n#### Exemple1 Wireshark (in addition of hex_encoded payload):  \n\n![ascii_field_ws](/uploads/861d1c5987a0d6062758d7a2a6065752/ascii_field_ws.png)\n\n\n#### Exemple2 TShark:  \n\n![ascii_field](/uploads/78341eee4a9060aae3ec2ee3c9ba5306/ascii_field.png)",
+  "state": "opened",
+  "created_at": "2025-06-16T15:42:36.741Z",
+  "updated_at": "2026-03-23T10:58:19.090Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "nba-ascii-field",
+  "user_notes_count": 27,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 15285070,
+    "username": "nbanb",
+    "public_email": null,
+    "name": "nbanb",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+    "web_url": "https://gitlab.com/nbanb"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 69405669,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged_recheck",
+  "detailed_merge_status": "not_approved",
+  "merge_after": null,
+  "sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-06-16T15:42:44.913Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!20229",
+  "references": {
+    "short": "!20229",
+    "relative": "!20229",
+    "full": "wireshark/wireshark!20229"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/20229",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2026-03-23T10:58:26.913Z",
+  "latest_build_finished_at": "2026-03-23T11:19:51.071Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2402473632,
+    "iid": 277,
+    "project_id": 69405669,
+    "sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+    "ref": "nba-ascii-field",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-03-23T10:58:25.085Z",
+    "updated_at": "2026-03-23T11:19:51.088Z",
+    "web_url": "https://gitlab.com/nbanba/wireshark/-/pipelines/2402473632"
+  },
+  "head_pipeline": {
+    "id": 2402473632,
+    "iid": 277,
+    "project_id": 69405669,
+    "sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+    "ref": "nba-ascii-field",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-03-23T10:58:25.085Z",
+    "updated_at": "2026-03-23T11:19:51.088Z",
+    "web_url": "https://gitlab.com/nbanba/wireshark/-/pipelines/2402473632",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 15285070,
+      "username": "nbanb",
+      "public_email": null,
+      "name": "nbanb",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+      "web_url": "https://gitlab.com/nbanb"
+    },
+    "started_at": "2026-03-23T10:58:26.913Z",
+    "finished_at": "2026-03-23T11:19:51.071Z",
+    "committed_at": null,
+    "duration": 1284,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/nbanba/wireshark/-/pipelines/2402473632",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+    "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+    "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "db17c29c42e749caeac26e0068d8ab2d3b34291e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565324115,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-16T15:43:26.228Z",
+          "updated_at": "2025-06-16T15:43:26.233Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "801e6e34d983947ec21f1e8b2b3eea7f400decf4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565377998,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>35883585 - 1 commit from branch <code>wireshark:master</code></li><li>f123e6e6 - ssh: add TShark ascii_decrypted_payload field</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1391817405&start_sha=1b290e30f675be72637e429cc2b18486628dde71)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-16T15:59:26.119Z",
+          "updated_at": "2025-06-16T15:59:26.128Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d12580fdf442099a035c50a7b922a9357465d913",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565426338,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>5e259975 - ssh: add TShark ascii_decrypted_payload field</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1391846281&start_sha=f123e6e6d771ba25267022fee4376bda1588b7f8)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-16T16:22:23.046Z",
+          "updated_at": "2025-06-16T16:22:23.099Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c879183c660884815794d1bff9caabab91a72c99",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2565431284,
+          "type": null,
+          "body": "mentioned in issue #20580",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-16T16:25:35.410Z",
+          "updated_at": "2025-06-16T16:25:35.413Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b6d4406aa6f24f6ac7b494292aef32fc555eb514",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2568240569,
+          "type": "DiscussionNote",
+          "body": "This is broken, because there is no guarantee that all strings inside SSH channel data are ASCII, and indeed on modern systems they are likely to be UTF-8.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-06-17T13:48:39.897Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2568664478,
+          "type": "DiscussionNote",
+          "body": "I thought (maybe I'm wrong) that UTF-8 was \"just\" an extend of ASCII as the 7 first bit of the first byte get the same meaning (with the 8th bit as MSB =0) and the 8th bit != 0 + the possibility to have char coded using 1 to 4 bytes was the process which extend UTF-8 from ASCII to millions of char.     \nI thought that could be an extend of ASCII support in a second time, but maybe I'm wrong.",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-17T16:42:45.992Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2568700927,
+          "type": "DiscussionNote",
+          "body": "Your code as written will replace all such bytes with a dot.\n\nI think it makes more sense to parse the messages.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-06-17T17:09:08.545Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2568721836,
+          "type": "DiscussionNote",
+          "body": "For example, in the ssh-multi-rekey.pcapng file you provided earlier, there are CHANNEL_EXTENDED_DATA messages with UTF-8 stderr messages that won't look correct with this method.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-06-17T17:23:37.820Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2590705123,
+          "type": "DiscussionNote",
+          "body": "OK   \nTo go forward and following to all the work you made to dissect extensions, etc., what would you suggest ?   \n(You already added a decrypted command field after 'exec' so that's perfect for command without shell)  \n   \n~~Adding a decrypted field for 'shell' request ?   \nand track channel_data output for answer ?~~   \n   \n~~Or~~ trying to use already existing `data-text-line` pseudo field UI protocol (work is done ~~here~~) after converting it to a \"one string\" field ?   \n\nWas thinking of something like:    \n\n```c\n\nstatic int hf_decrypted_text_lines;\n\nstatic hf_register_info hf[] = {\n    {\n        &hf_decrypted_text_lines,\n        { \"Decrypted Lines\", \"ssh.decrypted_text_lines\",\n          FT_STRING, BASE_NONE, NULL, 0x0,\n          \"Joined decrypted TEXT lines\", HFILL }\n    }\n};\n```\n\nand using packet-media-text.c main loop :       \n\n```c\nwhile (tvb_offset_exists(tvb, offset)) {\n    len = tvb_find_line_end(tvb, offset, -1, &next_offset, false);\n    if (len == -1)\n        break;\n\n    proto_tree_add_format_text(tree, tvb, offset, next_offset - offset);\n    offset = next_offset;\n}\n```\n\nAnd instead of proto_tree_add_format_text(), to collect the lines into a char buf[], and to proto_tree_add_string()    \n\nWhat do you think ?",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-27T16:49:04.320Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2593179973,
+          "type": "DiscussionNote",
+          "body": "Hi    \nSorry for `shell` I missed :    \nhttps://gitlab.com/wireshark/wireshark/-/merge_requests/20273\n\nFor the moment I still didn't achieve to print these text lines in TShark and not just a summary like :   \n`Line-based text data (23 lines)`    \n\nFrom the example: `Line-based text data (23 lines)`, printing the content of the 23 lines as a one line field in TShark would \"solve\" the main goal of this MR",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-30T08:03:27.898Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2593475144,
+          "type": "DiscussionNote",
+          "body": "That data-text-lines dissector adds generic text fields, which can be printed from TShark as `text`, but the issue is that other generic text fields will show up as well. Probably that dissector should be changed.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-06-30T10:12:08.745Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2595620183,
+          "type": "DiscussionNote",
+          "body": "Hi John  \n\nThanks for answer.   \nHaving a look at the simple `-e text` switch and despite of all added additional data, `-e text` provide something very close to what I need, for example:   \n\nCapture command:   \n```bash\n/usr/src/build/wireshark/build/run/tshark \\\n-i enp0s3 \\\n-n \\\n-o ssh.keylog_file:/home/nba/ssh1_key.log \\\n-o ssh.desegment_buffers:TRUE \\\n-o tcp.reassemble_out_of_order:TRUE \\\n-o tcp.desegment_tcp_streams:TRUE \\\n-t ad \\\n-f '(host 10.0.50.78 or host 10.0.50.91) and (host 10.0.50.77 or host 10.0.50.75) and port 22' \\\n-T fields \\\n-e frame.number \\\n-e frame.time_relative \\\n-e ip.src \\\n-e ip.dst \\\n-e tcp.srcport \\\n-e tcp.dstport \\\n-e tcp.len \\\n-e _ws.col.Protocol \\\n-e _ws.col.Info \\\n-e ssh.cookie \\\n-e ssh.message_code \\\n-e ssh.exec_command \\\n-e text\n```\n\nCaptured command :   \n```bash\n/usr/src/build/openssh-portable/ssh -F none \\\n-o KexAlgorithms=mlkem768x25519-sha256 \\\n-o Ciphers=chacha20-poly1305@openssh.com \\\n-o RekeyLimit=10K \\\nnba@10.0.50.77 \n```\n\nOutput:   \n```bash\n...\n278\t6.490557036\t10.0.50.91\t10.0.50.77\t50000\t22\t392\tSSHv2\tClient: Encrypted packet (plaintext_len=332), Channel Request, Encrypted packet (plaintext_len=28), Channel Request\t\t98,98\t\t\tTimestamps,SSH Version 2 (encryption:chacha20-poly1305@openssh.com mac:<implicit> compression:none),Message: Connection: (channel related message),SSH Version 2 (encryption:chacha20-poly1305@openssh.com mac:<implicit> compression:none),Message: Connection: (channel related message)\n279\t6.490883405\t10.0.50.77\t10.0.50.91\t22\t50000\t0\tTCP\t22 → 50000 [ACK] Seq=3938 Ack=3523 Win=65152 Len=0 TSval=112425936 TSecr=2926497233\t\t\t\t\tTimestamps\n280\t6.493065853\t10.0.50.77\t10.0.50.91\t22\t50000\t108\tSSHv2\tServer: Encrypted packet (plaintext_len=20), Channel Success, Encrypted packet (plaintext_len=20), Window Adjust, Encrypted packet (plaintext_len=20), Channel Success\t\t99,93,99\t\t\tTimestamps,SSH Version 2 (encryption:chacha20-poly1305@openssh.com mac:<implicit> compression:none),Message: Connection: (channel related message),SSH Version 2 (encryption:chacha20-poly1305@openssh.com mac:<implicit> compression:none),Message: Connection: (channel related message),SSH Version 2 (encryption:chacha20-poly1305@openssh.com mac:<implicit> compression:none),Message: Connection: (channel related message)\n281\t6.493590658\t10.0.50.77\t10.0.50.91\t22\t50000\t508\tSSHv2\tServer: Encrypted packet (plaintext_len=492), Channel Data\t\t94\t\tTimestamps,SSH Version 2 (encryption:chacha20-poly1305@openssh.com mac:<implicit> compression:none),Message: Connection: (channel related message),Linux deb12-lab-10d.lab.lan 6.13.0-rc6-next-20250107-amd64 #0 SMP PREEMPT_DYNAMIC Tue Jan  7 17:48:44 CET 2025 x86_64\\\\r\\\\n,\\\\r\\\\n,The programs included with the Debian GNU/Linux system are free software;\\\\r\\\\n,the exact distribution terms for each program are described in the\\\\r\\\\n,individual files in /usr/share/doc/*/copyright.\\\\r\\\\n,\\\\r\\\\n,Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\\\\r\\\\n,permitted by applicable law.\\\\r\\\\n,Last login: Tue Jul  1 09:48:13 2025 from 10.0.50.91\\\\r,\\\\r\\\\n\n...\n```  \n\nBut as you said I always constat an \"annoying\" part on each text lines: \n\n```bash\nTimestamps,SSH Version 2 (encryption:chacha20-poly1305@openssh.com mac:<implicit> compression:none),Message: Connection: (channel related message),\n``` \n\nAnd ANSI codes are not interpreted: \n![no-ansi](/uploads/a20dc16b5b36b221a3d8d2e71e799ccf/no-ansi.png)\n\nSo and instead of rewriting the dissector I did:    \n\n\n```c\nvoid\nproto_register_ssh(void)\n{\n    static hf_register_info hf[] = {\n...\n        { &hf_ssh_textonly,\n          { \"Text Only\", \"ssh.textonly\",\n            FT_STRING, BASE_NONE, NULL, 0x0,\n            \"Decrypted shell/exec output only\", HFILL }\n        }\n    }\n}\n```\n\nand   \n```c\nstatic int hf_ssh_textonly;\n```\n\nand in the end:  \n```c\nstatic void\nssh_process_payload(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, ssh_channel_info_t *channel)\n{\n    tvbuff_t *next_tvb = tvb_new_subset_remaining(tvb, offset);\n    if (channel->handle) {\n        call_dissector(channel->handle, next_tvb, pinfo, proto_tree_get_root(tree));\n\n        // If this is the \"data-text-lines\" dissector, add the text field\n        if (channel->handle == data_text_lines_handle) {\n            if (tvb_captured_length(next_tvb) > 0) {\n                int off = 0;\n                int next_off;\n                int len;\n                int tvb_len = tvb_captured_length(next_tvb);\n\n                // Allocate buffer for text (twice the length to be safe)\n                char *buf = malloc(tvb_len * 2);\n                int out = 0;\n\n                while (tvb_offset_exists(next_tvb, off)) {\n                    len = tvb_find_line_end(next_tvb, off, -1, &next_off, FALSE);\n                    if (len == -1)\n                        break;\n\n                    const uint8_t *line = tvb_get_ptr(next_tvb, off, len);\n                    for (int i = 0; i < len; ++i) {\n                        uint8_t c = line[i];\n                            buf[out++] = (char)c;\n                    }\n\n                    // Append '\\n' as separator if more lines remain\n                    if (tvb_offset_exists(next_tvb, next_off)) {\n                        buf[out++] = '\\\\';\n                        buf[out++] = 'n';\n                    }\n                    off = next_off;\n                }\n                buf[out] = '\\0';\n\n                proto_tree_add_string(tree, hf_ssh_textonly, next_tvb, 0, tvb_len, buf);\n            }\n        }\n    } else {\n        call_data_dissector(next_tvb, pinfo, proto_tree_get_root(tree));\n    }\n}\n```\n\nNow I have the ouput I need:\n\n```bash\n34\t0.794500881\t10.0.50.77\t10.0.50.91\t22\t59972\t388\tSSHv2\tServer: Encrypted packet (plaintext_len=372), Channel Data\t\t94\t\t\\\\n\\\\nThe programs included with the Debian GNU/Linux system are free software;\\\\nthe exact distribution terms for each program are described in the\\\\nindividual files in /usr/share/doc/*/copyright.\\\\n\\\\nDebian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\\\\npermitted by applicable law.\\\\nLast login: Tue Jul  1 10:25:06 2025 from 10.0.50.91\\\\n\n\n```\n\nand ANSI is interpreted:\n\n![ansi_ok](/uploads/586ef3475900676885ccee6a621c7a56/ansi_ok.png)\n\nWhat do you think about this version which provide a text output for `exec` and `shell` with `-e ssh.textonly` option based on the selected dissector ?",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-01T09:44:13.453Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2597227783,
+          "type": "DiscussionNote",
+          "body": "\nI think it could be easier to understand what this 'ssh.textonly' field can do with the following captured video.  \n   \n\nDecryption command:   \n```bash\nstdbuf -oL \\\n/usr/src/build/wireshark/build/run/tshark \\\n-i enp0s3 \\\n-n \\\n-o ssh.keylog_file:/home/nba/ssh1_key.log \\\n-o ssh.desegment_buffers:TRUE \\\n-o tcp.reassemble_out_of_order:TRUE \\\n-o tcp.desegment_tcp_streams:TRUE \\\n-f 'host 10.0.50.91 and host 10.0.50.77 and port 22' \\\n-T fields \\\n-e ssh.textonly \\\n-Y ssh.textonly \\\n2>/dev/null  |sed 's/\\\\n/\\n/g'\n``` \n- top terminal: the place where I'm running `ssh`    \n- bottom terminal: the place where I'm decrypting `ssh` (formatting output with `stdbuf` + the simplest possible`sed`)  \n\n\n![tshark_textonly](/uploads/9037af02182abff077742d1a5339c395/tshark_textonly.webm)\n\nTerminal rendering is OK:    \n![tshark_textonly2](/uploads/7b9824a79de46a4564741a261a1dfc4c/tshark_textonly2.webm)\n\n\nAnd UTF-8 too:   \n![tshark_textonly-utf8](/uploads/3c78036597446d5742473e56f388595f/tshark_textonly-utf8.webm)\n\n   \nNB:   \nI've seen several posts on stackoverflow where people asked for this same kind of feature but for TLS (unfortunately today very few people know that it's possible to decrypt `ssh` --I think we must update wireshark SSH wiki page with all recent work before next major release--)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-01T17:38:54.174Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2599697704,
+          "type": "DiscussionNote",
+          "body": "Just a more complete example:   \n- left terminal: the place I'm running ssh remote shell   \n- right terminal: tshark live decrypted data   \n\n![tshark_decrypt_shell-session](/uploads/284d4f276a070ef99a1523e9925c11cc/tshark_decrypt_shell-session.webm)\n\n@johnthacker :   \nPlease let me know what you think of this last version and what to do with this merge request (which solve my need...)    \nThanks ;)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-02T18:41:13.108Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2618589642,
+          "type": "DiscussionNote",
+          "body": "discussion continue on net thread ...",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-10T19:36:49.507Z",
+          "updated_at": "2025-07-10T19:36:50.027Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2025-07-10T19:36:50.027Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e1f2fd8fdee8e6af486ac1ccb527de5b16430c0f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2590394270,
+          "type": null,
+          "body": "added 104 commits\n\n<ul><li>5e259975...b85d66e2 - 103 commits from branch <code>wireshark:master</code></li><li>9426dc03 - ssh: add TShark ascii_decrypted_payload field</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1405197636&start_sha=5e25997501e2c34dac97fdae3e6202af1a3d629d)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-27T14:21:28.589Z",
+          "updated_at": "2025-06-27T14:21:28.593Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0995fccd5c5f0f33a698bd28d1d5acf8b2f94be4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2593216153,
+          "type": null,
+          "body": "added 21 commits\n\n<ul><li>9426dc03...9510afb8 - 20 commits from branch <code>wireshark:master</code></li><li>ca6076e7 - ssh: add TShark ascii_decrypted_payload field</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1406481670&start_sha=9426dc0306d55a37c3f446555e9c37e32e472543)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-06-30T08:19:15.388Z",
+          "updated_at": "2025-06-30T08:19:15.394Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "db531d904d5128d6688b8b39d06911c34eb4e352",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2596372447,
+          "type": null,
+          "body": "added 25 commits\n\n<ul><li>ca6076e7...1121a142 - 24 commits from branch <code>wireshark:master</code></li><li>3af3bd77 - ssh: add TShark ssh.textonly field for &quot;exec&quot; and &quot;shell&quot; request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1408418826&start_sha=ca6076e7ef68cd07375e524fe7c5668e69a39e82)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-01T13:22:11.460Z",
+          "updated_at": "2025-07-01T13:22:11.481Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2920fb8c18c1917e908b009f960b127f334bfceb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2596428895,
+          "type": null,
+          "body": "<p>changed title from <code class=\"idiff\">[SSH] add TShark <span class=\"idiff left right deletion\">ascii_decrypted_payload field</span></code> to <code class=\"idiff\">[SSH] <span class=\"idiff left addition\"> </span>add TShark <span class=\"idiff right addition\">ssh.textonly field for &quot;exec&quot; and &quot;shell&quot; request</span></code></p>",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-01T13:32:18.321Z",
+          "updated_at": "2025-07-01T13:32:18.326Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b673a3ce733ccdbff5a8795faa79a39d6f7f9c5b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2596428897,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-01T13:32:18.355Z",
+          "updated_at": "2025-07-01T13:32:18.360Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e9fbb6cd4c591787245f13e50da4b923d05f4751",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2596490188,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>aa6bc00a - ssh: add TShark ssh.textonly field for exec and shell request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1408465309&start_sha=3af3bd77785bba9b776e5db4892bc2e5d8bed673)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-01T13:46:05.441Z",
+          "updated_at": "2025-07-01T13:46:05.450Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1ca53fb2f790f0e5b7a647afa98f6eb18cb750cc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2596899570,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>fe6fb389 - 1 commit from branch <code>wireshark:master</code></li><li>3739b087 - ssh: add TShark ssh.textonly field for exec and shell request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1408618002&start_sha=aa6bc00a6a3ceadcdca0e9298be098ad4c12feaa)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-01T14:58:24.381Z",
+          "updated_at": "2025-07-01T14:58:24.387Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a584b648f4832df6068423f66770b3536d078e80",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2602137826,
+          "type": null,
+          "body": "added 21 commits\n\n<ul><li>3739b087...0865ff99 - 20 commits from branch <code>wireshark:master</code></li><li>d74f8eb5 - ssh: add TShark ssh.textonly field for exec and shell request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1411793304&start_sha=3739b087fb280addf72cb982dd0a9b46daef2bec)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-03T17:52:19.046Z",
+          "updated_at": "2025-07-03T17:52:19.050Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ee74a96d91d73181a448aa14f967d2354eb774b7",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2602550988,
+          "type": "DiffNote",
+          "body": "This doesn't guarantee that only valid UTF-8 is added to the tree in the case that the data is not UTF-8. (Other methods would substitute replacement characters.)\n\nWhy not replace all of this with just\n`proto_tree_add_item(tree, hf_ssh_textonly, next_tvb, 0, tvb_len, ENC_UTF_8)`?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-07-04T01:02:32.417Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2603172544,
+          "type": "DiffNote",
+          "body": "Hi   \n\nThanks for answer.  \nin the first time I did:   \n```c\n                        // Only print ASCII printable or UTF-8 continuation bytes (>=128)\n                        if ((c >= 32 && c < 127) || (c >= 128)) {\n                            buf[out++] = (char)c;\n                        } else {\n                            buf[out++] = '.'; // non-printable replaced with '.'\n                        }\n``` \nBut I was not sure it would be enough as UTF-8 can use up to 4 bytes and I wasn't satisfied by the dot replacement when `c < 32`  \n\nI will try ENC_UTF_8 in a proto_tree_add_item",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-04T09:29:47.204Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2603205442,
+          "type": "DiffNote",
+          "body": "Ok, doing what you suggest work but also need to handle all trailing `\\r` with a filtering shell command, so rendering is a little better and more close to the reality using the loop instead of ENC_UTF_8 in a proto_tree_add_item\n\n![trailing_backslash_r](/uploads/2488865de18005b7ae1479646fbf859f/trailing_backslash_r.png)\n\nAlso the last `\\n` of the concatenated string add a second newline",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-04T09:44:48.569Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2603610289,
+          "type": "DiffNote",
+          "body": "The loop as written is unacceptable. It does not verify that the input is valid UTF-8. You *must* ensure that it is before calling `proto_tree_add_string()` (see https://gitlab.com/wireshark/wireshark/-/blob/master/doc/README.developer#L649-655)\n\nEven though this will have passed decryption and MAC checks, presumably (which reduces some of the fuzzing concerns) since the character set for client data is not specified in the SSH protocol anywhere, it is *probably* UTF-8 in the original but not necessarily.\n\nYou can do something like `tvb_get_string_enc(pinfo->pool, next_tvb, off, len, ENC_UTF_8);` add those to a string array (`char**`) and then call `wmem_strjoinv(pinfo->pool, '\\n', str_array)`. (The latter is from wsutil/str_util.h).\n\n>  rendering is a little better and more close to the reality using the loop \n\nOr farther away from reality, depending on how you look it.\n\nThis is perhaps something that is better done through Follow Stream than adding a field.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-07-04T13:09:01.493Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2603695842,
+          "type": "DiffNote",
+          "body": "Thanks again for help and time!\n\n> You can do something like `tvb_get_string_enc(pinfo->pool, next_tvb, off, len, ENC_UTF_8);` add those to a string array (`char**`) and then call `wmem_strjoinv(pinfo->pool, '\\n', str_array)`. (The latter is from wsutil/str_util.h).\n\nOk I will try to\n\n> This is perhaps something that is better done through Follow Stream than adding a field.\n\nIt's not the first time you tell me this and I think it could be a better solution but to be honest I don't know how to address it",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-04T13:50:13.247Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2603725211,
+          "type": "DiffNote",
+          "body": "I will take a look.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-07-04T14:07:28.839Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2603728479,
+          "type": "DiffNote",
+          "body": "Thanks !",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-04T14:09:16.659Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2603825346,
+          "type": "DiffNote",
+          "body": "For the technical point:   \n\n> You can do something like `tvb_get_string_enc(pinfo->pool, next_tvb, off, len, ENC_UTF_8);` add those to a string array (`char**`) and then call `wmem_strjoinv(pinfo->pool, '\\n', str_array)`. (The latter is from wsutil/str_util.h).\n\nHere is what I can purpose:   \n\n1) using GLIB (maybe the one I prefer)\n\n```c\nstatic void\nssh_process_payload(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, ssh_channel_info_t *channel)\n{\n    tvbuff_t *next_tvb = tvb_new_subset_remaining(tvb, offset);\n    if (channel->handle) {\n        call_dissector(channel->handle, next_tvb, pinfo, proto_tree_get_root(tree));\n\n        // If this is the \"data-text-lines\" dissector, extract and add clean UTF-8 lines\n        if (channel->handle == data_text_lines_handle) {\n            int off = 0;\n            int next_off = 0;\n            int line_len;\n            int tvb_len = tvb_captured_length(next_tvb);\n\n            // Temporary array to store valid UTF-8 lines\n            GPtrArray *lines_array = g_ptr_array_new();  // did not find easy alternative in pure C99\n\n            while (tvb_offset_exists(next_tvb, off)) {\n                line_len = tvb_find_line_end(next_tvb, off, -1, &next_off, FALSE);\n                if (line_len == -1)\n                    break;\n\n                const char *line = tvb_get_string_enc(pinfo->pool, next_tvb, off, line_len, ENC_UTF_8);\n                if (line) {\n                    g_ptr_array_add(lines_array, (gpointer)line);\n                }\n\n                off = next_off;\n            }\n\n            if (lines_array->len > 0) {\n                g_ptr_array_add(lines_array, NULL);  // NULL-terminate\n                gchar *joined = wmem_strjoinv(pinfo->pool, \"\\n\", (gchar **)lines_array->pdata);\n                proto_tree_add_string(tree, hf_ssh_textonly, next_tvb, 0, tvb_len, joined);\n            }\n\n            g_ptr_array_free(lines_array, TRUE);  // free metadata (not the strings themselves)\n        }\n    } else {\n        call_data_dissector(next_tvb, pinfo, proto_tree_get_root(tree));\n    }\n}\n```\n\n2) C99 version\n\n```c\n#define INITIAL_LINE_CAPACITY 8\nstatic void\nssh_process_payload(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, ssh_channel_info_t *channel)\n{\n    tvbuff_t *next_tvb = tvb_new_subset_remaining(tvb, offset);\n    if (channel->handle) {\n        call_dissector(channel->handle, next_tvb, pinfo, proto_tree_get_root(tree));\n\n        // If this is the \"data-text-lines\" dissector, add the text field\n        if (channel->handle == data_text_lines_handle) {\n            const int tvb_len = tvb_captured_length(next_tvb);\n            int off = 0, next_off, len;\n\n            if (tvb_len <= 0)\n                return;\n\n            // Pure C dynamic array of char*\n            size_t line_capacity = INITIAL_LINE_CAPACITY;\n            size_t line_count = 0;\n            char **line_array = (char **)wmem_alloc(pinfo->pool, line_capacity * sizeof(char *));\n\n            while (tvb_offset_exists(next_tvb, off)) {\n                len = tvb_find_line_end(next_tvb, off, -1, &next_off, FALSE);\n                if (len == -1)\n                    break;\n\n                // Validate and copy UTF-8 line into pool\n                const char *line = tvb_get_string_enc(pinfo->pool, next_tvb, off, len, ENC_UTF_8);\n                if (line != NULL) {\n                    // Grow array if needed\n                    if (line_count >= line_capacity) {\n                        line_capacity *= 2;\n                        char **new_array = (char **)wmem_alloc(pinfo->pool, line_capacity * sizeof(char *));\n                        for (size_t i = 0; i < line_count; ++i) {\n                            new_array[i] = line_array[i];\n                        }\n                        line_array = new_array;\n                    }\n\n                    line_array[line_count++] = (char *)line;\n                }\n\n                off = next_off;\n            }\n\n            if (line_count > 0) {\n                // NULL-terminate the array for wmem_strjoinv()\n                char **null_terminated_array = (char **)wmem_alloc(pinfo->pool, (line_count + 1) * sizeof(char *));\n                for (size_t i = 0; i < line_count; ++i) {\n                    null_terminated_array[i] = line_array[i];\n                }\n                null_terminated_array[line_count] = NULL;\n\n                char *joined = wmem_strjoinv(pinfo->pool, \"\\n\", null_terminated_array);\n                proto_tree_add_string(tree, hf_ssh_textonly, next_tvb, 0, tvb_len, joined);\n            }\n        }\n    } else {\n        call_data_dissector(next_tvb, pinfo, proto_tree_get_root(tree));\n    }\n}\n```\n\nFrom my tests both produced the same results (and could be OK for me)  \n\nWhich one would be the best ?  \nThanks",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-04T15:09:18.578Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2603890004,
+          "type": "DiffNote",
+          "body": "If you think it's convenient here, I can also try to add a \"preference\" and to enable the field conditionally if this pref is set to TRUE  \n\nSomething like: \n```c\n...\nstatic bool pref_ssh_show_textonly = TRUE;\n...\n\n#define INITIAL_LINE_CAPACITY 8\nstatic void\nssh_process_payload(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, ssh_channel_info_t *channel)\n{\n...\n    if (pref_ssh_show_textonly && line_count > 0) {\n        char **null_terminated_array = (char **)wmem_alloc(pinfo->pool, (line_count + 1) * sizeof(char *));\n        for (size_t i = 0; i < line_count; ++i)\n            null_terminated_array[i] = line_array[i];\n        null_terminated_array[line_count] = NULL;\n\n        char *joined = wmem_strjoinv(pinfo->pool, \"\\n\", null_terminated_array);\n        proto_tree_add_string(tree, hf_ssh_textonly, next_tvb, 0, tvb_len, joined);\n    }\n...\n}\n\n...\n\nvoid\nproto_register_ssh(void)\n{\n    ...\n    prefs_register_bool_preference(ssh_module, \"desegment_buffers\",\n                       \"Reassemble SSH buffers spanning multiple TCP segments\",\n                       \"Whether the SSH dissector should reassemble SSH buffers spanning multiple TCP segments. \"\n                       \"To use this option, you must also enable \\\"Allow subdissectors to reassemble TCP streams\\\" in the TCP protocol settings.\",\n                       &ssh_desegment);\n\n...\n\n    prefs_register_bool_preference(ssh_module, \"show_textonly_field\",\n                       \"Show decrypted UTF-8 text (ssh.textonly)\",\n                       \"Whether to extract and display valid UTF-8 lines from decrypted SSH payloads\",\n                       &pref_ssh_show_textonly);\n\n...\n}\n...\n```\n\nLike this I suppose it won't be added to the tree if this new pref is not set in SSH preference pane and won't be available in TShark until adding to the command line:   \n\n```bash\n-o ssh.show_textonly_field:true -T fields -e ssh.textonly -Y ssh.textonly \n```\n\nIt won't be the easiest for me (needed to set a supplementary  preference) but if you think it's better for the project, I can try to add it and I will use tshark setting this preference  \n\nDoing this, maybe the field can become hidden (using NULL in its definition ?) if you think it's more relevant (but maybe documentation should be update to explain how to enable and use it)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-04T15:54:50.508Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2618587125,
+          "type": "DiffNote",
+          "body": "Hi @johnthacker    \n\nIf you have a few minutes, feel free to take a look at this thread, thanks !    \n   \nPlease let me know what's better for the project, and if I must rewrite one of the 2 solutions purposed to suites better, and specially the one which don't use GLIB.    \n   \nPS: `tshark -l` give better output on `vi` sessions than `stdbuf -oL`   \n   \nKind regards,   \nnbanba",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-10T19:35:04.457Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2630337525,
+          "type": "DiffNote",
+          "body": "Hi  \nIt would be helpful to have an update.  \nThanks  \n  \nKind regards",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-16T09:31:42.064Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2630674622,
+          "type": "DiffNote",
+          "body": "Of the approaches above, the GLib approach is cleaner. wmem also provides a resizable array (wmem_array), which can be used with pointers (though it's more similar to GArray and lacks some of the nice for dealing with pointers functions that GPtrArray adds, it does have a function to set to always automatically have a null terminator), but GPtrArray is good. (For the C99 approach, I would prefer using `wmem_realloc` to re-implementing it.)\n\nRecent versions of GLib add support for automatically terminating a GPtrArray (>= 2.74), and add GStrvBuilder (>= 2.68) which might be even more relevant for your approach, but those are past the Wireshark minimum requirements now so let's not use those I guess.\n\nAnother similar approach would be to repeatedly append to a GString or wmem_strbuf, though the more Python build an array and then join it approach is fine.\n\nI guess the point of what you're doing (rather than just getting one big string) is universal line termination, replacing '\\r\\n' with '\\n' if that is present. It might be helpful to have a comment to that effect.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-07-16T11:26:32.146Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2632914588,
+          "type": "DiffNote",
+          "body": "Thanks @johnthacker for answer and help !  \nOk I will update this MR.    \n\nAt starting, I thought I prefer the GLIB version, but doing new tests after just updating comments show that sometimes some lines are cut in 2 (maybe due to tcp reassembly or different frames):   \n```bash\n  (The fi\nrst couple of paragraphs of \"A Christmas Carol\" by Dickens)\n```\n and sometimes the NULL terminated must be bad interpreted or I get garbage in the array as it produce an extra coma \",\"   \n```bash\n                                               ▝▀▘▙▄▟,\n```\n\nI think I can try to construct a true NULL-terminated char ** array myself separated from the GPtrArray and excluding the NULL from the GPtrArray size, something like: \n\n```c\nif (lines_array->len > 0) {\n    char **null_terminated_array = (char **)wmem_alloc(pinfo->pool, (lines_array->len + 1) * sizeof(char *));\n    for (guint i = 0; i < lines_array->len; ++i) {\n        null_terminated_array[i] = (char *)g_ptr_array_index(lines_array, i);\n    }\n    null_terminated_array[lines_array->len] = NULL;\n\n    gchar *joined = wmem_strjoinv(pinfo->pool, \"\\n\", null_terminated_array);\n    proto_tree_add_string(tree, hf_ssh_textonly, next_tvb, 0, tvb_len, joined);\n}\n```\n\nBut doing this, I'm not sure the GLIB approach is still the one I prefer (or the best here)  \n\nWhat would you suggest ?  \n \nThanks!   \n\nPS: I'm trying to close all opened work before summer vacation start (at the end of the month)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-17T08:42:32.386Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 2634217736,
+          "type": "DiffNote",
+          "body": "I think I found why sometimes I had a trailing coma \",\" it's because I add to the tree once per frame and not once per complete message...  Maybe I will have to add fields to `ssh_channel_info_t` to accumulate lines from different frames.  \nI'll try to ...",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-17T18:02:04.870Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 3015438089,
+          "type": "DiffNote",
+          "body": "Hi  \nJust realize this MR still open ...   \nDid merge master, fix signed types and push again.   \nIs there something else expected in this MR to be merged ?    \nLet me know and I will solved this thread.   \n\nKind regards\nnbanba",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-01-18T18:49:07.135Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        },
+        {
+          "id": 3178202663,
+          "type": "DiffNote",
+          "body": "Hi\n\nRegarding to this old comment :  \nhttps://gitlab.com/wireshark/wireshark/-/merge_requests/20229#note_2634217736   \n\n I found that the 'aggregator' add the trailing coma, so using \n```bash\n-E aggregator=$'\\n' -E escape=n\n```\nRemove the coma and give the same behavior as 'data-text-lines' dissector in Wireshark GUI, and terminal interpret correctly '\\n' and '\\r'  \n\nIs there something else to do in this MR to let tshark being able to print 'data-text-lines' when ssh use channel 'shell' and 'exec', in the same way Wireshark does in it's GUI  ?  \n\nThanks \nRegards\n\nnbanba",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-03-20T17:27:32.802Z",
+          "updated_at": "2026-03-20T17:27:35.138Z",
+          "system": false,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "start_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+            "head_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 4800,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4769",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4769
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_4765_4799",
+                "type": "new",
+                "old_line": null,
+                "new_line": 4799
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "resolved_at": "2026-03-20T17:27:35.138Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3f7ccd0f17d64905222943a617cec34a5da739b5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2606329616,
+          "type": null,
+          "body": "added 19 commits\n\n<ul><li>d74f8eb5...769f7ff9 - 18 commits from branch <code>wireshark:master</code></li><li>235f6b21 - ssh: add TShark ssh.textonly field for exec and shell request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1413527891&start_sha=d74f8eb55ea43de20d8625c913d29a5f807a8d0c)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-07-06T15:26:31.853Z",
+          "updated_at": "2025-07-06T15:26:31.870Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "305bba30b42159483b6b9a9b65c28590a73e2340",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3015275470,
+          "type": null,
+          "body": "added 2247 commits\n\n<ul><li>235f6b21...6829f67d - 2243 commits from branch <code>wireshark:master</code></li><li>463367c9 - nba-tdev06a2</li><li>d9f47f81 - Merge remote-tracking branch &#39;origin/master&#39; into nba-tdev06a2</li><li>31e644af - fix uint_8 type after merge master</li><li>0494b954 - Merge remote-tracking branch &#39;origin/master&#39; into nba-tdev06a2</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1630445498&start_sha=235f6b2136c43aff3f0706348c24b3005e1203e6)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-01-18T11:46:15.834Z",
+          "updated_at": "2026-01-18T11:46:15.838Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2239fe618c1e38bad347ecd862d824295240c3fe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3015353576,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>d09ec324 - 1 commit from branch <code>wireshark:master</code></li><li>eeb66900 - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1630484424&start_sha=0494b9549fe7ef825f3f2624d9890cc4dc5a5f8e)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-01-18T15:09:54.813Z",
+          "updated_at": "2026-01-18T15:09:54.821Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1d77234d6204adbedc530a3e868a375f7148e20b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3015416497,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>ef7305ce - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1630513885&start_sha=eeb669004901a755f447bb2d999c1d7d9d4c5777)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-01-18T18:01:39.752Z",
+          "updated_at": "2026-01-18T18:01:39.757Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5e594d31c05823d2dc10dd1e8fdf02e443abf7c5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3049446356,
+          "type": null,
+          "body": "added 138 commits\n\n<ul><li>ef7305ce...2d8dbf6d - 137 commits from branch <code>wireshark:master</code></li><li>00244e7d - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request tdev06b</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1647777801&start_sha=ef7305ce77f132515d78cb3da57310299abbfa5f)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-01-31T19:52:23.992Z",
+          "updated_at": "2026-01-31T19:52:23.996Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "58be53ea251e1711097fb4781decede6a3ef6e18",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3049488079,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>dfeedf61 - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1647799090&start_sha=00244e7d1f90d47ab52ed3ae1b83feffe6613f8a)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-01-31T22:03:47.309Z",
+          "updated_at": "2026-01-31T22:03:47.334Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "21c2bf69ed23ac9c3d37f6d9f9c18bb674a191c4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3049739885,
+          "type": null,
+          "body": "mentioned in merge request !23394",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-02-01T08:37:58.284Z",
+          "updated_at": "2026-02-01T08:37:58.291Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "96530b675ed0b068395166ae96ccea708615f856",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3178202747,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-03-20T17:27:35.343Z",
+          "updated_at": "2026-03-20T17:27:35.348Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "961779bbde45605300a9e58693eb95ec3150db80",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3178521083,
+          "type": null,
+          "body": "added 455 commits\n\n<ul><li>dfeedf61...ff9a3bfb - 454 commits from branch <code>wireshark:master</code></li><li>ba2cc40f - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1715040726&start_sha=dfeedf6142334f3307f669c8981ec832e239ca39)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-03-20T19:59:04.224Z",
+          "updated_at": "2026-03-20T19:59:04.234Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0a0bcd69ee7cfc435f3f1476cc374f4148d58f33",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3179450675,
+          "type": null,
+          "body": "added 9 commits\n\n<ul><li>ba2cc40f...558e5285 - 8 commits from branch <code>wireshark:master</code></li><li>fb3e1ff7 - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1715381691&start_sha=ba2cc40f9d02a488c7469dc45d47f40cccf4fc1f)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-03-21T11:05:26.225Z",
+          "updated_at": "2026-03-21T11:05:26.235Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f2028614be8dde8cae4491d038b9990bf5e236e0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3180515644,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>fb3e1ff7...db67edfd - 2 commits from branch <code>wireshark:master</code></li><li>002cb6ab - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1715495139&start_sha=fb3e1ff7b586639597f60d04dffb3bf76118e5be)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-03-21T18:18:32.485Z",
+          "updated_at": "2026-03-21T18:18:32.489Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "54f15ef03d3fe3e8237bf7fc85f0aa5c2a2e61ed",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181331671,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-03-22T10:37:33.337Z",
+          "updated_at": "2026-03-22T10:37:33.343Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "853deb100b5e3fe2c1168d4c94a2e56c9ccfce5b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3181529526,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>002cb6ab...8faae143 - 7 commits from branch <code>wireshark:master</code></li><li>746f5e40 - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1715840287&start_sha=002cb6abdcedfa57c6803a3ef6ac79327f407a46)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-03-22T18:36:09.661Z",
+          "updated_at": "2026-03-22T18:36:09.678Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "641db5266877918fc4dd45d0ad03b0d590fb7ab4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3182772879,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>746f5e40...89587ab3 - 5 commits from branch <code>wireshark:master</code></li><li>bca47a0b - ssh: add TShark ssh.textonly decrypted field for exec and shell channel request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/20229/diffs?diff_id=1716521431&start_sha=746f5e40f3ebdb97814a7886a49b313b5a2c43a0)",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2026-03-23T10:58:21.593Z",
+          "updated_at": "2026-03-23T10:58:21.606Z",
+          "system": true,
+          "noteable_id": 391428705,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 20229,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -259,6 +259,7 @@ static int hf_ssh_mac_string;\n static int hf_ssh_mac_status;\n static int hf_ssh_seq_num;\n static int hf_ssh_direction;\n+static int hf_ssh_textonly;\n \n /* Message codes */\n static int hf_ssh_msg_code;\n@@ -4736,12 +4737,68 @@ ssh_dissect_userauth_specific(tvbuff_t *packet_tvb, packet_info *pinfo,\n         return offset;\n }\n \n+#define INITIAL_LINE_CAPACITY 8\n static void\n ssh_process_payload(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, ssh_channel_info_t *channel)\n {\n     tvbuff_t *next_tvb = tvb_new_subset_remaining(tvb, offset);\n     if (channel->handle) {\n         call_dissector(channel->handle, next_tvb, pinfo, proto_tree_get_root(tree));\n+\n+        // If this is the \"data-text-lines\" dissector, add the text field\n+        if (channel->handle == data_text_lines_handle) {\n+            const int tvb_len = tvb_captured_length(next_tvb);\n+            int off = 0, len, next_off;\n+\n+            if (tvb_len <= 0)\n+                return;\n+\n+            // Dynamic array of char*\n+            size_t line_capacity = INITIAL_LINE_CAPACITY;\n+            size_t line_count = 0;\n+            char **line_array = (char **)wmem_alloc(pinfo->pool, line_capacity * sizeof(char *));\n+\n+            while (tvb_offset_exists(next_tvb, off)) {\n+                /*\n+                 * Replacement for deprecated tvb_find_line_end():\n+                 *   len = tvb_find_line_end(tvb, off, -1, &next_off, FALSE);\n+                 * Use unquoted variant, scanning from 'off' to end.\n+                 */\n+                len = tvb_find_line_end_unquoted(next_tvb, off, -1, &next_off);\n+                if (len == -1)\n+                    break;\n+\n+                // Validate and copy UTF-8 line into pool\n+                const char *line = (const char *) tvb_get_string_enc(pinfo->pool, next_tvb, off, len, ENC_UTF_8);\n+                if (line != NULL) {\n+                    // Grow array if needed\n+                    if (line_count >= line_capacity) {\n+                        line_capacity *= 2;\n+                        char **new_array = (char **)wmem_alloc(pinfo->pool, line_capacity * sizeof(char *));\n+                        for (size_t i = 0; i < line_count; ++i) {\n+                            new_array[i] = line_array[i];\n+                        }\n+                        line_array = new_array;\n+                    }\n+\n+                    line_array[line_count++] = (char *)line;\n+                }\n+\n+                off = next_off;\n+            }\n+\n+            if (line_count > 0) {\n+                // NULL-terminate the array for wmem_strjoinv()\n+                char **null_terminated_array = (char **)wmem_alloc(pinfo->pool, (line_count + 1) * sizeof(char *));\n+                for (size_t i = 0; i < line_count; ++i) {\n+                    null_terminated_array[i] = line_array[i];\n+                }\n+                null_terminated_array[line_count] = NULL;\n+\n+                char *joined = wmem_strjoinv(pinfo->pool, \"\\n\", null_terminated_array);\n+                proto_tree_add_string(tree, hf_ssh_textonly, next_tvb, 0, tvb_len, joined);\n+            }\n+        }\n     } else {\n         call_data_dissector(next_tvb, pinfo, proto_tree_get_root(tree));\n     }\n@@ -7282,6 +7339,12 @@ proto_register_ssh(void)\n             \"Post-quantum ciphertext (server response)\", HFILL }\n         },\n \n+        { &hf_ssh_textonly,\n+          { \"UTF-8 Decrypted Text Only field for shell and exec channel\", \"ssh.textonly\",\n+            FT_STRING, BASE_NONE, NULL, 0x0,\n+            \"Decrypted shell/exec output only\", HFILL }\n+        }\n+\n     };\n \n     static int *ett[] = {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ssh.c",
+      "old_path": "epan/dissectors/packet-ssh.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -2256,6 +2256,7 @@ void output_fields_list_options(FILE *fh)\n     fputs(\"occurrence=f|l|a  Select the occurrence of a field to use;\\n     \\\"f\\\" = first, \\\"l\\\" = last, \\\"a\\\" = all (def: a: all)\\n\", fh);\n     fputs(\"aggregator=,|/s|<character>   Set the aggregator to use;\\n     \\\",\\\" = comma, \\\"/s\\\" = space (def: ,: comma)\\n\", fh);\n     fputs(\"quote=d|s|n   Print either d: double-quotes, s: single quotes or \\n     n: no quotes around field values (def: n: none)\\n\", fh);\n+    fputs(\"escape=y|n   Escape control characters in strings (\\\\n, \\\\r, \\\\t, etc.);\\n     n = no escape, y = escape (def: y: yes)\\n\", fh);\n }\n \n bool output_fields_has_cols(output_fields_t* fields)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/print.c",
+      "old_path": "epan/print.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [],
+  "diff_versions_data": [
+    {
+      "id": 1716521431,
+      "head_commit_sha": "bca47a0b48acd2f095cfd010be97d07ad8c01c18",
+      "base_commit_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+      "start_commit_sha": "89587ab33194565e32e7eb345af8ab7993edec94",
+      "created_at": "2026-03-23T10:58:18.185Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "a1f8632489409fecd5ee340140203f210b82b116"
+    },
+    {
+      "id": 1715840287,
+      "head_commit_sha": "746f5e40f3ebdb97814a7886a49b313b5a2c43a0",
+      "base_commit_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+      "start_commit_sha": "8faae143d342d129989f4e26b73e9fdb860e54c7",
+      "created_at": "2026-03-22T18:36:05.557Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "a1f8632489409fecd5ee340140203f210b82b116"
+    },
+    {
+      "id": 1715495139,
+      "head_commit_sha": "002cb6abdcedfa57c6803a3ef6ac79327f407a46",
+      "base_commit_sha": "db67edfd7422454472ec9eec14781a1d46835872",
+      "start_commit_sha": "db67edfd7422454472ec9eec14781a1d46835872",
+      "created_at": "2026-03-21T18:18:28.872Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "9818a9ead7147d9758bf6004e3acabcbc8784370"
+    },
+    {
+      "id": 1715381691,
+      "head_commit_sha": "fb3e1ff7b586639597f60d04dffb3bf76118e5be",
+      "base_commit_sha": "558e528505aba8e04371de2bf8b1d3784b4a3b85",
+      "start_commit_sha": "a62cdf89f60aab442398c8b0638ceb845e2bb882",
+      "created_at": "2026-03-21T11:05:22.434Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "9818a9ead7147d9758bf6004e3acabcbc8784370"
+    },
+    {
+      "id": 1715040726,
+      "head_commit_sha": "ba2cc40f9d02a488c7469dc45d47f40cccf4fc1f",
+      "base_commit_sha": "ff9a3bfbdcc70819d83a944c6736a54aeb09a45d",
+      "start_commit_sha": "ff9a3bfbdcc70819d83a944c6736a54aeb09a45d",
+      "created_at": "2026-03-20T19:58:59.823Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "8b8ac9073e0c6cb3c532a0c8a9a313c048cd15a2"
+    },
+    {
+      "id": 1647799090,
+      "head_commit_sha": "dfeedf6142334f3307f669c8981ec832e239ca39",
+      "base_commit_sha": "2d8dbf6d1d9b473c8b987f24d6f20523cda42893",
+      "start_commit_sha": "1b424848419bc84c8f1f666725a36e9ea2e8a91e",
+      "created_at": "2026-01-31T22:03:41.698Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "8b8ac9073e0c6cb3c532a0c8a9a313c048cd15a2"
+    },
+    {
+      "id": 1647777801,
+      "head_commit_sha": "00244e7d1f90d47ab52ed3ae1b83feffe6613f8a",
+      "base_commit_sha": "2d8dbf6d1d9b473c8b987f24d6f20523cda42893",
+      "start_commit_sha": "1b424848419bc84c8f1f666725a36e9ea2e8a91e",
+      "created_at": "2026-01-31T19:52:20.145Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "275f01b16894cac6c1a3fac2db3731a77d80930d"
+    },
+    {
+      "id": 1630513885,
+      "head_commit_sha": "ef7305ce77f132515d78cb3da57310299abbfa5f",
+      "base_commit_sha": "d09ec324023a06ed47870032d041b362f60be94b",
+      "start_commit_sha": "0349e7921007e9652f8a563050d4ec0109ef0af4",
+      "created_at": "2026-01-18T18:01:36.570Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "7c81339aef314fbd4e6a440b41625f5bb631fdf5"
+    },
+    {
+      "id": 1630484424,
+      "head_commit_sha": "eeb669004901a755f447bb2d999c1d7d9d4c5777",
+      "base_commit_sha": "d09ec324023a06ed47870032d041b362f60be94b",
+      "start_commit_sha": "d09ec324023a06ed47870032d041b362f60be94b",
+      "created_at": "2026-01-18T15:09:52.267Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "0993bf2f8fadb0a5695df6ab9e74db3bd7e3fcaf"
+    },
+    {
+      "id": 1630445498,
+      "head_commit_sha": "0494b9549fe7ef825f3f2624d9890cc4dc5a5f8e",
+      "base_commit_sha": "6829f67d17bc340ba89b2620db49866eeafbb3fa",
+      "start_commit_sha": "6829f67d17bc340ba89b2620db49866eeafbb3fa",
+      "created_at": "2026-01-18T11:46:13.775Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "5cdb4ef2358d48823b5208f8b388bfdd10635e25"
+    },
+    {
+      "id": 1413527891,
+      "head_commit_sha": "235f6b2136c43aff3f0706348c24b3005e1203e6",
+      "base_commit_sha": "769f7ff930ff68ed5b6a2428566e12aa887eb5e8",
+      "start_commit_sha": "769f7ff930ff68ed5b6a2428566e12aa887eb5e8",
+      "created_at": "2025-07-06T15:26:27.132Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "90914d8bd784634ea1b0ea06496b788a820a48aa"
+    },
+    {
+      "id": 1411793304,
+      "head_commit_sha": "d74f8eb55ea43de20d8625c913d29a5f807a8d0c",
+      "base_commit_sha": "0865ff99f3a8c70e46e348b42f026f4d5a5f5fe0",
+      "start_commit_sha": "0865ff99f3a8c70e46e348b42f026f4d5a5f5fe0",
+      "created_at": "2025-07-03T17:52:16.192Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "9a618704377d0b769de22567491ed4193a4df30e"
+    },
+    {
+      "id": 1408618002,
+      "head_commit_sha": "3739b087fb280addf72cb982dd0a9b46daef2bec",
+      "base_commit_sha": "fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5",
+      "start_commit_sha": "fe6fb389b8c5c5920e6e97e346ffb208c8f5daf5",
+      "created_at": "2025-07-01T14:58:23.388Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "9a618704377d0b769de22567491ed4193a4df30e"
+    },
+    {
+      "id": 1408465309,
+      "head_commit_sha": "aa6bc00a6a3ceadcdca0e9298be098ad4c12feaa",
+      "base_commit_sha": "1121a14269bbd9df5327225ac4379d0c961e3d6f",
+      "start_commit_sha": "1121a14269bbd9df5327225ac4379d0c961e3d6f",
+      "created_at": "2025-07-01T13:45:59.651Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "e978e83cf8d54df21a9509adfb501d476d36b19e"
+    },
+    {
+      "id": 1408418826,
+      "head_commit_sha": "3af3bd77785bba9b776e5db4892bc2e5d8bed673",
+      "base_commit_sha": "1121a14269bbd9df5327225ac4379d0c961e3d6f",
+      "start_commit_sha": "1121a14269bbd9df5327225ac4379d0c961e3d6f",
+      "created_at": "2025-07-01T13:22:10.700Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "c61a2cfaa7390ffd9ab02eb8d8c5cb7e16ce55de"
+    },
+    {
+      "id": 1406481670,
+      "head_commit_sha": "ca6076e7ef68cd07375e524fe7c5668e69a39e82",
+      "base_commit_sha": "9510afb8cbd22f682ca62643166c3fcb5b62d2d9",
+      "start_commit_sha": "9510afb8cbd22f682ca62643166c3fcb5b62d2d9",
+      "created_at": "2025-06-30T08:19:14.050Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "d0ff082e3e53464de764dcba7e2965161fa6c087"
+    },
+    {
+      "id": 1405197636,
+      "head_commit_sha": "9426dc0306d55a37c3f446555e9c37e32e472543",
+      "base_commit_sha": "b85d66e21b8ba3f582beb37367f7c34e46461830",
+      "start_commit_sha": "b85d66e21b8ba3f582beb37367f7c34e46461830",
+      "created_at": "2025-06-27T14:21:27.742Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "d0ff082e3e53464de764dcba7e2965161fa6c087"
+    },
+    {
+      "id": 1391846281,
+      "head_commit_sha": "5e25997501e2c34dac97fdae3e6202af1a3d629d",
+      "base_commit_sha": "3588358579db7dbfc004a4d5bf9b4c77731204c9",
+      "start_commit_sha": "3588358579db7dbfc004a4d5bf9b4c77731204c9",
+      "created_at": "2025-06-16T16:22:20.042Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "d0ff082e3e53464de764dcba7e2965161fa6c087"
+    },
+    {
+      "id": 1391817405,
+      "head_commit_sha": "f123e6e6d771ba25267022fee4376bda1588b7f8",
+      "base_commit_sha": "3588358579db7dbfc004a4d5bf9b4c77731204c9",
+      "start_commit_sha": "3588358579db7dbfc004a4d5bf9b4c77731204c9",
+      "created_at": "2025-06-16T15:59:24.770Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "1e6fc10ecc40ff8482a47561f9b4c2b85cad5b2a"
+    },
+    {
+      "id": 1391792144,
+      "head_commit_sha": "1b290e30f675be72637e429cc2b18486628dde71",
+      "base_commit_sha": "148e04ec65d430c7237c3b10016b8ff97e786d0c",
+      "start_commit_sha": "148e04ec65d430c7237c3b10016b8ff97e786d0c",
+      "created_at": "2025-06-16T15:42:39.198Z",
+      "merge_request_id": 391428705,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "598b45f5c17a703b4d043acf497e91fe13dca8f3"
+    }
+  ]
+}

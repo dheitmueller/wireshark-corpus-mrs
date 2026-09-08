@@ -1,0 +1,2399 @@
+{
+  "id": 372273197,
+  "iid": 19394,
+  "project_id": 7898047,
+  "title": "http3: properly dissect CONNECT/CONNECT-UDP",
+  "description": "The http3 dissector did not follow up on the evolution\nof the \"CONNECT\"/\"CONNECT-UDP\" methods, which are used for MASQUE et.al.\n\n## Some context\nThe \"CONNECT\" method is used for tunneling other protocols on top of HTTP.\nThe HTTP/3 protocol is used as a building block for the MASQUE protocol,\nwhich tunnels other protocols in QUIC `DATAGRAM` frames.\n\nInitially, the semantics of the \"CONNECT\" method were grandfathered\nfrom the HTTP/1.1 protocol:\n- The `:method` pseudo-header, containing the value \"CONNECT\"\n- The `:authority` pseudo-header, containing the host and the port.\n- The `:scheme` and `:path` pseudo-headers, which MUST have been omitted.\nSee: https://www.rfc-editor.org/rfc/rfc7231#section-4.3.6\n\nWhen the MASQUE protocol was introduced, `draft-schinazi-masque-connect-udp`\nproposed a special form of \"CONNECT\", called \"CONNECT-UDP\", to allow tunneling\nother protocols over QUIC `DATAGRAM` frames.\nSemantics of \"CONNECT-UDP\" are similar to the \"CONNECT\" semantics above:\n- The `:method` pseudo-header, containing value \"CONNECT-UDP\" (this is the only difference from \"CONNECT\" above)\n- The `:authority` pseudo-header, containing the host and the port.\n- The `:scheme` and `:path' pseudo-headers, which MUST have been omitted.\nSee:  https://www.ietf.org/archive/id/draft-schinazi-masque-connect-udp-00.html#section-3\n\nFinally, when `draft-schinazi-masque-connect-udp` has been ratified into rfc9298,\nthe special \"CONNECT-UDP\" method was deprecated in favor of the existing mechanism\nknown as \"Extended Connect\" (described in rfc8441), with the following semantics:\n- The `:method` pseudo-header, containing the value \"CONNECT\"\n- The `:protocol` pseudo-header, containing the value \"connect-udp\" (or \"connect-ip\", etc.)\n- The `:authority` pseudo-header, containing the authority of the proxy.\n- The `:scheme` and `:path` pseudo-headers define the target address,\n  according to URI template chosen by the client.\nhttps://www.rfc-editor.org/rfc/rfc8441.html#section-4\nhttps://www.rfc-editor.org/rfc/rfc9298.html#section-2\nhttps://www.rfc-editor.org/rfc/rfc9298.html#section-3.4\n\n## Changes in this MR\n1. Properly parsing the different forms of the \"CONNECT\" message. Note that modern implementations use both the \"plain CONNECT\" and the \"extended CONNECT\" but not \"CONNECT-UDP\".\n2. Properly constructing the target URL in accordance with the specific form of the \"CONNECT*\" method.\n3. Fixed a typo in \"CONNECT_UDP\" - it is \"CONNECT-UDP\".\n4. Fixed a bug that caused the \"CONNECT\" header to be appended multiple times (once when parsing `:method`, once when parsing `:authority`)\n\n### Additional changes\n1. The construction of expert information related to QPACK decoding errors is moved outside of the `if (!PINFO_FD_VISITED(pinfo)) {}` block.\n2. Dropped the broken attempt to match headers that are head-of-line blocked by the QPACK stream. I will add proper support for head-of-line blocked headers later.\n3. Some cleanup: formatting, removed dead code.",
+  "state": "merged",
+  "created_at": "2025-03-27T04:08:10.295Z",
+  "updated_at": "2025-04-02T06:11:37.476Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2025-04-02T06:11:37.505Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "dev/oesh-fix-connect-column-info",
+  "user_notes_count": 22,
+  "upvotes": 1,
+  "downvotes": 0,
+  "author": {
+    "id": 6764911,
+    "username": "oesh",
+    "public_email": "",
+    "name": "Omer Shapira",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+    "web_url": "https://gitlab.com/oesh"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 21350697,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-03-27T04:08:16.088Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!19394",
+  "references": {
+    "short": "!19394",
+    "relative": "!19394",
+    "full": "wireshark/wireshark!19394"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/19394",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2025-04-01T18:56:26.115Z",
+  "latest_build_finished_at": "2025-04-01T20:26:23.136Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1747209516,
+    "iid": 141,
+    "project_id": 21350697,
+    "sha": "bedae78caaf9c7422b70c73b5f56f9d1c0a2f7e2",
+    "ref": "dev/oesh-fix-connect-column-info",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-04-01T18:56:25.142Z",
+    "updated_at": "2025-04-01T20:26:23.159Z",
+    "web_url": "https://gitlab.com/oesh/wireshark/-/pipelines/1747209516"
+  },
+  "head_pipeline": {
+    "id": 1747883712,
+    "iid": 79657,
+    "project_id": 7898047,
+    "sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+    "ref": "refs/merge-requests/19394/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2025-04-02T06:11:18.577Z",
+    "updated_at": "2025-04-02T06:11:18.577Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1747883712",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1747883712",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+    "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+    "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "c73ce3a08924f21f40e0dea08aa17f6fe957c179",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2419032228,
+          "type": "DiffNote",
+          "body": "These variables are now bundled into `pseudo_headers`.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:09:31.862Z",
+          "updated_at": "2025-03-27T04:09:35.636Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": 907,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_907_923",
+                "type": "old",
+                "old_line": 907,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_907_923",
+                "type": "old",
+                "old_line": 907,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T04:09:35.636Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2d7906cc93312397258e44bd4d8aee3a1a665076",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2419032305,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:09:35.660Z",
+          "updated_at": "2025-03-27T04:09:35.668Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8658d8abe3f18cfca4e43db7001eab71ceb93f0e",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2419032964,
+          "type": "DiffNote",
+          "body": "Most of these variables have been moved to the scope where those are used.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:09:57.663Z",
+          "updated_at": "2025-03-27T04:10:01.245Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": 915,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_915_923",
+                "type": "old",
+                "old_line": 915,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_915_923",
+                "type": "old",
+                "old_line": 915,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T04:10:01.245Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f9c05b17f5bbc1f12a0116eeb5ff5132a92a1a06",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2419033078,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:10:01.273Z",
+          "updated_at": "2025-03-27T04:10:01.283Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b953d3dd25731e8431f7f6368cda83e149b1a410",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2419033652,
+          "type": "DiffNote",
+          "body": "Moved outside of `if (!PINFO_FD_VISITED(pinfo))` block.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:10:37.056Z",
+          "updated_at": "2025-03-27T04:10:41.670Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": 961,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_961_970",
+                "type": "old",
+                "old_line": 961,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_961_970",
+                "type": "old",
+                "old_line": 961,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T04:10:41.670Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7e1ec5c7559fb2cf8291a9f967774dd53a4fe63d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2419033759,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:10:41.699Z",
+          "updated_at": "2025-03-27T04:10:41.706Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4730ca60e67ec00b24a05b3f787f602e05b9d45b",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2419034318,
+          "type": "DiffNote",
+          "body": "Moved outside of the `if (!PINFO_FD_VISITED(pinfo))` block.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:11:08.073Z",
+          "updated_at": "2025-03-27T04:11:11.716Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": 987,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_987_994",
+                "type": "old",
+                "old_line": 987,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_987_994",
+                "type": "old",
+                "old_line": 987,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T04:11:11.716Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5492b364dc6aa3c9d85282d51e7493dec9c4ea1a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2419034437,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:11:11.749Z",
+          "updated_at": "2025-03-27T04:11:11.758Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5450accf09769dd2df826eb70ede2a75e30a7a6b",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2419036189,
+          "type": "DiffNote",
+          "body": "The original intent of having the `ricnt` and `winct` here was to check for the head-of-line blocking. It never worked as intended, and I will add a proper support later. For now, nuking most of it, but leaving the simple indication that the request stream is blocked on the QPACK stream.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:12:34.837Z",
+          "updated_at": "2025-03-27T04:12:37.550Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": 999,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_999_1001",
+                "type": "old",
+                "old_line": 999,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_999_1001",
+                "type": "old",
+                "old_line": 999,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T04:12:37.550Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f566ce8f16902e2697bec3dd0d89e77f98bf49c9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2419036247,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:12:37.593Z",
+          "updated_at": "2025-03-27T04:12:37.606Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "469ed4cd4c53b8dfaf1fb810487fdaa56df7aa15",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2419037387,
+          "type": "DiffNote",
+          "body": "The `pseudo_headers` are populated here, and used after we finish iterating over the header fields array.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:13:33.258Z",
+          "updated_at": "2025-03-27T04:13:36.795Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1148,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1125_1147",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1147
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1125_1147",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1147
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T04:13:36.795Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0359a0b3fef289360ad3529c4884841d8f8db8fe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2419037461,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:13:36.825Z",
+          "updated_at": "2025-03-27T04:13:36.834Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "226ce26b78e2b9ab9b8b07aef58a40ecad225f76",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2419038979,
+          "type": "DiffNote",
+          "body": "This is the flag that determines whether the target URL will contain just the `:authority` header, or will be constructed as usual (`:scheme`://`:authority``:path`).\nThis part has a significant comment/code ratio.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:15:05.102Z",
+          "updated_at": "2025-03-27T04:15:07.909Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1182,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1181",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1181
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1181",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1181
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T04:15:07.909Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0a2552d58caad1688e00d04e59b685a5a6788818",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2419039032,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:15:07.941Z",
+          "updated_at": "2025-03-27T04:15:07.949Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0b601a8b51c218e9f011c0a2fbc5bb21de331eca",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2419040546,
+          "type": "DiffNote",
+          "body": "A lot of times I see the encoder stream being empty, because the client/server only use static field. If this is the case, no need to show empty fields.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:16:21.019Z",
+          "updated_at": "2025-03-27T04:16:23.901Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1867,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1802_1866",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1866
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1802_1866",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1866
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T04:16:23.901Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ed1b048cb453bcf43f68f588b4736aab4798c54b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2419040636,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T04:16:23.932Z",
+          "updated_at": "2025-03-27T04:16:23.944Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "98fe7b35996887df9f1054a0bac7a8fe38f3d42d",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2420010034,
+          "type": "DiffNote",
+          "body": "Minor, but the indention is off by one space here.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-03-27T12:52:03.858Z",
+          "updated_at": "2025-03-27T18:32:32.204Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "start_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "head_sha": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1178,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T18:32:32.204Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        },
+        {
+          "id": 2420397743,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1309387260&start_sha=f0c5f25cf96509a56daa4d395f83aefaa12bd6a2#2a2ba47f7de558435f2088e27e61a75a5d3016d5_1178_1178)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T15:05:32.685Z",
+          "updated_at": "2025-03-27T15:05:32.685Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "start_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "head_sha": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1178,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        },
+        {
+          "id": 2420398546,
+          "type": "DiffNote",
+          "body": "Fixed in 8a4e0e3b2d",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T15:05:52.844Z",
+          "updated_at": "2025-03-27T18:32:32.204Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "start_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "head_sha": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1178,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T18:32:32.204Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        },
+        {
+          "id": 2420422257,
+          "type": "DiffNote",
+          "body": "@johnthacker do you know by any chance whether there is a `.clang-format` (or similar) file that can help with automated code styling?\n\nI recall seeing code comments `// clang-format off` and `// clang-format on`, which imply that `clang-format` is the linter of choice for Wireshark. Unfortunately, I could not find the `.clang-format` file in the codebase.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T15:14:20.069Z",
+          "updated_at": "2025-03-27T18:32:32.204Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "start_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "head_sha": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1178,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T18:32:32.204Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        },
+        {
+          "id": 2420465653,
+          "type": "DiffNote",
+          "body": "Editorconfig is the current preferred method. Previously modelines were used at the bottom of files, many files still have them (#17253).\n\nThere's several `.editorconfig` files - there's default settings for most files and some have different values.\n\nMost editors can support editorconfig these days. What do you use?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-03-27T15:32:03.476Z",
+          "updated_at": "2025-03-27T18:32:32.204Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "start_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "head_sha": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1178,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T18:32:32.204Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        },
+        {
+          "id": 2420913398,
+          "type": "DiffNote",
+          "body": "I use VSCode. It seems that there is an editorconfig plugin for that. I will check it out, thanks.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T18:32:30.590Z",
+          "updated_at": "2025-03-27T18:32:32.204Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "start_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+            "head_sha": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1178,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_1159_1178",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1178
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T18:32:32.204Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ce6f53ad111c0d32c5f37132ffe97cb765b503e1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2420282890,
+          "type": null,
+          "body": "hi @oesh \n\ncan you attach directly the pcap on the MR and not on the commit ?",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2025-03-27T14:28:15.124Z",
+          "updated_at": "2025-03-27T14:28:15.124Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "08253ce9c0124b0ed367c6d1d639e6d068978546",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2420301636,
+          "type": null,
+          "body": "Ping #17502",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2025-03-27T14:34:17.867Z",
+          "updated_at": "2025-03-27T14:34:17.867Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "24f62bb5da16ac650a7118295c73ec6c576c8703",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2420393130,
+          "type": null,
+          "body": "@alagoutte attaching the pcap.\n\n[http3-ext-connect.pcapng](/uploads/38afe23e97b5c38f9d3b53d7b23f7012/http3-ext-connect.pcapng)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T15:03:35.505Z",
+          "updated_at": "2025-03-27T15:03:35.505Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3e7250cd2a4dba69aa000249e0554639b7842ef3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2420397748,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>8a4e0e3b - Fixed identation</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1309387260&start_sha=f0c5f25cf96509a56daa4d395f83aefaa12bd6a2)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T15:05:32.883Z",
+          "updated_at": "2025-03-27T15:05:32.889Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a136a5189bb8d3af8dbc8b4d08632936c3884177",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2420412832,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>44781615 - 1 commit from branch <code>wireshark:master</code></li><li>9ef821a1 - http3: properly dissect CONNECT/CONNECT-UDP</li><li>556c9874 - Fixed identation</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1309397389&start_sha=8a4e0e3b2dd72859b5cb33db2f19c998244a054b)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T15:11:00.218Z",
+          "updated_at": "2025-03-27T15:11:00.223Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c2a4140e7cbd9ba72868945ea9a577c1ce6ec2ad",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2420913458,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T18:32:32.243Z",
+          "updated_at": "2025-03-27T18:32:32.253Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "39f7953ac33a9355fe1f64ea472143d043647cdf",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2420915171,
+          "type": "DiscussionNote",
+          "body": "@alagoutte do you want me to remove the pcapng file from the MR (so that it will be only attached to the MR, but not part of the git patch), or should I keep it both in the MR and as an attachment?",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T18:33:29.258Z",
+          "updated_at": "2025-03-27T19:39:30.160Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T19:39:30.160Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        },
+        {
+          "id": 2421004710,
+          "type": "DiscussionNote",
+          "body": "Yes remove from the git patch",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2025-03-27T19:32:13.371Z",
+          "updated_at": "2025-03-27T19:39:30.160Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T19:39:30.160Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        },
+        {
+          "id": 2421014099,
+          "type": "DiscussionNote",
+          "body": "Done.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T19:39:27.665Z",
+          "updated_at": "2025-03-27T19:39:30.160Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-27T19:39:30.160Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e0a576514eba6bd70db9e307950374dbcd27329a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2421012980,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>ee14156f - 1 commit from branch <code>wireshark:master</code></li><li>3461d3c0 - http3: properly dissect CONNECT/CONNECT-UDP</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1309750106&start_sha=556c98742d68f2b877b5dd90887965080ba073b7)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T19:38:38.516Z",
+          "updated_at": "2025-03-27T19:38:38.522Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "724c9a8dcd574e80357b66dde311e850f4134618",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2421014148,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T19:39:30.187Z",
+          "updated_at": "2025-03-27T19:39:30.194Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c41ff2690b6650fd9d8737df45bce4fe61f4f0cf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2421092687,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>fb75e88f - http3: properly dissect CONNECT/CONNECT-UDP</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1309797230&start_sha=3461d3c092090b8a551b9976ac1bd0ced4d31697)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-27T20:32:33.386Z",
+          "updated_at": "2025-03-27T20:32:33.390Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9308dd6f3e867e4faf86807a1b4c13c18f77b383",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2422892914,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>fb75e88f...d3dcb4f8 - 6 commits from branch <code>wireshark:master</code></li><li>183fe117 - http3: properly dissect CONNECT/CONNECT-UDP</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1310885507&start_sha=fb75e88f12811b63fe2aef190733776ebe8821cb)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-28T16:22:33.112Z",
+          "updated_at": "2025-03-28T16:22:33.117Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "aa6b08e5801b81bd7719b5538f7816d0fc84ae71",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 2423202439,
+          "type": "DiffNote",
+          "body": "Indentation was off by one character. Fixed the indentation and removed dead code.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-28T18:50:32.240Z",
+          "updated_at": "2025-03-28T18:50:35.345Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "183fe117513c6f4f882d5229effad6d8987a36b4",
+          "position": {
+            "base_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "start_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+            "head_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": 2615,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_2615_2665",
+                "type": "old",
+                "old_line": 2615,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "2a2ba47f7de558435f2088e27e61a75a5d3016d5_2615_2665",
+                "type": "old",
+                "old_line": 2615,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "resolved_at": "2025-03-28T18:50:35.345Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "94cecc77bfdb340270eff9097ec4cbf70c7ae0b4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2423202643,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-28T18:50:35.377Z",
+          "updated_at": "2025-03-28T18:50:35.385Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2c40d858eada7e301a551be9824e486b24d9cb5c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2423609639,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>183fe117...1a3391b6 - 6 commits from branch <code>wireshark:master</code></li><li>c366888b - http3: properly dissect CONNECT/CONNECT-UDP</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1311247187&start_sha=183fe117513c6f4f882d5229effad6d8987a36b4)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-03-29T02:10:32.880Z",
+          "updated_at": "2025-03-29T02:10:32.887Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b24acfa189dded44bd24b29b273850ad182fe366",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2429059469,
+          "type": null,
+          "body": "@alagoutte @johnthacker Do you have any comments, concerns, suggestions?",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-04-01T15:49:28.102Z",
+          "updated_at": "2025-04-01T15:49:28.102Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f4630a168920ff6994bdb9941e490c753fbe528c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2429334489,
+          "type": null,
+          "body": "cc @AndersBroman",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-04-01T18:55:28.055Z",
+          "updated_at": "2025-04-01T18:55:28.055Z",
+          "system": false,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d049505d58f0929a81f4d68467af32aef5498d89",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2429335964,
+          "type": null,
+          "body": "added 30 commits\n\n<ul><li>c366888b...c7d301fa - 29 commits from branch <code>wireshark:master</code></li><li>bedae78c - http3: properly dissect CONNECT/CONNECT-UDP</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1314306847&start_sha=c366888b43b4d7356680c3629f93ada99d8ed52d)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-04-01T18:56:23.313Z",
+          "updated_at": "2025-04-01T18:56:23.318Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6e83a648465d8f1d972a8afd0fd05ed9b9a1cf72",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2429354532,
+          "type": null,
+          "body": "mentioned in issue #17502",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2025-04-01T19:11:07.182Z",
+          "updated_at": "2025-04-01T19:11:07.186Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "28457d7dca7a2c631f0b5e2c3d2e8a30da6f49e0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2429890551,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>bedae78c...cc3daf6c - 5 commits from branch <code>wireshark:master</code></li><li>6628e912 - http3: properly dissect CONNECT/CONNECT-UDP</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19394/diffs?diff_id=1314665844&start_sha=bedae78caaf9c7422b70c73b5f56f9d1c0a2f7e2)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-04-02T06:11:16.997Z",
+          "updated_at": "2025-04-02T06:11:17.001Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "114ed89eea25174ff3d48fd247e9eeae7dff3771",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2429890652,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-04-02T06:11:23.091Z",
+          "updated_at": "2025-04-02T06:11:23.101Z",
+          "system": true,
+          "noteable_id": 372273197,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19394,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -21,6 +21,7 @@\n  */\n \n #include <config.h>\n+#include <wmem_scopes.h>\n \n #define WS_LOG_DOMAIN \"HTTP3\"\n \n@@ -84,6 +85,7 @@ static int hf_http3_header_qpack_blocked_decoder_wicnt;\n /* Static HTTP3 headers */\n static int hf_http3_headers_status;\n static int hf_http3_headers_path;\n+static int hf_http3_headers_protocol;\n static int hf_http3_headers_method;\n static int hf_http3_headers_scheme;\n static int hf_http3_headers_accept;\n@@ -195,6 +197,7 @@ static int ett_http3_qpack_opcode;\n #define HTTP3_HEADER_NAME_AUTHORITY         \":authority\"\n #define HTTP3_HEADER_NAME_METHOD            \":method\"\n #define HTTP3_HEADER_NAME_PATH              \":path\"\n+#define HTTP3_HEADER_NAME_PROTOCOL          \":protocol\"\n #define HTTP3_HEADER_NAME_SCHEME            \":scheme\"\n #define HTTP3_HEADER_NAME_STATUS            \":status\"\n \n@@ -262,10 +265,10 @@ static const val64_string http3_frame_types[] = {\n     { 0x09, \"Reserved\" },\n     { HTTP3_MAX_PUSH_ID, \"MAX_PUSH_ID\" },\n     { 0x0e, \"Reserved\" }, // \"DUPLICATE_PUSH\" in draft-26 and before\n+    /* 0x40 - 0x3FFFFFFFFFFFFFFF Assigned via Specification Required policy */\n     { HTTP3_WEBTRANSPORT_BISTREAM, \"WEBTRANSPORT_BISTREAM\" }, // draft-ietf-webtrans-http3-03\n     { HTTP3_PRIORITY_UPDATE_REQUEST_STREAM, \"PRIORITY_UPDATE\" }, // RFC 9218\n     { HTTP3_PRIORITY_UPDATE_PUSH_STREAM, \"PRIORITY_UPDATE\" }, // RFC 9218\n-    /* 0x40 - 0x3FFFFFFFFFFFFFFF Assigned via Specification Required policy */\n     { 0, NULL }\n };\n \n@@ -277,9 +280,9 @@ static const val64_string http3_frame_types[] = {\n #define HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE   0x06\n #define HTTP3_QPACK_BLOCKED_STREAMS             0x07\n #define HTTP3_EXTENDED_CONNECT                  0x08        /* https://datatracker.ietf.org/doc/draft-ietf-httpbis-h3-websockets */\n-#define HTTP3_H3_DATAGRAM                       0x33             // rfc9297\n-#define HTTP3_H3_DATAGRAM_DRAFT04               0xffd277 // draft-ietf-masque-h3-datagram-04\n-#define HTTP3_WEBTRANSPORT                      0x2b603742      // draft-ietf-webtrans-http3-03\n+#define HTTP3_H3_DATAGRAM                       0x33        /* rfc9297 */\n+#define HTTP3_H3_DATAGRAM_DRAFT04               0xffd277    /* draft-ietf-masque-h3-datagram-04 */\n+#define HTTP3_WEBTRANSPORT                      0x2b603742  /* draft-ietf-webtrans-http3-03 */\n \n static const val64_string http3_settings_vals[] = {\n     { HTTP3_QPACK_MAX_TABLE_CAPACITY, \"Max Table Capacity\" },\n@@ -420,6 +423,8 @@ typedef struct _header_block_encoded_iter {\n         }                                                                                                              \\\n     } while (0)\n \n+#define HTTP3_HD_DECODER_BLOCKED    0x1\n+#define HTTP3_HD_DECODER_ERROR      0x2\n /**\n  * HTTP3 header data block.\n  *\n@@ -430,14 +435,47 @@ typedef struct _header_block_encoded_iter {\n  * will be identified by the `offset' field.\n  */\n typedef struct _http3_header_data {\n-    unsigned                    len;           /**< Length of the encoded headers block. */\n-    unsigned                    offset;        /**< Offset of the headers block in the pinfo TVB. */\n-    unsigned                    ds_idx;        /**< Index of the data source tvb in the pinfo. */\n+    uint32_t                    len;           /**< Length of the encoded headers block. */\n+    uint32_t                    offset;        /**< Offset of the headers block in the pinfo TVB. */\n+    uint32_t                    ds_idx;        /**< Index of the data source tvb in the pinfo. */\n+    uint16_t                    state;         /**< See HTTP3_HD_DECODER_XXX above */\n+    uint16_t                    error;         /**< Decoding error code if any. */\n     wmem_array_t *              header_fields; /**< List of header fields contained in the header block. */\n     header_block_encoded_iter_t encoded;       /**< Used for dissection, not allocated. */\n     struct _http3_header_data * next;          /**< Next pointer in the chain. */\n } http3_header_data_t;\n \n+\n+#ifdef HAVE_NGHTTP3\n+/* HTTP/3 pseudo-header fields.\n+ *\n+ * This is a convenience structure that is used\n+ * to collect the values of the HTTP/3 pseudo-headers\n+ * while constructing the protocol tree,\n+ * and to construct the column info afterwards.\n+ * https://www.ietf.org/archive/id/draft-ietf-quic-http-34.html#name-pseudo-header-fields\n+ */\n+typedef struct _http3_pseudo_header_fields {\n+    const char      *authority;\n+    const char      *method;\n+    const char      *path;\n+    const char      *protocol;\n+    const char      *reason_phrase;    /**< \"pseudo\" pseudo-header. */\n+    const char      *scheme;\n+    const char      *status;\n+} http3_pseudo_header_fields_t;\n+\n+#define HTTP3_PSEUDO_HEADERS_INITIALIZER (http3_pseudo_header_fields_t){    \\\n+    .authority      = NULL,                                                 \\\n+    .method         = NULL,                                                 \\\n+    .path           = NULL,                                                 \\\n+    .protocol       = NULL,                                                 \\\n+    .reason_phrase  = NULL,                                                 \\\n+    .scheme         = NULL,                                                 \\\n+    .status         = NULL,                                                 \\\n+}\n+#endif /* HAVE_NGHTTP3 */\n+\n /* HTTP3 QPACK encoder state\n  *\n  * Store information about how many entries a QPACK encoder stream\n@@ -794,26 +832,6 @@ http3_packet_get_direction(quic_stream_info *stream_info)\n         : FROM_SERVER_TO_CLIENT;\n }\n \n-static void\n-try_append_method_path_info(packet_info *pinfo, proto_tree *tree, const char *method_header_value,\n-                            const char *path_header_value, const char *authority_header_value)\n-{\n-    if (method_header_value != NULL) {\n-        if ((strcmp(method_header_value, \"CONNECT_UDP\") == 0) || (strcmp(method_header_value, \"CONNECT\") == 0)) {\n-            if (authority_header_value != NULL) {\n-                col_append_sep_fstr(pinfo->cinfo, COL_INFO, \": \", \"%s %s\", method_header_value, authority_header_value);\n-            }\n-        } else {\n-            if (path_header_value != NULL) {\n-                /* append request information to info column (for example, HEADERS: GET /demo/1.jpg) */\n-                col_append_sep_fstr(pinfo->cinfo, COL_INFO, \": \", \"%s %s\", method_header_value, path_header_value);\n-                /* append request information to Stream node */\n-                proto_item_append_text(tree, \", %s %s\", method_header_value, path_header_value);\n-            }\n-        }\n-    }\n-}\n-\n static proto_item *\n try_add_named_header_field(proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t length, const char *header_name,\n                            const char *header_value)\n@@ -848,7 +866,6 @@ try_add_named_header_field(proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t\n     return ti;\n }\n \n-\n static void\n get_header_field_pstr(wmem_allocator_t *scratch, nghttp3_qpack_nv *header_nv, const char **outp, uint32_t *outlen)\n {\n@@ -904,24 +921,13 @@ static int\n dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned tvb_offset, unsigned offset,\n                       quic_stream_info *stream_info, http3_stream_info_t *http3_stream)\n {\n-    const char   *authority_header_value = NULL;\n-    const char   *method_header_value    = NULL;\n-    const char   *path_header_value      = NULL;\n-    const char   *scheme_header_value    = NULL;\n-    const uint8_t *header_name;\n-    const uint8_t *header_value;\n-\n-    int                           length = 0;\n-    uint32_t                      header_name_length;\n-    uint32_t                      header_value_length;\n-    http3_header_data_t           *header_data;\n-    http3_session_info_t          *http3_session;\n-    http3_stream_dir              packet_direction;\n-    int                           header_len = 0, hoffset = 0;\n-    nghttp3_qpack_decoder         *decoder;\n-    proto_item                    *header, *ti, *ti_named_field;\n-    proto_tree                    *header_tree, *blocked_rcint_tree;\n-    tvbuff_t                      *header_tvb = NULL;\n+    http3_header_data_t           *header_data;         /* The decoded header data block; populated on the first pass. */\n+    http3_session_info_t          *http3_session;       /* The corresponding HTTP/3 session. */\n+    tvbuff_t                      *header_tvb;          /* Composite TVB containing the decoded header fields. */\n+    int                           header_len;           /* Total length of the decoded header fields. */\n+    int                           hoffset;              /* Offset of a decoded header in the decoded TVB */\n+    proto_item                    *ti;                  /* Temporary tree item; used in multiple ways when constructing proto trees. */\n+    http3_pseudo_header_fields_t  pseudo_headers;       /* Pseudo-header values; populated when building proto trees; used when creating column info. */\n \n     http3_session = http3_session_lookup_or_create(pinfo);\n     header_data   = http3_get_header_data(pinfo, tvb, offset);\n@@ -929,6 +935,10 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig\n     ws_noisy(\"pdinfo visited=%d\", PINFO_FD_VISITED(pinfo));\n \n     if (!PINFO_FD_VISITED(pinfo)) {\n+        nghttp3_qpack_decoder         *decoder;\n+        int                           length = 0;\n+        http3_stream_dir              packet_direction;\n+\n         /*\n          * This packet has not been processed yet, which means this is\n          *  the first linear scan.  We do header decompression only\n@@ -958,9 +968,6 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig\n         ws_debug(\"Header data: %p %d %d\", header_data->encoded.bytes, header_data->encoded.pos,\n                                 header_data->encoded.len);\n \n-        proto_tree_add_expert_format(tree, pinfo, &ei_http3_header_encoded_state, tvb, tvb_offset, 0,\n-                                     \"HTTP3 encoded headers - bytes %p pos %d len %d\", header_data->encoded.bytes,\n-                                     header_data->encoded.pos, header_data->encoded.len);\n         /*\n          * Attempt to decode headers.\n          *\n@@ -978,15 +985,13 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig\n             int32_t nread = (int32_t)nghttp3_qpack_decoder_read_request(decoder, sctx, &nv, &flags,\n                                                                       HEADER_BLOCK_ENC_ITER_PTR(header_data),\n                                                                       HEADER_BLOCK_ENC_ITER_REMAINING(header_data), 1);\n-\n+            /*\n+             * Check for decoding errors.\n+             */\n             if (nread < 0) {\n-                /*\n-                 * This should be signaled up.\n-                 */\n+                header_data->state = HTTP3_HD_DECODER_ERROR;\n+                header_data->error = nread;\n                 ws_debug(\"Early return nread=%d err=%s\", nread, nghttp3_strerror(nread));\n-                proto_tree_add_expert_format(tree, pinfo, &ei_http3_header_decoding_failed, tvb, tvb_offset, 0,\n-                                             \"QPACK error decoder %p ctx %p flags %\" PRIu8 \" error %d (%s)\", decoder,\n-                                             sctx, flags, nread, nghttp3_strerror((int)nread));\n                 break;\n             }\n \n@@ -994,24 +999,13 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig\n              * Check whether the QPACK decoder is blocked on QPACK encoder stream.\n              */\n             if (flags & NGHTTP3_QPACK_DECODE_FLAG_BLOCKED) {\n-                uint64_t ricnt, wicnt;\n-\n-                ricnt = nghttp3_qpack_stream_context_get_ricnt(sctx);\n-                wicnt = nghttp3_qpack_decoder_get_icnt(decoder);\n-                ti    = proto_tree_add_boolean(tree, hf_http3_header_qpack_blocked, tvb, tvb_offset, 0, true);\n-                proto_item_set_generated(ti);\n-                blocked_rcint_tree = proto_item_add_subtree(ti, ett_http3_headers_qpack_blocked);\n-                ti = proto_tree_add_uint(blocked_rcint_tree, hf_http3_header_qpack_blocked_stream_rcint, tvb,\n-                                         tvb_offset, 0, (uint32_t)ricnt);\n-                proto_item_set_generated(ti);\n-                proto_tree_add_uint(blocked_rcint_tree, hf_http3_header_qpack_blocked_decoder_wicnt, tvb, tvb_offset, 0,\n-                                    (uint32_t)wicnt);\n-                proto_tree_add_expert_format(tree, pinfo, &ei_http3_header_decoding_blocked, tvb, tvb_offset, 0,\n-                                             \"QPACK - blocked decoder %p ctx %p flags=%\" PRIu8 \" ricnt=%\" PRIu64\n-                                             \" wicnt=%\" PRIu64 \" error %d (%s)\",\n-                                             decoder, sctx, flags, ricnt, wicnt, nread, nghttp3_strerror((int)nread));\n+                uint64_t wicnt, ricnt;\n+\n+                header_data->state  = HTTP3_HD_DECODER_BLOCKED;\n+                ricnt               = nghttp3_qpack_stream_context_get_ricnt(sctx);\n+                wicnt               = nghttp3_qpack_decoder_get_icnt(decoder);\n                 ws_debug(\"Early return nread=%d blocked=%\" PRIu8 \" ricnt=%\" PRIu64 \" wicnt=%\" PRIu64,\n-                                        nread, flags, ricnt, wicnt);\n+                    nread, flags, ricnt, wicnt);\n                 break;\n             }\n \n@@ -1019,7 +1013,7 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig\n              * Check whether the decoder has emitted header data.\n              */\n             if (flags & NGHTTP3_QPACK_DECODE_FLAG_EMIT) {\n-                http3_header_field_t        *out;\n+                http3_header_field_t  *out;\n \n                 ws_noisy(\"Emit nread=%d flags=%\" PRIu8 \"\", nread, flags);\n \n@@ -1056,11 +1050,34 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig\n         nghttp3_qpack_stream_context_del(sctx);\n     }\n \n+    /* Check if any expert information fields have to be added.\n+     */\n+    if (header_data->state == HTTP3_HD_DECODER_ERROR) {\n+        proto_tree_add_expert_format(tree, pinfo, &ei_http3_header_decoding_failed, tvb, tvb_offset, 0,\n+            \"QPACK decoding error %d (%s)\",\n+            header_data->error, nghttp3_strerror(header_data->error));\n+    } else if (header_data->state == HTTP3_HD_DECODER_BLOCKED) {\n+        ti  = proto_tree_add_boolean(tree, hf_http3_header_qpack_blocked, tvb, tvb_offset, 0, true);\n+        proto_item_set_generated(ti);\n+        proto_tree_add_expert_format(tree, pinfo, &ei_http3_header_decoding_blocked, tvb, tvb_offset, 0,\n+            \"QPACK decoding blocked\");\n+    }\n+\n+    if (header_data->encoded.pos < tvb_offset && header_data->encoded.len != 0) {\n+        proto_tree_add_expert_format(tree, pinfo, &ei_http3_header_encoded_state, tvb, tvb_offset, 0,\n+            \"HTTP3 encoded headers - bytes %p pos %d len %d\", header_data->encoded.bytes,\n+            header_data->encoded.pos, header_data->encoded.len);\n+    }\n+\n     if ((header_data->header_fields == NULL) || (wmem_array_get_count(header_data->header_fields) == 0)) {\n         return tvb_offset;\n     }\n \n-    header_tvb = tvb_new_composite();\n+    /* Header data contains decoded header values; start building the protocol trees. */\n+    header_tvb      = tvb_new_composite();\n+    header_len      = 0;\n+    hoffset         = 0;\n+    pseudo_headers  = HTTP3_PSEUDO_HEADERS_INITIALIZER;\n \n     for (unsigned i = 0; i < wmem_array_get_count(header_data->header_fields); ++i) {\n         http3_header_field_t    *in;\n@@ -1085,7 +1102,14 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig\n     proto_item_set_generated(ti);\n \n     for (unsigned i = 0; i < wmem_array_get_count(header_data->header_fields); ++i) {\n-        http3_header_field_t *in;\n+        http3_header_field_t    *in;\n+        proto_item              *ti_named_field;\n+        proto_item              *header;\n+        proto_tree              *header_tree;\n+        uint32_t                header_name_length;\n+        const uint8_t           *header_name;\n+        uint32_t                header_value_length;\n+        const uint8_t           *header_value;\n \n         in = (http3_header_field_t *)wmem_array_index(header_data->header_fields, i);\n \n@@ -1121,58 +1145,103 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig\n \n         proto_item_append_text(header, \": %s: %s\", header_name, header_value);\n \n-        /* Display :method, :path and :status in info column (just like http1.1 dissector does)*/\n+        /* Collect the pseudo-header values to be used later. */\n         if (strcmp(header_name, HTTP3_HEADER_NAME_METHOD) == 0) {\n-            method_header_value = header_value;\n-            try_append_method_path_info(pinfo, tree, method_header_value, path_header_value, authority_header_value);\n+            pseudo_headers.method = header_value;\n+        } else if (strcmp(header_name, HTTP3_HEADER_NAME_PROTOCOL) == 0) {\n+            pseudo_headers.protocol = header_value;\n         } else if (strcmp(header_name, HTTP3_HEADER_NAME_PATH) == 0) {\n-            path_header_value = header_value;\n-            try_append_method_path_info(pinfo, tree, method_header_value, path_header_value, authority_header_value);\n+            pseudo_headers.path = header_value;\n             http_add_path_components_to_tree(header_tvb, pinfo, ti_named_field, hoffset - header_value_length,\n                                              header_value_length);\n         } else if (strcmp(header_name, HTTP3_HEADER_NAME_AUTHORITY) == 0) {\n-            authority_header_value = header_value;\n-            try_append_method_path_info(pinfo, tree, method_header_value, path_header_value, authority_header_value);\n-        } else if (strcmp(header_name, HTTP3_HEADER_NAME_STATUS) == 0) {\n-            const char *reason_phase =\n-                val_to_str_const((unsigned)strtoul(header_value, NULL, 10), vals_http_status_code, \"Unknown\");\n-            /* append response status and reason phrase to info column (for example, HEADERS: 200 OK) */\n-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, \": \", \"%s %s\", header_value, reason_phase);\n-            /* append response status and reason phrase to header_tree and Stream node */\n-            proto_item_append_text(header_tree, \" %s\", reason_phase);\n-            proto_item_append_text(tree, \", %s %s\", header_value, reason_phase);\n-        } else if (strcmp(header_name, HTTP3_HEADER_NAME_AUTHORITY) == 0) {\n-            authority_header_value = header_value;\n+            pseudo_headers.authority = header_value;\n         } else if (strcmp(header_name, HTTP3_HEADER_NAME_SCHEME) == 0) {\n-            scheme_header_value = header_value;\n+            pseudo_headers.scheme = header_value;\n+        } else if (strcmp(header_name, HTTP3_HEADER_NAME_STATUS) == 0) {\n+            unsigned status_code;\n+\n+            status_code             = (unsigned)strtoul(header_value, NULL, 10);\n+            pseudo_headers.status   = header_value;\n+            pseudo_headers.reason_phrase = val_to_str_const(status_code, vals_http_status_code, \"Unknown\");\n+            proto_item_append_text(header_tree, \" %s\", pseudo_headers.reason_phrase);\n+            proto_item_append_text(tree, \", %s %s\", pseudo_headers.status, pseudo_headers.reason_phrase);\n         }\n \n         tvb_offset += in->encoded.len;\n     }\n \n-    /*\n-     * Use the `:authority' Header as an indication that this packet is a request.\n+    /* We have finished constructing the tree for the header fields.\n+     * Proceed to determine whether this is a variant of the CONNECT\n+     * method and to update the `hf_http3_header_request_full_uri'\n+     * and the info column display accordingly.\n      */\n-    if (authority_header_value) {\n-        proto_item *e_ti;\n-        char       *uri;\n+    if (pseudo_headers.method != NULL) {\n+        proto_item   *ti_url;\n+        char         *uri;\n+        bool         authority_contains_target = false;\n+\n+        if (strncmp(pseudo_headers.method, \"CONNECT\", 7) == 0) {\n+            /* This is a variant of CONNECT method.\n+             * Supported variants:\n+             * 1. \"CONNECT-UDP\"\n+             *     https://www.ietf.org/archive/id/draft-schinazi-masque-connect-udp-00.html#section-3\n+             * 2. \"Plain CONNECT\"\n+             *    https://www.rfc-editor.org/rfc/rfc7231#section-4.3.6\n+             * 3. \"Extended CONNECT\"\n+             *     https://www.rfc-editor.org/rfc/rfc9298.html#section-2\n+             *     https://www.rfc-editor.org/rfc/rfc9298.html#section-3.4\n+             *     https://www.rfc-editor.org/rfc/rfc8441.html#section-4\n+             *\n+             * Both the \"CONNECT-UDP\" and \"Plain CONNECT\" utilize the\n+             * `:authority' pseudo-header as the connection target.\n+             * The \"Extended CONNECT\" uses the pseudo-headers\n+             * in the same way as other HTTP methods.\n+             */\n+            if (strcmp(pseudo_headers.method, \"CONNECT-UDP\") == 0) {\n+                /* This is CONNECT-UDP method\n+                 * https://www.ietf.org/archive/id/draft-schinazi-masque-connect-udp-00.html#section-3\n+                 *\n+                 * Pseudo-header semantics:\n+                 * `:method' contains  \"CONNECT-UDP\"\n+                 * `:authority' contains the target host:port\n+                 * `:scheme' and `:path' MUST be empty.\n+                 */\n+                 authority_contains_target = true;\n+            } else if (pseudo_headers.protocol == NULL) {\n+                /* This is the plain CONNECT method\n+                 * https://www.rfc-editor.org/rfc/rfc7231#section-4.3.6\n+                 *\n+                 * Pseudo-header semantics:\n+                 * `:method' contains \"CONNECT\"\n+                 * `:authority' contains the target host and port\n+                 * `:scheme' and `:path' MUST be empty\n+                 */\n+                 authority_contains_target = true;\n+            }\n+        }\n \n-        /*\n-         * https://www.ietf.org/rfc/rfc9114.html#name-request-pseudo-header-field\n-         *\n-         * All HTTP/3 requests MUST include exactly one value for the `:method',\n-         * `:scheme', and `:path' pseudo-header fields, unless the request is\n-         * a `CONNECT' request; see Section 4.4.\n-         */\n-        if (method_header_value && strcmp(method_header_value, HTTP3_HEADER_METHOD_CONNECT) == 0) {\n-            uri = wmem_strdup(pinfo->pool, authority_header_value);\n+        if (authority_contains_target) {\n+            /* Both plain CONNECT and CONNECT-UDP use only the `:authority' header.\n+             */\n+            uri = wmem_strdup(pinfo->pool, pseudo_headers.authority);\n         } else {\n-            uri = wmem_strdup_printf(pinfo->pool, \"%s://%s%s\", scheme_header_value, authority_header_value,\n-                                     path_header_value);\n+            /* The Extended CONNECT uses the standard URL construction\n+             */\n+            uri = wmem_strdup_printf(pinfo->pool, \"%s://%s%s\",\n+                pseudo_headers.scheme, pseudo_headers.authority, pseudo_headers.path);\n         }\n-        e_ti = proto_tree_add_string(tree, hf_http3_header_request_full_uri, tvb, 0, 0, uri);\n-        proto_item_set_url(e_ti);\n-        proto_item_set_generated(e_ti);\n+\n+        col_append_sep_fstr(pinfo->cinfo, COL_INFO, \": \", \"%s %s\",\n+            pseudo_headers.method, uri);\n+        ti_url = proto_tree_add_string(tree, hf_http3_header_request_full_uri, tvb, 0, 0, uri);\n+        proto_item_set_url(ti_url);\n+        proto_item_set_generated(ti_url);\n+    } else if (pseudo_headers.status != NULL) {\n+        DISSECTOR_ASSERT(pseudo_headers.reason_phrase); /* Must be filled together with `:status' */\n+        /* append the status code and the reason phrase (for example, HEADERS: 200 OK) */\n+        col_append_sep_fstr(pinfo->cinfo, COL_INFO, \": \", \"%s %s\",\n+            pseudo_headers.status, pseudo_headers.reason_phrase);\n     }\n \n     return tvb_offset;\n@@ -1457,6 +1526,7 @@ dissect_http3_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int off\n     case HTTP3_MAX_PUSH_ID: /* TODO: dissect Max_Push_ID Frame */\n         break;\n     case HTTP3_PRIORITY_UPDATE_REQUEST_STREAM:\n+        /* FALLTHROUGH */\n     case HTTP3_PRIORITY_UPDATE_PUSH_STREAM: { /* Priority_Update Frame */\n         tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, payload_length);\n         dissect_http3_priority_update(next_tvb, pinfo, ft_tree, 0, frame_length);\n@@ -1582,9 +1652,9 @@ dissect_http3_qpack_encoder_stream(tvbuff_t *tvb, packet_info *pinfo _U_, proto_\n     proto_item   *opcode_ti;\n     proto_tree   *opcode_tree;\n     tvbuff_t     *decoded_tvb;\n-    unsigned      decoded = 0;\n-    bool          fin = false;\n-    int           inc = 0;\n+    unsigned      decoded      = 0;\n+    bool          fin          = false;\n+    int           inc          = 0;\n     volatile bool can_continue = true;\n \n     remaining = tvb_captured_length_remaining(tvb, offset);\n@@ -1607,7 +1677,7 @@ dissect_http3_qpack_encoder_stream(tvbuff_t *tvb, packet_info *pinfo _U_, proto_\n                 int      value_len        = 0;\n                 int      val_bytes_offset = 0;\n                 uint64_t val_bytes_len    = 0;\n-                bool value_huffman    = false;\n+                bool value_huffman        = false;\n \n                 /* https://datatracker.ietf.org/doc/html/rfc9204#name-insert-with-name-reference\n                  *\n@@ -1787,53 +1857,54 @@ static int\n dissect_http3_qpack_enc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset,\n                         quic_stream_info *stream_info, http3_stream_info_t *http3_stream)\n {\n-    int                   remaining, remaining_captured, retval, decoded = 0;\n-    proto_item *          qpack_update;\n-    proto_tree *          qpack_update_tree;\n-    http3_session_info_t *http3_session;\n+    int                   remaining, remaining_captured, retval;\n \n     remaining_captured = tvb_captured_length_remaining(tvb, offset);\n     remaining          = tvb_reported_length_remaining(tvb, offset);\n     DISSECTOR_ASSERT(remaining_captured == remaining);\n     retval = remaining;\n \n-    http3_session = http3_session_lookup_or_create(pinfo);\n-    DISSECTOR_ASSERT(http3_session);\n+    if (remaining > 0) {\n+        http3_session_info_t    *http3_session;\n+        proto_item              *qpack_update;\n+        proto_tree              *qpack_update_tree;\n+        int                     decoded;\n \n-    /*\n-     * Add a QPACK encoder tree item.\n-     */\n-    qpack_update      = proto_tree_add_item(tree, hf_http3_qpack_encoder, tvb, offset, remaining, ENC_NA);\n-    qpack_update_tree = proto_item_add_subtree(qpack_update, ett_http3_qpack_update);\n-    decoded =     dissect_http3_qpack_encoder_stream(tvb, pinfo, qpack_update_tree, offset,\n-                                                           http3_stream);\n+        http3_session = http3_session_lookup_or_create(pinfo);\n+        DISSECTOR_ASSERT(http3_session);\n \n-    if (!PINFO_FD_VISITED(pinfo)) {\n-        ws_debug(\"decode encoder stream: Wireshark decoded=%u of %u\", decoded, remaining);\n-    }\n-    if (decoded < remaining) {\n-        pinfo->desegment_offset = offset + decoded;\n-        pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;\n-    }\n+        /*\n+        * Add a QPACK encoder tree item.\n+        */\n+        qpack_update      = proto_tree_add_item(tree, hf_http3_qpack_encoder, tvb, offset, remaining, ENC_NA);\n+        qpack_update_tree = proto_item_add_subtree(qpack_update, ett_http3_qpack_update);\n+        decoded =     dissect_http3_qpack_encoder_stream(tvb, pinfo, qpack_update_tree, offset,\n+                                                            http3_stream);\n+\n+        if (!PINFO_FD_VISITED(pinfo)) {\n+            ws_debug(\"decode encoder stream: Wireshark decoded=%u of %u\", decoded, remaining);\n+        }\n+        if (decoded < remaining) {\n+            pinfo->desegment_offset = offset + decoded;\n+            pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;\n+        }\n \n #ifdef HAVE_NGHTTP3\n-    if (remaining > 0) {\n-        proto_item *           ti;\n-        http3_stream_dir       packet_direction = http3_packet_get_direction(stream_info);\n-        nghttp3_qpack_decoder *decoder          = http3_session->qpack_decoder[packet_direction];\n+        proto_item            *ti;\n+        http3_stream_dir      packet_direction = http3_packet_get_direction(stream_info);\n+        nghttp3_qpack_decoder *decoder         = http3_session->qpack_decoder[packet_direction];\n \n         http3_qpack_encoder_state_t *encoder_state = http3_get_qpack_encoder_state(pinfo, tvb, offset);\n \n         if (!PINFO_FD_VISITED(pinfo)) {\n-\n             /*\n              * Since we are now defragmenting, pass only the number of bytes\n              * decoded to the nghttp3_qpack_decoder. Otherwise, we'll end up\n              * sending the same bytes to the decoder again when the packet\n              * is defragmented.\n              */\n-            uint8_t *qpack_buf = (uint8_t *)tvb_memdup(pinfo->pool, tvb, offset, decoded);\n-            int                    qpack_buf_len = decoded;\n+            uint8_t *qpack_buf      = (uint8_t *)tvb_memdup(pinfo->pool, tvb, offset, decoded);\n+            int     qpack_buf_len   = decoded;\n \n             /*\n              * Get the instr count prior to processing the data.\n@@ -1868,12 +1939,12 @@ dissect_http3_qpack_enc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n         ti = proto_tree_add_uint64(qpack_update_tree, hf_http3_qpack_encoder_icnt, tvb, offset, 0,\n                                    encoder_state->icnt);\n         proto_item_set_generated(ti);\n-    }\n #else\n     (void)stream_info;\n     (void)qpack_update;\n     (void)decoded;\n #endif /* HAVE_NGHTTP3 */\n+    }\n \n     return retval;\n }\n@@ -2070,6 +2141,11 @@ register_static_headers(void)\n             FT_STRING, BASE_NONE, NULL, 0x0,\n             NULL, HFILL }\n         },\n+        { &hf_http3_headers_protocol,\n+          { \":protocol\", \"http3.headers.protocol\",\n+            FT_STRING, BASE_NONE, NULL, 0x0,\n+            NULL, HFILL }\n+        },\n         { &hf_http3_headers_method,\n           { \":method\", \"http3.headers.method\",\n             FT_STRING, BASE_NONE, NULL, 0x0,\n@@ -2320,8 +2396,8 @@ register_static_headers(void)\n void\n proto_register_http3(void)\n {\n-    expert_module_t *      expert_http3;\n-    module_t *module_http3 _U_;\n+    expert_module_t *expert_http3;\n+    module_t        *module_http3 _U_;\n \n     static hf_register_info hf[] = {\n         { &hf_http3_stream_uni,\n@@ -2364,18 +2440,15 @@ proto_register_http3(void)\n             FT_BYTES, BASE_NONE, NULL, 0x0,\n             NULL, HFILL }\n         },\n+\n         /* Data */\n         { &hf_http3_data,\n           { \"Data\", \"http3.data\",\n             FT_BYTES, BASE_NONE, NULL, 0x0,\n             NULL, HFILL }\n         },\n+\n         /* Headers */\n-        //{ &hf_http3_headers,\n-        //     { \"Header\", \"http3.headers\",\n-        //        FT_UINT32, BASE_DEC, NULL, 0x0,\n-        //        NULL, HFILL }\n-        //},\n         { &hf_http3_headers_count,\n              { \"Headers Count\", \"http3.headers.count\",\n                 FT_UINT32, BASE_DEC, NULL, 0x0,\n@@ -2416,6 +2489,8 @@ proto_register_http3(void)\n               FT_STRING, BASE_NONE, NULL, 0x0,\n               \"The full requested URI (including host name)\", HFILL }\n         },\n+\n+        /* QPACK */\n         { &hf_http3_header_qpack_blocked,\n             { \"HEADERS head-of-line-blocked on QPACK encoder stream\", \"http3.header.qpack.blocked\",\n                 FT_BOOLEAN, BASE_NONE, NULL, 0x0,\n@@ -2431,26 +2506,11 @@ proto_register_http3(void)\n                 FT_UINT32, BASE_DEC, NULL, 0x0,\n                 NULL, HFILL }\n         },\n-        //{ &hf_http3_header_qpack_fatal,\n-        //    { \"QPACK decoding error\", \"http3.header.qpack.fatal\",\n-        //        FT_BOOLEAN, BASE_NONE, NULL, 0x0,\n-        //        NULL, HFILL }\n-        //},\n-        //{ &hf_http3_qpack,\n-        //    { \"QPACK\", \"http3.qpack\",\n-        //        FT_BYTES, BASE_NONE, NULL, 0x0,\n-        //        NULL, HFILL }\n-        //},\n         { &hf_http3_qpack_encoder,\n             { \"QPACK encoder\", \"http3.qpack.encoder\",\n                 FT_BYTES, BASE_NONE, NULL, 0x0,\n                 NULL, HFILL }\n         },\n-        //{ &hf_http3_qpack_encoder_length,\n-        //    { \"QPACK encoder update length\", \"http3.qpack.encoder.length\",\n-        //        FT_UINT32, BASE_DEC, NULL, 0x0,\n-        //        NULL, HFILL }\n-        //},\n         { &hf_http3_qpack_encoder_icnt,\n             { \"QPACK encoder instruction count\", \"http3.qpack.encoder.icnt\",\n                 FT_UINT64, BASE_DEC, NULL, 0x0,\n@@ -2461,11 +2521,6 @@ proto_register_http3(void)\n                 FT_UINT32, BASE_DEC, NULL, 0x0,\n                 NULL, HFILL }\n         },\n-       //{ &hf_http3_qpack_encoder_opcode,\n-       //     { \"QPACK encoder opcode\", \"http3.qpack.encoder.opcode\",\n-       //       FT_BYTES, BASE_NONE, NULL, 0x0,\n-       //       NULL, HFILL }\n-       // },\n         { &hf_http3_qpack_encoder_opcode_insert_indexed,\n             { \"Insert with Name Reference\", \"http3.qpack.encoder.opcode.insert_indexed\",\n               FT_BYTES, BASE_NONE, NULL, 0x0,\n@@ -2516,11 +2571,6 @@ proto_register_http3(void)\n               FT_BYTES, BASE_NONE, NULL, 0x0,\n               NULL, HFILL }\n         },\n-        //{ &hf_http3_qpack_encoder_opcode_duplicate_val,\n-        //    { \"Duplicate Index\", \"http3.qpack.encoder.opcode.duplicate.val\",\n-        //      FT_BYTES, BASE_NONE, NULL, 0x0,\n-        //      NULL, HFILL }\n-        //},\n         { &hf_http3_qpack_encoder_opcode_dtable_cap,\n             { \"Set Dynamic Table Capacity\", \"http3.qpack.encoder.opcode.dtable_cap\",\n               FT_BYTES, BASE_NONE, NULL, 0x0,\n@@ -2612,34 +2662,26 @@ proto_register_http3(void)\n           { \"http3.unknown_stream_type\", PI_UNDECODED, PI_WARN,\n             \"An unknown stream type was encountered\", EXPFILL }\n         },\n-        //{ &ei_http3_data_not_decoded,\n-        //    { \"http3.data_not_decoded\", PI_UNDECODED, PI_WARN,\n-        //      \"Data not decoded\", EXPFILL }\n-        // },\n-        // { &ei_http3_qpack_enc_update,\n-        //   { \"http3.qpack_enc_update\", PI_UNDECODED, PI_WARN,\n-        //     \"Success decoding QPACK buffer\", EXPFILL }\n-        // },\n-         { &ei_http3_qpack_failed,\n-           { \"http3.qpack_enc_failed\", PI_UNDECODED, PI_NOTE,\n-             \"Error decoding QPACK buffer\", EXPFILL }\n-         },\n-         { &ei_http3_header_encoded_state ,\n-           { \"http3.expert.header.encoded_state\", PI_DEBUG, PI_NOTE,\n-             \"HTTP3 header encoded block\", EXPFILL }\n-         },\n-         { &ei_http3_header_decoding_failed ,\n-           { \"http3.expert.header_decoding.failed\", PI_UNDECODED, PI_NOTE,\n-             \"Failed to decode HTTP3 header name/value\", EXPFILL }\n-         },\n-         { &ei_http3_header_decoding_blocked,\n-           { \"http3.expert.header_decoding.blocked\", PI_UNDECODED, PI_NOTE,\n-             \"Failed to decode HTTP3 header name/value (blocked on QPACK)\", EXPFILL}\n-         },\n-         { &ei_http3_header_decoding_no_output,\n-           { \"http3.expert.header_decoding.no_output\", PI_UNDECODED, PI_NOTE,\n-             \"Failed to decode HTTP3 header name/value (QPACK decoder no emission)\", EXPFILL}\n-         },\n+        { &ei_http3_qpack_failed,\n+          { \"http3.qpack_enc_failed\", PI_UNDECODED, PI_NOTE,\n+            \"Error decoding QPACK buffer\", EXPFILL }\n+        },\n+        { &ei_http3_header_encoded_state ,\n+          { \"http3.expert.header.encoded_state\", PI_DEBUG, PI_NOTE,\n+            \"HTTP3 header encoded block\", EXPFILL }\n+        },\n+        { &ei_http3_header_decoding_failed ,\n+          { \"http3.expert.header_decoding.failed\", PI_UNDECODED, PI_NOTE,\n+            \"Failed to decode HTTP3 header name/value\", EXPFILL }\n+        },\n+        { &ei_http3_header_decoding_blocked,\n+          { \"http3.expert.header_decoding.blocked\", PI_UNDECODED, PI_NOTE,\n+            \"Failed to decode HTTP3 header name/value (blocked on QPACK)\", EXPFILL}\n+        },\n+        { &ei_http3_header_decoding_no_output,\n+          { \"http3.expert.header_decoding.no_output\", PI_UNDECODED, PI_NOTE,\n+            \"Failed to decode HTTP3 header name/value (QPACK decoder no emission)\", EXPFILL}\n+        },\n     };\n \n     proto_http3 = proto_register_protocol(\"Hypertext Transfer Protocol Version 3\", \"HTTP3\", \"http3\");\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-http3.c",
+      "old_path": "epan/dissectors/packet-http3.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+      "short_id": "6628e912",
+      "created_at": "2025-04-02T08:11:12.000+02:00",
+      "parent_ids": [
+        "cc3daf6cb24731049b9063df976f50eb0c374345"
+      ],
+      "title": "http3: properly dissect CONNECT/CONNECT-UDP",
+      "message": "http3: properly dissect CONNECT/CONNECT-UDP\n\nThe http3 dissector did not follow up on the evolution\nof the CONNECT/CONNECT-UDP methods, which are used for MASQUE et.al.\n\nh1. Some context:\n\nInitially, the semantics of the CONNECT method were grandfathered\nfrom the HTTP/1.1 protocol:\n- The `:method` pseudo-header, containing the value \"CONNECT\"\n- The `:authority` pseudo-header, containing the host and the port.\n- The `:scheme` and `:path` pseudo-headers, which MUST have been omitted.\nSee: https://www.rfc-editor.org/rfc/rfc7231#section-4.3.6\n\nLater, following the evolution of the MASQUE protocol, `draft-schinazi-masque-connect-udp`\nproposed a special form of \"CONNECT\", called \"CONNECT-UDP\".\nSemantics of \"CONNECT-UDP\":\n- The `:method` pseudo-header, containing value \"CONNECT-UDP\".\n- The `:authority` pseudo-header, containing the host and the port.\n- The `:scheme` and `:path' pseudo-headers, which MUST have been omitted.\nSee:  https://www.ietf.org/archive/id/draft-schinazi-masque-connect-udp-00.html#section-3\n\nNOTE: before this MR, the http3 dissector attempts to dissect both\nthe \"CONNECT\" and \"CONNECT-UDP\" methods, but it is doing that incorrectly.\n\nFinally, when `draft-schinazi-masque-connect-udp` has been ratified into rfc9298,\nthe special \"CONNECT-UDP\" method was replaced with the existing mechanism from rfc8441\nknown as \"Extended Connect\" (described in rfc8441), with the following semantics:\n- The `:method` pseudo-header, containing the value \"CONNECT\"\n- The `:protocol` pseudo-header, containing the value \"connect-udp\"\n- The `:authority` pseudo-header, containing the authority of the UDP proxy.\n- The `:scheme` and `:path` pseudo-headers define the target address,\n  according to URI template chosen by the client.\nhttps://www.rfc-editor.org/rfc/rfc8441.html#section-4\nhttps://www.rfc-editor.org/rfc/rfc9298.html#section-2\nhttps://www.rfc-editor.org/rfc/rfc9298.html#section-3.4\n\nh1. Changes in this MR\n\n1. The values that depend on multiple header fields, such as the request URI,\n   are not determined while dissecting individual fields, but moved to the end\n   of the `dissect_http3_headers` function.\n2. The construction of QPACK errors is moved from the `if (!PINFO_FD_VISITED(pinfo)) {}` block.\n3. Dropped the broken attempt to match headers that are head-of-line blocked by the QPACK stream.\n   I will add proper support for head-of-line blocked headers later.\n4. Some cleanup: formatting, removed dead code.\n\nFixed identation\n\nRemoved the pcapng\n",
+      "author_name": "Omer Shapira",
+      "author_email": "omer_shapira@apple.com",
+      "authored_date": "2025-03-26T18:15:15.000-07:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2025-04-02T08:11:12.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/6628e912c44b3030d5938cf1de93ec7720bb0ff5"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1314665844,
+      "head_commit_sha": "6628e912c44b3030d5938cf1de93ec7720bb0ff5",
+      "base_commit_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+      "start_commit_sha": "cc3daf6cb24731049b9063df976f50eb0c374345",
+      "created_at": "2025-04-02T06:11:15.215Z",
+      "merge_request_id": 372273197,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "d023aa550fa08f2de18d4946b77bab48b3b85645"
+    },
+    {
+      "id": 1314306847,
+      "head_commit_sha": "bedae78caaf9c7422b70c73b5f56f9d1c0a2f7e2",
+      "base_commit_sha": "c7d301fa2d02678983662c7bb5e02b88f0c34e80",
+      "start_commit_sha": "c7d301fa2d02678983662c7bb5e02b88f0c34e80",
+      "created_at": "2025-04-01T18:56:20.971Z",
+      "merge_request_id": 372273197,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "d023aa550fa08f2de18d4946b77bab48b3b85645"
+    },
+    {
+      "id": 1311247187,
+      "head_commit_sha": "c366888b43b4d7356680c3629f93ada99d8ed52d",
+      "base_commit_sha": "1a3391b60f20406b366bcec72e777ab1507ce18d",
+      "start_commit_sha": "1a3391b60f20406b366bcec72e777ab1507ce18d",
+      "created_at": "2025-03-29T02:10:29.858Z",
+      "merge_request_id": 372273197,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "d023aa550fa08f2de18d4946b77bab48b3b85645"
+    },
+    {
+      "id": 1310885507,
+      "head_commit_sha": "183fe117513c6f4f882d5229effad6d8987a36b4",
+      "base_commit_sha": "d3dcb4f8bbf75ae3befc6b21f7aa90476b641402",
+      "start_commit_sha": "d3dcb4f8bbf75ae3befc6b21f7aa90476b641402",
+      "created_at": "2025-03-28T16:22:31.007Z",
+      "merge_request_id": 372273197,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "d023aa550fa08f2de18d4946b77bab48b3b85645"
+    },
+    {
+      "id": 1309797230,
+      "head_commit_sha": "fb75e88f12811b63fe2aef190733776ebe8821cb",
+      "base_commit_sha": "ee14156f6d33543133722e8c0f75509c321837ae",
+      "start_commit_sha": "ee14156f6d33543133722e8c0f75509c321837ae",
+      "created_at": "2025-03-27T20:32:30.418Z",
+      "merge_request_id": 372273197,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "d023aa550fa08f2de18d4946b77bab48b3b85645"
+    },
+    {
+      "id": 1309750106,
+      "head_commit_sha": "3461d3c092090b8a551b9976ac1bd0ced4d31697",
+      "base_commit_sha": "ee14156f6d33543133722e8c0f75509c321837ae",
+      "start_commit_sha": "ee14156f6d33543133722e8c0f75509c321837ae",
+      "created_at": "2025-03-27T19:38:36.420Z",
+      "merge_request_id": 372273197,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "a2d9cbe40a6e38ba3f7981fb929f04f9407ac284"
+    },
+    {
+      "id": 1309397389,
+      "head_commit_sha": "556c98742d68f2b877b5dd90887965080ba073b7",
+      "base_commit_sha": "44781615b155d3ae125394454cc317af159c218f",
+      "start_commit_sha": "44781615b155d3ae125394454cc317af159c218f",
+      "created_at": "2025-03-27T15:10:58.186Z",
+      "merge_request_id": 372273197,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "c7ffd51f123e1d0ff3a20e84c4566c67ca33ca92"
+    },
+    {
+      "id": 1309387260,
+      "head_commit_sha": "8a4e0e3b2dd72859b5cb33db2f19c998244a054b",
+      "base_commit_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+      "start_commit_sha": "44781615b155d3ae125394454cc317af159c218f",
+      "created_at": "2025-03-27T15:05:30.049Z",
+      "merge_request_id": 372273197,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "c7ffd51f123e1d0ff3a20e84c4566c67ca33ca92"
+    },
+    {
+      "id": 1308524612,
+      "head_commit_sha": "f0c5f25cf96509a56daa4d395f83aefaa12bd6a2",
+      "base_commit_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+      "start_commit_sha": "ac6329be26fdea9f486ee5530005c45426c54f6c",
+      "created_at": "2025-03-27T04:08:11.636Z",
+      "merge_request_id": 372273197,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "54d585928360d8797f38f68d24892ac56a06cee0"
+    }
+  ]
+}

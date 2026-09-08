@@ -1,0 +1,261 @@
+{
+  "id": 379095031,
+  "iid": 19679,
+  "project_id": 7898047,
+  "title": "dfilter: Fix possible segfaults around dup'ing (XOR and multiple relations)",
+  "description": "Both xor and multiple relation tests call stnode_dup, and they\ncan be called on sets and character constants. If a node doesn't\nhave a dup function, then a shallow copy of the data is performed.\n\nThat doesn't work for the nodes whose data is a pointer (XXX -\ncharconst shouldn't need to be a pointer, it's maximum size is\na gunichar / uint32_t, so GUINT_TO_POINTER style tricks could\nwork). For the internal PCRE type (and probably FTYPE), those\naren't created until all the dup'ing is done, so they're probably\nok technically, though it's easy enough to implement the ftype\none. (PCRE requires a change in regex.h)\n\nA set node needs to have its nodelist duplicated in a similar\nmanner as a function node.\n\nThe following two filter tests segfault or assert before this\nchange but now work (and do not leak with ASAN):\n\ndftest 'wlan ^^ ip.proto in {\"udp\", \"tcp\"}'\n\nFilter:\n wlan ^^ ip.proto in {\"udp\", \"tcp\"}\n\nSyntax tree:\n 0 TEST_AND:\n   1 TEST_OR:\n     2 FIELD(wlan <FT_PROTOCOL>)\n     2 TEST_IN:\n       3 FIELD(ip.proto <FT_UINT8>)\n       3 SET(#2):\n         4 FVALUE(17 <FT_UINT64>)\n         4 FVALUE(6 <FT_UINT64>)\n   1 TEST_NOT:\n     2 TEST_AND:\n       3 FIELD(wlan <FT_PROTOCOL>)\n       3 TEST_IN:\n         4 FIELD(ip.proto <FT_UINT8>)\n         4 SET(#2):\n           5 FVALUE(17 <FT_UINT64>)\n           5 FVALUE(6 <FT_UINT64>)\n\nInstructions:\n 0000 CHECK_EXISTS     wlan\n 0001 IF_TRUE_GOTO     9\n 0002 READ_TREE        ip.proto         -> R0\n 0003 IF_FALSE_GOTO    18\n 0004 SET_ADD          17\n 0005 SET_ADD          6\n 0006 SET_ANY_IN       R0\n 0007 SET_CLEAR\n 0008 IF_FALSE_GOTO    18\n 0009 CHECK_EXISTS     wlan\n 0010 IF_FALSE_GOTO    17\n 0011 READ_TREE        ip.proto         -> R0\n 0012 IF_FALSE_GOTO    17\n 0013 SET_ADD          17\n 0014 SET_ADD          6\n 0015 SET_ANY_IN       R0\n 0016 SET_CLEAR\n 0017 NOT\n 0018 RETURN\n\nand\n\ndftest -s \"tcp.srcport <= '\\x50' < tcp.dstport\"\nFilter:\n tcp.srcport <= '\\x50' < tcp.dstport\n\nSyntax tree:\n 0 TEST_AND:\n   1 TEST_LE:\n     2 FIELD(tcp.srcport <FT_UINT16>)\n     2 FVALUE(80 <FT_UINT16>)\n   1 TEST_LT:\n     2 FVALUE(80 <FT_UINT16>)\n     2 FIELD(tcp.dstport <FT_UINT16>)\n\nInstructions:\n 0000 READ_TREE        tcp.srcport      -> R0\n 0001 IF_FALSE_GOTO    7\n 0002 ANY_LE           R0 <= 80\n 0003 IF_FALSE_GOTO    7\n 0004 READ_TREE        tcp.dstport      -> R1\n 0005 IF_FALSE_GOTO    7\n 0006 ANY_LT           80 < R1\n 0007 RETURN\n\n\n(cherry picked from commit f5e14b6dc97554f6674ad44e472d1e5a2c1984ee)\n\nCo-authored-by: John Thacker <johnthacker@gmail.com>",
+  "state": "merged",
+  "created_at": "2025-04-25T13:41:07.980Z",
+  "updated_at": "2025-04-26T09:17:33.963Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2025-04-26T09:17:32.120Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-4.2",
+  "source_branch": "cherry-pick-f5e14b6d-2",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 7898047,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "066e2c4a3fc396cc6f956fc3cc7cb0b2b0f9f471",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-04-25T13:41:17.737Z",
+  "reference": "!19679",
+  "references": {
+    "short": "!19679",
+    "relative": "!19679",
+    "full": "wireshark/wireshark!19679"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/19679",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2025-04-25T13:41:13.908Z",
+  "latest_build_finished_at": "2025-04-25T13:54:24.014Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1786405368,
+    "iid": 80616,
+    "project_id": 7898047,
+    "sha": "066e2c4a3fc396cc6f956fc3cc7cb0b2b0f9f471",
+    "ref": "refs/merge-requests/19679/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-04-25T13:41:11.707Z",
+    "updated_at": "2025-04-25T13:54:24.029Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1786405368"
+  },
+  "head_pipeline": {
+    "id": 1786405368,
+    "iid": 80616,
+    "project_id": 7898047,
+    "sha": "066e2c4a3fc396cc6f956fc3cc7cb0b2b0f9f471",
+    "ref": "refs/merge-requests/19679/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-04-25T13:41:11.707Z",
+    "updated_at": "2025-04-25T13:54:24.029Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1786405368",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2025-04-25T13:41:13.908Z",
+    "finished_at": "2025-04-25T13:54:24.014Z",
+    "committed_at": null,
+    "duration": 789,
+    "queued_duration": 2,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1786405368",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "7e74fc976132d5cbb8d671ae80d3fdfa30f95e5c",
+    "head_sha": "066e2c4a3fc396cc6f956fc3cc7cb0b2b0f9f471",
+    "start_sha": "7e74fc976132d5cbb8d671ae80d3fdfa30f95e5c"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "c4f0e42c0018135aa0964083c13cae916c032ee8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2471435641,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-04-26T09:17:28.737Z",
+          "updated_at": "2025-04-26T09:17:28.743Z",
+          "system": true,
+          "noteable_id": 379095031,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19679,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -36,6 +36,25 @@ pcre_free(void *value)\n \t}\n }\n \n+static void *\n+sttype_fvalue_dup(const void *value)\n+{\n+\tconst fvalue_t *fvalue = value;\n+\n+\t/* If the data was not claimed with stnode_steal_data(), dup it. */\n+\tif (fvalue) {\n+\t\treturn fvalue_dup(fvalue);\n+\t}\n+\n+\treturn NULL;\n+}\n+\n+static void *\n+charconst_dup(const void *value)\n+{\n+\treturn g_memdup2(value, sizeof(unsigned long));\n+}\n+\n static char *\n sttype_fvalue_tostr(const void *data, bool pretty)\n {\n@@ -110,7 +129,7 @@ sttype_register_pointer(void)\n \t\t\"FVALUE\",\n \t\tNULL,\n \t\tsttype_fvalue_free,\n-\t\tNULL,\n+\t\tsttype_fvalue_dup,\n \t\tsttype_fvalue_tostr\n \t};\n \tstatic sttype_t pcre_type = {\n@@ -118,7 +137,8 @@ sttype_register_pointer(void)\n \t\t\"PCRE\",\n \t\tNULL,\n \t\tpcre_free,\n-\t\tNULL,\n+\t\tNULL,\t// Need to add a ws_regex_dup, but a STTYPE_PCRE can't\n+\t\t\t// be duped with the current syntax and semantic check.\n \t\tpcre_tostr\n \t};\n \tstatic sttype_t charconst_type = {\n@@ -126,7 +146,7 @@ sttype_register_pointer(void)\n \t\t\"CHARCONST\",\n \t\tNULL,\n \t\tg_free,\n-\t\tNULL,\n+\t\tcharconst_dup,\n \t\tcharconst_tostr\n \t};\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dfilter/sttype-pointer.c",
+      "old_path": "epan/dfilter/sttype-pointer.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -26,6 +26,15 @@ slist_stnode_free(void *data)\n \t}\n }\n \n+static void*\n+slist_stnode_dup(const void *data, void *userdata _U_)\n+{\n+\tif (data) {\n+\t\treturn stnode_dup(data);\n+\t}\n+\treturn NULL;\n+}\n+\n void\n set_nodelist_free(GSList *params)\n {\n@@ -36,11 +45,20 @@ static void\n sttype_set_free(void *value)\n {\n \t/* If the data was not claimed with stnode_steal_data(), free it. */\n+\t/* (The test is unnecessary because NULL is an empty GSList.) */\n \tif (value) {\n \t\tset_nodelist_free(value);\n \t}\n }\n \n+static void *\n+sttype_set_dup(const void *value)\n+{\n+\tGSList *nodelist = (GSList*)value;\n+\n+\treturn g_slist_copy_deep(nodelist, slist_stnode_dup, NULL);\n+}\n+\n static char *\n sttype_set_tostr(const void *data, bool pretty)\n {\n@@ -78,7 +96,7 @@ sttype_register_set(void)\n \t\t\"SET\",\n \t\tNULL,\n \t\tsttype_set_free,\n-\t\tNULL,\n+\t\tsttype_set_dup,\n \t\tsttype_set_tostr\n \t};\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dfilter/sttype-set.c",
+      "old_path": "epan/dfilter/sttype-set.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "066e2c4a3fc396cc6f956fc3cc7cb0b2b0f9f471",
+      "short_id": "066e2c4a",
+      "created_at": "2025-04-25T13:40:34.000+00:00",
+      "parent_ids": [
+        "7e74fc976132d5cbb8d671ae80d3fdfa30f95e5c"
+      ],
+      "title": "dfilter: Fix possible segfaults around dup'ing (XOR and multiple relations)",
+      "message": "dfilter: Fix possible segfaults around dup'ing (XOR and multiple relations)\n\nBoth xor and multiple relation tests call stnode_dup, and they\ncan be called on sets and character constants. If a node doesn't\nhave a dup function, then a shallow copy of the data is performed.\n\nThat doesn't work for the nodes whose data is a pointer (XXX -\ncharconst shouldn't need to be a pointer, it's maximum size is\na gunichar / uint32_t, so GUINT_TO_POINTER style tricks could\nwork). For the internal PCRE type (and probably FTYPE), those\naren't created until all the dup'ing is done, so they're probably\nok technically, though it's easy enough to implement the ftype\none. (PCRE requires a change in regex.h)\n\nA set node needs to have its nodelist duplicated in a similar\nmanner as a function node.\n\nThe following two filter tests segfault or assert before this\nchange but now work (and do not leak with ASAN):\n\ndftest 'wlan ^^ ip.proto in {\"udp\", \"tcp\"}'\n\nFilter:\n wlan ^^ ip.proto in {\"udp\", \"tcp\"}\n\nSyntax tree:\n 0 TEST_AND:\n   1 TEST_OR:\n     2 FIELD(wlan <FT_PROTOCOL>)\n     2 TEST_IN:\n       3 FIELD(ip.proto <FT_UINT8>)\n       3 SET(#2):\n         4 FVALUE(17 <FT_UINT64>)\n         4 FVALUE(6 <FT_UINT64>)\n   1 TEST_NOT:\n     2 TEST_AND:\n       3 FIELD(wlan <FT_PROTOCOL>)\n       3 TEST_IN:\n         4 FIELD(ip.proto <FT_UINT8>)\n         4 SET(#2):\n           5 FVALUE(17 <FT_UINT64>)\n           5 FVALUE(6 <FT_UINT64>)\n\nInstructions:\n 0000 CHECK_EXISTS     wlan\n 0001 IF_TRUE_GOTO     9\n 0002 READ_TREE        ip.proto         -> R0\n 0003 IF_FALSE_GOTO    18\n 0004 SET_ADD          17\n 0005 SET_ADD          6\n 0006 SET_ANY_IN       R0\n 0007 SET_CLEAR\n 0008 IF_FALSE_GOTO    18\n 0009 CHECK_EXISTS     wlan\n 0010 IF_FALSE_GOTO    17\n 0011 READ_TREE        ip.proto         -> R0\n 0012 IF_FALSE_GOTO    17\n 0013 SET_ADD          17\n 0014 SET_ADD          6\n 0015 SET_ANY_IN       R0\n 0016 SET_CLEAR\n 0017 NOT\n 0018 RETURN\n\nand\n\ndftest -s \"tcp.srcport <= '\\x50' < tcp.dstport\"\nFilter:\n tcp.srcport <= '\\x50' < tcp.dstport\n\nSyntax tree:\n 0 TEST_AND:\n   1 TEST_LE:\n     2 FIELD(tcp.srcport <FT_UINT16>)\n     2 FVALUE(80 <FT_UINT16>)\n   1 TEST_LT:\n     2 FVALUE(80 <FT_UINT16>)\n     2 FIELD(tcp.dstport <FT_UINT16>)\n\nInstructions:\n 0000 READ_TREE        tcp.srcport      -> R0\n 0001 IF_FALSE_GOTO    7\n 0002 ANY_LE           R0 <= 80\n 0003 IF_FALSE_GOTO    7\n 0004 READ_TREE        tcp.dstport      -> R1\n 0005 IF_FALSE_GOTO    7\n 0006 ANY_LT           80 < R1\n 0007 RETURN\n\n\n(cherry picked from commit f5e14b6dc97554f6674ad44e472d1e5a2c1984ee)\n\nCo-authored-by: John Thacker <johnthacker@gmail.com>",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2025-04-25T13:40:34.000+00:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2025-04-25T13:40:34.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/066e2c4a3fc396cc6f956fc3cc7cb0b2b0f9f471"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1338973001,
+      "head_commit_sha": "066e2c4a3fc396cc6f956fc3cc7cb0b2b0f9f471",
+      "base_commit_sha": "7e74fc976132d5cbb8d671ae80d3fdfa30f95e5c",
+      "start_commit_sha": "7e74fc976132d5cbb8d671ae80d3fdfa30f95e5c",
+      "created_at": "2025-04-25T13:41:08.474Z",
+      "merge_request_id": 379095031,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "8e01f7cf1299f322d73ecb3f06d323a6a1c27d1b"
+    }
+  ]
+}

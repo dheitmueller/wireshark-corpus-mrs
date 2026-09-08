@@ -1,0 +1,276 @@
+{
+  "id": 345680785,
+  "iid": 18243,
+  "project_id": 7898047,
+  "title": "asn2wrs: Don't use implicit -1 choice tags in value strings",
+  "description": "When parsing a CHOICE type with untagged choices that are themselves\nCHOICEs (and implicit tagging instead of AUTOMATIC tagging), we\nset the tag as a special value of -1 so that dissect_ber_choice()\nwill know to try various choices at the next level.\n\n(This is an internal tag value not something encoded in the packet.\nThe tag as actually encoded is from the type ultimately chosen,\nand should be unique once all the choice levels are traversed,\nsee ITU-T X.680 29.3 and the examples in 29.9.)\n\nWe add to the tree an item that represents which choice was taken;\nrather than adding a single item that reflects the ultimate choice\nwe add items for each level of choice. Those items get value strings -\nthe value string values can either be directly from the tags used in\nthe CHOICE, or can be assigned incremently from 0 enumerating the\nchoices. We shouldn't use these special tag numbers of -1 in a value\nstring for the choice; we should always fall back to assigning values\nfor each choice enumerated from 0.\n\nMost of the time our existing checks catch this either at least one\nof the tags will be something other than a CHOICE, and thus will have a\ndifferent tag class, or AUTOMATIC tagging is used.) However, if all the\nchoices of a CHOICE are themselves a CHOICE and IMPLICIT tagging is used\nthe current checks don't catch it.\n\nIPAddress from GPRSCDR is such a type. This change causes\niPBinaryAddress to have a value of 0 and iPTextRepresentedAddress to\nhave a value of 1, instead of both having a value of -1 (4294967295),\neliminating a large number of warnings of the form:\n\n [Epan WARNING] epan/proto.c:9249 -- tmp_fld_check_assert(): Field 'iPAddress' (gprscdr.iPAddress) has a conflicting entry in its value_string: 4294967295 is at indices 0 (iPBinaryAddress) and 1 (iPTextRepresentedAddress)\n\nwhen ENABLE_CHECK_FILTER is defined (as in the Clang + Code Checks job)\n\nThis allows unique filtering on gpsrcdr.iPAddress and other fields using\nthat ChoiceType, like gprscdr.ggsnAddress.",
+  "state": "merged",
+  "created_at": "2024-11-27T14:49:10.358Z",
+  "updated_at": "2024-11-27T15:21:05.436Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2024-11-27T15:21:01.891Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "ber_choice_vals",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "3787caf5811cadccf60140f5712ac9662035e0d4",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-11-27T14:49:23.513Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!18243",
+  "references": {
+    "short": "!18243",
+    "relative": "!18243",
+    "full": "wireshark/wireshark!18243"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/18243",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2024-11-27T14:49:14.639Z",
+  "latest_build_finished_at": "2024-11-27T15:09:28.737Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1562867951,
+    "iid": 74896,
+    "project_id": 7898047,
+    "sha": "3787caf5811cadccf60140f5712ac9662035e0d4",
+    "ref": "refs/merge-requests/18243/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-11-27T14:49:13.129Z",
+    "updated_at": "2024-11-27T15:09:28.758Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1562867951"
+  },
+  "head_pipeline": {
+    "id": 1562867951,
+    "iid": 74896,
+    "project_id": 7898047,
+    "sha": "3787caf5811cadccf60140f5712ac9662035e0d4",
+    "ref": "refs/merge-requests/18243/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-11-27T14:49:13.129Z",
+    "updated_at": "2024-11-27T15:09:28.758Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1562867951",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2024-11-27T14:49:14.639Z",
+    "finished_at": "2024-11-27T15:09:28.737Z",
+    "committed_at": null,
+    "duration": 1213,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1562867951",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "7206964cd21623f0e1aed18d29ffb3eadbaa8b9b",
+    "head_sha": "3787caf5811cadccf60140f5712ac9662035e0d4",
+    "start_sha": "7206964cd21623f0e1aed18d29ffb3eadbaa8b9b"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "2d189878023d21e9229764473aef11b5abd6c8a4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2230739772,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-11-27T15:20:57.369Z",
+          "updated_at": "2024-11-27T15:20:57.379Z",
+          "system": true,
+          "noteable_id": 345680785,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 18243,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -4686,10 +4686,10 @@ dissect_ftam_FSM_PDU(bool implicit_tag _U_, tvbuff_t *tvb _U_, int offset _U_, a\n \n \n static const ber_choice_t PDU_choice[] = {\n-  { -1/*choice*/, &hf_ftam_fTAM_Regime_PDU, BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_ftam_FTAM_Regime_PDU },\n-  { -1/*choice*/, &hf_ftam_file_PDU       , BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_ftam_File_PDU },\n-  { -1/*choice*/, &hf_ftam_bulk_Data_PDU  , BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_ftam_Bulk_Data_PDU },\n-  { -1/*choice*/, &hf_ftam_fSM_PDU        , BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_ftam_FSM_PDU },\n+  {   0, &hf_ftam_fTAM_Regime_PDU, BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_ftam_FTAM_Regime_PDU },\n+  {   1, &hf_ftam_file_PDU       , BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_ftam_File_PDU },\n+  {   2, &hf_ftam_bulk_Data_PDU  , BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_ftam_Bulk_Data_PDU },\n+  {   3, &hf_ftam_fSM_PDU        , BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_ftam_FSM_PDU },\n   { 0, NULL, 0, 0, 0, NULL }\n };\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ftam.c",
+      "old_path": "epan/dissectors/packet-ftam.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1253,14 +1253,14 @@ dissect_gprscdr_IPTextRepresentedAddress(bool implicit_tag _U_, tvbuff_t *tvb _U\n \n \n static const value_string gprscdr_IPAddress_vals[] = {\n-  { -1/*choice*/, \"iPBinaryAddress\" },\n-  { -1/*choice*/, \"iPTextRepresentedAddress\" },\n+  {   0, \"iPBinaryAddress\" },\n+  {   1, \"iPTextRepresentedAddress\" },\n   { 0, NULL }\n };\n \n static const ber_choice_t IPAddress_choice[] = {\n-  { -1/*choice*/, &hf_gprscdr_iPBinaryAddress, BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_gprscdr_IPBinaryAddress },\n-  { -1/*choice*/, &hf_gprscdr_iPTextRepresentedAddress, BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_gprscdr_IPTextRepresentedAddress },\n+  {   0, &hf_gprscdr_iPBinaryAddress, BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_gprscdr_IPBinaryAddress },\n+  {   1, &hf_gprscdr_iPTextRepresentedAddress, BER_CLASS_ANY/*choice*/, -1/*choice*/, BER_FLAGS_NOOWNTAG, dissect_gprscdr_IPTextRepresentedAddress },\n   { 0, NULL, 0, 0, 0, NULL }\n };\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-gprscdr.c",
+      "old_path": "epan/dissectors/packet-gprscdr.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -4612,6 +4612,9 @@ class ChoiceType (Type):\n         return not self.HasOwnTag()\n \n     def detect_tagval(self, ectx):\n+        '''Returns True if the tag numbers are used as the tree values.\n+           Returns False if we assign our own tree values for each choice.\n+        '''\n         tagval = False\n         lst = self.elt_list[:]\n         if hasattr(self, 'ext_list'):\n@@ -4623,6 +4626,10 @@ class ChoiceType (Type):\n             t = ''\n             tagval = False\n         if (t == 'BER_CLASS_UNI'):\n+            # Don't use universal tags\n+            tagval = False\n+        if t == 'BER_CLASS_ANY/*choice*/':\n+            # Don't use -1 tags that refer to another level of CHOICE\n             tagval = False\n         for e in (lst):\n             if not (ectx.Per() or ectx.Oer()) or e.HasOwnTag():\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/asn2wrs.py",
+      "old_path": "tools/asn2wrs.py",
+      "a_mode": "100755",
+      "b_mode": "100755",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "3787caf5811cadccf60140f5712ac9662035e0d4",
+      "short_id": "3787caf5",
+      "created_at": "2024-11-27T09:47:13.000-05:00",
+      "parent_ids": [
+        "7206964cd21623f0e1aed18d29ffb3eadbaa8b9b"
+      ],
+      "title": "asn2wrs: Don't use implicit -1 choice tags in value strings",
+      "message": "asn2wrs: Don't use implicit -1 choice tags in value strings\n\nWhen parsing a CHOICE type with untagged choices that are themselves\nCHOICEs (and implicit tagging instead of AUTOMATIC tagging), we\nset the tag as a special value of -1 so that dissect_ber_choice()\nwill know to try various choices at the next level.\n\n(This is an internal tag value not something encoded in the packet.\nThe tag as actually encoded is from the type ultimately chosen,\nand should be unique once all the choice levels are traversed,\nsee ITU-T X.680 29.3 and the examples in 29.9.)\n\nWe add to the tree an item that represents which choice was taken;\nrather than adding a single item that reflects the ultimate choice\nwe add items for each level of choice. Those items get value strings -\nthe value string values can either be directly from the tags used in\nthe CHOICE, or can be assigned incremently from 0 enumerating the\nchoices. We shouldn't use these special tag numbers of -1 in a value\nstring for the choice; we should always fall back to assigning values\nfor each choice enumerated from 0.\n\nMost of the time our existing checks catch this either at least one\nof the tags will be something other than a CHOICE, and thus will have a\ndifferent tag class, or AUTOMATIC tagging is used.) However, if all the\nchoices of a CHOICE are themselves a CHOICE and IMPLICIT tagging is used\nthe current checks don't catch it.\n\nIPAddress from GPRSCDR is such a type. This change causes\niPBinaryAddress to have a value of 0 and iPTextRepresentedAddress to\nhave a value of 1, instead of both having a value of -1 (4294967295),\neliminating a large number of warnings of the form:\n\n [Epan WARNING] epan/proto.c:9249 -- tmp_fld_check_assert(): Field 'iPAddress' (gprscdr.iPAddress) has a conflicting entry in its value_string: 4294967295 is at indices 0 (iPBinaryAddress) and 1 (iPTextRepresentedAddress)\n\nwhen ENABLE_CHECK_FILTER is defined (as in the Clang + Code Checks job)\n\nThis allows unique filtering on gpsrcdr.iPAddress and other fields using\nthat ChoiceType, like gprscdr.ggsnAddress.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-11-27T08:42:48.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2024-11-27T09:47:13.000-05:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3787caf5811cadccf60140f5712ac9662035e0d4"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1195221050,
+      "head_commit_sha": "3787caf5811cadccf60140f5712ac9662035e0d4",
+      "base_commit_sha": "7206964cd21623f0e1aed18d29ffb3eadbaa8b9b",
+      "start_commit_sha": "7206964cd21623f0e1aed18d29ffb3eadbaa8b9b",
+      "created_at": "2024-11-27T14:49:11.708Z",
+      "merge_request_id": 345680785,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "78c98b54b6912b8a8ba53a888403ac49478ca27a"
+    }
+  ]
+}

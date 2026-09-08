@@ -1,0 +1,296 @@
+{
+  "id": 365915796,
+  "iid": 19183,
+  "project_id": 7898047,
+  "title": "tcp: Don't check retransmission/ooo if desegment_tcp did",
+  "description": "In certain cases, desegment_tcp can deal with out of order or\nretransmitted segments even when the \"reassemble out-of-order\nsegments\" preference is off. This is primarily when two segments\nare out of order relative to each other, but both lie within the\nsequence number range of a multisegment PDU begun by an earlier,\nin order segment. (E.g., after an HTTP Response Header with a large\nContent-Length, subsequent segments all part of the content can\nbe received out of order but still reassembled properly, as it is\nalready known that they belong to the same PDU.)\n\ndesegment_tcp has checks, both when out of order reassembly is on\nand off, for when TCP analysis has set a retransmission or out of\norder flag. In the case where the segment is known to be able to be\nused in a multisegment PDU (and thus the final stream can still be\ndelivered in order), retransmitted segments are still dissected and\nthe flag effectively ignored.\n\nThe check currently in decode_tcp_ports is superfluous to the checks\nalready in desegment_tcp, except that it (when out of order reassembly\nis off) incorrectly refuses to dissect in cases where the segment is\nthe final segment received of such an MSP and in-order delivery still\nachieved.\n\nSince desegment_tcp has superior checking for reassembled and out\nof order segments in all cases, move that retransmission check to\nprocess_tcp_payload, and perform it in the cases where desegment_tcp\nwas not called, along with other existing checks of whether a segment\nis in the middle of a PDU.\n\nFix #20406, which has a case where this happens. (In the capture on\nthat issue, frame 205 has a sequence number earlier than that of frame\n203, but is the last segment received to complete the HTTP response\nbegun in frame 11. Despite the out of order frames in the capture, the\nTCP dissector can properly deliver the stream in order to the HTTP\ndissector even with \"reassemble out-of-order\" disabled.)",
+  "state": "merged",
+  "created_at": "2025-03-02T23:09:48.931Z",
+  "updated_at": "2025-03-05T06:15:17.420Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2025-03-05T06:15:17.488Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "tcp_retrans",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "e50432f8bf80a7695219a7367fa0eb69ed360c71",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2025-03-02T23:09:55.307Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!19183",
+  "references": {
+    "short": "!19183",
+    "relative": "!19183",
+    "full": "wireshark/wireshark!19183"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/19183",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2025-03-02T23:09:52.562Z",
+  "latest_build_finished_at": "2025-03-02T23:29:03.074Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1695952541,
+    "iid": 78573,
+    "project_id": 7898047,
+    "sha": "714e66e18c471cb4a5a5074176b00438a330a498",
+    "ref": "refs/merge-requests/19183/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2025-03-02T23:09:51.416Z",
+    "updated_at": "2025-03-02T23:29:03.084Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1695952541"
+  },
+  "head_pipeline": {
+    "id": 1700403342,
+    "iid": 78661,
+    "project_id": 7898047,
+    "sha": "e50432f8bf80a7695219a7367fa0eb69ed360c71",
+    "ref": "refs/merge-requests/19183/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2025-03-05T06:15:09.893Z",
+    "updated_at": "2025-03-05T06:15:09.893Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1700403342",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1700403342",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "bcd931f62eb7519d53abf40a2d431035f6b235f1",
+    "head_sha": "e50432f8bf80a7695219a7367fa0eb69ed360c71",
+    "start_sha": "bcd931f62eb7519d53abf40a2d431035f6b235f1"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "c6caa76fe6ecac4c85970e5f2b705b6faf2fd93a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2379707966,
+          "type": null,
+          "body": "added 15 commits\n\n<ul><li>714e66e1...bcd931f6 - 14 commits from branch <code>wireshark:master</code></li><li>e50432f8 - tcp: Don&#39;t check retransmission/ooo if desegment_tcp did</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/19183/diffs?diff_id=1284120117&start_sha=714e66e18c471cb4a5a5074176b00438a330a498)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-03-05T06:15:08.035Z",
+          "updated_at": "2025-03-05T06:15:08.043Z",
+          "system": true,
+          "noteable_id": 365915796,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19183,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "98d832319ff3e86fab43a60f409c8b34ca28af6b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2379708045,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2025-03-05T06:15:13.658Z",
+          "updated_at": "2025-03-05T06:15:13.690Z",
+          "system": true,
+          "noteable_id": 365915796,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 19183,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -4747,6 +4747,7 @@ again:\n             /* The above code only finds retransmission if the PDU boundaries and the seq coincide\n              * If we have sequence analysis active use the TCP_A_RETRANSMISSION flag.\n              * XXXX Could the above code be improved?\n+             * XXX - Should we only do this if tcp_no_subdissector_on_error is true?\n              */\n             if(tcpd->ta) {\n                 /* If we have an unfinished MSP that this segment belongs to\n@@ -7860,19 +7861,6 @@ decode_tcp_ports(tvbuff_t *tvb, int offset, packet_info *pinfo,\n         }\n     }\n \n-    if (tcp_no_subdissector_on_error && !(tcp_desegment && tcp_reassemble_out_of_order) &&\n-        tcpd && tcpd->ta && tcpd->ta->flags & (TCP_A_RETRANSMISSION | TCP_A_FAST_RETRANSMISSION |\n-            TCP_A_SPURIOUS_RETRANSMISSION | TCP_A_OUT_OF_ORDER)) {\n-        /* Don't try to dissect a retransmission high chance that it will mess\n-         * subdissectors for protocols that require in-order delivery of the\n-         * PDUs. (i.e. DCE/RPCoverHTTP and encryption)\n-         * If OoO reassembly is enabled and if this segment was previously lost,\n-         * then this retransmission could have finished reassembly, so continue.\n-         * XXX should this option be removed? \"tcp_reassemble_out_of_order\"\n-         * should have addressed the above in-order requirement.\n-         */\n-        return false;\n-    }\n     next_tvb = tvb_new_subset_remaining(tvb, offset);\n \n     save_desegment_offset = pinfo->desegment_offset;\n@@ -8054,15 +8042,36 @@ process_tcp_payload(tvbuff_t *tvb, volatile int offset, packet_info *pinfo,\n         if(is_tcp_segment) {\n             /*qqq   see if it is an unaligned PDU */\n             if(tcpd && tcp_analyze_seq && (!tcp_desegment)) {\n+                /* XXX - Is it correct to check tcp_desegment? We know we\n+                 * didn't try to desegment. tcp_desegment could be true but\n+                 * other reasons prevented desegmentation, e.g. a bad checksum.\n+                 * Should we do these routines anyway?\n+                 */\n                 if(seq || nxtseq) {\n                     offset=scan_for_next_pdu(tvb, tcp_tree, pinfo, offset,\n                         seq, nxtseq, tcpd->fwd->multisegment_pdus);\n                 }\n+                if (tcp_no_subdissector_on_error && tcpd->ta && tcpd->ta->flags &\n+                    (TCP_A_RETRANSMISSION | TCP_A_FAST_RETRANSMISSION |\n+                    TCP_A_SPURIOUS_RETRANSMISSION | TCP_A_OUT_OF_ORDER)) {\n+                    /* Don't try to dissect a retransmission, as there's a high\n+                     * chance that it will mess up subdissectors for protocols\n+                     * that require in-order delivery of the PDUs. (e.g.,\n+                     * DCE/RPCoverHTTP and encryption)\n+                     *\n+                     * If desegmentation was performed, we already did a version\n+                     * of this check that doesn't ignore retransmitted or out of\n+                     * order segments that complete a multisegment PDU.\n+                     * XXX should this option be removed? \"tcp_reassemble_out_of_order\"\n+                     * should have addressed the above in-order requirement.\n+                     */\n+                    offset = -1;\n+                }\n             }\n         }\n-        /* if offset is -1 this means that this segment is known\n-         * to be fully inside a previously detected pdu\n-         * so we don't even need to try to dissect it either.\n+        /* if offset is -1 this means that this segment is known to be\n+         * fully inside a previously detected pdu, or is a retransmission or\n+         * out of order, so we don't even need to try to dissect it either.\n          */\n         if( (offset!=-1) &&\n             decode_tcp_ports(tvb, offset, pinfo, tree, src_port,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tcp.c",
+      "old_path": "epan/dissectors/packet-tcp.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "e50432f8bf80a7695219a7367fa0eb69ed360c71",
+      "short_id": "e50432f8",
+      "created_at": "2025-03-05T07:15:03.000+01:00",
+      "parent_ids": [
+        "bcd931f62eb7519d53abf40a2d431035f6b235f1"
+      ],
+      "title": "tcp: Don't check retransmission/ooo if desegment_tcp did",
+      "message": "tcp: Don't check retransmission/ooo if desegment_tcp did\n\nIn certain cases, desegment_tcp can deal with out of order or\nretransmitted segments even when the \"reassemble out-of-order\nsegments\" preference is off. This is primarily when two segments\nare out of order relative to each other, but both lie within the\nsequence number range of a multisegment PDU begun by an earlier,\nin order segment. (E.g., after an HTTP Response Header with a large\nContent-Length, subsequent segments all part of the content can\nbe received out of order but still reassembled properly, as it is\nalready known that they belong to the same PDU.)\n\ndesegment_tcp has checks, both when out of order reassembly is on\nand off, for when TCP analysis has set a retransmission or out of\norder flag. In the case where the segment is known to be able to be\nused in a multisegment PDU (and thus the final stream can still be\ndelivered in order), retransmitted segments are still dissected and\nthe flag effectively ignored.\n\nThe check currently in decode_tcp_ports is superfluous to the checks\nalready in desegment_tcp, except that it (when out of order reassembly\nis off) incorrectly refuses to dissect in cases where the segment is\nthe final segment received of such an MSP and in-order delivery still\nachieved.\n\nSince desegment_tcp has superior checking for reassembled and out\nof order segments in all cases, move that retransmission check to\nprocess_tcp_payload, and perform it in the cases where desegment_tcp\nwas not called, along with other existing checks of whether a segment\nis in the middle of a PDU.\n\nFix #20406, which has a case where this happens. (In the capture on\nthat issue, frame 205 has a sequence number earlier than that of frame\n203, but is the last segment received to complete the HTTP response\nbegun in frame 11. Despite the out of order frames in the capture, the\nTCP dissector can properly deliver the stream in order to the HTTP\ndissector even with \"reassemble out-of-order\" disabled.)\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2025-03-02T13:23:26.000-05:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2025-03-05T07:15:03.000+01:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e50432f8bf80a7695219a7367fa0eb69ed360c71"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1284120117,
+      "head_commit_sha": "e50432f8bf80a7695219a7367fa0eb69ed360c71",
+      "base_commit_sha": "bcd931f62eb7519d53abf40a2d431035f6b235f1",
+      "start_commit_sha": "bcd931f62eb7519d53abf40a2d431035f6b235f1",
+      "created_at": "2025-03-05T06:15:06.856Z",
+      "merge_request_id": 365915796,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "369dc099a888d73ed533cad4dd62e23f226ee95c"
+    },
+    {
+      "id": 1281165627,
+      "head_commit_sha": "714e66e18c471cb4a5a5074176b00438a330a498",
+      "base_commit_sha": "6f9dd37b75a1e4da770e5ba7b727924b6e99a4ec",
+      "start_commit_sha": "6f9dd37b75a1e4da770e5ba7b727924b6e99a4ec",
+      "created_at": "2025-03-02T23:09:50.177Z",
+      "merge_request_id": 365915796,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "369dc099a888d73ed533cad4dd62e23f226ee95c"
+    }
+  ]
+}
