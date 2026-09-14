@@ -1,0 +1,821 @@
+{
+  "id": 323048628,
+  "iid": 16956,
+  "project_id": 7898047,
+  "title": "lua: Fix some dissector segfaults",
+  "description": "Calling Lua dissectors requires at least one top level pcall\n(protected call) to avoid crashing. This invokes Lua's error\nhandling, which uses setjmp/longjmp.\n    \nWireshark's kazlib derived exception handling also uses setjmp/longjmp,\nand every frame is dissected within a TRY (setjmp) block, and many\nepan functions (esp. those involving tvbuffers) can throw exceptions.\n    \nJumping out of a TRY block due to a Lua error, or jumping out of a Lua\npcall due to an exception, can cause crashes and failed assertions.\nIt is in particular undefined behavior if nested TRY and pcall and errors\ncause going the wrong way on the stack. (E.g., a Wireshark exception causes\njumping up the stack to a CATCH past a Lua setjmp point, and then a later\nLua error causes a longjmp to the call site that has exited, because the\nLua states maintains a linked list of jmp_bufs to return to.)\n    \nThe above issue is particularly likely to happen when Lua dissectors\ncall other Lua dissectors, including by defining Lua functions that\ncall Lua dissectors.\n    \nThe current Lua code tries to reduce the number of Wireshark exceptions\nvia pre-emptive bounds and options checking, though it's not perfect.\nThe checking also makes it impossible to properly handle truncated\ncaptures where the captured length is less than the reported length.\n(See #15655).\n    \nThe proper thing to do is to wrap every C function that can throw an\nexception in a TRY EXCEPT block and inside there throw exceptions\nthat are converted to Lua errors instead of Lua errrors directly.\nPre-emptive checking that merely duplicates what the epan functions\ndo (instead of, e.g., verifying that an argument type can be converted\nto the proper type) should be removed.\n    \nBegin fixing this with some particular cases where nested Lua dissector\ncalls segfault and we have bugs filed. Fix #20005. Fix #13674.",
+  "state": "merged",
+  "created_at": "2024-08-24T00:57:34.821Z",
+  "updated_at": "2024-08-28T04:06:29.639Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2024-08-28T04:06:27.263Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "lua_crash",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "8181ec3463631536f81b9aa568f887fa8dc2a10a",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-08-24T00:57:40.188Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!16956",
+  "references": {
+    "short": "!16956",
+    "relative": "!16956",
+    "full": "wireshark/wireshark!16956"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/16956",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "5",
+  "latest_build_started_at": "2024-08-27T13:43:25.078Z",
+  "latest_build_finished_at": "2024-08-27T14:03:20.867Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1429009979,
+    "iid": 70392,
+    "project_id": 7898047,
+    "sha": "5f272bee9349be24870327034780c58e7dca2d9f",
+    "ref": "refs/merge-requests/16956/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-08-27T13:43:23.643Z",
+    "updated_at": "2024-08-27T14:03:21.498Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1429009979"
+  },
+  "head_pipeline": {
+    "id": 1429833855,
+    "iid": 70427,
+    "project_id": 7898047,
+    "sha": "8181ec3463631536f81b9aa568f887fa8dc2a10a",
+    "ref": "refs/merge-requests/16956/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2024-08-28T04:06:10.858Z",
+    "updated_at": "2024-08-28T04:06:10.858Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1429833855",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1429833855",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "1e79a1166cdaf8f49e0a51e00b22ac5d561e6284",
+    "head_sha": "8181ec3463631536f81b9aa568f887fa8dc2a10a",
+    "start_sha": "1e79a1166cdaf8f49e0a51e00b22ac5d561e6284"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b7161c3a9699d859efb21c0fa404e9bc35e3913b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2073973889,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>72c1608d - lua: Fix a dissector segfault</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1100837684&start_sha=76a26c697e30bfee6386d0ca29ce31644cbaad49)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-24T01:26:03.469Z",
+          "updated_at": "2024-08-24T01:26:03.475Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "04b3d3ae16a348c3907cf27045dd0ee4db6317b6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2075265141,
+          "type": null,
+          "body": "added 12 commits\n\n<ul><li>72c1608d...1cb9ee33 - 11 commits from branch <code>wireshark:master</code></li><li>7b22f747 - lua: Fix a dissector segfault</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1101608685&start_sha=72c1608de897e166aef5754771a6c365ee3ce972)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-26T11:59:04.097Z",
+          "updated_at": "2024-08-26T11:59:04.106Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d3359f964167e7a961cba54e6edee39f7a397255",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2075426532,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>9fb17cb4 - lua: Fix a dissector segfault</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1101728380&start_sha=7b22f7471616f40fcec9e5d69341f3957d5ad429)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-26T13:33:13.832Z",
+          "updated_at": "2024-08-26T13:33:13.894Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7cb1d01e899e84bc72ff1efc618becf4cdbfcd62",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2075692464,
+          "type": null,
+          "body": "added 5 commits\n\n<ul><li>9fb17cb4...94aed422 - 4 commits from branch <code>wireshark:master</code></li><li>bf6b42b2 - lua: Fix a dissector segfault</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1101906298&start_sha=9fb17cb49aa78975c9fef0ea30ae66acd02a3dd5)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-26T15:43:22.855Z",
+          "updated_at": "2024-08-26T15:43:22.870Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "430ceaea04caa959c3ddfbae7602c3e4dbb6b5a4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2076184770,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>bf6b42b2...1f525c8d - 5 commits from branch <code>wireshark:master</code></li><li>ac9e5243 - lua: Fix a dissector segfault</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1102188438&start_sha=bf6b42b2b450888e306d80d2e7769de86a41b9b8)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-26T21:34:19.042Z",
+          "updated_at": "2024-08-26T21:34:19.060Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e55965d1729f228c4e10c155ba95ecca2fc0c721",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2077441743,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>ac9e5243...e0c49a85 - 5 commits from branch <code>wireshark:master</code></li><li>c6b05da7 - lua: Fix some dissector segfaults</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1102959601&start_sha=ac9e5243b7b2a24d65d5910f60afd9c41f795c2c)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-27T13:32:23.801Z",
+          "updated_at": "2024-08-27T13:32:23.809Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "500c2fc2e6c866874e8e88a2deb564eecb2df845",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2077455707,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>1f233061 - lua: Fix some dissector segfaults</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1102969030&start_sha=c6b05da7e679fa777302d0ce2698449311a0c5ae)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-27T13:38:27.225Z",
+          "updated_at": "2024-08-27T13:38:27.231Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7cfce977d98542d039098b259916de1ca44294d8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2077464691,
+          "type": null,
+          "body": "changed title from **Draft: lua: Fix {-a-} dissector segfault** to **Draft: lua: Fix {+some+} dissector segfault{+s+}**",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-27T13:42:45.607Z",
+          "updated_at": "2024-08-27T13:42:45.612Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8b419d4a971d1e0426510d07750ebb28c6acdad1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2077464694,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-27T13:42:45.648Z",
+          "updated_at": "2024-08-27T13:42:45.654Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "341ca60ac1fcb2d70f66495674a1593a2d23d6c9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2077465809,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>5f272bee - lua: Fix some dissector segfaults</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1102976450&start_sha=1f2330612dea215602b9a1c6bd90f10e0cc117b9)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-27T13:43:20.223Z",
+          "updated_at": "2024-08-27T13:43:20.236Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "331be91745a5f66b987b37e2d3ac74276a75cb77",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2077468347,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-27T13:44:42.735Z",
+          "updated_at": "2024-08-27T13:44:42.741Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1103043069fbef6c06ff1dd2769fb8f0b2c171da",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2078270696,
+          "type": null,
+          "body": "added 5 commits\n\n<ul><li>5f272bee...1e79a116 - 4 commits from branch <code>wireshark:master</code></li><li>8181ec34 - lua: Fix some dissector segfaults</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16956/diffs?diff_id=1103577929&start_sha=5f272bee9349be24870327034780c58e7dca2d9f)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-08-28T04:06:06.324Z",
+          "updated_at": "2024-08-28T04:06:06.475Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1bd4629a4fb348133e3259d61e24bb848d630fce",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2078270756,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-08-28T04:06:10.480Z",
+          "updated_at": "2024-08-28T04:06:10.488Z",
+          "system": true,
+          "noteable_id": 323048628,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16956,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -195,6 +195,8 @@ static int dissector_error_handler(lua_State *LS) {\n     proto_tree *tb_tree;\n \n     // Add the expert info Lua error message\n+    // XXX - Should this add the current protocol to the message, and add to\n+    // COL_INFO and the log, like DissectorError does?\n     proto_tree_add_expert_format(lua_tree->tree, lua_pinfo, &ei_lua_error, lua_tvb, 0, 0,\n             \"Lua Error: %s\", lua_tostring(LS,-1));\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/init_wslua.c",
+      "old_path": "epan/wslua/init_wslua.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -47,6 +47,8 @@\n #include <epan/tvbparse.h>\n #include <epan/epan.h>\n #include <epan/expert.h>\n+#include <epan/exceptions.h>\n+#include <epan/show_exception.h>\n \n #include <epan/wslua/declare_wslua.h>\n \n@@ -679,7 +681,7 @@ extern int wslua_reg_attributes(lua_State *L, const wslua_attribute_table *t, bo\n     /* silly little trick so we can add a semicolon after this macro */ \\\n     typedef void __dummy##C##_set_##field\n \n-#define WSLUA_ERROR(name,error) { luaL_error(L, \"%s%s\", #name \": \" ,error); }\n+#define WSLUA_ERROR(name,error) { luaL_error(L, \"%s%s\", #name \": \", error); }\n #define WSLUA_ARG_ERROR(name,attr,error) { luaL_argerror(L,WSLUA_ARG_ ## name ## _ ## attr, #name  \": \" error); }\n #define WSLUA_OPTARG_ERROR(name,attr,error) { luaL_argerror(L,WSLUA_OPTARG_##name##_ ##attr, #name  \": \" error); }\n \n@@ -729,14 +731,34 @@ extern C shift##C(lua_State* L,int i)\n     THROW_FORMATTED(DissectorError, __VA_ARGS__)\n \n /* Catches any Wireshark exceptions in code and convert it into a Lua error.\n- * Normal restrictions for TRY/CATCH apply, in particular, do not return! */\n+ * Normal restrictions for TRY/CATCH apply, in particular, do not return!\n+ *\n+ * This means do not call lua[L]_error() inside code, as that longjmps out\n+ * of the TRY block to the Lua pcall! Use THROW_LUA_ERROR, which is caught\n+ * and then converted into a Lua error.\n+ *\n+ * XXX: We CATCH_ALL here, although there's little point in catching\n+ * OutOfMemoryError here. (Is CATCH_BOUNDS_AND_DISSECTOR_ERRORS sufficient?)\n+ * There are some Exceptions that we catch and show but don't want to add\n+ * the Lua error malformed expert info to the tree: BoundsError,\n+ * FragmentBoundsError, and ScsiBoundsError (show_exception doesn't consider\n+ * those malformed). The traceback might (or might not) be useful for those.\n+ * Putting an extra malformed expert info in the tree in the cases that are\n+ * malformed seems not so bad, but we might want to reduce that. Perhaps\n+ * at least we could have a separate LuaError type and not call show_exception\n+ * for that (we still need to handle some Lua errors that don't use this in\n+ * dissector_error_handler.)\n+ */\n #define WRAP_NON_LUA_EXCEPTIONS(code) \\\n { \\\n     volatile bool has_error = false; \\\n     TRY { \\\n         code \\\n+    } CATCH3(BoundsError, FragmentBoundsError, ScsiBoundsError) { \\\n+        show_exception(lua_tvb, lua_pinfo, lua_tree->tree, EXCEPT_CODE, GET_MESSAGE); \\\n     } CATCH_ALL { \\\n-        lua_pushstring(L, GET_MESSAGE);  \\\n+        show_exception(lua_tvb, lua_pinfo, lua_tree->tree, EXCEPT_CODE, GET_MESSAGE); \\\n+        lua_pushfstring(L, \"%s: %s\", __func__, GET_MESSAGE ? GET_MESSAGE : \"Malformed packet\"); \\\n         has_error = true; \\\n     } ENDTRY; \\\n     if (has_error) { lua_error(L); } \\\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/wslua.h",
+      "old_path": "epan/wslua/wslua.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -93,22 +93,13 @@ WSLUA_METHOD Dissector_call(lua_State* L) {\n     Tvb tvb = checkTvb(L,WSLUA_ARG_Dissector_call_TVB);\n     Pinfo pinfo = checkPinfo(L,WSLUA_ARG_Dissector_call_PINFO);\n     TreeItem ti = checkTreeItem(L,WSLUA_ARG_Dissector_call_TREE);\n-    const char *volatile error = NULL;\n-    int len = 0;\n+    volatile int len = 0;\n \n     if (! ( d && tvb && pinfo) ) return 0;\n \n-    TRY {\n+    WRAP_NON_LUA_EXCEPTIONS(\n         len = call_dissector(d, tvb->ws_tvb, pinfo->ws_pinfo, ti->tree);\n-        /* XXX Are we sure about this??? is this the right/only thing to catch */\n-    } CATCH_BOUNDS_AND_DISSECTOR_ERRORS {\n-        show_exception(tvb->ws_tvb, pinfo->ws_pinfo, ti->tree, EXCEPT_CODE, GET_MESSAGE);\n-        error = GET_MESSAGE ? GET_MESSAGE : \"Malformed frame\";\n-    } ENDTRY;\n-\n-    /* XXX: Some exceptions, like FragmentBoundsError and ScsiBoundsError,\n-       are normal conditions and possibly don't need the Lua traceback. */\n-    if (error) { WSLUA_ERROR(Dissector_call,error); }\n+    )\n \n     lua_pushinteger(L,(lua_Integer)len);\n     WSLUA_RETURN(1); /* Number of bytes dissected.  Note that some dissectors always return number of bytes in incoming buffer, so be aware. */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/wslua_dissector.c",
+      "old_path": "epan/wslua/wslua_dissector.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -443,6 +443,10 @@ WSLUA_METHOD TreeItem_add_packet_field(lua_State *L) {\n     WSLUA_RETURN(3); /* The new child <<lua_class_TreeItem,`TreeItem`>>, the field's extracted value or nil, and offset or nil. */\n }\n \n+/* The following is used by TreeItem_add() and TreeItem_le() and can THROW.\n+ * It should be called inside a TRY (e.g. WRAP_NON_LUA_EXCEPTIONS) block and\n+ * THROW_LUA_ERROR should be used insteadof lua[L]_error.\n+ */\n static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n     TvbRange tvbr;\n     Proto proto;\n@@ -454,10 +458,10 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n     proto_item* item = NULL;\n \n     if (!tree_item) {\n-        return luaL_error(L,\"not a TreeItem!\");\n+        THROW_LUA_ERROR(\"not a TreeItem!\");\n     }\n     if (tree_item->expired) {\n-        luaL_error(L,\"expired TreeItem\");\n+        THROW_LUA_ERROR(\"expired TreeItem\");\n         return 0;\n     }\n \n@@ -467,7 +471,7 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n             type = FT_PROTOCOL;\n             ett = proto->ett;\n         } else if (lua_isnil(L, 1)) {\n-            return luaL_error(L, \"first argument to TreeItem:add is nil!\");\n+            THROW_LUA_ERROR(\"first argument to TreeItem:add is nil!\");\n         }\n     } else {\n         hfid = field->hfid;\n@@ -490,7 +494,7 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n \n         if (type == FT_STRINGZ) {\n             if (tvb_find_uint8 (tvbr->tvb->ws_tvb, tvbr->offset, -1, 0) == -1) {\n-                luaL_error(L,\"out of bounds\");\n+                THROW_LUA_ERROR(\"out of bounds\");\n                 return 0;\n             }\n             tvbr->len = tvb_strsize (tvbr->tvb->ws_tvb, tvbr->offset);\n@@ -564,7 +568,7 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n                         uint32_t addr_value;\n \n                         if (addr->type != AT_IPv4) {\n-                            luaL_error(L, \"Expected IPv4 address for FT_IPv4 field\");\n+                            THROW_LUA_ERROR(\"Expected IPv4 address for FT_IPv4 field\");\n                             return 0;\n                         }\n \n@@ -581,7 +585,7 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n                     {\n                         Address addr = checkAddress(L,1);\n                         if (addr->type != AT_IPv6) {\n-                            luaL_error(L, \"Expected IPv6 address for FT_IPv6 field\");\n+                            THROW_LUA_ERROR(\"Expected IPv6 address for FT_IPv6 field\");\n                             return 0;\n                         }\n \n@@ -592,7 +596,7 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n                     {\n                         Address addr = checkAddress(L,1);\n                         if (addr->type != AT_ETHER) {\n-                            luaL_error(L, \"Expected MAC address for FT_ETHER field\");\n+                            THROW_LUA_ERROR(\"Expected MAC address for FT_ETHER field\");\n                             return 0;\n                         }\n \n@@ -608,7 +612,7 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n                 case FT_VINES:\n                 case FT_FCWWN:\n                 default:\n-                    luaL_error(L,\"FT_ not yet supported\");\n+                    THROW_LUA_ERROR(\"%s not yet supported\", ftype_name(type));\n                     return 0;\n             }\n \n@@ -616,7 +620,7 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n \n         } else {\n             if (type == FT_FRAMENUM) {\n-                luaL_error(L, \"ProtoField FRAMENUM cannot fetch value from Tvb\");\n+                THROW_LUA_ERROR(\"ProtoField FRAMENUM cannot fetch value from Tvb\");\n                 return 0;\n             }\n             /* the Lua stack is empty - no value was given - so decode the value from the tvb */\n@@ -640,11 +644,11 @@ static int TreeItem_add_item_any(lua_State *L, bool little_endian) {\n                 item = proto_tree_add_item(tree_item->tree, hf, tvbr->tvb->ws_tvb, tvbr->offset, tvbr->len, ENC_NA);\n                 proto_item_set_text(item, \"%s\", s);\n             } else {\n-                luaL_error(L,\"Internal error: hf_wslua_text not registered\");\n+                THROW_LUA_ERROR(\"Internal error: hf_wslua_text not registered\");\n             }\n             lua_remove(L,1);\n         } else {\n-            luaL_error(L,\"Tree item ProtoField/Protocol handle is invalid (ProtoField/Proto not registered?)\");\n+            THROW_LUA_ERROR(\"Tree item ProtoField/Protocol handle is invalid (ProtoField/Proto not registered?)\");\n         }\n     }\n \n@@ -726,7 +730,12 @@ WSLUA_METHOD TreeItem_add(lua_State *L) {\n #define WSLUA_OPTARG_TreeItem_add_TVBRANGE 3 /* The <<lua_class_TvbRange,`TvbRange`>> of bytes in the packet this tree item covers/represents. */\n #define WSLUA_OPTARG_TreeItem_add_VALUE 4 /* The field's value, instead of the ProtoField/Proto one. */\n #define WSLUA_OPTARG_TreeItem_add_LABEL 5 /* One or more strings to use for the tree item label, instead of the ProtoField/Proto one. */\n-    WSLUA_RETURN(TreeItem_add_item_any(L,false)); /* The new child TreeItem. */\n+\n+    volatile int ret;\n+    WRAP_NON_LUA_EXCEPTIONS(\n+        ret = TreeItem_add_item_any(L,false);\n+    )\n+    WSLUA_RETURN(ret); /* The new child TreeItem. */\n }\n \n WSLUA_METHOD TreeItem_add_le(lua_State *L) {\n@@ -745,7 +754,11 @@ WSLUA_METHOD TreeItem_add_le(lua_State *L) {\n #define WSLUA_OPTARG_TreeItem_add_le_TVBRANGE 3 /* The TvbRange of bytes in the packet this tree item covers/represents. */\n #define WSLUA_OPTARG_TreeItem_add_le_VALUE 4 /* The field's value, instead of the ProtoField/Proto one. */\n #define WSLUA_OPTARG_TreeItem_add_le_LABEL 5 /* One or more strings to use for the tree item label, instead of the ProtoField/Proto one. */\n-    WSLUA_RETURN(TreeItem_add_item_any(L,true)); /* The new child TreeItem. */\n+    volatile int ret;\n+    WRAP_NON_LUA_EXCEPTIONS(\n+        ret = TreeItem_add_item_any(L,true);\n+    )\n+    WSLUA_RETURN(ret); /* The new child TreeItem. */\n }\n \n /* WSLUA_ATTRIBUTE TreeItem_text RW Set/get the <<lua_class_TreeItem,`TreeItem`>>'s display string (string).\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/wslua_tree.c",
+      "old_path": "epan/wslua/wslua_tree.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -29,9 +29,17 @@\n  *\n  * a Tvb represents a tvbuff_t in Lua.\n  * a TvbRange represents a range in a tvb (tvb,offset,length) its main purpose is to do bounds checking,\n- *            It helps, too, simplifying argument passing to Tree. In wireshark terms this is worthless nothing\n- *            not already done by the TVB itself. In lua's terms it's necessary to avoid abusing TRY{}CATCH(){}\n- *            via preemptive bounds checking.\n+ * It helps, too, simplifying argument passing to Tree.\n+ *\n+ * Normally in Wireshark explicit bounds checking is unnecessary as the tvbuff\n+ * functions throw appropriate exceptions depending on why data wasn't present.\n+ * In Lua, the interaction between the exception handling in epan and Lua's error\n+ * handling, both of which use setjmp/longjmp, requires careful programming to\n+ * avoid longjmp'ing down to the stack to a location that has already exited,\n+ * particularly when Lua dissector calls are nested. TvbRange reduces the amount\n+ * of possible exceptions (and TRY/CATCH to deal with them) by doing preemptive\n+ * bounds checking - at a cost of making it impossible to support truncated\n+ * captures where captured length < reported length (#15655).\n  *\n  * These lua objects refer to structures in wireshark that are freed independently from Lua's garbage collector.\n  * To avoid using pointers from Lua to Wireshark structures that are already freed, we maintain a list of the\n@@ -1227,22 +1235,24 @@ WSLUA_METHOD TvbRange_bitfield(lua_State* L) {\n         return 0;\n     }\n \n-    if (len <= 8) {\n-        lua_pushinteger(L,(lua_Integer)(unsigned)tvb_get_bits8(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len));\n-        return 1;\n-    } else if (len <= 16) {\n-        lua_pushinteger(L,tvb_get_bits16(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));\n-        return 1;\n-    } else if (len <= 32) {\n-        lua_pushinteger(L,tvb_get_bits32(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));\n-        return 1;\n+    if (len <= 32) {\n+        /* XXX - If LUA_INTEGER_SIZE is 4 (on Lua 5.3/5.4 it's usually 8), then\n+         * for len == 32 an unsigned won't necessarily fit in a lua_Integer.\n+         * Should we use a UInt64 then?\n+         */\n+        WRAP_NON_LUA_EXCEPTIONS(\n+            lua_pushinteger(L,tvb_get_bits32(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));\n+        )\n     } else if (len <= 64) {\n-        pushUInt64(L,tvb_get_bits64(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));\n-        WSLUA_RETURN(1); /* The bitfield value */\n+        WRAP_NON_LUA_EXCEPTIONS(\n+            pushUInt64(L,tvb_get_bits64(tvbr->tvb->ws_tvb,tvbr->offset*8 + pos, len, false));\n+        )\n     } else {\n         luaL_error(L,\"TvbRange:bitfield() does not handle %d bits\",len);\n         return 0;\n     }\n+\n+    WSLUA_RETURN(1); /* The bitfield value */\n }\n \n WSLUA_METHOD TvbRange_range(lua_State* L) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/wslua_tvb.c",
+      "old_path": "epan/wslua/wslua_tvb.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "8181ec3463631536f81b9aa568f887fa8dc2a10a",
+      "short_id": "8181ec34",
+      "created_at": "2024-08-28T04:06:00.000+00:00",
+      "parent_ids": [
+        "1e79a1166cdaf8f49e0a51e00b22ac5d561e6284"
+      ],
+      "title": "lua: Fix some dissector segfaults",
+      "message": "lua: Fix some dissector segfaults\n\nCalling Lua dissectors requires at least one top level pcall\n(protected call) to avoid crashing. This invokes Lua's error\nhandling, which uses setjmp/longjmp.\n\nWireshark's kazlib derived exception handling also uses setjmp/longjmp,\nand every frame is dissected within a TRY (setjmp) block, and many\nepan functions (esp. those involving tvbuffers) can throw exceptions.\n\nJumping out of a TRY block due to a Lua error, or jumping out of a Lua\npcall due to an exception, can cause crashes and failed assertions.\nIt is in particular undefined behavior if nested TRY and pcall and errors\ncause going the wrong way on the stack. (E.g., a Wireshark exception causes\njumping up the stack to a CATCH past a Lua setjmp point, and then a later\nLua error causes a longjmp to the call site that has exited, because the\nLua states maintains a linked list of jmp_bufs to return to.)\n\nThe above issue is particularly likely to happen when Lua dissectors\ncall other Lua dissectors, including by defining Lua functions that\ncall Lua dissectors.\n\nThe current Lua code tries to reduce the number of Wireshark exceptions\nvia pre-emptive bounds and options checking, though it's not perfect.\nThe checking also makes it impossible to properly handle truncated\ncaptures where the captured length is less than the reported length.\n(See #15655).\n\nThe proper thing to do is to wrap every C function that can throw an\nexception in a TRY EXCEPT block and inside there throw exceptions\nthat are converted to Lua errors instead of Lua errrors directly.\nPre-emptive checking that merely duplicates what the epan functions\ndo (instead of, e.g., verifying that an argument type can be converted\nto the proper type) should be removed.\n\nBegin fixing this with some particular cases where nested Lua dissector\ncalls segfault. Fix #20005. Fix #13674.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-08-23T20:54:51.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2024-08-28T04:06:00.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8181ec3463631536f81b9aa568f887fa8dc2a10a"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1103577929,
+      "head_commit_sha": "8181ec3463631536f81b9aa568f887fa8dc2a10a",
+      "base_commit_sha": "1e79a1166cdaf8f49e0a51e00b22ac5d561e6284",
+      "start_commit_sha": "1e79a1166cdaf8f49e0a51e00b22ac5d561e6284",
+      "created_at": "2024-08-28T04:06:03.432Z",
+      "merge_request_id": 323048628,
+      "state": "collected",
+      "real_size": "5",
+      "patch_id_sha": "cd74fdcaccc7c4335d377cde8895bc0d1b90d8e2"
+    },
+    {
+      "id": 1102976450,
+      "head_commit_sha": "5f272bee9349be24870327034780c58e7dca2d9f",
+      "base_commit_sha": "e0c49a857373267c17ff7daef0e1a840b9897116",
+      "start_commit_sha": "e0c49a857373267c17ff7daef0e1a840b9897116",
+      "created_at": "2024-08-27T13:43:16.687Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": "cd74fdcaccc7c4335d377cde8895bc0d1b90d8e2"
+    },
+    {
+      "id": 1102969030,
+      "head_commit_sha": "1f2330612dea215602b9a1c6bd90f10e0cc117b9",
+      "base_commit_sha": "e0c49a857373267c17ff7daef0e1a840b9897116",
+      "start_commit_sha": "e0c49a857373267c17ff7daef0e1a840b9897116",
+      "created_at": "2024-08-27T13:38:26.506Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": "cd74fdcaccc7c4335d377cde8895bc0d1b90d8e2"
+    },
+    {
+      "id": 1102959601,
+      "head_commit_sha": "c6b05da7e679fa777302d0ce2698449311a0c5ae",
+      "base_commit_sha": "e0c49a857373267c17ff7daef0e1a840b9897116",
+      "start_commit_sha": "e0c49a857373267c17ff7daef0e1a840b9897116",
+      "created_at": "2024-08-27T13:32:22.771Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": "1432ef950e3878a1f908ec2ef5927d61db13743a"
+    },
+    {
+      "id": 1102188438,
+      "head_commit_sha": "ac9e5243b7b2a24d65d5910f60afd9c41f795c2c",
+      "base_commit_sha": "1f525c8d15e126aa4d88e4ba2435710b4433fc96",
+      "start_commit_sha": "1f525c8d15e126aa4d88e4ba2435710b4433fc96",
+      "created_at": "2024-08-26T21:34:17.977Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "902e812e6f365bbc1afb6065e377b9bb2d47dd9b"
+    },
+    {
+      "id": 1101906298,
+      "head_commit_sha": "bf6b42b2b450888e306d80d2e7769de86a41b9b8",
+      "base_commit_sha": "94aed4226b04bbe4997aab0c198aea12d9ca1490",
+      "start_commit_sha": "94aed4226b04bbe4997aab0c198aea12d9ca1490",
+      "created_at": "2024-08-26T15:43:21.553Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "538d823f268cb50c892cebcaf65e1bc3103fa4dd"
+    },
+    {
+      "id": 1101728380,
+      "head_commit_sha": "9fb17cb49aa78975c9fef0ea30ae66acd02a3dd5",
+      "base_commit_sha": "1cb9ee338079dab2cddbb0044d28f768e427b001",
+      "start_commit_sha": "1cb9ee338079dab2cddbb0044d28f768e427b001",
+      "created_at": "2024-08-26T13:33:07.016Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "4634685572c96d4936f8751aab0794b61710e6f5"
+    },
+    {
+      "id": 1101608685,
+      "head_commit_sha": "7b22f7471616f40fcec9e5d69341f3957d5ad429",
+      "base_commit_sha": "1cb9ee338079dab2cddbb0044d28f768e427b001",
+      "start_commit_sha": "1cb9ee338079dab2cddbb0044d28f768e427b001",
+      "created_at": "2024-08-26T11:59:02.812Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "16c273f2731792a14d5471db9f1188e19f89b7e0"
+    },
+    {
+      "id": 1100837684,
+      "head_commit_sha": "72c1608de897e166aef5754771a6c365ee3ce972",
+      "base_commit_sha": "23e5f4ce3979ecd297f8a7c93b19ac95127eefbf",
+      "start_commit_sha": "23e5f4ce3979ecd297f8a7c93b19ac95127eefbf",
+      "created_at": "2024-08-24T01:26:02.414Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "ae88b8e1a1dc7b1a5053af4980f831d934741a3e"
+    },
+    {
+      "id": 1100830971,
+      "head_commit_sha": "76a26c697e30bfee6386d0ca29ce31644cbaad49",
+      "base_commit_sha": "23e5f4ce3979ecd297f8a7c93b19ac95127eefbf",
+      "start_commit_sha": "23e5f4ce3979ecd297f8a7c93b19ac95127eefbf",
+      "created_at": "2024-08-24T00:57:36.346Z",
+      "merge_request_id": 323048628,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "d5b60e109992aafa3743853b8108a2aafc0fee62"
+    }
+  ]
+}

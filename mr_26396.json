@@ -1,0 +1,825 @@
+{
+  "id": 529114992,
+  "iid": 26396,
+  "project_id": 7898047,
+  "title": "RTPproxy: Fix malformed-packet bugs and catch up with the protocol",
+  "description": "The RTPproxy dissector had drifted a long way from what RTPproxy and\nrtpengine actually speak, and several framing bugs made it report\nordinary traffic as malformed.\n\nFixes first, then protocol coverage, then the RTPproxy-ng (bencode)\nside. Each commit stands alone and builds.\n\n### Malformed-packet fixes\n\n* `tvb_find_uint8_length()` was given an absolute offset where it wants\n  a byte count, at all three call sites. The searches ran to the end of\n  the captured data, and **every session command carrying a tag — D, R,\n  N, U, L, P, C, Q — was reported as `[Malformed Packet]`**, because the\n  zero-length Media-ID placeholder ended up anchored outside the tvb.\n* The second tag was recomputed from a stale offset, so\n  `D call_id from_tag to_tag` printed `from_tag` twice and never showed\n  the to_tag. Without a to_tag it fell through to the notification\n  parser and reported the from_tag as a notify target.\n* The whole argument path walked with unbounded searches and never\n  compared against the end of the command, so a command with fewer\n  arguments than its syntax allows ran past its own end and wrapped\n  `end - begin`. `U call_id 192.168.0.1 10000` was enough — and a\n  truncated control datagram is not a rare thing.\n* The `P` and `U` modifiers consumed a byte without checking one was\n  there; `CP call_id target from_tag` was malformed.\n\nOver a corpus of 1604 generated commands this takes the number of\ndissector exceptions from **969 to zero**.\n\n### Protocol coverage\n\n`G` (get statistics) and `N` (stop recording) were not recognised at\nall — such packets showed a bare cookie and took no part in\nrequest/reply tracking. Also added: the `&&` sub-command trailer, which\nthe positional parser previously ate as a tag; the `Q` command's counter\nnames and its reply, decoded into typed per-counter fields\n(`rtpproxy.counter.ndropped` and friends) so they can be filtered and\ngraphed; IPv6 and `{label}` forms of the `L`/`R` modifiers; the `unix:`,\n`tcp:` and bare-path notify socket forms, which used to be run through\nthe IPv4 parser and reported as bad addresses; the `v` modifier; and the\nmissing `E37` error code.\n\nThe version table gains the five datestamps whose features are now\nactually dissected — 20150617, 20191015, 20200226, 20250523 and\n20260306. Nothing is advertised that isn't implemented.\n\nThe unofficial \"protocol type\" `P` modifier is dropped. It came from\nerlrtpproxy, never shipped there, and erlrtpproxy is now EOL — nothing\never put it on the wire, and RTPproxy has since given `P` a meaning of\nits own, which the following commit implements. This removes the\n`rtpproxy.command_parameter_proto` field.\n\n### RTPproxy-ng\n\nThe info column carried the entire bencoded payload, SDP and all —\nhundreds of unreadable characters per packet. Every ng message names\nitself, so the `command`, `result` and `call-id` are now picked out of\nthe top level dictionary (nested keys are stepped over, never mistaken\nfor the real one) and the column reads `Request: offer, Call-ID: ...`.\n`rtpproxy.ng.command == \"delete\"` is filterable.\n\nThat also made request/reply tracking possible: `rtpproxy_add_tid()` was\nonly ever reached by the plain protocol, so ng exchanges had no\n\"Response in\", no round trip time, and nothing tying a reply to its\ncall. They do now.\n\nFinally the session description is handed to the SDP dissector, so\nrtpengine's rewriting is visible as structured fields — in the included\ncapture the offer names 192.168.0.1:8000 and the reply to it\n192.168.0.101:37506. As with SDP carried over any other protocol, this\nalso sets up the media streams it describes.\n\n### Testing\n\nSix tests in `test/suite_dissection.py`, four capture files. The first\ncommit is a 2021 test addition that was never submitted; the two new\ncaptures cover the ng error/warning replies and a reply large enough to\nbe split across two IP fragments, which arrive out of order.\n\n**The two new captures are sanitised real traffic** — addresses rewritten\nto RFC 1918 in the packet headers *and* inside the bencoded payloads,\nand MAC addresses replaced. Replacements were chosen with identical\nstring lengths so the fragment offsets and bencode length prefixes stay\nvalid.\n\n`tools/check_apis.py` and `tools/check_typed_item_calls.py` report no\nwarnings. Beyond the suite, this was run over ~23k frames of real\nrtpengine traffic and several fuzz corpora with no dissector exceptions,\nand against the unmodified dissector to confirm frame counts and decoded\ncontent are otherwise unchanged.\n\nAssisted-by: Claude",
+  "state": "merged",
+  "created_at": "2026-09-07T18:19:20.695Z",
+  "updated_at": "2026-09-08T07:38:33.704Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-09-08T07:38:33.728Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "rtpproxy_improvements",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 62913,
+    "username": "lemenkov",
+    "public_email": "",
+    "name": "Peter Lemenkov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/305bd72c5208635a0f52fe4bfdbe7b7e5d682775d264bdae0cb298bf4d1efba0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/lemenkov"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    }
+  ],
+  "source_project_id": 25510003,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "49bfd21e28872db1b61fea34a94e3ccfe8f1886a",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": false,
+  "force_remove_source_branch": false,
+  "prepared_at": "2026-09-07T18:19:26.414Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26396",
+  "references": {
+    "short": "!26396",
+    "relative": "!26396",
+    "full": "wireshark/wireshark!26396"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26396",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "6",
+  "latest_build_started_at": "2026-09-08T07:21:39.267Z",
+  "latest_build_finished_at": "2026-09-08T07:38:32.018Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2828556884,
+    "iid": 109377,
+    "project_id": 7898047,
+    "sha": "1df582eedb3576582bb8cf657cd5fe8d14b73e8e",
+    "ref": "refs/merge-requests/26396/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-08T07:21:38.294Z",
+    "updated_at": "2026-09-08T07:38:32.030Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2828556884"
+  },
+  "head_pipeline": {
+    "id": 2828556884,
+    "iid": 109377,
+    "project_id": 7898047,
+    "sha": "1df582eedb3576582bb8cf657cd5fe8d14b73e8e",
+    "ref": "refs/merge-requests/26396/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-08T07:21:38.294Z",
+    "updated_at": "2026-09-08T07:38:32.030Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2828556884",
+    "before_sha": "1df582eedb3576582bb8cf657cd5fe8d14b73e8e",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-09-08T07:21:39.267Z",
+    "finished_at": "2026-09-08T07:38:32.018Z",
+    "committed_at": null,
+    "duration": 1011,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2828556884",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "27a028e726b0766379939d1bd37dc61b4b7211c9",
+    "head_sha": "49bfd21e28872db1b61fea34a94e3ccfe8f1886a",
+    "start_sha": "27a028e726b0766379939d1bd37dc61b4b7211c9"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "35de4305d3dacff7763b9bf344824bc994d137e0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3799159434,
+          "type": null,
+          "body": "added 31 commits\n\n<ul><li>bc7613c7...27a028e7 - 8 commits from branch <code>wireshark:master</code></li><li>27a028e7...dcd49ab1 - 13 earlier commits</li><li>29636a20 - RTPproxy: Dissect the &quot;%%CC_SELF%%&quot; notify address wildcard</li><li>556ef646 - RTPproxy: Drop the unofficial &quot;protocol type&quot; command modifier</li><li>deb62643 - RTPproxy: Dissect the official &quot;P&quot; command modifier</li><li>5e87c071 - RTPproxy: Dissect the counter names of a &quot;Q&quot; command</li><li>63426d58 - RTPproxy: Dissect the reply to a &quot;Q&quot; command</li><li>caead4d1 - RTPproxy: Add a test capture for the RTPproxy-ng error replies</li><li>3d08f4e9 - RTPproxy: Add a test capture for a reassembled RTPproxy-ng reply</li><li>03fcbe8e - RTPproxy: Name the RTPproxy-ng command and result</li><li>47615a4f - RTPproxy: Track RTPproxy-ng requests and replies</li><li>49bfd21e - RTPproxy: Hand the RTPproxy-ng session description to the SDP dissector</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26396/diffs?diff_id=2009800103&start_sha=bc7613c793dd40d7b8e43aa69cdff50ce1e63d4a)",
+          "author": {
+            "id": 62913,
+            "username": "lemenkov",
+            "public_email": "",
+            "name": "Peter Lemenkov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/305bd72c5208635a0f52fe4bfdbe7b7e5d682775d264bdae0cb298bf4d1efba0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/lemenkov"
+          },
+          "created_at": "2026-09-07T19:02:53.719Z",
+          "updated_at": "2026-09-07T19:02:53.721Z",
+          "system": true,
+          "noteable_id": 529114992,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26396,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5b0cc1ed0218886c2db679bf736f9f0b25a40849",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3801026144,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-08T07:21:31.623Z",
+          "updated_at": "2026-09-08T07:21:31.629Z",
+          "system": true,
+          "noteable_id": 529114992,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26396,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "72a519f0590b09b1d497bb773898d50d9c3d1296",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3801026397,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-08T07:21:35.265Z",
+          "updated_at": "2026-09-08T07:21:35.267Z",
+          "system": true,
+          "noteable_id": 529114992,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26396,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-rtpproxy.c",
+      "old_path": "epan/dissectors/packet-rtpproxy.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/rtpengine_bad_bencode.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/rtpengine_bad_bencode.pcap",
+      "old_path": "test/captures/rtpengine_bad_bencode.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/rtpengine_error_reply.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/rtpengine_error_reply.pcap",
+      "old_path": "test/captures/rtpengine_error_reply.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/rtpengine_good_bencode.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/rtpengine_good_bencode.pcap",
+      "old_path": "test/captures/rtpengine_good_bencode.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/rtpengine_query_reassembled.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/rtpengine_query_reassembled.pcap",
+      "old_path": "test/captures/rtpengine_query_reassembled.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -867,6 +867,75 @@ class TestDissectProtobuf:\n         assert not grep_output(stdout, '.last_field_for_wireshark_test')\n         assert not grep_output(stdout, 'Protobuf: Error')\n \n+class TestDissectRtpproxy:\n+    def test_rtpengine_bencode_good(self, cmd_tshark, capture_file, test_env):\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('rtpengine_good_bencode.pcap'),\n+                '-d', 'udp.port==12222,rtpproxy',\n+                '-Y', 'rtpproxy.cookie == \"19384_1139339\" && bencode.str == \"sdp\"',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'RTPproxy-ng')\n+\n+    def test_rtpengine_bencode_bad(self, cmd_tshark, capture_file, test_env):\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('rtpengine_bad_bencode.pcap'),\n+                '-d', 'udp.port==12222,rtpproxy',\n+                '-Y', 'rtpproxy.cookie == \"19509_1136304\" && bencode.str == \"delete\"',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'RTPproxy-ng')\n+\n+    def test_rtpengine_bencode_error_reply(self, cmd_tshark, capture_file, test_env):\n+        '''An \"offer\" refused with an error, and a \"delete\" answered with a warning'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('rtpengine_error_reply.pcap'),\n+                '-d', 'udp.port==12222,rtpproxy',\n+                '-Y', 'bencode.str == \"Unknown call-id\"',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'RTPproxy-ng')\n+\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('rtpengine_error_reply.pcap'),\n+                '-d', 'udp.port==12222,rtpproxy',\n+                '-Y', 'bencode.str contains \"Call-ID not found or tags\"',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'RTPproxy-ng')\n+\n+    def test_rtpengine_ng_command_tracking(self, cmd_tshark, capture_file, test_env):\n+        '''The ng messages name themselves, and requests are matched to replies'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('rtpengine_error_reply.pcap'),\n+                '-d', 'udp.port==12222,rtpproxy',\n+                '-Y', 'rtpproxy.ng.command == \"delete\"',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'Request: delete')\n+\n+        # The reply to it carries no Call-ID of its own\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('rtpengine_error_reply.pcap'),\n+                '-d', 'udp.port==12222,rtpproxy',\n+                '-2',\n+                '-Y', 'rtpproxy.ng.result == \"error\" && rtpproxy.request_in',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'Reply: error')\n+\n+    def test_rtpengine_ng_sdp(self, cmd_tshark, capture_file, test_env):\n+        '''The session description carried by an ng message reaches the SDP dissector'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('rtpengine_query_reassembled.pcap'),\n+                '-d', 'udp.port==12222,rtpproxy',\n+                '-Y', 'rtpproxy.ng.command == \"offer\" && sdp.media.port == 8000',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'RTPproxy-ng/SDP')\n+\n+    def test_rtpengine_bencode_reassembled(self, cmd_tshark, capture_file, test_env):\n+        '''A reply long enough to be split over two IP fragments'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+                '-r', capture_file('rtpengine_query_reassembled.pcap'),\n+                '-d', 'udp.port==12222,rtpproxy',\n+                '-Y', 'bencode.str == \"last signal\" && ip.reassembled.length == 1704',\n+            ), encoding='utf-8', env=test_env)\n+        assert grep_output(stdout, 'RTPproxy-ng')\n+\n class TestDissectTcp:\n     @staticmethod\n     def check_tcp_out_of_order(cmd_tshark, dirs, test_env, extraArgs=[]):\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissection.py",
+      "old_path": "test/suite_dissection.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "49bfd21e28872db1b61fea34a94e3ccfe8f1886a",
+      "short_id": "49bfd21e",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "47615a4fdbbb1db03a54cbca4e3078f3d5ff5b1b"
+      ],
+      "title": "RTPproxy: Hand the RTPproxy-ng session description to the SDP dissector",
+      "message": "RTPproxy: Hand the RTPproxy-ng session description to the SDP dissector\n\nThe whole point of an \"offer\" or an \"answer\" is the session description\nit carries, and rtpengine rewrites the addresses and ports in it - which\nis exactly what one opens such a capture to look at. It was shown as one\nlong bencode string.\n\nIt is just another string as far as bencode is concerned, so pass it on\nto the dissector which understands it. The rewriting is then plain to\nsee: the offer names 192.168.0.1:8000 and the reply to it 192.168.0.101:\n37506.\n\nNote that this also sets up the media streams the description names, the\nway SDP carried over any other protocol does, so RTP in the same capture\ngets decoded.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-07T09:18:27.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/49bfd21e28872db1b61fea34a94e3ccfe8f1886a"
+    },
+    {
+      "id": "47615a4fdbbb1db03a54cbca4e3078f3d5ff5b1b",
+      "short_id": "47615a4f",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "03fcbe8e7d210ee8c2a484b6295bca2ba1a5bb7b"
+      ],
+      "title": "RTPproxy: Track RTPproxy-ng requests and replies",
+      "message": "RTPproxy: Track RTPproxy-ng requests and replies\n\nrtpproxy_add_tid() was only ever reached by the plain protocol, so an\nRTPproxy-ng exchange got no request/response matching at all - no\n\"Response in\", no round trip time, and a reply that showed nothing to\ntie it to the call it belonged to.\n\nNow that a message says whether it carries a \"command\" or a \"result\"\nthere is enough to pair the two up by cookie, exactly as the plain\nprotocol does. The Call-ID of the request is remembered, so a reply -\nwhich carries none of its own - can show it as a generated field.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T17:13:45.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/47615a4fdbbb1db03a54cbca4e3078f3d5ff5b1b"
+    },
+    {
+      "id": "03fcbe8e7d210ee8c2a484b6295bca2ba1a5bb7b",
+      "short_id": "03fcbe8e",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "3d08f4e93828845aa3407bf42f6b601b9c746b50"
+      ],
+      "title": "RTPproxy: Name the RTPproxy-ng command and result",
+      "message": "RTPproxy: Name the RTPproxy-ng command and result\n\nThe info column carried the whole bencoded payload, SDP and all, which\non a busy capture is several hundred unreadable characters per packet\nand says nothing about what the message actually is.\n\nEvery ng message names itself: a request carries a \"command\" key, a\nreply a \"result\" one. Pick those out, along with the \"call-id\", and let\nthe column say \"Request: offer, Call-ID: ...\" or \"Reply: error\". They\nare dissected as fields as well, so \"rtpproxy.ng.command == \\\"delete\\\"\"\nnow works, and the Call-ID reuses the field the plain protocol already\nhad.\n\nOnly the top level dictionary is searched - the keys of a nested one are\nstepped over, so a \"command\" inside it is never mistaken for the one\nnaming the message.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T17:11:09.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/03fcbe8e7d210ee8c2a484b6295bca2ba1a5bb7b"
+    },
+    {
+      "id": "3d08f4e93828845aa3407bf42f6b601b9c746b50",
+      "short_id": "3d08f4e9",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "caead4d15dc3f9dd95e293f15d90aea5bb10c93a"
+      ],
+      "title": "RTPproxy: Add a test capture for a reassembled RTPproxy-ng reply",
+      "message": "RTPproxy: Add a test capture for a reassembled RTPproxy-ng reply\n\nA reply to a \"query\" easily outgrows the MTU, and the two fragments do\nnot necessarily arrive in order - in this capture the second one comes\nfirst. Nothing exercised that path, even though it is the one where a\nbencoded payload reaches the dissector as a reassembled buffer rather\nthan as a datagram.\n\nTaken from a real exchange; the addresses, both in the packet headers\nand inside the bencoded payloads, and the MAC addresses have been\nrewritten to RFC 1918 / locally administered ones. Rewriting the ones\ncarried by a fragment required replacements of exactly the same length,\nso that the fragment offsets kept lining up.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T16:55:31.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3d08f4e93828845aa3407bf42f6b601b9c746b50"
+    },
+    {
+      "id": "caead4d15dc3f9dd95e293f15d90aea5bb10c93a",
+      "short_id": "caead4d1",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "63426d58479872e0c300668c6f8e555d90bd8e5e"
+      ],
+      "title": "RTPproxy: Add a test capture for the RTPproxy-ng error replies",
+      "message": "RTPproxy: Add a test capture for the RTPproxy-ng error replies\n\nThe two captures the suite had both carry a well formed request; nothing\ncovered what rtpengine answers with when it refuses one. This one holds\nan \"offer\" rejected with \"error\"/\"error-reason: Unknown call-id\" and a\n\"delete\" answered with \"result: ok\" alongside a \"warning\", which is the\ncombination the reply parser is most likely to get wrong.\n\nTaken from a real exchange; the addresses, both in the packet headers\nand inside the bencoded payloads, and the MAC addresses have been\nrewritten to RFC 1918 / locally administered ones.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T16:55:12.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/caead4d15dc3f9dd95e293f15d90aea5bb10c93a"
+    },
+    {
+      "id": "63426d58479872e0c300668c6f8e555d90bd8e5e",
+      "short_id": "63426d58",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "5e87c0719a5efec336041531ce8e8e27f37d376e"
+      ],
+      "title": "RTPproxy: Dissect the reply to a \"Q\" command",
+      "message": "RTPproxy: Dissect the reply to a \"Q\" command\n\nA query is answered with the counters it asked for, or with a fixed set\nof five when it named none. Neither was dissected: a plain reply\n(\"60 1200 1198 2398 2\") went through the port-and-address parser of an\noffer reply and produced a bad IPv4 address, and a verbose one\n(\"ttl=60 npkts_ina=1200 ...\") was not recognized at all.\n\nA reply carries no hint of the command it belongs to, and the verbose\nform may start with something that looks like one - \"ndropped=0\" was\ndissected as an \"N\" command - so remember the command each cookie stood\nfor and look it up when the reply arrives. The counter names a query\nasked for are remembered along with it, which is what makes the plain\nform readable: the values are matched against them by position, falling\nback to the five defaults.\n\nThe counters are registered with the types RTPproxy prints them with, so\nthat they can be filtered on and graphed - \"rtpproxy.counter.ndropped >\n0\" and the like. Anything not recognized, or not parsable as the type it\nshould be, is kept as a string rather than dropped.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T15:06:34.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/63426d58479872e0c300668c6f8e555d90bd8e5e"
+    },
+    {
+      "id": "5e87c0719a5efec336041531ce8e8e27f37d376e",
+      "short_id": "5e87c071",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "deb626436e3d348f6ccb24a7a13029fd0ccd054c"
+      ],
+      "title": "RTPproxy: Dissect the counter names of a \"Q\" command",
+      "message": "RTPproxy: Dissect the counter names of a \"Q\" command\n\n\"Q[v] call_id from_tag to_tag [counter1 ... counterN]\" may name the\ncounters it wants back, but the dissector stopped right after the tags\nand left them undissected.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T14:59:44.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/5e87c0719a5efec336041531ce8e8e27f37d376e"
+    },
+    {
+      "id": "deb626436e3d348f6ccb24a7a13029fd0ccd054c",
+      "short_id": "deb62643",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "556ef64686f8dd87076509cd82df3b7de32c3ca5"
+      ],
+      "title": "RTPproxy: Dissect the official \"P\" command modifier",
+      "message": "RTPproxy: Dissect the official \"P\" command modifier\n\nSince the 20250523 protocol version the \"C\" command takes a \"P\"\nmodifier, which asks RTPproxy to reply with the address and port it has\nallocated for the recording stream instead of a plain OK. It is only\naccepted by \"C\", and only when the recording target is a remote one\n(\"udp:host:port\") - \"R\" and a local target are rejected outright.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T14:55:58.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/deb626436e3d348f6ccb24a7a13029fd0ccd054c"
+    },
+    {
+      "id": "556ef64686f8dd87076509cd82df3b7de32c3ca5",
+      "short_id": "556ef646",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "29636a20cb1607021ca9d05808d7be2017efb488"
+      ],
+      "title": "RTPproxy: Drop the unofficial \"protocol type\" command modifier",
+      "message": "RTPproxy: Drop the unofficial \"protocol type\" command modifier\n\nThe \"P\" modifier was dissected as an RTP transmission protocol selector\n(UDP/TCP/SCTP) taken from erlrtpproxy. It never made it into erlrtpproxy\nthough, and erlrtpproxy itself has since been EOLed, so nothing has ever\nput such a modifier on the wire.\n\nRTPproxy in the meantime gave \"P\" a meaning of its own, which the next\ncommit implements, so retire the extension along with its\n\"rtpproxy.command_parameter_proto\" field rather than let the two clash.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T14:54:15.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/556ef64686f8dd87076509cd82df3b7de32c3ca5"
+    },
+    {
+      "id": "29636a20cb1607021ca9d05808d7be2017efb488",
+      "short_id": "29636a20",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "dcd49ab156ffe5fefcf74b8060cebc15fbab3745"
+      ],
+      "title": "RTPproxy: Dissect the \"%%CC_SELF%%\" notify address wildcard",
+      "message": "RTPproxy: Dissect the \"%%CC_SELF%%\" notify address wildcard\n\nSince the 20150617 protocol version the host part of a notification\ntarget may be the \"%%CC_SELF%%\" wildcard, which asks RTPproxy to send\nthe notification back to whoever the command came from. It used to be\nrun through the IPv4 parser and reported as a bad address.\n\nThe address taken from ip.src/ipv6.src is now shown as a generated item\nthe same way it already is for a target carrying a bare port number.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T16:20:51.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/29636a20cb1607021ca9d05808d7be2017efb488"
+    },
+    {
+      "id": "dcd49ab156ffe5fefcf74b8060cebc15fbab3745",
+      "short_id": "dcd49ab1",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "b6d5a29875204e704483ddda761381948650f4ce"
+      ],
+      "title": "RTPproxy: Dissect all the notify socket forms",
+      "message": "RTPproxy: Dissect all the notify socket forms\n\nThe notification target of an \"U\" command was always run through the\nip:port parser, but RTPproxy accepts a local socket just as well - as\n\"unix:<path>\", or as a bare path for compatibility with the 1.0-2.0\nreleases - and spells an INET one \"tcp:<host>:<port>\". A socket path was\ntherefore reported as a bad IPv4 address followed by port 0, and the\n\"tcp:\" prefix turned the address into a bad IPv6 one by adding a colon.\n\nRecognize the prefixes, tell a path from a bare port number the way\nRTPproxy does, and accept an IPv6 address enclosed in square brackets.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T16:19:24.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/dcd49ab156ffe5fefcf74b8060cebc15fbab3745"
+    },
+    {
+      "id": "b6d5a29875204e704483ddda761381948650f4ce",
+      "short_id": "b6d5a298",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "c8b5777560e4de573aa6d5ece621413052dd5848"
+      ],
+      "title": "RTPproxy: Stop parsing a command once its arguments run out",
+      "message": "RTPproxy: Stop parsing a command once its arguments run out\n\nThe whole request path walked the arguments with unbounded searches -\ntvb_find_uint8_remaining() and tvb_skip_wsp() over the captured length -\nand never compared the result against the end of the command. A command\ncarrying fewer arguments than its syntax allows therefore kept going\npast its own end: the offset ran beyond realsize, \"end - begin\" wrapped\naround in rtpproxy_add_tag() and the packet was reported as malformed.\n\n\"U call_id 192.168.0.1 10000\" was enough to trigger it, and so was every\nother truncated command - a fairly common sight, since a control socket\ndatagram is quite happily cut short by a broken SIP proxy.\n\nBound every field to the command instead, and bail out cleanly as soon\nas there is nothing left to dissect. Two more reads off the end go with\nit: the zero length Media-ID placeholder was anchored just past the tag,\nwhich is outside of the tvb when the command carries no trailing LF, and\nthe \"sessions ...\" reply detection looked at the second byte of a\ncommand which may well be one byte long (\"S\").\n\nOver a corpus of 1604 generated commands this takes the number of\ndissector exceptions from 969 down to zero.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T16:17:23.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/b6d5a29875204e704483ddda761381948650f4ce"
+    },
+    {
+      "id": "c8b5777560e4de573aa6d5ece621413052dd5848",
+      "short_id": "c8b57775",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "e8a9914876a19d2d2628da58670adab168906062"
+      ],
+      "title": "RTPproxy: Dissect the address label of the \"L\" command modifier",
+      "message": "RTPproxy: Dissect the address label of the \"L\" command modifier\n\nSince the 20260306 protocol version the \"L\" modifier of the \"U\"/\"L\"\ncommands takes a bind address label in curly braces instead of an\naddress, so that the caller doesn't have to know the addresses RTPproxy\nis bound to. \"Ul{ext}\" used to be walked byte by byte, with \"e\" reported\nas an \"external network\" request and \"t\" as a transcoding one.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T15:41:19.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c8b5777560e4de573aa6d5ece621413052dd5848"
+    },
+    {
+      "id": "e8a9914876a19d2d2628da58670adab168906062",
+      "short_id": "e8a99148",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "cda44275d2d72db9da7ec36b0b06ce755cbe6e22"
+      ],
+      "title": "RTPproxy: Dissect IPv6 addresses of the \"L\"/\"R\" command modifiers",
+      "message": "RTPproxy: Dissect IPv6 addresses of the \"L\"/\"R\" command modifiers\n\nRTPproxy accepts an IPv6 address enclosed in square brackets everywhere\nit accepts an IPv4 one, but both modifiers only ever scanned for digits\nand dots. \"Ul[2001:db8::1]\" was therefore torn apart byte by byte, each\nof them reported as a command modifier of its own - and \"db\" happened to\nlook like a DTMF payload ID followed by a brief stats request.\n\nFactor the address out of the two nearly identical branches and teach it\nabout the bracketed form. The \"no address at all\" case keeps adding no\nsubtree, since a bare \"L\" is the \"load average\" modifier of the \"I\"\ncommand rather than a local address.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T15:40:12.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e8a9914876a19d2d2628da58670adab168906062"
+    },
+    {
+      "id": "cda44275d2d72db9da7ec36b0b06ce755cbe6e22",
+      "short_id": "cda44275",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "ad330e32d5d1c4d1526a1acbdbba2778d5bfc592"
+      ],
+      "title": "RTPproxy: Don't read past a command modifier without a value",
+      "message": "RTPproxy: Don't read past a command modifier without a value\n\nThe \"P\" (protocol type) and \"U\" (accounting) modifiers both consume one\nmore byte, but neither checked that the byte is actually there. A command\nending right after such a modifier - \"CP call_id target from_tag\" for\ninstance - was reported as a \"[Malformed Packet]\".\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T15:38:04.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/cda44275d2d72db9da7ec36b0b06ce755cbe6e22"
+    },
+    {
+      "id": "ad330e32d5d1c4d1526a1acbdbba2778d5bfc592",
+      "short_id": "ad330e32",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "864c7b5a6ff33689558ce3f420e2f418ee19314e"
+      ],
+      "title": "RTPproxy: Dissect the \"&&\" sub-commands",
+      "message": "RTPproxy: Dissect the \"&&\" sub-commands\n\nSince the 20191015 protocol version an \"U\", \"L\" or \"Q\" command may be\nfollowed by any number of sub-commands separated by a standalone \"&&\"\nargument, and the reply carries one result per sub-command.\n\nThe dissector knew nothing about them, so the separator and everything\nbehind it were consumed by the positional parser of the main command -\n\"U ... from_tag && M0\" reported \"&&\" as the to_tag. A reply consisting\nof a port and a result only (\"12345 && 0\") went as far as running the\nresult through the IPv4 parser and complaining about a bad address.\n\nCut the trailer off before the command is parsed and dissect it on its\nown afterwards. The separator is recognized the way RTPproxy itself\ndoes it - as a whitespace delimited \"&&\" argument - so that a Call-ID or\na tag containing \"&&\" is left alone.\n\nThe bencode sniffing test is factored out into a helper, both because\nthe new code needs it and because it used to read two bytes past the\ncommand without checking that they are actually there.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T15:35:37.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ad330e32d5d1c4d1526a1acbdbba2778d5bfc592"
+    },
+    {
+      "id": "864c7b5a6ff33689558ce3f420e2f418ee19314e",
+      "short_id": "864c7b5a",
+      "created_at": "2026-09-07T20:58:47.000+02:00",
+      "parent_ids": [
+        "434d9faf9221773af1aa88566e7b7e247006c1c2"
+      ],
+      "title": "RTPproxy: Recognize the \"v\" (verbose) command modifier",
+      "message": "RTPproxy: Recognize the \"v\" (verbose) command modifier\n\nBoth \"G[v]\" and \"Q[v]\" ask for a verbose reply, but the modifier was not\nlisted, so it was reported as \"Parameter: Unknown ('v')\".\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T15:29:57.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/864c7b5a6ff33689558ce3f420e2f418ee19314e"
+    },
+    {
+      "id": "434d9faf9221773af1aa88566e7b7e247006c1c2",
+      "short_id": "434d9faf",
+      "created_at": "2026-09-07T20:58:46.000+02:00",
+      "parent_ids": [
+        "ea506f2b1a3f7e093e95dbbf6b9f22701ed1cc62"
+      ],
+      "title": "RTPproxy: Add the missing E37 error code",
+      "message": "RTPproxy: Add the missing E37 error code\n\nECODE_INVLARG_7 is returned when the remote address of an \"U\"/\"L\"\ncommand cannot be resolved. It was the only gap left in the error table.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T13:55:34.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:46.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/434d9faf9221773af1aa88566e7b7e247006c1c2"
+    },
+    {
+      "id": "ea506f2b1a3f7e093e95dbbf6b9f22701ed1cc62",
+      "short_id": "ea506f2b",
+      "created_at": "2026-09-07T20:58:46.000+02:00",
+      "parent_ids": [
+        "5670cd15fad12861f1bef16597c22e676e9da7d6"
+      ],
+      "title": "RTPproxy: Fix extraction of the second tag",
+      "message": "RTPproxy: Fix extraction of the second tag\n\nrtpproxy_add_tag() already leaves the offset on the separator following\nthe tag it has just consumed, but the caller went on to recompute the\noffset from new_offset - which had last been set while looking for the\nCall-ID. The second tag was therefore parsed starting at the first one\nagain, so \"D call_id from_tag to_tag\" reported \"from_tag\" twice and the\nto_tag was never shown.\n\nAdvance from the offset rtpproxy_add_tag() returns instead. While at it,\nhonour its return value for the second tag as well: without a to_tag the\ndissector fell through to the notification address parser and reported\nthe from_tag as a notify target of an \"U\" command.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T13:54:49.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:46.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ea506f2b1a3f7e093e95dbbf6b9f22701ed1cc62"
+    },
+    {
+      "id": "5670cd15fad12861f1bef16597c22e676e9da7d6",
+      "short_id": "5670cd15",
+      "created_at": "2026-09-07T20:58:46.000+02:00",
+      "parent_ids": [
+        "ded53debcb4c77fddd7b52161804e7eb111d2e92"
+      ],
+      "title": "RTPproxy: Fix the length passed to tvb_find_uint8_length()",
+      "message": "RTPproxy: Fix the length passed to tvb_find_uint8_length()\n\nThe third argument of tvb_find_uint8_length() is the number of bytes to\nscan, but all the three call sites handed it \"end\" - an absolute offset\ninto the tvb. The searches therefore ran way past the field they were\nsupposed to look at, up to the end of the captured data.\n\nFor a tag without a Media-ID this made the search fail with new_offset\npointing just past the last scanned byte, and the \"<skipped>\" Media-ID\nplaceholder was then anchored at new_offset+1, i.e. outside of the tvb.\nEvery session command carrying a tag - D, R, N, U, L, P, C, Q - ended up\nas a \"[Malformed Packet]\" because of that. A stray semicolon anywhere\nlater in the packet was mis-detected as this tag's separator as well,\nand in the notify address parser a colon belonging to another field made\nan IPv4 address look like an IPv6 one.\n\nPass the actual field lengths instead.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T13:52:10.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:46.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/5670cd15fad12861f1bef16597c22e676e9da7d6"
+    },
+    {
+      "id": "ded53debcb4c77fddd7b52161804e7eb111d2e92",
+      "short_id": "ded53deb",
+      "created_at": "2026-09-07T20:58:46.000+02:00",
+      "parent_ids": [
+        "a87e693401a8a90117f80ffae2d45b72a46a6414"
+      ],
+      "title": "RTPproxy: Dissect the \"N\" (stop recording) command",
+      "message": "RTPproxy: Dissect the \"N\" (stop recording) command\n\n\"N[a] call_id from_tag [to_tag]\" has the very same shape as the other\nsession commands, so it only needs to be listed in the command table and\nrouted through the generic request path. The \"a\" modifier selects all\nthe recordings rather than an asymmetric stream here, so mention both\nmeanings the way the other overloaded modifiers already do.\n\nAdvertise the matching \"20200226\" protocol version now that the command\nis actually dissected.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T13:46:39.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:46.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ded53debcb4c77fddd7b52161804e7eb111d2e92"
+    },
+    {
+      "id": "a87e693401a8a90117f80ffae2d45b72a46a6414",
+      "short_id": "a87e6934",
+      "created_at": "2026-09-07T20:58:46.000+02:00",
+      "parent_ids": [
+        "8dc3c19a16e6f0078e14e7d7af3a747a4128a225"
+      ],
+      "title": "RTPproxy: Dissect the \"G\" (get statistics) command",
+      "message": "RTPproxy: Dissect the \"G\" (get statistics) command\n\nThe \"G\" command was not recognized at all, so such packets were shown as\na bare cookie with no request tree and took no part in the request/reply\ntracking.\n\nAdd it to the command table and dissect its optional list of the\nrequested counter names (\"G[v] [stat_name1 ... stat_nameN]\"). Unlike the\nother commands \"G\" may carry no arguments whatsoever, so the modifiers\nare looked up within the command boundaries only - otherwise a bare \"G\"\nwould report the trailing LF as a command parameter.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-05T13:45:15.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:46.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/a87e693401a8a90117f80ffae2d45b72a46a6414"
+    },
+    {
+      "id": "8dc3c19a16e6f0078e14e7d7af3a747a4128a225",
+      "short_id": "8dc3c19a",
+      "created_at": "2026-09-07T20:58:46.000+02:00",
+      "parent_ids": [
+        "27a028e726b0766379939d1bd37dc61b4b7211c9"
+      ],
+      "title": "RTPproxy: Add basic unit-tests",
+      "message": "RTPproxy: Add basic unit-tests\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2021-04-13T12:24:02.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:58:46.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8dc3c19a16e6f0078e14e7d7af3a747a4128a225"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2009800103,
+      "head_commit_sha": "49bfd21e28872db1b61fea34a94e3ccfe8f1886a",
+      "base_commit_sha": "27a028e726b0766379939d1bd37dc61b4b7211c9",
+      "start_commit_sha": "27a028e726b0766379939d1bd37dc61b4b7211c9",
+      "created_at": "2026-09-07T19:02:53.172Z",
+      "merge_request_id": 529114992,
+      "state": "collected",
+      "real_size": "6",
+      "patch_id_sha": "9f88fc97ace46cffca7ee88def81436594fd32cc"
+    },
+    {
+      "id": 2009751121,
+      "head_commit_sha": "bc7613c793dd40d7b8e43aa69cdff50ce1e63d4a",
+      "base_commit_sha": "411f78566bed622a2ca2e6480c659486175db129",
+      "start_commit_sha": "27a028e726b0766379939d1bd37dc61b4b7211c9",
+      "created_at": "2026-09-07T18:19:24.618Z",
+      "merge_request_id": 529114992,
+      "state": "without_files",
+      "real_size": "6",
+      "patch_id_sha": "30580e78f0b1e712aef54b1e52ebf71409abdf92"
+    }
+  ]
+}

@@ -1,0 +1,514 @@
+{
+  "id": 529426070,
+  "iid": 26413,
+  "project_id": 7898047,
+  "title": "HyperDHT: Add dissector for DHT-RPC and HyperDHT",
+  "description": "Add a built-in dissector for dht-rpc and HyperDHT, the UDP DHT layer of\nthe Holepunch peer-to-peer stack (Pear, Keet). The protocol has no\nassigned port and no specification apart from its reference\nimplementations, which define the wire format this dissector follows:\nhttps://github.com/holepunchto/dht-rpc (lib/io.js, 6.27.0) and\nhttps://github.com/holepunchto/hyperdht (lib/messages.js, 6.34.0), both\nMIT licensed. The relayed handshake and holepunch rounds are described in\nhttps://github.com/holepunchto/hyperdht/blob/main/docs/handshake.md and\nhttps://github.com/holepunchto/hyperdht/blob/main/docs/holepunch.md.\nCaptures of Pear/Keet traffic currently show up as undissected UDP.\n\nCovered:\n\n* The dht-rpc envelope in both directions and all sixteen commands with\n  their response payloads: PING, PING_NAT, FIND_NODE, DOWN_HINT,\n  DELAYED_PING (dht-rpc) and PEER_HANDSHAKE, PEER_HOLEPUNCH, FIND_PEER,\n  LOOKUP, ANNOUNCE, UNANNOUNCE, MUTABLE_PUT, MUTABLE_GET, IMMUTABLE_PUT,\n  IMMUTABLE_GET, PLUGIN (HyperDHT).\n* Request/response linking with response time, tracked per frame so\n  transaction id reuse and retransmissions link correctly.\n* The PING_NAT reply, which is sent to the port carried in the request\n  and arrives on a different five-tuple.\n* Relayed PEER_HANDSHAKE / PEER_HOLEPUNCH rounds: only the FROM_CLIENT\n  leg is answered by a dht-rpc response; the forwarded legs are requests\n  that reuse the transaction id, so a FROM_RELAY forward links to the\n  FROM_SERVER request that answers it and no relay leg is reported as\n  missing a response.\n* Expert items for unrecognized commands and error codes, a request or\n  response whose counterpart was not captured, length fields that outrun\n  the packet, and trailing data.\n* Encrypted payloads (Noise handshake, holepunch payload) are shown as\n  opaque bytes; decryption and signature verification are out of scope.\n\nThe heuristic is registered enabled and accepts only a message that\ndecodes completely: known command or error code, plausible unicast\naddress, exact length match. It claims no frame in the other captures\nunder `test/captures`, and an 882-frame capture of a live three-node\nswarm decodes its 879 dht-rpc frames (the remaining three are not\ndht-rpc).\n\nBoth command fields share the filter name `hyperdht.command` on purpose,\nso one filter finds a command in either namespace; names resolve against\ntheir own table and `hyperdht.flag.internal` tells the namespaces apart.\nDuplicate abbreviations of a compatible type are allowed by\n`doc/README.dissector`.\n\nIncludes two synthetic captures (every command, response, error and\nexpert item including a relayed handshake and holepunch round;\ntransaction id reuse with retransmission) and thirteen test cases in\n`test/suite_dissectors/group_hyperdht.py`. `tools/check_dissector.py`\nand `tools/fuzz-test.sh` are clean.\n\nBased on the work-in-progress dissector by James Thomas (Holepunch).\nAI assistance (Claude) was used in developing this change, as declared\nin the commit trailer.",
+  "state": "merged",
+  "created_at": "2026-09-08T12:22:59.391Z",
+  "updated_at": "2026-09-10T06:37:06.010Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-09-10T06:37:06.034Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "hyperdht-dissector",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 40987065,
+    "username": "vijaygopalbalasa",
+    "public_email": "",
+    "name": "Vijaygopal Balasa",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/5b6b5b4cb61418fba7a8baa3abb3207878d83291d9d445902f3218a4c857187e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/vijaygopalbalasa"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    }
+  ],
+  "source_project_id": 85158089,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "70b904c11e2b7ac891499b3c7ac2365dceadaebe",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-09-08T12:23:04.581Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26413",
+  "references": {
+    "short": "!26413",
+    "relative": "!26413",
+    "full": "wireshark/wireshark!26413"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26413",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2026-09-10T06:10:31.217Z",
+  "latest_build_finished_at": "2026-09-10T06:37:04.268Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2835935027,
+    "iid": 109464,
+    "project_id": 7898047,
+    "sha": "bf08e6adad6cde39093cdb0d43b72dacbb504de4",
+    "ref": "refs/merge-requests/26413/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-10T06:10:27.930Z",
+    "updated_at": "2026-09-10T06:37:04.281Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2835935027"
+  },
+  "head_pipeline": {
+    "id": 2835935027,
+    "iid": 109464,
+    "project_id": 7898047,
+    "sha": "bf08e6adad6cde39093cdb0d43b72dacbb504de4",
+    "ref": "refs/merge-requests/26413/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-10T06:10:27.930Z",
+    "updated_at": "2026-09-10T06:37:04.281Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2835935027",
+    "before_sha": "bf08e6adad6cde39093cdb0d43b72dacbb504de4",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-09-10T06:10:31.217Z",
+    "finished_at": "2026-09-10T06:37:04.268Z",
+    "committed_at": null,
+    "duration": 1592,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2835935027",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "0ae245b39a0b073ad35796b161ff4db8b156a46d",
+    "head_sha": "70b904c11e2b7ac891499b3c7ac2365dceadaebe",
+    "start_sha": "0ae245b39a0b073ad35796b161ff4db8b156a46d"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b29959ea9e3c877b26379e7e3e2c6a301242efb9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3803605016,
+          "type": null,
+          "body": "Duplicate with !26085 ?",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-09-08T14:59:35.311Z",
+          "updated_at": "2026-09-08T14:59:42.117Z",
+          "system": false,
+          "noteable_id": 529426070,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26413,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6acb7573200256bb2d6e49b1323f88bd512192fa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3803726230,
+          "type": null,
+          "body": "Hi Alexis, thanks for checking. It is the same protocol, but a separate implementation built on James Thomas's original WIP (he is co-author on the commit). James reviewed this version and asked me to submit it upstream.\n\nCompared to !26085 this one also handles the relayed handshake/holepunch rounds, PING_NAT cross-port linking and transaction id reuse, and comes with 13 tests and a release notes entry. It is complete and ready for review, so I am removing the draft status. If you would like me to coordinate with the other authors in some way, let me know.",
+          "author": {
+            "id": 40987065,
+            "username": "vijaygopalbalasa",
+            "public_email": "",
+            "name": "Vijaygopal Balasa",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5b6b5b4cb61418fba7a8baa3abb3207878d83291d9d445902f3218a4c857187e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/vijaygopalbalasa"
+          },
+          "created_at": "2026-09-08T15:20:14.868Z",
+          "updated_at": "2026-09-08T15:20:14.868Z",
+          "system": false,
+          "noteable_id": 529426070,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26413,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0c63b1ed7ccdaf7ea1b6c8e307a8338813d09bdb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3803727334,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 40987065,
+            "username": "vijaygopalbalasa",
+            "public_email": "",
+            "name": "Vijaygopal Balasa",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/5b6b5b4cb61418fba7a8baa3abb3207878d83291d9d445902f3218a4c857187e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/vijaygopalbalasa"
+          },
+          "created_at": "2026-09-08T15:20:26.314Z",
+          "updated_at": "2026-09-08T15:20:26.315Z",
+          "system": true,
+          "noteable_id": 529426070,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26413,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e9893ccc1e1d5a3b3fe600ad92c8b183689c3dd1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3813175195,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-10T06:10:20.218Z",
+          "updated_at": "2026-09-10T06:10:20.222Z",
+          "system": true,
+          "noteable_id": 529426070,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26413,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bee6a7a24c46af30fc8c55888683f6245866f408",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3813175422,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 3",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-10T06:10:24.569Z",
+          "updated_at": "2026-09-10T06:10:24.571Z",
+          "system": true,
+          "noteable_id": 529426070,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26413,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "02dd8eb2097f41b310292ab25c9e6d8759acaaee",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3813182544,
+          "type": null,
+          "body": "mentioned in merge request !26323",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-10T06:12:32.752Z",
+          "updated_at": "2026-09-10T06:12:32.754Z",
+          "system": true,
+          "noteable_id": 529426070,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26413,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -229,6 +229,7 @@ DCERPC SCARD_PACK\n DECT NR+\n ESUN\n Generic UDP Encapsulation (GUE)\n+HyperDHT / DHT-RPC\n JSON Dictionary\n Linux mac80211_hwsim Netlink\n Linux Open vSwitch Netlink (OVS)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "doc/Wireshark_Release_Notes.adoc",
+      "old_path": "doc/Wireshark_Release_Notes.adoc",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1007,6 +1007,7 @@ set(DISSECTOR_SRC\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-http2.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-http3.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-http-urlencoded.c\n+\t${CMAKE_CURRENT_SOURCE_DIR}/packet-hyperdht.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-hyperscsi.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-i2c.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-iana-oui.c\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/CMakeLists.txt",
+      "old_path": "epan/dissectors/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-hyperdht.c",
+      "old_path": "epan/dissectors/packet-hyperdht.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/hyperdht.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/hyperdht.pcap.gz",
+      "old_path": "test/captures/hyperdht.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/hyperdht_tidreuse.pcap.gz differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/hyperdht_tidreuse.pcap.gz",
+      "old_path": "test/captures/hyperdht_tidreuse.pcap.gz",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,330 @@\n+#\n+# Wireshark tests\n+#\n+# Copyright 2026 by Vijaygopal Balasa <balasavijaygopal@gmail.com>\n+#\n+# SPDX-License-Identifier: GPL-2.0-or-later\n+#\n+'''HyperDHT tests'''\n+\n+import subprocess\n+\n+\n+class TestHyperdht:\n+    def test_hyperdht_command_sequence(self, cmd_tshark, capture_file, test_env):\n+        '''Every command of both namespaces decodes, in capture order.\n+\n+        Replies carry no command on the wire, so the name shown against one\n+        comes from the request its transaction id was matched to.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Tfields', '-e_ws.col.info',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            'Req PING', 'Reply PING',\n+            'Req PING_NAT', 'Reply PING_NAT',\n+            'Req FIND_NODE', 'Reply FIND_NODE',\n+            'Req DOWN_HINT', 'Reply DOWN_HINT',\n+            'Req DELAYED_PING', 'Reply DELAYED_PING',\n+            'Req PEER_HANDSHAKE Mode=FROM_CLIENT',\n+            'Reply PEER_HANDSHAKE Mode=REPLY',\n+            'Req PEER_HOLEPUNCH Mode=FROM_RELAY',\n+            'Req PEER_HOLEPUNCH Mode=FROM_SERVER',\n+            'Req FIND_PEER', 'Reply FIND_PEER',\n+            'Req LOOKUP', 'Reply LOOKUP',\n+            'Req ANNOUNCE', 'Reply ANNOUNCE',\n+            'Req UNANNOUNCE', 'Reply UNANNOUNCE',\n+            'Req MUTABLE_PUT', 'Reply MUTABLE_PUT',\n+            'Req MUTABLE_GET', 'Reply MUTABLE_GET',\n+            'Req IMMUTABLE_PUT', 'Reply IMMUTABLE_PUT',\n+            'Req IMMUTABLE_GET', 'Reply IMMUTABLE_GET',\n+            'Req UNKNOWN (9)', 'Reply UNKNOWN (9) Error=UNKNOWN_COMMAND',\n+            'Req UNKNOWN (42)', 'Reply UNKNOWN (42) Error=UNKNOWN_COMMAND',\n+            'Req PING', 'Reply PING Error=UNKNOWN (99)',\n+            'Req PING', 'Reply PING',\n+            'Reply (Request not seen) Error=INVALID_TOKEN',\n+            'Req PLUGIN', 'Reply PLUGIN', 'Req PLUGIN',\n+            'Req PEER_HOLEPUNCH Mode=FROM_CLIENT',\n+            'Reply PEER_HOLEPUNCH Mode=REPLY',\n+            'Req PEER_HANDSHAKE Mode=FROM_RELAY',\n+            'Req PEER_HANDSHAKE Mode=FROM_SERVER',\n+            'Req PEER_HANDSHAKE Mode=FROM_SECOND_RELAY',\n+            'Req PEER_HOLEPUNCH Mode=FROM_RELAY',\n+            'Req PEER_HANDSHAKE Mode=FROM_SERVER',\n+            'Req PEER_HANDSHAKE[Packet size limited during capture]',\n+            'Reply PEER_HANDSHAKE Mode=REPLY',\n+            'Req LOOKUP',\n+            'Req PEER_HANDSHAKE Mode=FROM_SERVER',\n+            'Reply LOOKUP',\n+            'Req PEER_HOLEPUNCH Mode=FROM_RELAY',\n+            'Req LOOKUP',\n+            'Reply LOOKUP',\n+            'Req FIND_NODE', 'Reply FIND_NODE',\n+        ]\n+\n+    def test_hyperdht_command_namespaces(self, cmd_tshark, capture_file, test_env):\n+        '''Internal commands and HyperDHT commands are separate number spaces.\n+\n+        Both use small integers, so PING (internal 0) and PEER_HANDSHAKE\n+        (external 0) are only told apart by the internal flag. Both fields\n+        share the one filter name hyperdht.command, and a name resolves\n+        against its own namespace, so filtering by \"PING\" does not pick up\n+        PEER_HANDSHAKE frames.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'hyperdht.flag.internal == 1 && hyperdht.command',\n+                '-Tfields', '-ehyperdht.command',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.split() == ['0', '1', '2', '3', '4', '9', '0', '0', '2']\n+\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'hyperdht.flag.internal == 0 && hyperdht.command',\n+                '-Tfields', '-ehyperdht.command',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.split() == ['0', '1', '1', '2', '3', '4', '5', '6',\n+                                  '7', '8', '9', '42', '10', '10', '1',\n+                                  '0', '0', '0', '1', '0', '0', '3', '0',\n+                                  '1', '3']\n+\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'hyperdht.command == \"PING\"',\n+                '-Tfields', '-eframe.number',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.split() == ['1', '35', '37']\n+\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'hyperdht.response == 1 && hyperdht.command',\n+                '-Tfields', '-eframe.number',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout == ''\n+\n+    def test_hyperdht_ping_nat(self, cmd_tshark, capture_file, test_env):\n+        '''The PING_NAT reply arrives on a different five-tuple and still links.\n+\n+        The request names the port the reply is to be sent to, so the reply\n+        comes back from a socket the request never spoke to.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number == 3 || frame.number == 4',\n+                '-Tfields', '-eframe.number', '-ehyperdht.transaction_id',\n+                '-ehyperdht.ping_nat.port', '-ehyperdht.response_in',\n+                '-ehyperdht.request_in', '-eudp.srcport', '-eudp.dstport',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            '3\\t2\\t49802\\t4\\t\\t49761\\t49737',\n+            '4\\t2\\t\\t\\t3\\t49737\\t49802',\n+        ]\n+\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number == 4',\n+                '-Tfields', '-ehyperdht.response_time',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.strip() == '0.001000000'\n+\n+    def test_hyperdht_errors(self, cmd_tshark, capture_file, test_env):\n+        '''Error codes decode to the names dht-rpc gives them.'''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'hyperdht.error',\n+                '-Tfields', '-eframe.number', '-ehyperdht.error',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == ['32\\t1', '34\\t1', '36\\t99', '39\\t2']\n+\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number in {32, 39}',\n+                '-V',\n+            ), encoding='utf-8', env=test_env)\n+        assert 'Error: UNKNOWN_COMMAND (1)' in stdout\n+        assert 'Error: INVALID_TOKEN (2)' in stdout\n+\n+    def test_hyperdht_plugin(self, cmd_tshark, capture_file, test_env):\n+        '''A plugin request names the plugin; its value is optional.\n+\n+        Frame 42 is the same plugin with the value flag clear, which is what\n+        separates an absent value from an empty one.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number in {40, 41, 42}',\n+                '-Tfields', '-eframe.number', '-ehyperdht.plugin.name',\n+                '-ehyperdht.plugin.version', '-ehyperdht.plugin.command',\n+                '-ehyperdht.plugin.flag.value', '-ehyperdht.plugin.value',\n+                '-ehyperdht.plugin.response.value', '-ehyperdht.request_in',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            '40\\tblind-relay\\t1\\t2\\tTrue\\tc0ffee01\\t\\t',\n+            '41\\t\\t\\t\\t\\t\\ta0a1a2\\t40',\n+            '42\\tblind-relay\\t1\\t7\\tFalse\\t\\t\\t',\n+        ]\n+\n+    def test_hyperdht_holepunch_reply(self, cmd_tshark, capture_file, test_env):\n+        '''A holepunch reply links to its request; the punch id lives there.\n+\n+        The reply carries id 0 because the server already zeroes the id on\n+        the FROM_SERVER leg the reply is built from.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number == 43 || frame.number == 44',\n+                '-Tfields', '-eframe.number', '-ehyperdht.transaction_id',\n+                '-ehyperdht.peer_holepunch.mode',\n+                '-ehyperdht.peer_holepunch.id',\n+                '-ehyperdht.response_in', '-ehyperdht.request_in',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            '43\\t23\\t0\\t4321\\t44\\t',\n+            '44\\t23\\t4\\t0\\t\\t43',\n+        ]\n+\n+    def test_hyperdht_relay_round(self, cmd_tshark, capture_file, test_env):\n+        '''Relayed handshake and holepunch legs pair up without a response.\n+\n+        A relayed leg is answered by another request under the same\n+        transaction id, not by a dht-rpc response: the FROM_RELAY forward\n+        links to the FROM_SERVER request that answers it. The\n+        FROM_SECOND_RELAY leg, a forward the server declined (frame 48) and\n+        an answer whose forward went over a second relay (frame 49) are all\n+        legitimate and stay unlinked.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number in {13, 14, 45, 46, 47, 48, 49}',\n+                '-Tfields', '-eframe.number', '-ehyperdht.transaction_id',\n+                '-ehyperdht.peer_holepunch.id',\n+                '-ehyperdht.response_in', '-ehyperdht.request_in',\n+                '-ehyperdht.response_time',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            '13\\t7\\t1234\\t14\\t\\t',\n+            '14\\t7\\t0\\t\\t13\\t0.001000000',\n+            '45\\t24\\t\\t46\\t\\t',\n+            '46\\t24\\t\\t\\t45\\t0.001000000',\n+            '47\\t25\\t\\t\\t\\t',\n+            '48\\t26\\t5678\\t\\t\\t',\n+            '49\\t27\\t\\t\\t\\t',\n+        ]\n+\n+    def test_hyperdht_truncated_request(self, cmd_tshark, capture_file, test_env):\n+        '''A snaplen-truncated request still anchors its reply.\n+\n+        Frame 50 is cut mid-value, so its mode is unreadable in the capture,\n+        but the peer saw the whole packet: the request must be tracked and\n+        the fully captured reply must keep its link.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number == 51',\n+                '-Tfields', '-ehyperdht.request_in', '-ehyperdht.response_time',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == ['50\\t0.001000000']\n+\n+    def test_hyperdht_tid_collision(self, cmd_tshark, capture_file, test_env):\n+        '''A relayed answer must not close an ordinary request's slot.\n+\n+        Frame 53 is a FROM_SERVER leg reusing the transaction id the LOOKUP\n+        of frame 52 still has in flight on the same conversation. The LOOKUP\n+        keeps its real reply and the stray answer stays unlinked.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number in {52, 53, 54}',\n+                '-Tfields', '-eframe.number', '-ehyperdht.response_in',\n+                '-ehyperdht.request_in', '-ehyperdht.response_time',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            '52\\t54\\t\\t',\n+            '53\\t\\t\\t',\n+            '54\\t\\t52\\t0.002000000',\n+        ]\n+\n+    def test_hyperdht_stale_forward_slot(self, cmd_tshark, capture_file, test_env):\n+        '''A declined forward's slot must not adopt a later ordinary request.\n+\n+        Frame 55 is a FROM_RELAY forward the server declined, so its slot is\n+        never resolved. Frame 56 reuses the transaction id five seconds later\n+        as an ordinary LOOKUP: it must start a fresh transaction, so its\n+        reply's response time is the real millisecond, not the five seconds\n+        since the forward.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'frame.number in {55, 56, 57}',\n+                '-Tfields', '-eframe.number', '-ehyperdht.response_in',\n+                '-ehyperdht.request_in', '-ehyperdht.response_time',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            '55\\t\\t\\t',\n+            '56\\t57\\t\\t',\n+            '57\\t\\t56\\t0.001000000',\n+        ]\n+\n+    def test_hyperdht_bad_length(self, cmd_tshark, capture_file, test_env):\n+        '''A count that outruns the packet is clamped, flagged, and decoded.\n+\n+        Frame 59 declares nine closer nodes with two on the wire: both real\n+        records still render, the reply still links to its request, and the\n+        length expert item fires instead of a malformed-packet abort.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'hyperdht.bad_length',\n+                '-Tfields', '-eframe.number', '-ehyperdht.closer_nodes.node.ipv4',\n+                '-ehyperdht.closer_nodes.node.port', '-ehyperdht.request_in',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == ['59\\t10.0.0.2,10.0.0.3\\t49737,40001\\t58']\n+\n+    def test_hyperdht_expert_items(self, cmd_tshark, capture_file, test_env):\n+        '''Every expert item the capture is built to raise, and no others.'''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', '_ws.expert',\n+                '-Tfields', '-eframe.number', '-e_ws.expert.message',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            '31\\tUnrecognized command',\n+            '33\\tUnrecognized command',\n+            '36\\tUnrecognized error code',\n+            '37\\tTrailing data after end of message',\n+            '39\\tNo request captured for this response',\n+            '42\\tNo response captured for this request',\n+            '59\\tLength or element count exceeds the remaining packet data',\n+        ]\n+\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht.pcap.gz'),\n+                '-Y', 'hyperdht.trailing_bytes',\n+                '-Tfields', '-eframe.number', '-ehyperdht.trailing',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.strip() == '37\\tdeadbeef'\n+\n+    def test_hyperdht_transaction_id_reuse(self, cmd_tshark, capture_file, test_env):\n+        '''Transaction ids are reused and requests are retransmitted.\n+\n+        Frames 1 and 3 share a transaction id, so each reply has to match the\n+        request still outstanding rather than the first one ever seen. Frames\n+        5 and 6 are the same request sent twice; the single reply is timed\n+        from the first transmission.\n+        '''\n+        stdout = subprocess.check_output((cmd_tshark, '-2',\n+                '-r', capture_file('hyperdht_tidreuse.pcap.gz'),\n+                '-Tfields', '-eframe.number', '-ehyperdht.transaction_id',\n+                '-ehyperdht.request_in', '-ehyperdht.response_in',\n+                '-ehyperdht.response_time',\n+            ), encoding='utf-8', env=test_env)\n+        assert stdout.splitlines() == [\n+            '1\\t7\\t\\t2\\t',\n+            '2\\t7\\t1\\t\\t0.001000000',\n+            '3\\t7\\t\\t4\\t',\n+            '4\\t7\\t3\\t\\t0.001000000',\n+            '5\\t9\\t\\t7\\t',\n+            '6\\t9\\t\\t7\\t',\n+            '7\\t9\\t5\\t\\t0.002000000',\n+        ]\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissectors/group_hyperdht.py",
+      "old_path": "test/suite_dissectors/group_hyperdht.py",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -3380,6 +3380,7 @@ unalias\n unaligned\n unallocated\n unallowed\n+unannounce\n unary\n unassign\n unassoc\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/wireshark_words.txt",
+      "old_path": "tools/wireshark_words.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "70b904c11e2b7ac891499b3c7ac2365dceadaebe",
+      "short_id": "70b904c1",
+      "created_at": "2026-09-08T17:33:42.000+05:30",
+      "parent_ids": [
+        "0ae245b39a0b073ad35796b161ff4db8b156a46d"
+      ],
+      "title": "HyperDHT: Add dissector for DHT-RPC and HyperDHT",
+      "message": "HyperDHT: Add dissector for DHT-RPC and HyperDHT\n\ndht-rpc and HyperDHT form the DHT layer of the Holepunch peer-to-peer\nstack (Pear, Keet). The protocol runs over UDP on no assigned port and\nhas no specification apart from its reference implementations, so\ncaptures of it currently show up as undissected UDP. The wire format\nfollows the reference encoders, dht-rpc 6.27.0 (lib/io.js) and\nhyperdht 6.34.0 (lib/messages.js), both MIT licensed.\n\nDissect the dht-rpc envelope in both directions and all sixteen\ncommands with their responses, link requests to responses with a\nresponse time, and follow the PING_NAT reply that arrives on a\ndifferent five-tuple. The relayed PEER_HANDSHAKE and PEER_HOLEPUNCH\nrounds are handled as the protocol defines them: only the FROM_CLIENT\nleg is answered by a response, the forwarded legs are requests that\nreuse the transaction id, so a forward links to the request that\nanswers it and no relay leg is reported as missing a response. Expert\nitems cover unrecognized commands and error codes, a request or\nresponse without its counterpart, length fields that outrun the packet\nand trailing data. The encrypted Noise and holepunch payloads are shown\nas opaque bytes.\n\nThe heuristic accepts only a message that decodes completely, with a\nknown command or error code, a plausible unicast address and an exact\nlength match; it claims no frame in the other captures under\ntest/captures.\n\nBoth test captures are synthetic. One, built with a Python script from\nthe reference encoders, covers every command, response, error and\nexpert item, including a relayed handshake and holepunch round; the\nother is a short transaction id reuse and retransmission sequence.\nThirteen test cases in test/suite_dissectors/group_hyperdht.py check\nthem.\n\nBased on the work-in-progress dissector by James Thomas of Holepunch.\n\nCo-authored-by: James Thomas <jthomas.dev@protonmail.com>\nAssisted-by: Claude\n",
+      "author_name": "Vijaygopal Balasa",
+      "author_email": "balasavijaygopal@gmail.com",
+      "authored_date": "2026-09-08T17:33:42.000+05:30",
+      "committer_name": "Vijaygopal Balasa",
+      "committer_email": "balasavijaygopal@gmail.com",
+      "committed_date": "2026-09-08T17:33:42.000+05:30",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/70b904c11e2b7ac891499b3c7ac2365dceadaebe"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2011345400,
+      "head_commit_sha": "70b904c11e2b7ac891499b3c7ac2365dceadaebe",
+      "base_commit_sha": "0ae245b39a0b073ad35796b161ff4db8b156a46d",
+      "start_commit_sha": "0ae245b39a0b073ad35796b161ff4db8b156a46d",
+      "created_at": "2026-09-08T12:23:03.094Z",
+      "merge_request_id": 529426070,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": "7606c581cd7b9df89c38c5c3ef589ffec41e9b16"
+    }
+  ]
+}

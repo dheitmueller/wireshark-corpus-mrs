@@ -1,0 +1,906 @@
+{
+  "id": 531392084,
+  "iid": 26493,
+  "project_id": 7898047,
+  "title": "wsutil: Add a lookup of the processes that have a socket open",
+  "description": "Fourth of the series adding capture-time process attribution (design on wireshark-dev: https://lists.wireshark.org/archives/wireshark-dev/202609/msg00002.html; see #17525 and #1184; previous MRs: !26470, !26471, !26479).\n\nThe file format (!26471) and the display (!26479) are in place; this MR adds the piece that will let dumpcap fill the blocks: a small libwsutil API that maps a socket to the processes that have it open, using only what each operating system offers to an unprivileged process. Nothing uses it yet, so it can be reviewed on its own for portability and style; the dumpcap option is the next MR.\n\n**API** (`wsutil/process_lookup.h`)\n\n- `ws_process_lookup_new()` / `_free()`: a lookup context holding a snapshot of the OS socket tables and a cache of process records.\n- `ws_process_lookup_socket(lookup, protocol, local, remote, processes)`: appends every process that has the TCP or UDP socket with that local endpoint and, if connected, remote endpoint open, and returns how many. If nothing matches both ends, a socket bound to the local endpoint alone is tried (listening, or unconnected UDP), then one bound to the port on any address, of either IP version. A miss refreshes the snapshot, but not more often than a configurable interval (default 250 ms, `ws_process_lookup_set_refresh_interval()`), which bounds the cost of packets that belong to no local socket. Several processes can have one socket open (inherited across `fork()`, or passed between processes), and several sockets can match (SO_REUSEPORT); all of them are reported, the process that has had the socket open longest first, normally the one that created it, which is the order dumpcap will write the `epb_processid_threadid` options in now that the draft allows one per process. Windows itself reports one process per socket, the one that bound it.\n- `ws_process_lookup_pid()`: a process by ID.\n- `ws_process_info_t`: pid, parent, uid, name, path, command line (NUL-separated arguments), user name, start time, the attributes of the process information block. Records are owned by the context and stay valid until it is freed; when a process ID is reused, the start time tells the two apart and both records are kept.\n\n**Backends**, chosen in `wsutil/CMakeLists.txt`:\n\n- Windows: `GetExtendedTcpTable()` / `GetExtendedUdpTable()` with owning PIDs (both IP versions), a Toolhelp snapshot for every process's name and parent, `QueryFullProcessImageNameW()` / `GetProcessTimes()` / the token's SID for path, start time and user, and the command line from the process's PEB via `ReadProcessMemory()` (own processes; `NtQueryInformationProcess` is resolved at run time and only public `winternl.h` structures are used). No new link libraries.\n- Linux: `/proc/net/{tcp,udp}{,6}` for the sockets and their inodes, `/proc/<pid>/fd` to map inodes to processes (own processes unprivileged; everybody's with CAP_SYS_PTRACE or as root), and `/proc/<pid>/{stat,comm,exe,cmdline,status}` for the details. Kept to `/proc` rather than `NETLINK_SOCK_DIAG` so it needs no kernel headers or libnl; sock_diag can replace the socket enumeration later if the text tables turn out too slow on very busy hosts.\n- Everything else: a stub; `ws_process_lookup_supported()` is false and `ws_process_lookup_new()` explains. macOS is deliberately not in this MR: the unprivileged socket table with process IDs (`net.inet.tcp.pcblist_n`) is only declared in xnu's private headers, and `libproc` covers the caller's own processes only; I would rather add it in its own MR with a Mac to test on than ship it untested.\n\n**Tests**: `test_wsutil` gains three tests that create loopback sockets and look the test process up: a TCP connection seen from both ends and its listener, a listener bound to any address matched through the wildcard fallback, an unconnected UDP socket with and without a caller-supplied remote end, a protocol mismatch, an IPv6 listener (skipped without IPv6 loopback), a nonexistent PID, the sockets after closing (a TIME_WAIT socket has no owner), and on Unix a listener inherited by a forked child, reported for both with the parent first, and for the child alone once the parent closes it. Each checks the record describes the test executable (pid, name, path, command line, user, start time, and on Unix the uid).\n\nBuilt and tested on Windows (MSVC) and, in the CI container image, on Linux with the GCC, Clang + code checks and ASAN jobs.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01MeQMmftoMWrDyC8HdFk7sT",
+  "state": "merged",
+  "created_at": "2026-09-13T03:30:29.485Z",
+  "updated_at": "2026-09-14T15:16:54.843Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-09-14T15:16:55.185Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "wsutil-process-lookup",
+  "user_notes_count": 6,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 42234152,
+    "username": "fiddyschmitt",
+    "public_email": null,
+    "name": "Fidel PS",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+    "web_url": "https://gitlab.com/fiddyschmitt"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    }
+  ],
+  "source_project_id": 86329048,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "a14bfc57070d0c507d467827733728dcec7edce6",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-09-13T03:30:34.447Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26493",
+  "references": {
+    "short": "!26493",
+    "relative": "!26493",
+    "full": "wireshark/wireshark!26493"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26493",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "9",
+  "latest_build_started_at": "2026-09-14T14:56:29.999Z",
+  "latest_build_finished_at": "2026-09-14T15:16:11.673Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2847718651,
+    "iid": 109750,
+    "project_id": 7898047,
+    "sha": "3d90a4e3bd1e8ae560edc0d3ca686e29e11a758c",
+    "ref": "refs/merge-requests/26493/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-14T14:56:23.103Z",
+    "updated_at": "2026-09-14T15:16:11.692Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2847718651"
+  },
+  "head_pipeline": {
+    "id": 2847718651,
+    "iid": 109750,
+    "project_id": 7898047,
+    "sha": "3d90a4e3bd1e8ae560edc0d3ca686e29e11a758c",
+    "ref": "refs/merge-requests/26493/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-14T14:56:23.103Z",
+    "updated_at": "2026-09-14T15:16:11.692Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2847718651",
+    "before_sha": "3d90a4e3bd1e8ae560edc0d3ca686e29e11a758c",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-09-14T14:56:29.999Z",
+    "finished_at": "2026-09-14T15:16:11.673Z",
+    "committed_at": null,
+    "duration": 1180,
+    "queued_duration": 6,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2847718651",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "1650299e8a1bc23662a6e178a5ef2a0d95aeefbf",
+    "head_sha": "a14bfc57070d0c507d467827733728dcec7edce6",
+    "start_sha": "6971deb86e2ec687f1a86abef0988be0594d14ea"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "dd57313090e65935d26f11e6d5255bcffbb9fde2",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 3825892432,
+          "type": "DiscussionNote",
+          "body": "What if a given socket is open in more than one process?",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-09-13T03:42:34.230Z",
+          "updated_at": "2026-09-14T14:55:51.078Z",
+          "system": false,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-09-14T14:55:51.078Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        },
+        {
+          "id": 3826045064,
+          "type": "DiscussionNote",
+          "body": "Hi guy, I've discussed this with Fable 5.1, and this is the current thinking:\n\nBoth the API and the file format carry one process per packet (option 8 holds a single PID), so the lookup has to pick one.\n\nOn Windows the system picks: `GetExtendedTcpTable()`/`GetExtendedUdpTable()` report one owning process per endpoint, the one that bound it, and that is what is returned.\n\nOn Linux, the first version kept whichever process the `/proc` scan happened to visit last, which was arbitrary. I've changed it so that a socket that several processes have open (inherited across `fork()`, or passed with `SCM_RIGHTS`) is attributed to the process that has had it open longest, i.e. the earliest-started of them, normally the one that created it, with the lower PID breaking ties within a clock tick. The rule is documented in `process_lookup.h`, and there's a new unit test that forks a child holding a listening socket and checks that the parent is reported, and the child once the parent has closed its copy.\n\nIn practice, for a pre-fork server that means the listening socket is attributed to the master process, while each accepted connection is attributed to the worker that accepted it, since that socket only exists there.\n\nIt is a rule, not an answer for every case: with socket activation the oldest holder of a listener is systemd or launchd rather than the service, a privilege-separated daemon like sshd keeps the connection in both the root monitor and the unprivileged child that does the I/O, and with SO_REUSEPORT several processes have their own socket on the same port and the socket table cannot say which one got a given datagram. The table can only ever say who holds a socket; saying who sent or received a particular packet needs packet-level attribution (eBPF, ETW, PKTAP), which is the deferred \"exact\" mode. Since the process information blocks carry the parent PID, dumpcap can also write a block for every holder of a shared socket so the relationship is visible in the file even though each packet names one process; I intend to do that in the dumpcap MR.",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T06:23:46.515Z",
+          "updated_at": "2026-09-14T14:55:51.078Z",
+          "system": false,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2026-09-14T14:55:51.078Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f02c613eda295510ba9674a7d3731dc8499a1d43",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3825900897,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>bea751f1 - wsutil: Add a lookup of the process that owns a socket</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26493/diffs?diff_id=2022258833&start_sha=c78ff75fd906e2d8719c3427a72470b2e5f74bcc)",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T03:55:37.959Z",
+          "updated_at": "2026-09-13T03:55:37.960Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e1612702b1988cc76f987e63eb9a4df50c722c7e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3825926137,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T04:22:32.845Z",
+          "updated_at": "2026-09-13T04:22:32.847Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "aecb3334422ad6c29b83488ebbfe8deda1c63cf7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3825926244,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>4e16fde6 - wsutil: Add a lookup of the process that owns a socket</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26493/diffs?diff_id=2022270644&start_sha=bea751f173f31b9b577cf2398498697debb5fc6f)",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T04:22:34.080Z",
+          "updated_at": "2026-09-13T04:22:34.082Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d60fe3faa3e6b515b70876d547ed4c317c1d856f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826193232,
+          "type": null,
+          "body": "> Both the API and the file format carry one process per packet (option 8 holds a single PID), so the lookup has to pick one.\n\nWhich API? If it's a Wireshark API, we can change it.\n\nAs for the file format, I'll fix the pcapng draft to allow more than one instance of `epb_processid_threadid` per packet, given that neither any UNIX nor Windows allows only one process to have a given file descriptor open.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-09-13T07:11:57.480Z",
+          "updated_at": "2026-09-13T07:11:57.480Z",
+          "system": false,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bdfb1417c0895bfac3d7e9d80d2eb37c56f43a77",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826211743,
+          "type": null,
+          "body": "> As for the file format, I'll fix the pcapng draft to allow more than one instance of `epb_processid_threadid` per packet, given that neither any UNIX nor Windows allows only one process to have a given file descriptor open.\n\nDone.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2026-09-13T07:26:50.225Z",
+          "updated_at": "2026-09-13T07:35:54.194Z",
+          "system": false,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5481b47fb329d15365cc08eca30a494b3f66e4b4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826214055,
+          "type": null,
+          "body": "Nice one, thanks Guy. It's our own API (wsutil/process_lookup.h) in this MR, so yes. I'll change it to return every process holding a matching socket, oldest first, so the first entry is normally the one that created the socket, and update the tests. Thanks for changing the draft; on the reader side, wiretap and the frame dissector currently accept a single instance of the option, so I'll extend them to handle several once the new text is in, or in the dumpcap MR that writes them. Should the draft say anything about ordering, or leave it unspecified?",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T07:30:12.784Z",
+          "updated_at": "2026-09-13T07:30:12.784Z",
+          "system": false,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "032a33346e6520bc2e1ab7c157d161e95332ece9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826245905,
+          "type": null,
+          "body": "<p>changed title from <code class=\"idiff\">wsutil: Add a lookup of the process that <span class=\"idiff left right deletion\">owns</span> a socket</code> to <code class=\"idiff\">wsutil: Add a lookup of the process<span class=\"idiff left addition\">es</span> that <span class=\"idiff addition\">have</span> a socket<span class=\"idiff right addition\"> open</span></code></p>",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T07:59:02.846Z",
+          "updated_at": "2026-09-13T07:59:02.847Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "322bee1f57ea1653486ff8116cdbf194bac3b063",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826245906,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T07:59:02.879Z",
+          "updated_at": "2026-09-13T07:59:02.880Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e9632a5f6616f9b2bd2234c0395cb0ee65a86b42",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826245917,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>a14bfc57 - wsutil: Add a lookup of the processes that have a socket open</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26493/diffs?diff_id=2022366701&start_sha=4e16fde695436989743551dc5150cc19364f791e)",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T07:59:04.207Z",
+          "updated_at": "2026-09-13T07:59:04.210Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a85e107180c335e46463dc1d8551c9cca45572b5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826250207,
+          "type": null,
+          "body": "Done here too, in the amended commit: `ws_process_lookup_socket()` now appends every process that has a matching socket open to a caller-supplied array and returns the count, the process that has had the socket open longest first (normally the one that created it), so dumpcap can write one `epb_processid_threadid` option per process in that order, matching the new draft text. The fork test now checks that both parent and child are reported, parent first, and the child alone once the parent closes its copy. Title, description and release note updated to match.\n\nFor the reader side, wiretap currently registers the option as single-instance and the frame dissector reads the first one; I'll extend both to handle several, either in a small follow-up or together with the dumpcap MR that writes them.",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-13T08:03:53.412Z",
+          "updated_at": "2026-09-13T08:03:53.412Z",
+          "system": false,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "19cd5dbc4145d165e7c0856bbde1580e94f87cf7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3831036739,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-14T14:55:51.154Z",
+          "updated_at": "2026-09-14T14:55:51.161Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a927149739aef7827dec4f447e8d296c7bbd1721",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3831037840,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-14T14:56:03.459Z",
+          "updated_at": "2026-09-14T14:56:03.469Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5d9d26d7833b1edf12a1b01b3b8c561201167dbe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3831037981,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-14T14:56:04.998Z",
+          "updated_at": "2026-09-14T14:56:04.999Z",
+          "system": true,
+          "noteable_id": 531392084,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26493,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -336,6 +336,12 @@ wtap_file_get_num_pibs() and wtap_file_get_pib(), the dpibs_growing member\n of wtap_dump_params has been renamed pibs_growing, and the OPT_DPIB_NAME\n and OPT_DPIB_UUID option codes have been removed.\n \n+libwsutil has a new API, wsutil/process_lookup.h, that finds the processes\n+that have a network socket open, from the operating system's socket tables,\n+and describes them (name, path, command line, parent, user, start time). It\n+is implemented for Windows and Linux; on other platforms it reports that it\n+is not supported.\n+\n === Plugin Development Changes\n \n The list of installed dissector header files has been reduced and is now restricted to ones that contain the following:\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "doc/Wireshark_Release_Notes.adoc",
+      "old_path": "doc/Wireshark_Release_Notes.adoc",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -128,6 +128,7 @@ set(WSUTIL_PUBLIC_HEADERS\n \tplugin_exports.h\n \tpow2.h\n \tprivileges.h\n+\tprocess_lookup.h\n \tprocesses.h\n \tregex.h\n \treport_message.h\n@@ -202,6 +203,7 @@ set(WSUTIL_COMMON_FILES\n \tos_version_info.c\n \tplease_report_bug.c\n \tprivileges.c\n+\tprocess_lookup.c\n \tregex.c\n \trsa.c\n \tsaplzclzh.c\n@@ -253,6 +255,15 @@ if(WIN32)\n \t)\n endif(WIN32)\n \n+# The platform backend of the process lookup.\n+if(WIN32)\n+\tlist(APPEND WSUTIL_FILES process_lookup-win32.c)\n+elseif(CMAKE_SYSTEM_NAME STREQUAL \"Linux\")\n+\tlist(APPEND WSUTIL_FILES process_lookup-linux.c)\n+else()\n+\tlist(APPEND WSUTIL_FILES process_lookup-stub.c)\n+endif()\n+\n \n if(HAVE_MACOS_FRAMEWORKS)\n \tlist(APPEND WSUTIL_FILES cfutils.c)\n@@ -525,7 +536,7 @@ add_executable(test_wsutil EXCLUDE_FROM_ALL\n \ttest_wsutil.c\n )\n \n-target_link_libraries(test_wsutil ${M_LIBRARIES} ${GLIB2_LIBRARIES} wsutil)\n+target_link_libraries(test_wsutil ${M_LIBRARIES} ${GLIB2_LIBRARIES} ${SOCKET_LIBRARY} wsutil)\n target_include_directories(test_wsutil SYSTEM PRIVATE ${XXHASH_INCLUDE_DIRS})\n \n set_target_properties(test_wsutil PROPERTIES\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/CMakeLists.txt",
+      "old_path": "wsutil/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,359 @@\n+/* process_lookup-linux.c\n+ * Look up the processes that have a network socket open: Linux, through /proc\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#include \"config.h\"\n+#define WS_LOG_DOMAIN LOG_DOMAIN_WSUTIL\n+\n+#include \"process_lookup_int.h\"\n+\n+#include <stdio.h>\n+#include <stdlib.h>\n+#include <string.h>\n+#include <errno.h>\n+#include <dirent.h>\n+#include <unistd.h>\n+#include <pwd.h>\n+#include <sys/types.h>\n+\n+/*\n+ * The sockets come from /proc/net/{tcp,tcp6,udp,udp6}, which list every\n+ * socket in the network namespace with its owner's UID and its inode, and\n+ * the processes that have each open from the socket inodes in\n+ * /proc/<pid>/fd, which can be read for the caller's own processes and,\n+ * with CAP_SYS_PTRACE or as root, for everybody's. Sockets nobody has open\n+ * any more, such as TIME_WAIT ones, have inode 0 and are skipped.\n+ */\n+\n+#define NS_PER_S 1000000000ULL\n+\n+typedef struct {\n+    GHashTable *inode_to_pids;  /* uint64_t * -> GArray of the uint32_t pids that have the socket open */\n+    uint64_t    boot_time_s;    /* seconds since the Epoch */\n+    long        clk_tck;\n+} linux_state_t;\n+\n+static void\n+pid_array_free(void *p)\n+{\n+    g_array_free((GArray *)p, TRUE);\n+}\n+\n+static uint64_t\n+read_boot_time(void)\n+{\n+    char *contents = NULL;\n+    const char *line;\n+    uint64_t btime = 0;\n+\n+    if (!g_file_get_contents(\"/proc/stat\", &contents, NULL, NULL))\n+        return 0;\n+    line = strstr(contents, \"btime \");\n+    if (line != NULL && (line == contents || line[-1] == '\\n'))\n+        btime = g_ascii_strtoull(line + 6, NULL, 10);\n+    g_free(contents);\n+    return btime;\n+}\n+\n+static void *\n+linux_open(char **err_msg)\n+{\n+    linux_state_t *state;\n+\n+    if (access(\"/proc/net/tcp\", R_OK) != 0) {\n+        *err_msg = ws_strdup_printf(\"Cannot read /proc/net/tcp: %s\", g_strerror(errno));\n+        return NULL;\n+    }\n+    state = g_new0(linux_state_t, 1);\n+    state->inode_to_pids = g_hash_table_new_full(g_int64_hash, g_int64_equal, g_free, pid_array_free);\n+    state->boot_time_s = read_boot_time();\n+    state->clk_tck = sysconf(_SC_CLK_TCK);\n+    if (state->clk_tck <= 0)\n+        state->clk_tck = 100;\n+    return state;\n+}\n+\n+static void\n+linux_close(void *p)\n+{\n+    linux_state_t *state = (linux_state_t *)p;\n+\n+    g_hash_table_destroy(state->inode_to_pids);\n+    g_free(state);\n+}\n+\n+/* Read /proc/<pid>/<file> into a g_malloc()ed buffer; NULL if it can't be read. */\n+static char *\n+read_proc_file(uint32_t pid, const char *file, size_t *len)\n+{\n+    char path[64];\n+    char *contents = NULL;\n+    gsize contents_len = 0;\n+\n+    snprintf(path, sizeof path, \"/proc/%u/%s\", pid, file);\n+    if (!g_file_get_contents(path, &contents, &contents_len, NULL))\n+        return NULL;\n+    if (len != NULL)\n+        *len = contents_len;\n+    return contents;\n+}\n+\n+/* The parent and the start time, in clock ticks since boot, from the contents of /proc/<pid>/stat. */\n+static bool\n+parse_proc_stat(const char *stat, unsigned *ppid, uint64_t *start_ticks)\n+{\n+    const char *rparen = strrchr(stat, ')');  /* the name is in parentheses and may contain anything */\n+\n+    return rparen != NULL &&\n+           sscanf(rparen + 1,\n+                  \" %*c %u %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %\" SCNu64,\n+                  ppid, start_ticks) == 2;\n+}\n+\n+/* Map every socket inode we are allowed to see to the processes that have it open. */\n+static void\n+scan_socket_fds(linux_state_t *state)\n+{\n+    DIR *proc;\n+    struct dirent *de;\n+\n+    g_hash_table_remove_all(state->inode_to_pids);\n+    proc = opendir(\"/proc\");\n+    if (proc == NULL)\n+        return;\n+    while ((de = readdir(proc)) != NULL) {\n+        char fd_dir[64];\n+        DIR *fds;\n+        struct dirent *fe;\n+        uint32_t pid;\n+\n+        if (!g_ascii_isdigit(de->d_name[0]))\n+            continue;\n+        pid = (uint32_t)strtoul(de->d_name, NULL, 10);\n+        /* The names are numbers; the precisions keep the compiler from worrying about their length. */\n+        snprintf(fd_dir, sizeof fd_dir, \"/proc/%.20s/fd\", de->d_name);\n+        fds = opendir(fd_dir);\n+        if (fds == NULL)\n+            continue;  /* another user's process */\n+        while ((fe = readdir(fds)) != NULL) {\n+            char link_path[128], target[64];\n+            ssize_t len;\n+            unsigned long inode;\n+\n+            if (!g_ascii_isdigit(fe->d_name[0]))\n+                continue;\n+            snprintf(link_path, sizeof link_path, \"%s/%.20s\", fd_dir, fe->d_name);\n+            len = readlink(link_path, target, sizeof target - 1);\n+            if (len <= 0)\n+                continue;\n+            target[len] = '\\0';\n+            if (sscanf(target, \"socket:[%lu]\", &inode) == 1) {\n+                uint64_t inode_key = inode;\n+                GArray *pids = (GArray *)g_hash_table_lookup(state->inode_to_pids, &inode_key);\n+\n+                if (pids == NULL) {\n+                    pids = g_array_new(FALSE, FALSE, sizeof(uint32_t));\n+                    g_hash_table_insert(state->inode_to_pids,\n+                                        g_memdup2(&inode_key, sizeof inode_key), pids);\n+                }\n+                /* A process may have it open through several descriptors; they come in a row. */\n+                if (pids->len == 0 || g_array_index(pids, uint32_t, pids->len - 1) != pid)\n+                    g_array_append_val(pids, pid);\n+            }\n+        }\n+        closedir(fds);\n+    }\n+    closedir(proc);\n+}\n+\n+/*\n+ * Parse an address as /proc/net prints it: the 32-bit words of the address\n+ * as stored in memory, each printed as a hexadecimal number in host byte\n+ * order. Returns the IP version, or 0 if it is not an address.\n+ */\n+static uint8_t\n+parse_proc_addr(const char *hex, uint8_t *addr)\n+{\n+    size_t len = strlen(hex);\n+\n+    if (len != 8 && len != 32)\n+        return 0;\n+    for (size_t i = 0; i < len / 8; i++) {\n+        char word[9];\n+        uint32_t w;\n+\n+        memcpy(word, hex + i * 8, 8);\n+        word[8] = '\\0';\n+        w = (uint32_t)strtoul(word, NULL, 16);\n+        memcpy(addr + i * 4, &w, sizeof w);\n+    }\n+    return (len == 8) ? 4 : 6;\n+}\n+\n+static bool\n+read_socket_table(linux_state_t *state, const char *path, uint8_t protocol,\n+                  ws_process_lookup_add_socket_func add, void *ctx, char **err_msg)\n+{\n+    char *contents = NULL;\n+    GError *error = NULL;\n+    char **lines;\n+\n+    if (!g_file_get_contents(path, &contents, NULL, &error)) {\n+        *err_msg = ws_strdup_printf(\"Cannot read %s: %s\", path, error->message);\n+        g_error_free(error);\n+        return false;\n+    }\n+    lines = g_strsplit(contents, \"\\n\", -1);\n+    g_free(contents);\n+    for (char **line = lines + 1; *line != NULL; line++) {  /* skip the header */\n+        char local_hex[33], remote_hex[33];\n+        unsigned local_port, remote_port, st, uid;\n+        unsigned long inode;\n+        uint64_t inode_key;\n+        uint8_t local_addr[16], remote_addr[16], ip_version;\n+        ws_process_lookup_socket_key_t key;\n+        const GArray *pids;\n+\n+        if (sscanf(*line,\n+                   \"%*d: %32[0-9A-Fa-f]:%4x %32[0-9A-Fa-f]:%4x %2x \"\n+                   \"%*[0-9A-Fa-f]:%*[0-9A-Fa-f] %*[0-9A-Fa-f]:%*[0-9A-Fa-f] %*[0-9A-Fa-f] %u %*u %lu\",\n+                   local_hex, &local_port, remote_hex, &remote_port, &st, &uid, &inode) != 7)\n+            continue;\n+        if (inode == 0)\n+            continue;  /* nobody has it open (any more) */\n+        inode_key = inode;\n+        pids = (const GArray *)g_hash_table_lookup(state->inode_to_pids, &inode_key);\n+        if (pids == NULL)\n+            continue;  /* not our process, and we may not look */\n+        ip_version = parse_proc_addr(local_hex, local_addr);\n+        if (ip_version == 0 || parse_proc_addr(remote_hex, remote_addr) != ip_version)\n+            continue;\n+        ws_process_lookup_key_init(&key, protocol, ip_version,\n+                                   local_addr, (uint16_t)local_port,\n+                                   remote_addr, (uint16_t)remote_port);\n+        for (unsigned i = 0; i < pids->len; i++)\n+            add(ctx, &key, g_array_index(pids, uint32_t, i));\n+    }\n+    g_strfreev(lines);\n+    return true;\n+}\n+\n+static bool\n+linux_refresh(void *p, ws_process_lookup_add_socket_func add, void *ctx, char **err_msg)\n+{\n+    linux_state_t *state = (linux_state_t *)p;\n+    static const struct {\n+        const char *path;\n+        uint8_t     protocol;\n+        bool        required;\n+    } tables[] = {\n+        { \"/proc/net/tcp\",  WS_PROCESS_LOOKUP_TCP, true },\n+        { \"/proc/net/udp\",  WS_PROCESS_LOOKUP_UDP, true },\n+        { \"/proc/net/tcp6\", WS_PROCESS_LOOKUP_TCP, false },  /* absent without IPv6 */\n+        { \"/proc/net/udp6\", WS_PROCESS_LOOKUP_UDP, false },\n+    };\n+\n+    scan_socket_fds(state);\n+    for (size_t i = 0; i < G_N_ELEMENTS(tables); i++) {\n+        if (!tables[i].required && access(tables[i].path, R_OK) != 0)\n+            continue;\n+        if (!read_socket_table(state, tables[i].path, tables[i].protocol, add, ctx, err_msg))\n+            return false;\n+    }\n+    return true;\n+}\n+\n+static bool\n+linux_describe(void *p, uint32_t pid, ws_process_info_t *info)\n+{\n+    linux_state_t *state = (linux_state_t *)p;\n+    char *stat, *comm, *status;\n+    unsigned ppid;\n+    uint64_t start_ticks;\n+    char path[64];\n+    size_t len;\n+\n+    /* The process exists if it has a stat file: its parent and start time. */\n+    stat = read_proc_file(pid, \"stat\", NULL);\n+    if (stat == NULL)\n+        return false;\n+    if (parse_proc_stat(stat, &ppid, &start_ticks)) {\n+        info->has_ppid = true;\n+        info->ppid = ppid;\n+        if (state->boot_time_s != 0) {\n+            info->start_time_ns = state->boot_time_s * NS_PER_S +\n+                                  (start_ticks * NS_PER_S) / (uint64_t)state->clk_tck;\n+        }\n+    }\n+    g_free(stat);\n+\n+    comm = read_proc_file(pid, \"comm\", NULL);\n+    if (comm != NULL) {\n+        g_strchomp(comm);\n+        if (comm[0] != '\\0')\n+            info->name = comm;\n+        else\n+            g_free(comm);\n+    }\n+\n+    snprintf(path, sizeof path, \"/proc/%u/exe\", pid);\n+    info->path = g_file_read_link(path, NULL);  /* NULL for another user's process, or a kernel thread */\n+    if (info->path != NULL && g_str_has_suffix(info->path, \" (deleted)\"))\n+        info->path[strlen(info->path) - strlen(\" (deleted)\")] = '\\0';\n+\n+    info->cmdline = (uint8_t *)read_proc_file(pid, \"cmdline\", &len);\n+    if (info->cmdline != NULL) {\n+        while (len > 0 && info->cmdline[len - 1] == '\\0')\n+            len--;  /* the arguments are NUL-terminated; the last one need not be */\n+        if (len == 0) {\n+            g_free(info->cmdline);  /* a kernel thread */\n+            info->cmdline = NULL;\n+        }\n+        info->cmdline_len = len;\n+    }\n+\n+    status = read_proc_file(pid, \"status\", NULL);\n+    if (status != NULL) {\n+        const char *uid_line = strstr(status, \"\\nUid:\");\n+        unsigned uid;\n+\n+        if (uid_line != NULL && sscanf(uid_line + 5, \" %u\", &uid) == 1) {\n+            struct passwd pwd, *result = NULL;\n+            char buf[4096];\n+\n+            info->has_uid = true;\n+            info->uid = uid;\n+            if (getpwuid_r(uid, &pwd, buf, sizeof buf, &result) == 0 && result != NULL)\n+                info->user = g_strdup(pwd.pw_name);\n+        }\n+        g_free(status);\n+    }\n+    return true;\n+}\n+\n+const ws_process_lookup_backend_t ws_process_lookup_backend = {\n+    true,\n+    linux_open,\n+    linux_close,\n+    linux_refresh,\n+    linux_describe,\n+};\n+\n+/*\n+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html\n+ *\n+ * Local variables:\n+ * c-basic-offset: 4\n+ * tab-width: 8\n+ * indent-tabs-mode: nil\n+ * End:\n+ *\n+ * vi: set shiftwidth=4 tabstop=8 expandtab:\n+ * :indentSize=4:tabSize=8:noTabs=true:\n+ */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/process_lookup-linux.c",
+      "old_path": "wsutil/process_lookup-linux.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,60 @@\n+/* process_lookup-stub.c\n+ * Look up the processes that have a network socket open: platforms without a backend\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#include \"config.h\"\n+\n+#include \"process_lookup_int.h\"\n+\n+static void *\n+stub_open(char **err_msg)\n+{\n+    *err_msg = g_strdup(\"Looking up the processes that own sockets is not supported on this platform\");\n+    return NULL;\n+}\n+\n+static void\n+stub_close(void *state _U_)\n+{\n+}\n+\n+static bool\n+stub_refresh(void *state _U_, ws_process_lookup_add_socket_func add _U_,\n+             void *ctx _U_, char **err_msg)\n+{\n+    *err_msg = g_strdup(\"Looking up the processes that own sockets is not supported on this platform\");\n+    return false;\n+}\n+\n+static bool\n+stub_describe(void *state _U_, uint32_t pid _U_, ws_process_info_t *info _U_)\n+{\n+    return false;\n+}\n+\n+const ws_process_lookup_backend_t ws_process_lookup_backend = {\n+    false,\n+    stub_open,\n+    stub_close,\n+    stub_refresh,\n+    stub_describe,\n+};\n+\n+/*\n+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html\n+ *\n+ * Local variables:\n+ * c-basic-offset: 4\n+ * tab-width: 8\n+ * indent-tabs-mode: nil\n+ * End:\n+ *\n+ * vi: set shiftwidth=4 tabstop=8 expandtab:\n+ * :indentSize=4:tabSize=8:noTabs=true:\n+ */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/process_lookup-stub.c",
+      "old_path": "wsutil/process_lookup-stub.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,420 @@\n+/* process_lookup-win32.c\n+ * Look up the process that owns a network socket: Windows, through the\n+ * IP Helper API, which reports one process per socket\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#include \"config.h\"\n+#define WS_LOG_DOMAIN LOG_DOMAIN_WSUTIL\n+\n+#include \"process_lookup_int.h\"\n+\n+#include <winsock2.h>\n+#include <ws2tcpip.h>\n+#include <windows.h>\n+#include <iphlpapi.h>\n+#include <tlhelp32.h>\n+#include <winternl.h>\n+#include <shellapi.h>\n+#include <sddl.h>\n+\n+#include <string.h>\n+\n+#include <wsutil/nstime.h>\n+\n+/*\n+ * The sockets come from GetExtendedTcpTable() and GetExtendedUdpTable(),\n+ * which list every socket on the system with its owning process, the one\n+ * that bound it (a socket inherited by or duplicated into another process\n+ * is still attributed to that one), and need no privilege. Several sockets\n+ * on the same endpoint, with SO_REUSEADDR, are listed each with their own\n+ * process. What can be found out about a process depends on the\n+ * caller's access to it: the name and parent of every process come from a\n+ * Toolhelp snapshot, the path, start time and user from a limited-query\n+ * handle, and the command line from reading the process's memory, which\n+ * usually works for the caller's own processes only. Sockets that no\n+ * process owns any more, such as TIME_WAIT ones, have process ID 0 and\n+ * are skipped.\n+ */\n+\n+typedef struct {\n+    uint32_t ppid;\n+    char    *name;\n+} toolhelp_entry_t;\n+\n+typedef NTSTATUS (NTAPI *NtQueryInformationProcess_t)(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG);\n+\n+typedef struct {\n+    GHashTable *processes;  /* pid -> toolhelp_entry_t *, from the last refresh */\n+    NtQueryInformationProcess_t query_process;\n+} win32_state_t;\n+\n+static void\n+toolhelp_entry_free(void *p)\n+{\n+    toolhelp_entry_t *entry = (toolhelp_entry_t *)p;\n+\n+    g_free(entry->name);\n+    g_free(entry);\n+}\n+\n+static void *\n+win32_open(char **err_msg _U_)\n+{\n+    win32_state_t *state = g_new0(win32_state_t, 1);\n+    HMODULE ntdll;\n+\n+    state->processes = g_hash_table_new_full(g_direct_hash, g_direct_equal,\n+                                             NULL, toolhelp_entry_free);\n+    /* Not a documented import; look it up, and do without if it's not there. */\n+    ntdll = GetModuleHandleW(L\"ntdll.dll\");\n+    if (ntdll != NULL) {\n+        state->query_process = (NtQueryInformationProcess_t)(void (*)(void))\n+            GetProcAddress(ntdll, \"NtQueryInformationProcess\");\n+    }\n+    return state;\n+}\n+\n+static void\n+win32_close(void *p)\n+{\n+    win32_state_t *state = (win32_state_t *)p;\n+\n+    g_hash_table_destroy(state->processes);\n+    g_free(state);\n+}\n+\n+/* The name and parent of every process, in one go. */\n+static void\n+load_toolhelp_snapshot(win32_state_t *state)\n+{\n+    HANDLE snapshot;\n+    PROCESSENTRY32W pe;\n+\n+    g_hash_table_remove_all(state->processes);\n+    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);\n+    if (snapshot == INVALID_HANDLE_VALUE)\n+        return;\n+    pe.dwSize = sizeof pe;\n+    if (Process32FirstW(snapshot, &pe)) {\n+        do {\n+            toolhelp_entry_t *entry = g_new0(toolhelp_entry_t, 1);\n+\n+            entry->ppid = pe.th32ParentProcessID;\n+            entry->name = g_utf16_to_utf8(pe.szExeFile, -1, NULL, NULL, NULL);\n+            g_hash_table_insert(state->processes, GUINT_TO_POINTER(pe.th32ProcessID), entry);\n+        } while (Process32NextW(snapshot, &pe));\n+    }\n+    CloseHandle(snapshot);\n+}\n+\n+typedef DWORD (*fetch_table_func)(void *table, DWORD *size);\n+\n+static DWORD\n+fetch_tcp4(void *table, DWORD *size)\n+{\n+    return GetExtendedTcpTable(table, size, FALSE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0);\n+}\n+\n+static DWORD\n+fetch_tcp6(void *table, DWORD *size)\n+{\n+    return GetExtendedTcpTable(table, size, FALSE, AF_INET6, TCP_TABLE_OWNER_PID_ALL, 0);\n+}\n+\n+static DWORD\n+fetch_udp4(void *table, DWORD *size)\n+{\n+    return GetExtendedUdpTable(table, size, FALSE, AF_INET, UDP_TABLE_OWNER_PID, 0);\n+}\n+\n+static DWORD\n+fetch_udp6(void *table, DWORD *size)\n+{\n+    return GetExtendedUdpTable(table, size, FALSE, AF_INET6, UDP_TABLE_OWNER_PID, 0);\n+}\n+\n+/* Fetch a table into a g_malloc()ed buffer, growing it as the table grows. */\n+static void *\n+fetch_table(fetch_table_func fetch, const char *what, char **err_msg)\n+{\n+    void *table = NULL;\n+    DWORD size = 0;\n+\n+    for (int attempt = 0; attempt < 5; attempt++) {\n+        DWORD ret = fetch(table, &size);\n+\n+        if (ret == NO_ERROR && table != NULL)\n+            return table;\n+        if (ret != ERROR_INSUFFICIENT_BUFFER && !(ret == NO_ERROR && table == NULL)) {\n+            g_free(table);\n+            *err_msg = ws_strdup_printf(\"Cannot get the %s table: error %lu\", what, (unsigned long)ret);\n+            return NULL;\n+        }\n+        g_free(table);\n+        table = g_malloc(size);\n+    }\n+    g_free(table);\n+    *err_msg = ws_strdup_printf(\"Cannot get the %s table: it keeps growing\", what);\n+    return NULL;\n+}\n+\n+/* The port fields hold the port in network byte order in their low 16 bits. */\n+static uint16_t\n+table_port(DWORD port)\n+{\n+    return GUINT16_FROM_BE((uint16_t)port);\n+}\n+\n+static bool\n+win32_refresh(void *p, ws_process_lookup_add_socket_func add, void *ctx, char **err_msg)\n+{\n+    win32_state_t *state = (win32_state_t *)p;\n+    ws_process_lookup_socket_key_t key;\n+    MIB_TCPTABLE_OWNER_PID *tcp4;\n+    MIB_TCP6TABLE_OWNER_PID *tcp6;\n+    MIB_UDPTABLE_OWNER_PID *udp4;\n+    MIB_UDP6TABLE_OWNER_PID *udp6;\n+\n+    load_toolhelp_snapshot(state);\n+\n+    tcp4 = (MIB_TCPTABLE_OWNER_PID *)fetch_table(fetch_tcp4, \"IPv4 TCP\", err_msg);\n+    if (tcp4 == NULL)\n+        return false;\n+    for (DWORD i = 0; i < tcp4->dwNumEntries; i++) {\n+        const MIB_TCPROW_OWNER_PID *row = &tcp4->table[i];\n+\n+        if (row->dwOwningPid == 0)\n+            continue;\n+        ws_process_lookup_key_init(&key, WS_PROCESS_LOOKUP_TCP, 4,\n+                                   (const uint8_t *)&row->dwLocalAddr, table_port(row->dwLocalPort),\n+                                   (const uint8_t *)&row->dwRemoteAddr, table_port(row->dwRemotePort));\n+        add(ctx, &key, row->dwOwningPid);\n+    }\n+    g_free(tcp4);\n+\n+    tcp6 = (MIB_TCP6TABLE_OWNER_PID *)fetch_table(fetch_tcp6, \"IPv6 TCP\", err_msg);\n+    if (tcp6 == NULL)\n+        return false;\n+    for (DWORD i = 0; i < tcp6->dwNumEntries; i++) {\n+        const MIB_TCP6ROW_OWNER_PID *row = &tcp6->table[i];\n+\n+        if (row->dwOwningPid == 0)\n+            continue;\n+        ws_process_lookup_key_init(&key, WS_PROCESS_LOOKUP_TCP, 6,\n+                                   row->ucLocalAddr, table_port(row->dwLocalPort),\n+                                   row->ucRemoteAddr, table_port(row->dwRemotePort));\n+        add(ctx, &key, row->dwOwningPid);\n+    }\n+    g_free(tcp6);\n+\n+    udp4 = (MIB_UDPTABLE_OWNER_PID *)fetch_table(fetch_udp4, \"IPv4 UDP\", err_msg);\n+    if (udp4 == NULL)\n+        return false;\n+    for (DWORD i = 0; i < udp4->dwNumEntries; i++) {\n+        const MIB_UDPROW_OWNER_PID *row = &udp4->table[i];\n+\n+        if (row->dwOwningPid == 0)\n+            continue;\n+        ws_process_lookup_key_init(&key, WS_PROCESS_LOOKUP_UDP, 4,\n+                                   (const uint8_t *)&row->dwLocalAddr, table_port(row->dwLocalPort),\n+                                   NULL, 0);\n+        add(ctx, &key, row->dwOwningPid);\n+    }\n+    g_free(udp4);\n+\n+    udp6 = (MIB_UDP6TABLE_OWNER_PID *)fetch_table(fetch_udp6, \"IPv6 UDP\", err_msg);\n+    if (udp6 == NULL)\n+        return false;\n+    for (DWORD i = 0; i < udp6->dwNumEntries; i++) {\n+        const MIB_UDP6ROW_OWNER_PID *row = &udp6->table[i];\n+\n+        if (row->dwOwningPid == 0)\n+            continue;\n+        ws_process_lookup_key_init(&key, WS_PROCESS_LOOKUP_UDP, 6,\n+                                   row->ucLocalAddr, table_port(row->dwLocalPort),\n+                                   NULL, 0);\n+        add(ctx, &key, row->dwOwningPid);\n+    }\n+    g_free(udp6);\n+    return true;\n+}\n+\n+/* \"DOMAIN\\user\" of the account the process runs as, or its SID if that can't be looked up. */\n+static char *\n+process_user(HANDLE process)\n+{\n+    HANDLE token;\n+    DWORD len = 0;\n+    TOKEN_USER *token_user;\n+    char *user = NULL;\n+\n+    if (!OpenProcessToken(process, TOKEN_QUERY, &token))\n+        return NULL;\n+    GetTokenInformation(token, TokenUser, NULL, 0, &len);\n+    if (len == 0) {\n+        CloseHandle(token);\n+        return NULL;\n+    }\n+    token_user = (TOKEN_USER *)g_malloc(len);\n+    if (GetTokenInformation(token, TokenUser, token_user, len, &len)) {\n+        wchar_t name[256], domain[256];\n+        DWORD name_len = G_N_ELEMENTS(name), domain_len = G_N_ELEMENTS(domain);\n+        SID_NAME_USE use;\n+        LPWSTR sid_str;\n+\n+        if (LookupAccountSidW(NULL, token_user->User.Sid, name, &name_len, domain, &domain_len, &use)) {\n+            char *name8 = g_utf16_to_utf8(name, -1, NULL, NULL, NULL);\n+            char *domain8 = g_utf16_to_utf8(domain, -1, NULL, NULL, NULL);\n+\n+            if (name8 != NULL) {\n+                user = (domain8 != NULL && domain8[0] != '\\0') ?\n+                    ws_strdup_printf(\"%s\\\\%s\", domain8, name8) : g_strdup(name8);\n+            }\n+            g_free(name8);\n+            g_free(domain8);\n+        } else if (ConvertSidToStringSidW(token_user->User.Sid, &sid_str)) {\n+            user = g_utf16_to_utf8(sid_str, -1, NULL, NULL, NULL);\n+            LocalFree(sid_str);\n+        }\n+    }\n+    g_free(token_user);\n+    CloseHandle(token);\n+    return user;\n+}\n+\n+/* The command line, read from the process's memory and split into arguments. */\n+static void\n+process_cmdline(win32_state_t *state, HANDLE process, ws_process_info_t *info)\n+{\n+    PROCESS_BASIC_INFORMATION pbi;\n+    PEB peb;\n+    RTL_USER_PROCESS_PARAMETERS params;\n+    SIZE_T got;\n+    size_t chars;\n+    wchar_t *cmdline;\n+    int argc;\n+    LPWSTR *argv;\n+    GByteArray *out;\n+\n+    if (state->query_process == NULL)\n+        return;\n+    if (state->query_process(process, ProcessBasicInformation, &pbi, sizeof pbi, NULL) != 0 ||\n+        pbi.PebBaseAddress == NULL)\n+        return;\n+    if (!ReadProcessMemory(process, pbi.PebBaseAddress, &peb, sizeof peb, &got) || got != sizeof peb)\n+        return;\n+    if (peb.ProcessParameters == NULL ||\n+        !ReadProcessMemory(process, peb.ProcessParameters, &params, sizeof params, &got) ||\n+        got != sizeof params)\n+        return;\n+    if (params.CommandLine.Buffer == NULL || params.CommandLine.Length == 0)\n+        return;\n+    chars = params.CommandLine.Length / sizeof(wchar_t);\n+    cmdline = g_new0(wchar_t, chars + 1);\n+    if (!ReadProcessMemory(process, params.CommandLine.Buffer, cmdline,\n+                           params.CommandLine.Length, &got) ||\n+        got != params.CommandLine.Length) {\n+        g_free(cmdline);\n+        return;\n+    }\n+    argv = CommandLineToArgvW(cmdline, &argc);\n+    g_free(cmdline);\n+    if (argv == NULL)\n+        return;\n+    out = g_byte_array_new();\n+    for (int i = 0; i < argc; i++) {\n+        char *arg = g_utf16_to_utf8(argv[i], -1, NULL, NULL, NULL);\n+\n+        if (arg == NULL)\n+            continue;\n+        if (out->len > 0)\n+            g_byte_array_append(out, (const uint8_t *)\"\", 1);\n+        g_byte_array_append(out, (const uint8_t *)arg, (unsigned)strlen(arg));\n+        g_free(arg);\n+    }\n+    LocalFree(argv);\n+    if (out->len == 0) {\n+        g_byte_array_free(out, TRUE);\n+        return;\n+    }\n+    info->cmdline_len = out->len;\n+    info->cmdline = g_byte_array_free(out, FALSE);\n+}\n+\n+static bool\n+win32_describe(void *p, uint32_t pid, ws_process_info_t *info)\n+{\n+    win32_state_t *state = (win32_state_t *)p;\n+    const toolhelp_entry_t *entry;\n+    HANDLE process;\n+    bool can_read_memory;\n+    DWORD path_len = 32768;\n+    wchar_t *path;\n+    FILETIME creation, exit, kernel, user;\n+\n+    entry = (const toolhelp_entry_t *)g_hash_table_lookup(state->processes, GUINT_TO_POINTER(pid));\n+    if (entry != NULL) {\n+        info->name = g_strdup(entry->name);\n+        info->has_ppid = true;\n+        info->ppid = entry->ppid;\n+    }\n+\n+    process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, pid);\n+    can_read_memory = (process != NULL);\n+    if (process == NULL)\n+        process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);\n+    if (process == NULL) {\n+        /* Not ours to look at, or gone; the snapshot may still have known it. */\n+        return entry != NULL;\n+    }\n+\n+    path = g_new(wchar_t, path_len);\n+    if (QueryFullProcessImageNameW(process, 0, path, &path_len)) {\n+        info->path = g_utf16_to_utf8(path, path_len, NULL, NULL, NULL);\n+        if (info->name == NULL && info->path != NULL)\n+            info->name = g_path_get_basename(info->path);\n+    }\n+    g_free(path);\n+\n+    if (GetProcessTimes(process, &creation, &exit, &kernel, &user)) {\n+        uint64_t filetime = ((uint64_t)creation.dwHighDateTime << 32) | creation.dwLowDateTime;\n+        nstime_t start;\n+\n+        if (filetime_to_nstime(&start, filetime))\n+            info->start_time_ns = (uint64_t)start.secs * 1000000000ULL + (uint64_t)start.nsecs;\n+    }\n+\n+    info->user = process_user(process);\n+    if (can_read_memory)\n+        process_cmdline(state, process, info);\n+\n+    CloseHandle(process);\n+    return true;\n+}\n+\n+const ws_process_lookup_backend_t ws_process_lookup_backend = {\n+    true,\n+    win32_open,\n+    win32_close,\n+    win32_refresh,\n+    win32_describe,\n+};\n+\n+/*\n+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html\n+ *\n+ * Local variables:\n+ * c-basic-offset: 4\n+ * tab-width: 8\n+ * indent-tabs-mode: nil\n+ * End:\n+ *\n+ * vi: set shiftwidth=4 tabstop=8 expandtab:\n+ * :indentSize=4:tabSize=8:noTabs=true:\n+ */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/process_lookup-win32.c",
+      "old_path": "wsutil/process_lookup-win32.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,416 @@\n+/* process_lookup.c\n+ * Look up the processes that have a network socket open\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#include \"config.h\"\n+#define WS_LOG_DOMAIN LOG_DOMAIN_WSUTIL\n+\n+#include \"process_lookup.h\"\n+#include \"process_lookup_int.h\"\n+\n+#include <string.h>\n+\n+#define DEFAULT_REFRESH_INTERVAL_MS 250\n+\n+/* A process in the cache. */\n+typedef struct {\n+    ws_process_info_t info;\n+    unsigned          verified_seq;  /* the refresh at which it was last confirmed to be the same process */\n+} process_entry_t;\n+\n+struct ws_process_lookup {\n+    void       *backend_state;\n+    GHashTable *sockets;             /* ws_process_lookup_socket_key_t * -> GArray of the pids that have it open */\n+    GHashTable *processes;           /* pid -> process_entry_t * */\n+    GPtrArray  *retired;             /* entries replaced when their PID was reused; kept for callers holding them */\n+    unsigned    refresh_interval_ms;\n+    int64_t     last_refresh;        /* monotonic time of the last refresh, in microseconds; 0 = never */\n+    unsigned    refresh_seq;\n+};\n+\n+static unsigned\n+socket_key_hash(const void *key)\n+{\n+    const uint8_t *p = (const uint8_t *)key;\n+    unsigned h = 2166136261u;  /* FNV-1a */\n+\n+    for (size_t i = 0; i < sizeof(ws_process_lookup_socket_key_t); i++) {\n+        h ^= p[i];\n+        h *= 16777619u;\n+    }\n+    return h;\n+}\n+\n+static gboolean\n+socket_key_equal(const void *a, const void *b)\n+{\n+    return memcmp(a, b, sizeof(ws_process_lookup_socket_key_t)) == 0;\n+}\n+\n+static bool\n+addr_is_zero(const uint8_t *addr, size_t len)\n+{\n+    for (size_t i = 0; i < len; i++) {\n+        if (addr[i] != 0)\n+            return false;\n+    }\n+    return true;\n+}\n+\n+static bool\n+addr_is_v4_mapped(const uint8_t *addr6)\n+{\n+    static const uint8_t prefix[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };\n+\n+    return memcmp(addr6, prefix, sizeof prefix) == 0;\n+}\n+\n+void\n+ws_process_lookup_key_init(ws_process_lookup_socket_key_t *key,\n+                           uint8_t protocol, uint8_t ip_version,\n+                           const uint8_t *local_addr, uint16_t local_port,\n+                           const uint8_t *remote_addr, uint16_t remote_port)\n+{\n+    size_t addr_len;\n+\n+    memset(key, 0, sizeof *key);\n+    key->protocol = protocol;\n+\n+    /* An IPv4 socket seen through an IPv6 socket is an IPv4 socket. */\n+    if (ip_version == 6 && addr_is_v4_mapped(local_addr)) {\n+        ip_version = 4;\n+        local_addr += 12;\n+        if (remote_addr != NULL)\n+            remote_addr += 12;\n+    }\n+    addr_len = (ip_version == 6) ? 16 : 4;\n+\n+    if (remote_addr != NULL &&\n+        (remote_port != 0 || !addr_is_zero(remote_addr, addr_len))) {\n+        memcpy(key->remote_addr, remote_addr, addr_len);\n+        key->remote_port = remote_port;\n+    }\n+    if (addr_is_zero(local_addr, addr_len)) {\n+        /* Bound to any address; matches either IP version. */\n+        key->ip_version = 0;\n+    } else {\n+        key->ip_version = ip_version;\n+        memcpy(key->local_addr, local_addr, addr_len);\n+    }\n+    key->local_port = local_port;\n+}\n+\n+static void\n+pid_array_free(void *p)\n+{\n+    g_array_free((GArray *)p, TRUE);\n+}\n+\n+static void\n+set_err_msg(char **err_msg, const char *msg)\n+{\n+    if (err_msg != NULL)\n+        *err_msg = g_strdup(msg);\n+}\n+\n+bool\n+ws_process_lookup_supported(void)\n+{\n+    return ws_process_lookup_backend.supported;\n+}\n+\n+ws_process_lookup_t *\n+ws_process_lookup_new(char **err_msg)\n+{\n+    ws_process_lookup_t *lookup;\n+    void *state;\n+    char *backend_err = NULL;\n+\n+    if (!ws_process_lookup_backend.supported) {\n+        set_err_msg(err_msg, \"Looking up the processes that own sockets is not supported on this platform\");\n+        return NULL;\n+    }\n+    state = ws_process_lookup_backend.create(&backend_err);\n+    if (state == NULL) {\n+        if (err_msg != NULL)\n+            *err_msg = backend_err;\n+        else\n+            g_free(backend_err);\n+        return NULL;\n+    }\n+\n+    lookup = g_new0(ws_process_lookup_t, 1);\n+    lookup->backend_state = state;\n+    lookup->sockets = g_hash_table_new_full(socket_key_hash, socket_key_equal, g_free, pid_array_free);\n+    lookup->processes = g_hash_table_new(g_direct_hash, g_direct_equal);\n+    lookup->retired = g_ptr_array_new();\n+    lookup->refresh_interval_ms = DEFAULT_REFRESH_INTERVAL_MS;\n+    return lookup;\n+}\n+\n+static void\n+process_info_clear(ws_process_info_t *info)\n+{\n+    g_free(info->name);\n+    g_free(info->path);\n+    g_free(info->user);\n+    g_free(info->cmdline);\n+    memset(info, 0, sizeof *info);\n+}\n+\n+static void\n+process_entry_free(void *p)\n+{\n+    process_entry_t *entry = (process_entry_t *)p;\n+\n+    process_info_clear(&entry->info);\n+    g_free(entry);\n+}\n+\n+static void\n+process_entry_free_value(void *key _U_, void *value, void *user_data _U_)\n+{\n+    process_entry_free(value);\n+}\n+\n+void\n+ws_process_lookup_free(ws_process_lookup_t *lookup)\n+{\n+    if (lookup == NULL)\n+        return;\n+    g_hash_table_destroy(lookup->sockets);\n+    g_hash_table_foreach(lookup->processes, process_entry_free_value, NULL);\n+    g_hash_table_destroy(lookup->processes);\n+    for (unsigned i = 0; i < lookup->retired->len; i++)\n+        process_entry_free(g_ptr_array_index(lookup->retired, i));\n+    g_ptr_array_free(lookup->retired, TRUE);\n+    ws_process_lookup_backend.destroy(lookup->backend_state);\n+    g_free(lookup);\n+}\n+\n+void\n+ws_process_lookup_set_refresh_interval(ws_process_lookup_t *lookup, unsigned interval_ms)\n+{\n+    lookup->refresh_interval_ms = interval_ms;\n+}\n+\n+static void\n+add_socket(void *ctx, const ws_process_lookup_socket_key_t *key, uint32_t pid)\n+{\n+    ws_process_lookup_t *lookup = (ws_process_lookup_t *)ctx;\n+    GArray *pids = (GArray *)g_hash_table_lookup(lookup->sockets, key);\n+\n+    if (pids == NULL) {\n+        pids = g_array_new(FALSE, FALSE, sizeof(uint32_t));\n+        g_hash_table_insert(lookup->sockets, g_memdup2(key, sizeof *key), pids);\n+    }\n+    for (unsigned i = 0; i < pids->len; i++) {\n+        if (g_array_index(pids, uint32_t, i) == pid)\n+            return;  /* the same process, through another descriptor */\n+    }\n+    g_array_append_val(pids, pid);\n+}\n+\n+bool\n+ws_process_lookup_refresh(ws_process_lookup_t *lookup, char **err_msg)\n+{\n+    char *backend_err = NULL;\n+\n+    g_hash_table_remove_all(lookup->sockets);\n+    lookup->refresh_seq++;\n+    lookup->last_refresh = g_get_monotonic_time();\n+    if (!ws_process_lookup_backend.refresh(lookup->backend_state, add_socket,\n+                                           lookup, &backend_err)) {\n+        ws_debug(\"refreshing the socket tables failed: %s\", backend_err);\n+        if (err_msg != NULL)\n+            *err_msg = backend_err;\n+        else\n+            g_free(backend_err);\n+        return false;\n+    }\n+    ws_noisy(\"refreshed the socket tables: %u sockets with owners\",\n+             g_hash_table_size(lookup->sockets));\n+    return true;\n+}\n+\n+/*\n+ * Find the processes that have a socket open in the snapshot: an exact\n+ * match, else a socket bound to the local end alone, else one bound to\n+ * the local port on any address. NULL if there is none.\n+ */\n+static const GArray *\n+find_socket(ws_process_lookup_t *lookup, const ws_process_lookup_socket_key_t *key)\n+{\n+    ws_process_lookup_socket_key_t k;\n+    const GArray *pids;\n+\n+    pids = (const GArray *)g_hash_table_lookup(lookup->sockets, key);\n+    if (pids != NULL)\n+        return pids;\n+\n+    k = *key;\n+    if (k.remote_port != 0 || !addr_is_zero(k.remote_addr, sizeof k.remote_addr)) {\n+        memset(k.remote_addr, 0, sizeof k.remote_addr);\n+        k.remote_port = 0;\n+        pids = (const GArray *)g_hash_table_lookup(lookup->sockets, &k);\n+        if (pids != NULL)\n+            return pids;\n+    }\n+    if (k.ip_version != 0) {\n+        k.ip_version = 0;\n+        memset(k.local_addr, 0, sizeof k.local_addr);\n+        pids = (const GArray *)g_hash_table_lookup(lookup->sockets, &k);\n+        if (pids != NULL)\n+            return pids;\n+    }\n+    return NULL;\n+}\n+\n+/*\n+ * Get the record of a process, describing it if it is not yet cached or\n+ * has not been checked since the last refresh, when its ID may have been\n+ * reused by a new process. known_to_exist says the socket tables named it,\n+ * in which case at least its ID is returned even if it cannot be described.\n+ */\n+static ws_process_info_t *\n+get_process(ws_process_lookup_t *lookup, uint32_t pid, bool known_to_exist)\n+{\n+    process_entry_t *entry;\n+    ws_process_info_t fresh;\n+\n+    entry = (process_entry_t *)g_hash_table_lookup(lookup->processes, GUINT_TO_POINTER(pid));\n+    if (entry != NULL && entry->verified_seq == lookup->refresh_seq)\n+        return &entry->info;\n+\n+    memset(&fresh, 0, sizeof fresh);\n+    fresh.pid = pid;\n+    if (!ws_process_lookup_backend.describe(lookup->backend_state, pid, &fresh)) {\n+        /* No such process, at least not any more. */\n+        if (entry != NULL) {\n+            /* What we know about it is still the best description. */\n+            entry->verified_seq = lookup->refresh_seq;\n+            return &entry->info;\n+        }\n+        if (!known_to_exist)\n+            return NULL;\n+        /* It had a socket a moment ago; report its ID at least. */\n+    }\n+    if (entry != NULL) {\n+        if (entry->info.start_time_ns == fresh.start_time_ns) {\n+            /* The same process, or no way to tell; keep the cached record. */\n+            process_info_clear(&fresh);\n+            entry->verified_seq = lookup->refresh_seq;\n+            return &entry->info;\n+        }\n+        /* The ID was reused; keep the old record alive for whoever holds it. */\n+        g_ptr_array_add(lookup->retired, entry);\n+    }\n+    entry = g_new0(process_entry_t, 1);\n+    entry->info = fresh;\n+    entry->verified_seq = lookup->refresh_seq;\n+    g_hash_table_insert(lookup->processes, GUINT_TO_POINTER(pid), entry);\n+    return &entry->info;\n+}\n+\n+static const uint8_t *\n+endpoint_addr(const ws_socket_endpoint_t *ep)\n+{\n+    return (ep->ip_version == 6) ? ep->addr.ipv6.bytes : (const uint8_t *)&ep->addr.ipv4;\n+}\n+\n+/*\n+ * The order in which the processes that have a socket open are reported:\n+ * the one that has had it longest first, normally the one that created\n+ * it. A process whose start time is unknown comes last.\n+ */\n+static bool\n+process_before(const ws_process_info_t *a, const ws_process_info_t *b)\n+{\n+    if (a->start_time_ns != b->start_time_ns) {\n+        if (a->start_time_ns == 0 || b->start_time_ns == 0)\n+            return b->start_time_ns == 0;\n+        return a->start_time_ns < b->start_time_ns;\n+    }\n+    return a->pid < b->pid;\n+}\n+\n+unsigned\n+ws_process_lookup_socket(ws_process_lookup_t *lookup,\n+                         ws_process_lookup_protocol_t protocol,\n+                         const ws_socket_endpoint_t *local,\n+                         const ws_socket_endpoint_t *remote,\n+                         GPtrArray *processes)\n+{\n+    ws_process_lookup_socket_key_t key;\n+    const GArray *pids;\n+    unsigned first, added = 0;\n+\n+    if (lookup == NULL || local == NULL || processes == NULL ||\n+        (local->ip_version != 4 && local->ip_version != 6))\n+        return 0;\n+    if (remote != NULL && remote->ip_version != local->ip_version)\n+        remote = NULL;\n+    ws_process_lookup_key_init(&key, (uint8_t)protocol, local->ip_version,\n+                               endpoint_addr(local), local->port,\n+                               remote != NULL ? endpoint_addr(remote) : NULL,\n+                               remote != NULL ? remote->port : 0);\n+\n+    if (lookup->last_refresh == 0) {\n+        if (!ws_process_lookup_refresh(lookup, NULL))\n+            return 0;\n+    }\n+    pids = find_socket(lookup, &key);\n+    if (pids == NULL &&\n+        g_get_monotonic_time() - lookup->last_refresh >= (int64_t)lookup->refresh_interval_ms * 1000) {\n+        /* Not in the snapshot; it may be a new socket. */\n+        if (!ws_process_lookup_refresh(lookup, NULL))\n+            return 0;\n+        pids = find_socket(lookup, &key);\n+    }\n+    if (pids == NULL)\n+        return 0;\n+\n+    first = processes->len;\n+    for (unsigned i = 0; i < pids->len; i++) {\n+        ws_process_info_t *info = get_process(lookup, g_array_index(pids, uint32_t, i), true);\n+        unsigned pos;\n+\n+        if (info == NULL)\n+            continue;\n+        /* Keep the processes added by this call in order; there are rarely more than one or two. */\n+        for (pos = first + added; pos > first; pos--) {\n+            if (!process_before(info, (const ws_process_info_t *)g_ptr_array_index(processes, pos - 1)))\n+                break;\n+        }\n+        g_ptr_array_insert(processes, (int)pos, info);\n+        added++;\n+    }\n+    return added;\n+}\n+\n+const ws_process_info_t *\n+ws_process_lookup_pid(ws_process_lookup_t *lookup, uint32_t pid)\n+{\n+    if (lookup == NULL)\n+        return NULL;\n+    return get_process(lookup, pid, false);\n+}\n+\n+/*\n+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html\n+ *\n+ * Local variables:\n+ * c-basic-offset: 4\n+ * tab-width: 8\n+ * indent-tabs-mode: nil\n+ * End:\n+ *\n+ * vi: set shiftwidth=4 tabstop=8 expandtab:\n+ * :indentSize=4:tabSize=8:noTabs=true:\n+ */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/process_lookup.c",
+      "old_path": "wsutil/process_lookup.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,184 @@\n+/** @file\n+ *\n+ * Look up the processes that have a network socket open, from the\n+ * operating system's socket tables, and describe them.\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#ifndef __WSUTIL_PROCESS_LOOKUP_H__\n+#define __WSUTIL_PROCESS_LOOKUP_H__\n+\n+#include <wireshark.h>\n+#include <wsutil/inet_addr.h>\n+\n+#ifdef __cplusplus\n+extern \"C\" {\n+#endif /* __cplusplus */\n+\n+/**\n+ * @brief What the operating system knows about a process.\n+ *\n+ * Whatever the operating system does not provide, or does not let the\n+ * calling user see, is NULL (strings), 0 (the start time) or flagged as\n+ * absent. Strings are UTF-8.\n+ */\n+typedef struct ws_process_info {\n+    uint32_t  pid;            /**< The process ID. */\n+    bool      has_ppid;       /**< Whether ppid is known. */\n+    uint32_t  ppid;           /**< The ID of the parent process. */\n+    bool      has_uid;        /**< Whether uid is known (systems with numeric user IDs). */\n+    uint32_t  uid;            /**< The numeric ID of the user the process runs as. */\n+    char     *name;           /**< The short name of the process, typically its executable's file name, or NULL. */\n+    char     *path;           /**< The full path of the executable image, or NULL. */\n+    char     *user;           /**< The name of the user the process runs as, e.g. \"alice\" or \"DOMAIN\\\\alice\", or NULL. */\n+    uint8_t  *cmdline;        /**< The command line, its arguments separated by NULs (none after the last), or NULL. */\n+    size_t    cmdline_len;    /**< The length of cmdline, in bytes. */\n+    uint64_t  start_time_ns;  /**< When the process started, in nanoseconds since the Epoch, or 0 if unknown. */\n+} ws_process_info_t;\n+\n+/**\n+ * @brief The transport protocols of the sockets that can be looked up.\n+ *\n+ * The values are the IP protocol numbers, so the protocol field of an IP\n+ * header can be passed as is.\n+ */\n+typedef enum {\n+    WS_PROCESS_LOOKUP_TCP = 6,\n+    WS_PROCESS_LOOKUP_UDP = 17\n+} ws_process_lookup_protocol_t;\n+\n+/**\n+ * @brief One end of a socket: an IPv4 or IPv6 address and a port.\n+ */\n+typedef struct ws_socket_endpoint {\n+    uint8_t  ip_version;      /**< 4 or 6. */\n+    union {\n+        ws_in4_addr ipv4;     /**< The IPv4 address, in network byte order. */\n+        ws_in6_addr ipv6;     /**< The IPv6 address. */\n+    } addr;\n+    uint16_t port;            /**< The port, in host byte order. */\n+} ws_socket_endpoint_t;\n+\n+/**\n+ * @brief A lookup context.\n+ *\n+ * It holds a snapshot of the operating system's socket tables, refreshed\n+ * on demand but not more often than a configurable interval, and a cache\n+ * of what is known about the processes found. It is not thread-safe.\n+ */\n+typedef struct ws_process_lookup ws_process_lookup_t;\n+\n+/**\n+ * @brief Whether the operating system's socket tables can be read on this platform.\n+ *\n+ * @return true if ws_process_lookup_new() can succeed here.\n+ */\n+WS_DLL_PUBLIC bool\n+ws_process_lookup_supported(void);\n+\n+/**\n+ * @brief Create a lookup context.\n+ *\n+ * @param err_msg Set to a g_malloc()ed message on failure, if not NULL.\n+ * @return The context, to be freed with ws_process_lookup_free(), or NULL\n+ * if the platform is not supported or the socket tables cannot be read.\n+ */\n+WS_DLL_PUBLIC ws_process_lookup_t *\n+ws_process_lookup_new(char **err_msg);\n+\n+/**\n+ * @brief Free a lookup context and every ws_process_info_t it returned.\n+ *\n+ * @param lookup The context; NULL is allowed.\n+ */\n+WS_DLL_PUBLIC void\n+ws_process_lookup_free(ws_process_lookup_t *lookup);\n+\n+/**\n+ * @brief Set how soon the socket tables may be read again after a miss.\n+ *\n+ * A socket that is not in the snapshot triggers a refresh only if the\n+ * previous refresh is at least this old, which bounds the cost of packets\n+ * that belong to no local socket. The default is 250 ms.\n+ *\n+ * @param lookup The context.\n+ * @param interval_ms The minimum interval between refreshes, in milliseconds.\n+ */\n+WS_DLL_PUBLIC void\n+ws_process_lookup_set_refresh_interval(ws_process_lookup_t *lookup, unsigned interval_ms);\n+\n+/**\n+ * @brief Read the operating system's socket tables again now.\n+ *\n+ * @param lookup The context.\n+ * @param err_msg Set to a g_malloc()ed message on failure, if not NULL.\n+ * @return true on success.\n+ */\n+WS_DLL_PUBLIC bool\n+ws_process_lookup_refresh(ws_process_lookup_t *lookup, char **err_msg);\n+\n+/**\n+ * @brief Find the processes that have a socket open.\n+ *\n+ * The socket is identified by its local end and, for a connected socket,\n+ * its remote end. If no socket matches both, a socket bound to the local\n+ * end alone (listening, or an unconnected UDP socket) is looked for, and\n+ * then one bound to the local port on any address, of either IP version.\n+ * Every process that has a matching socket open is reported: a socket can\n+ * be inherited across fork() or passed between processes, and several\n+ * sockets can match, e.g. with SO_REUSEPORT. On Windows the system reports\n+ * one process per socket, the one that bound it.\n+ *\n+ * @param lookup The context.\n+ * @param protocol The transport protocol.\n+ * @param local The end of the socket on this host.\n+ * @param remote The other end, or NULL if the socket is not connected or\n+ * the other end is unknown.\n+ * @param processes Array to which what is known about each process is\n+ * appended, as const ws_process_info_t pointers valid until the context\n+ * is freed, the process that has had the socket open longest first,\n+ * normally the one that created it.\n+ * @return The number of processes appended: 0 if no socket matches or\n+ * none can be attributed to a process.\n+ */\n+WS_DLL_PUBLIC unsigned\n+ws_process_lookup_socket(ws_process_lookup_t *lookup,\n+                         ws_process_lookup_protocol_t protocol,\n+                         const ws_socket_endpoint_t *local,\n+                         const ws_socket_endpoint_t *remote,\n+                         GPtrArray *processes);\n+\n+/**\n+ * @brief Describe a process by its ID.\n+ *\n+ * @param lookup The context.\n+ * @param pid The process ID.\n+ * @return What is known about the process, valid until the context is\n+ * freed, or NULL if there is no such process.\n+ */\n+WS_DLL_PUBLIC const ws_process_info_t *\n+ws_process_lookup_pid(ws_process_lookup_t *lookup, uint32_t pid);\n+\n+#ifdef __cplusplus\n+}\n+#endif /* __cplusplus */\n+\n+#endif /* __WSUTIL_PROCESS_LOOKUP_H__ */\n+\n+/*\n+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html\n+ *\n+ * Local variables:\n+ * c-basic-offset: 4\n+ * tab-width: 8\n+ * indent-tabs-mode: nil\n+ * End:\n+ *\n+ * vi: set shiftwidth=4 tabstop=8 expandtab:\n+ * :indentSize=4:tabSize=8:noTabs=true:\n+ */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/process_lookup.h",
+      "old_path": "wsutil/process_lookup.h",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,96 @@\n+/** @file\n+ *\n+ * The interface between the platform-independent part of the process\n+ * lookup and its platform backends. Not installed.\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#ifndef __WSUTIL_PROCESS_LOOKUP_INT_H__\n+#define __WSUTIL_PROCESS_LOOKUP_INT_H__\n+\n+#include \"process_lookup.h\"\n+\n+/**\n+ * A socket as found in the operating system's tables, in a form that can\n+ * be hashed: addresses in network byte order, zero-padded; ports in host\n+ * byte order. Always initialize it with ws_process_lookup_key_init(), which\n+ * normalizes it: ip_version 0 means the socket is bound to any address (so\n+ * it matches both IP versions), and a zero remote address and port mean the\n+ * socket is not connected.\n+ */\n+typedef struct {\n+    uint8_t  protocol;\n+    uint8_t  ip_version;\n+    uint16_t local_port;\n+    uint16_t remote_port;\n+    uint8_t  local_addr[16];\n+    uint8_t  remote_addr[16];\n+} ws_process_lookup_socket_key_t;\n+\n+/**\n+ * Initialize a socket key. remote_addr may be NULL. An IPv4 address seen\n+ * through an IPv6 socket (::ffff:a.b.c.d) becomes an IPv4 key.\n+ */\n+void\n+ws_process_lookup_key_init(ws_process_lookup_socket_key_t *key,\n+                           uint8_t protocol, uint8_t ip_version,\n+                           const uint8_t *local_addr, uint16_t local_port,\n+                           const uint8_t *remote_addr, uint16_t remote_port);\n+\n+/**\n+ * Called by a backend for each process that has a socket open. It may be\n+ * called for several processes with the same socket, and more than once\n+ * for the same process and socket.\n+ */\n+typedef void (*ws_process_lookup_add_socket_func)(void *ctx,\n+                                                  const ws_process_lookup_socket_key_t *key,\n+                                                  uint32_t pid);\n+\n+/**\n+ * A platform backend. err_msg arguments are never NULL; a message stored\n+ * there must be g_malloc()ed.\n+ */\n+typedef struct {\n+    /** Whether this platform is supported at all. */\n+    bool supported;\n+\n+    /** Set up the per-context state; NULL, with *err_msg set, on failure. */\n+    void *(*create)(char **err_msg);\n+\n+    /** Free the per-context state. */\n+    void (*destroy)(void *state);\n+\n+    /** Report every socket that has an owning process, through add(). */\n+    bool (*refresh)(void *state, ws_process_lookup_add_socket_func add,\n+                    void *ctx, char **err_msg);\n+\n+    /**\n+     * Fill in what is known about a process; info->pid is set on entry and\n+     * the rest is zero. The strings must be g_malloc()ed. Returns false if\n+     * there is no such process.\n+     */\n+    bool (*describe)(void *state, uint32_t pid, ws_process_info_t *info);\n+} ws_process_lookup_backend_t;\n+\n+/** The backend for this platform. */\n+extern const ws_process_lookup_backend_t ws_process_lookup_backend;\n+\n+#endif /* __WSUTIL_PROCESS_LOOKUP_INT_H__ */\n+\n+/*\n+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html\n+ *\n+ * Local variables:\n+ * c-basic-offset: 4\n+ * tab-width: 8\n+ * indent-tabs-mode: nil\n+ * End:\n+ *\n+ * vi: set shiftwidth=4 tabstop=8 expandtab:\n+ * :indentSize=4:tabSize=8:noTabs=true:\n+ */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/process_lookup_int.h",
+      "old_path": "wsutil/process_lookup_int.h",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1284,6 +1284,349 @@ static void test_ws_hexbuftoi64(void)\n     test_int64(hexstr, 2, &hexstr[1], 16, true, 0, 0);\n     test_int64(hexstr, 2, &hexstr[1], 0, true, 0, 0);\n }\n+#include <wsutil/process_lookup.h>\n+#include <wsutil/socket.h>\n+#ifdef _WIN32\n+#include <process.h>\n+#else\n+#include <unistd.h>\n+#include <signal.h>\n+#include <sys/wait.h>\n+#endif\n+\n+static uint32_t\n+own_pid(void)\n+{\n+#ifdef _WIN32\n+    return (uint32_t)GetCurrentProcessId();\n+#else\n+    return (uint32_t)getpid();\n+#endif\n+}\n+\n+/* A TCP or UDP socket bound to an ephemeral port on the given loopback address, listening if\n+ * asked; INVALID_SOCKET if that isn't possible, e.g. without IPv6. */\n+static socket_handle_t\n+bound_socket(int family, int type, const char *addr_str, bool do_listen)\n+{\n+    socket_handle_t sock;\n+    struct sockaddr_storage ss;\n+    socklen_t len;\n+\n+    sock = socket(family, type, 0);\n+    if (sock == INVALID_SOCKET)\n+        return INVALID_SOCKET;\n+    memset(&ss, 0, sizeof ss);\n+    if (family == AF_INET) {\n+        struct sockaddr_in *sin = (struct sockaddr_in *)&ss;\n+        ws_in4_addr addr;\n+\n+        g_assert_true(ws_inet_pton4(addr_str, &addr));\n+        sin->sin_family = AF_INET;\n+        memcpy(&sin->sin_addr, &addr, sizeof addr);\n+        len = sizeof *sin;\n+    } else {\n+        struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&ss;\n+        ws_in6_addr addr;\n+\n+        g_assert_true(ws_inet_pton6(addr_str, &addr));\n+        sin6->sin6_family = AF_INET6;\n+        memcpy(&sin6->sin6_addr, addr.bytes, sizeof addr.bytes);\n+        len = sizeof *sin6;\n+    }\n+    if (bind(sock, (struct sockaddr *)&ss, len) != 0 || (do_listen && listen(sock, 1) != 0)) {\n+        closesocket(sock);\n+        return INVALID_SOCKET;\n+    }\n+    return sock;\n+}\n+\n+static uint16_t\n+socket_port(socket_handle_t sock)\n+{\n+    struct sockaddr_storage ss;\n+    socklen_t len = sizeof ss;\n+\n+    g_assert_cmpint(getsockname(sock, (struct sockaddr *)&ss, &len), ==, 0);\n+    if (ss.ss_family == AF_INET)\n+        return g_ntohs(((struct sockaddr_in *)&ss)->sin_port);\n+    return g_ntohs(((struct sockaddr_in6 *)&ss)->sin6_port);\n+}\n+\n+static void\n+endpoint4(ws_socket_endpoint_t *ep, const char *addr, uint16_t port)\n+{\n+    memset(ep, 0, sizeof *ep);\n+    ep->ip_version = 4;\n+    g_assert_true(ws_inet_pton4(addr, &ep->addr.ipv4));\n+    ep->port = port;\n+}\n+\n+static void\n+endpoint6(ws_socket_endpoint_t *ep, const char *addr, uint16_t port)\n+{\n+    memset(ep, 0, sizeof *ep);\n+    ep->ip_version = 6;\n+    g_assert_true(ws_inet_pton6(addr, &ep->addr.ipv6));\n+    ep->port = port;\n+}\n+\n+/* The record must describe this very process. */\n+static void\n+check_own_process(const ws_process_info_t *info)\n+{\n+    uint64_t now_ns = (uint64_t)g_get_real_time() * 1000;\n+\n+    g_assert_nonnull(info);\n+    g_assert_cmpuint(info->pid, ==, own_pid());\n+    g_assert_nonnull(info->name);\n+    g_assert_nonnull(strstr(info->name, \"test_wsutil\"));\n+    g_assert_nonnull(info->path);\n+    g_assert_nonnull(strstr(info->path, \"test_wsutil\"));\n+    g_assert_nonnull(info->cmdline);\n+    g_assert_cmpuint(info->cmdline_len, >, 0);\n+    g_assert_nonnull(info->user);\n+    g_assert_true(info->has_ppid);\n+    g_assert_cmpuint(info->start_time_ns, >, 0);\n+    /* The start time is derived from the boot time on some systems; allow it some slack. */\n+    g_assert_cmpuint(info->start_time_ns, <=, now_ns + 2000000000ULL);\n+#ifndef _WIN32\n+    g_assert_true(info->has_uid);\n+    g_assert_cmpuint(info->uid, ==, (uint32_t)getuid());\n+#endif\n+}\n+\n+static ws_process_lookup_t *\n+new_lookup(void)\n+{\n+    char *err_msg = NULL;\n+    ws_process_lookup_t *lookup = ws_process_lookup_new(&err_msg);\n+\n+    if (lookup == NULL)\n+        g_error(\"ws_process_lookup_new: %s\", err_msg);\n+    return lookup;\n+}\n+\n+/* Look a socket up that no process but this one can have open: its record, or NULL if none. */\n+static const ws_process_info_t *\n+lookup_only(ws_process_lookup_t *lookup, ws_process_lookup_protocol_t protocol,\n+            const ws_socket_endpoint_t *local, const ws_socket_endpoint_t *remote)\n+{\n+    GPtrArray *procs = g_ptr_array_new();\n+    const ws_process_info_t *info = NULL;\n+\n+    g_assert_cmpuint(ws_process_lookup_socket(lookup, protocol, local, remote, procs), ==, procs->len);\n+    g_assert_cmpuint(procs->len, <=, 1);\n+    if (procs->len == 1)\n+        info = (const ws_process_info_t *)g_ptr_array_index(procs, 0);\n+    g_ptr_array_free(procs, TRUE);\n+    return info;\n+}\n+\n+/* Whether this process is among those reported as having a socket open. */\n+static bool\n+lists_own_process(ws_process_lookup_t *lookup, ws_process_lookup_protocol_t protocol,\n+                  const ws_socket_endpoint_t *local, const ws_socket_endpoint_t *remote)\n+{\n+    GPtrArray *procs = g_ptr_array_new();\n+    bool found = false;\n+\n+    ws_process_lookup_socket(lookup, protocol, local, remote, procs);\n+    for (unsigned i = 0; i < procs->len; i++) {\n+        if (((const ws_process_info_t *)g_ptr_array_index(procs, i))->pid == own_pid())\n+            found = true;\n+    }\n+    g_ptr_array_free(procs, TRUE);\n+    return found;\n+}\n+\n+static void\n+test_process_lookup_tcp4(void)\n+{\n+    socket_handle_t listener, client, server;\n+    struct sockaddr_in sin;\n+    ws_in4_addr loopback;\n+    uint16_t lport, cport;\n+    ws_process_lookup_t *lookup;\n+    ws_socket_endpoint_t l, c;\n+    const ws_process_info_t *info;\n+    char *err_msg = NULL;\n+\n+    if (!ws_process_lookup_supported()) {\n+        g_test_skip(\"not supported on this platform\");\n+        return;\n+    }\n+    g_assert_null(ws_init_sockets());\n+\n+    listener = bound_socket(AF_INET, SOCK_STREAM, \"127.0.0.1\", true);\n+    g_assert_true(listener != INVALID_SOCKET);\n+    lport = socket_port(listener);\n+    client = socket(AF_INET, SOCK_STREAM, 0);\n+    g_assert_true(client != INVALID_SOCKET);\n+    memset(&sin, 0, sizeof sin);\n+    sin.sin_family = AF_INET;\n+    g_assert_true(ws_inet_pton4(\"127.0.0.1\", &loopback));\n+    memcpy(&sin.sin_addr, &loopback, sizeof loopback);\n+    sin.sin_port = g_htons(lport);\n+    g_assert_cmpint(connect(client, (struct sockaddr *)&sin, sizeof sin), ==, 0);\n+    cport = socket_port(client);\n+    server = accept(listener, NULL, NULL);\n+    g_assert_true(server != INVALID_SOCKET);\n+\n+    lookup = new_lookup();\n+    endpoint4(&c, \"127.0.0.1\", cport);\n+    endpoint4(&l, \"127.0.0.1\", lport);\n+\n+    /* The connection, seen from either end, and the listening socket. */\n+    info = lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &c, &l);\n+    check_own_process(info);\n+    g_assert_true(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, &c) == info);\n+    g_assert_true(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL) == info);\n+    /* The same record, by process ID. */\n+    g_assert_true(ws_process_lookup_pid(lookup, own_pid()) == info);\n+    /* A process that doesn't exist. */\n+    g_assert_null(ws_process_lookup_pid(lookup, 0xfffffff0));\n+\n+    /* Once closed, the sockets have no owner (a TIME_WAIT socket has none). */\n+    closesocket(client);\n+    closesocket(server);\n+    closesocket(listener);\n+    g_assert_true(ws_process_lookup_refresh(lookup, &err_msg));\n+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_TCP, &c, &l));\n+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL));\n+\n+    ws_process_lookup_free(lookup);\n+    ws_cleanup_sockets();\n+}\n+\n+static void\n+test_process_lookup_wildcard_udp(void)\n+{\n+    socket_handle_t any_listener, udp;\n+    ws_process_lookup_t *lookup;\n+    ws_socket_endpoint_t l, r, u;\n+\n+    if (!ws_process_lookup_supported()) {\n+        g_test_skip(\"not supported on this platform\");\n+        return;\n+    }\n+    g_assert_null(ws_init_sockets());\n+\n+    any_listener = bound_socket(AF_INET, SOCK_STREAM, \"0.0.0.0\", true);\n+    g_assert_true(any_listener != INVALID_SOCKET);\n+    udp = bound_socket(AF_INET, SOCK_DGRAM, \"127.0.0.1\", false);\n+    g_assert_true(udp != INVALID_SOCKET);\n+\n+    lookup = new_lookup();\n+    /* A socket listening on any address matches a packet to any address on its port,\n+     * whether or not the caller knows the other end. */\n+    endpoint4(&l, \"127.0.0.1\", socket_port(any_listener));\n+    endpoint4(&r, \"127.0.0.1\", 40000);\n+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL));\n+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l, &r));\n+    /* An unconnected UDP socket matches with or without a remote end. */\n+    endpoint4(&u, \"127.0.0.1\", socket_port(udp));\n+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_UDP, &u, NULL));\n+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_UDP, &u, &r));\n+    /* Not with the other protocol (some other process may happen to use that port). */\n+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_UDP, &l, NULL));\n+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_TCP, &u, NULL));\n+\n+    ws_process_lookup_free(lookup);\n+    closesocket(any_listener);\n+    closesocket(udp);\n+    ws_cleanup_sockets();\n+}\n+\n+static void\n+test_process_lookup_tcp6(void)\n+{\n+    socket_handle_t listener;\n+    ws_process_lookup_t *lookup;\n+    ws_socket_endpoint_t l6, l4;\n+\n+    if (!ws_process_lookup_supported()) {\n+        g_test_skip(\"not supported on this platform\");\n+        return;\n+    }\n+    g_assert_null(ws_init_sockets());\n+\n+    listener = bound_socket(AF_INET6, SOCK_STREAM, \"::1\", true);\n+    if (listener == INVALID_SOCKET) {\n+        ws_cleanup_sockets();\n+        g_test_skip(\"no IPv6 loopback\");\n+        return;\n+    }\n+\n+    lookup = new_lookup();\n+    endpoint6(&l6, \"::1\", socket_port(listener));\n+    check_own_process(lookup_only(lookup, WS_PROCESS_LOOKUP_TCP, &l6, NULL));\n+    /* An IPv6 socket bound to ::1 is not reached over IPv4. */\n+    endpoint4(&l4, \"127.0.0.1\", socket_port(listener));\n+    g_assert_false(lists_own_process(lookup, WS_PROCESS_LOOKUP_TCP, &l4, NULL));\n+\n+    ws_process_lookup_free(lookup);\n+    closesocket(listener);\n+    ws_cleanup_sockets();\n+}\n+\n+#ifndef _WIN32\n+/* A socket that a child process inherited is reported for both, this older process first. */\n+static void\n+test_process_lookup_shared(void)\n+{\n+    socket_handle_t listener;\n+    pid_t child;\n+    int status;\n+    ws_process_lookup_t *lookup;\n+    ws_socket_endpoint_t l;\n+    GPtrArray *procs;\n+    const ws_process_info_t *info;\n+\n+    if (!ws_process_lookup_supported()) {\n+        g_test_skip(\"not supported on this platform\");\n+        return;\n+    }\n+    g_assert_null(ws_init_sockets());\n+\n+    listener = bound_socket(AF_INET, SOCK_STREAM, \"127.0.0.1\", true);\n+    g_assert_true(listener != INVALID_SOCKET);\n+    endpoint4(&l, \"127.0.0.1\", socket_port(listener));\n+\n+    child = fork();\n+    g_assert_cmpint(child, >=, 0);\n+    if (child == 0) {\n+        /* Hold the inherited socket until killed. */\n+        for (;;)\n+            pause();\n+    }\n+\n+    lookup = new_lookup();\n+    procs = g_ptr_array_new();\n+    g_assert_cmpuint(ws_process_lookup_socket(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL, procs), ==, 2);\n+    g_assert_cmpuint(procs->len, ==, 2);\n+    check_own_process((const ws_process_info_t *)g_ptr_array_index(procs, 0));\n+    info = (const ws_process_info_t *)g_ptr_array_index(procs, 1);\n+    g_assert_cmpuint(info->pid, ==, (uint32_t)child);\n+    g_assert_true(info->has_ppid);\n+    g_assert_cmpuint(info->ppid, ==, own_pid());\n+    g_assert_true(ws_process_lookup_pid(lookup, (uint32_t)child) == info);\n+\n+    /* Once we close it, the child is the only process that has it; the array is appended to. */\n+    closesocket(listener);\n+    g_assert_true(ws_process_lookup_refresh(lookup, NULL));\n+    g_assert_cmpuint(ws_process_lookup_socket(lookup, WS_PROCESS_LOOKUP_TCP, &l, NULL, procs), ==, 1);\n+    g_assert_cmpuint(procs->len, ==, 3);\n+    g_assert_true(g_ptr_array_index(procs, 2) == info);\n+\n+    kill(child, SIGKILL);\n+    g_assert_cmpint(waitpid(child, &status, 0), ==, child);\n+    g_ptr_array_free(procs, TRUE);\n+    ws_process_lookup_free(lookup);\n+    ws_cleanup_sockets();\n+}\n+#endif\n+\n int main(int argc, char **argv)\n {\n     int ret;\n@@ -1349,6 +1692,13 @@ int main(int argc, char **argv)\n     g_test_add_func(\"/sap_lzclzh_decompress\", test_sap_lzclzh_decompress);\n     g_test_add_func(\"/sap_lzclzh_decompress/errors\", test_sap_lzclzh_decompress_errors);\n \n+    g_test_add_func(\"/process_lookup/tcp4\", test_process_lookup_tcp4);\n+    g_test_add_func(\"/process_lookup/wildcard_udp\", test_process_lookup_wildcard_udp);\n+    g_test_add_func(\"/process_lookup/tcp6\", test_process_lookup_tcp6);\n+#ifndef _WIN32\n+    g_test_add_func(\"/process_lookup/shared\", test_process_lookup_shared);\n+#endif\n+\n     ret = g_test_run();\n \n     return ret;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/test_wsutil.c",
+      "old_path": "wsutil/test_wsutil.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "a14bfc57070d0c507d467827733728dcec7edce6",
+      "short_id": "a14bfc57",
+      "created_at": "2026-09-13T17:44:07.000+10:00",
+      "parent_ids": [
+        "1650299e8a1bc23662a6e178a5ef2a0d95aeefbf"
+      ],
+      "title": "wsutil: Add a lookup of the processes that have a socket open",
+      "message": "wsutil: Add a lookup of the processes that have a socket open\n\nAdd wsutil/process_lookup.h, which finds the processes that have a TCP\nor UDP socket open, given its local and, if connected, remote endpoint,\nfrom the operating system's socket tables, and describes them: name,\nexecutable path, command line, parent process ID, user ID and name, and\nstart time, the attributes of a pcapng process information block. A\nlookup context holds a snapshot of the tables, refreshed when a socket\nis not found but not more often than a configurable interval, and a\ncache of the processes found, which notices when a process ID is reused\nby comparing start times. A socket that is not connected, or listening,\nis matched by its local endpoint alone, and one bound to any address by\nits port.\n\nEvery process that has the socket open is reported, the one that has had\nit longest first, since a socket can be inherited across fork() or passed\nbetween processes, and the pcapng epb_processid_threadid option may now\nappear once per process.\n\nThe backends read what the platform offers to an unprivileged process:\non Windows the IP Helper TCP and UDP tables with owning process IDs, a\nToolhelp snapshot for names and parents, and the process's own memory for\nits command line; on Linux /proc/net/{tcp,udp}{,6} and the socket inodes\nin /proc/<pid>/fd, and the process's /proc files. Other platforms report\nthat the lookup is not supported.\n\nThis is for dumpcap to record which process sent or received a packet;\nnothing uses it yet.\n\nAdd unit tests that create sockets and look up the test process itself.\n\nRelated to #1184 and #17525.\n\nAssisted-by: Claude\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01MeQMmftoMWrDyC8HdFk7sT\n",
+      "author_name": "Fidel Perez-Smith",
+      "author_email": "fiddyschmitt@gmail.com",
+      "authored_date": "2026-09-13T13:25:51.000+10:00",
+      "committer_name": "Fidel Perez-Smith",
+      "committer_email": "fiddyschmitt@gmail.com",
+      "committed_date": "2026-09-13T17:44:07.000+10:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/a14bfc57070d0c507d467827733728dcec7edce6"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2022366701,
+      "head_commit_sha": "a14bfc57070d0c507d467827733728dcec7edce6",
+      "base_commit_sha": "1650299e8a1bc23662a6e178a5ef2a0d95aeefbf",
+      "start_commit_sha": "6971deb86e2ec687f1a86abef0988be0594d14ea",
+      "created_at": "2026-09-13T07:59:03.750Z",
+      "merge_request_id": 531392084,
+      "state": "collected",
+      "real_size": "9",
+      "patch_id_sha": "d3d682e9659a0787d14d028b0199fc2e6c16b48a"
+    },
+    {
+      "id": 2022270644,
+      "head_commit_sha": "4e16fde695436989743551dc5150cc19364f791e",
+      "base_commit_sha": "1650299e8a1bc23662a6e178a5ef2a0d95aeefbf",
+      "start_commit_sha": "6971deb86e2ec687f1a86abef0988be0594d14ea",
+      "created_at": "2026-09-13T04:22:33.662Z",
+      "merge_request_id": 531392084,
+      "state": "without_files",
+      "real_size": "9",
+      "patch_id_sha": "fc11b609be7ba827d19ef6d6d0bffec1cfae1c72"
+    },
+    {
+      "id": 2022258833,
+      "head_commit_sha": "bea751f173f31b9b577cf2398498697debb5fc6f",
+      "base_commit_sha": "1650299e8a1bc23662a6e178a5ef2a0d95aeefbf",
+      "start_commit_sha": "6971deb86e2ec687f1a86abef0988be0594d14ea",
+      "created_at": "2026-09-13T03:55:37.396Z",
+      "merge_request_id": 531392084,
+      "state": "without_files",
+      "real_size": "9",
+      "patch_id_sha": "a0f20febd3080aeee5092565cdee36dda566848a"
+    },
+    {
+      "id": 2022251736,
+      "head_commit_sha": "c78ff75fd906e2d8719c3427a72470b2e5f74bcc",
+      "base_commit_sha": "1650299e8a1bc23662a6e178a5ef2a0d95aeefbf",
+      "start_commit_sha": "6971deb86e2ec687f1a86abef0988be0594d14ea",
+      "created_at": "2026-09-13T03:30:32.986Z",
+      "merge_request_id": 531392084,
+      "state": "without_files",
+      "real_size": "9",
+      "patch_id_sha": "3a83dc954f6314e4cb621a85c6496222ebd64b52"
+    }
+  ]
+}

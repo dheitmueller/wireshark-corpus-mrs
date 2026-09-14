@@ -1,0 +1,307 @@
+{
+  "id": 531396361,
+  "iid": 26494,
+  "project_id": 7898047,
+  "title": "IEEE 802.11: Save the FTE element for dot11decrypt after length check",
+  "description": "For certain elements, data is saved off as proto_data for the\ndot11decrypt functions. Most of such elements are those that *SHOULD*\nonly appear once; if they appear more than once, rather than marking\nan expert info, the last element generally replaces the previous one\nin proto data. Certain elements can have \"one or more\" present; it\ndoes not appear that any of those are the ones saved as proto_data.\nFor purposes of calculating the MIC, the entire element, including\ntag number and tag length, is concatenated, so the data is saved\nbefore the tag dissector is called. (It is also before defragmentation,\nthough those elements, according to Table 9-92 Element IDs of IEEE\n802.11-2020, are not fragmentable.)\n\n*The* Fast BSS Transition Element (FTE) is one that MUST only appear\nonce in a frame body if it appears. It also saves to proto_data some\nparsed data needed for the MIC calculation from later in the element.\nThat is by necessity after a length check.\n\nThis means that in the case of a short FTE, the full element is saved\nto FTE_TAG_KEY is saved but not the other proto data from the FTE. Worse,\nif a frame illegally contains multiple FTE elements, an earlier one which\nis of a normal size and a second one which is short, there is an\ninconsistency between the data from the FTE_TAG_KEY and the data from\nthe FTE_MIC_LEN_KEY, as the former but not the latter will be copied\nfrom a short element.\n\nTo prevent that, don't copy the FTE if it is too short.\n\nIn addition, add some extra checks in Dot11DecryptFtMicCheck for the\nRSNE, MDE, or FTE being missing, as might somehow occur in a bogus\nAuthentication, Reassociation Request, or Reassociation Response frame.\n\nFix #21564\n\nThanks to Anthropic and Ada Logics for the report.\n\n\n(cherry picked from commit 6971deb86e2ec687f1a86abef0988be0594d14ea)\n\nCo-authored-by: John Thacker <johnthacker@gmail.com>",
+  "state": "merged",
+  "created_at": "2026-09-13T04:24:24.271Z",
+  "updated_at": "2026-09-13T08:21:02.824Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-09-13T08:21:04.175Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-4.6",
+  "source_branch": "cherry-pick-6971deb8",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 279822,
+      "username": "alagoutte",
+      "public_email": "",
+      "name": "Alexis La Goutte",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+      "web_url": "https://gitlab.com/alagoutte"
+    }
+  ],
+  "source_project_id": 7898047,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "147d2ca4b177a73e9abcadc64922f3c635317ca4",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-09-13T04:24:26.338Z",
+  "reference": "!26494",
+  "references": {
+    "short": "!26494",
+    "relative": "!26494",
+    "full": "wireshark/wireshark!26494"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26494",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2026-09-13T08:06:08.061Z",
+  "latest_build_finished_at": "2026-09-13T08:20:30.575Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2844335182,
+    "iid": 109669,
+    "project_id": 7898047,
+    "sha": "147d2ca4b177a73e9abcadc64922f3c635317ca4",
+    "ref": "refs/merge-requests/26494/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-13T08:06:06.980Z",
+    "updated_at": "2026-09-13T08:20:30.587Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2844335182"
+  },
+  "head_pipeline": {
+    "id": 2844335182,
+    "iid": 109669,
+    "project_id": 7898047,
+    "sha": "147d2ca4b177a73e9abcadc64922f3c635317ca4",
+    "ref": "refs/merge-requests/26494/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-13T08:06:06.980Z",
+    "updated_at": "2026-09-13T08:20:30.587Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2844335182",
+    "before_sha": "147d2ca4b177a73e9abcadc64922f3c635317ca4",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-09-13T08:06:08.061Z",
+    "finished_at": "2026-09-13T08:20:30.575Z",
+    "committed_at": null,
+    "duration": 859,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2844335182",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "0fe8d00e93b937d2688653c3349ac80aa6f8bb64",
+    "head_sha": "147d2ca4b177a73e9abcadc64922f3c635317ca4",
+    "start_sha": "0fe8d00e93b937d2688653c3349ac80aa6f8bb64"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "d3e7e8e134f00a9b0c243db76f90ef269372b8e7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826020278,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2026-09-13T05:57:24.419Z",
+          "updated_at": "2026-09-13T05:57:24.424Z",
+          "system": true,
+          "noteable_id": 531396361,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6791e94f56d6c6de898c9eba768a53b8e5bf8add",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3826252334,
+          "type": null,
+          "body": "started a [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-13T08:06:04.494Z",
+          "updated_at": "2026-09-13T08:06:04.495Z",
+          "system": true,
+          "noteable_id": 531396361,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26494,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2127,6 +2127,12 @@ Dot11DecryptFtMicCheck(\n     uint8_t zeros[16] = { 0 };\n     gcry_mac_hd_t handle;\n \n+    if (!assoc_parsed->rsne_tag || !assoc_parsed->mde_tag ||\n+        !assoc_parsed->fte_tag) {\n+        ws_debug(\"RSNE, MDE, or FTE not present\");\n+        return DOT11DECRYPT_RET_UNSUCCESS;\n+    }\n+\n     fte_len = assoc_parsed->fte_tag[1] + 2;\n     if (fte_len < 20) {\n         ws_debug(\"FTE too short\");\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/crypt/dot11decrypt.c",
+      "old_path": "epan/crypt/dot11decrypt.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -22339,6 +22339,16 @@ save_tag_for_dot11decrypt(tvbuff_t *tvb, packet_info *pinfo, int offset)\n   uint8_t tag_no;\n   uint8_t tag_len;\n \n+  /* None of these should be fragmented. For purposes of calculating the\n+   * MIC we want these elements including the tag number and tag len. The\n+   * tag dissector is passed a tvbuffer that does not include the tag number\n+   * or tag len.\n+   *\n+   * XXX - save_proto_data calls tvb_memcpy and can throw an exception if\n+   * the TVB doesn't contain the full element length. We don't want to copy\n+   * the data if the full length isn't there, but we might not want to throw\n+   * an exception here before we've added the fields that we can to the tree.\n+   */\n   if (!enable_decryption) {\n     return;\n   }\n@@ -22350,7 +22360,13 @@ save_tag_for_dot11decrypt(tvbuff_t *tvb, packet_info *pinfo, int offset)\n       save_proto_data(tvb, pinfo, offset, tag_len + 2, MDE_TAG_KEY);\n       break;\n     case TAG_FAST_BSS_TRANSITION:\n-      save_proto_data(tvb, pinfo, offset, tag_len + 2, FTE_TAG_KEY);\n+      if (tag_len >= 82) {\n+        /* Same length check as in dissect_fast_bss_transition(), which\n+         * also saves proto data needed for the MIC calculation but after\n+         * the length check. This prevents odd behavior in the unusual\n+         * case of a malformed frame with one normal and one short FTE. */\n+        save_proto_data(tvb, pinfo, offset, tag_len + 2, FTE_TAG_KEY);\n+      }\n       break;\n     case TAG_RIC_DATA:\n       save_proto_data(tvb, pinfo, offset, tag_len + 2, RDE_TAG_KEY);\n@@ -31471,6 +31487,13 @@ add_tagged_field_with_validation(packet_info *pinfo, proto_tree *tree, tvbuff_t\n \n   tag_no  = tvb_get_uint8(tvb, offset);\n   tag_len = tvb_get_uint8(tvb, offset + 1);\n+  /* XXX - Some elements can only appear once, whereas others can appear one or\n+   * more times. Compare in Table 9-32 \"Beacon frame body\" etc. the phrases\n+   * \"The X element is present if\" to \"One or more X elements are present if\".\n+   * We don't add an expert info if an element that should appear only once\n+   * is repeated. In general when saving proto_data, e.g. for dot11decrypt,\n+   * we save the last element of a tag, but need to be careful if an element\n+   * occurs once in a normal form and once in a short or malformed form. */\n   save_tag_for_dot11decrypt(tvb, pinfo, offset);\n \n   /*\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ieee80211.c",
+      "old_path": "epan/dissectors/packet-ieee80211.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "147d2ca4b177a73e9abcadc64922f3c635317ca4",
+      "short_id": "147d2ca4",
+      "created_at": "2026-09-13T00:24:18.000-04:00",
+      "parent_ids": [
+        "0fe8d00e93b937d2688653c3349ac80aa6f8bb64"
+      ],
+      "title": "IEEE 802.11: Save the FTE element for dot11decrypt after length check",
+      "message": "IEEE 802.11: Save the FTE element for dot11decrypt after length check\n\nFor certain elements, data is saved off as proto_data for the\ndot11decrypt functions. Most of such elements are those that *SHOULD*\nonly appear once; if they appear more than once, rather than marking\nan expert info, the last element generally replaces the previous one\nin proto data. Certain elements can have \"one or more\" present; it\ndoes not appear that any of those are the ones saved as proto_data.\nFor purposes of calculating the MIC, the entire element, including\ntag number and tag length, is concatenated, so the data is saved\nbefore the tag dissector is called. (It is also before defragmentation,\nthough those elements, according to Table 9-92 Element IDs of IEEE\n802.11-2020, are not fragmentable.)\n\n*The* Fast BSS Transition Element (FTE) is one that MUST only appear\nonce in a frame body if it appears. It also saves to proto_data some\nparsed data needed for the MIC calculation from later in the element.\nThat is by necessity after a length check.\n\nThis means that in the case of a short FTE, the full element is saved\nto FTE_TAG_KEY is saved but not the other proto data from the FTE. Worse,\nif a frame illegally contains multiple FTE elements, an earlier one which\nis of a normal size and a second one which is short, there is an\ninconsistency between the data from the FTE_TAG_KEY and the data from\nthe FTE_MIC_LEN_KEY, as the former but not the latter will be copied\nfrom a short element.\n\nTo prevent that, don't copy the FTE if it is too short.\n\nIn addition, add some extra checks in Dot11DecryptFtMicCheck for the\nRSNE, MDE, or FTE being missing, as might somehow occur in a bogus\nAuthentication, Reassociation Request, or Reassociation Response frame.\n\nFix #21564\n\nThanks to Anthropic and Ada Logics for the report.\n\n\n(cherry picked from commit 6971deb86e2ec687f1a86abef0988be0594d14ea)\n\nCo-authored-by: John Thacker <johnthacker@gmail.com>",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2026-09-13T00:24:18.000-04:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2026-09-13T00:24:18.000-04:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/147d2ca4b177a73e9abcadc64922f3c635317ca4"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2022271280,
+      "head_commit_sha": "147d2ca4b177a73e9abcadc64922f3c635317ca4",
+      "base_commit_sha": "0fe8d00e93b937d2688653c3349ac80aa6f8bb64",
+      "start_commit_sha": "0fe8d00e93b937d2688653c3349ac80aa6f8bb64",
+      "created_at": "2026-09-13T04:24:24.765Z",
+      "merge_request_id": 531396361,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "d0c71d3616379c5ab27b9e2cade1576b270226c8"
+    }
+  ]
+}

@@ -1,0 +1,354 @@
+{
+  "id": 529458439,
+  "iid": 26415,
+  "project_id": 7898047,
+  "title": "TNS: Fix two length misreads in the TTI_OER decoder",
+  "description": "A follow-up to !26411, which added the TTI_OER decoding. Re-checking it\nagainst the same reference the series was written from turned up two\nplaces where a byte was treated as a length when it isn't one. Two\ncommits, one per case, each with the fixture frame that demonstrates it.\n\n### The DALC null marker\n\nA DALC's leading byte is a length only in the middle of its range:\n`0x00` is empty, `0xFE` opens the chunked form, and `0xFF` is a null\nmarker that stands for itself with no data behind it. The decoder\nhandled the first two and let `0xFF` fall through to the plain-length\nbranch, where it claims 255 bytes that aren't there — every field after\nit lands at the wrong offset, and near the end of a packet the read runs\noff the frame and the whole thing is reported as malformed.\n\n### bytes_with_length\n\nA `bytes_with_length` / `str_with_length` field is a ub4 count followed\nby a DALC, and the DALC is present only when the count is non-zero. The\ndecoder read `oerrdd` and the batch-error message entries as a bare\nDALC.\n\nAn empty field is the count alone — a single zero byte — which a bare\nDALC read also consumes in one byte, so the two agree on every capture\nwhere the field is empty. That's every capture one normally sees, which\nis why this went unnoticed. As soon as the field carries something, the\ncount byte is mistaken for a length and the rest of the block decodes\none field early: on a real error the ORA-NNNNN message quietly\ndisappears.\n\nThe batch error-code and offset arrays get the same treatment from the\nother side — each is a count and then one DALC packing that many ub4\nvalues, not a byte to skip followed by the values inline. Both readings\nconsume the same bytes while the packed values fit a short DALC, but\nonly one keeps working when the array grows past that.\n\n### Not reachable in ordinary traffic\n\nNeither case appears in any capture I have, which is why the existing\ntests pass on the unfixed code. Both need a server to fill in a field\nthat is normally empty — a logical rowid in `oerrdd`, or a null rather\nthan empty message. Nothing here is in a released branch, so there's no\nbackport to consider.\n\n### Testing\n\n`test/captures/tns_oer.pcap` grows from two frames to four, one per\ncase, and each commit was checked against its own parent: without the\nfirst fix the null-marker frame is reported as `[Malformed Packet]`;\nwithout the second the `oerrdd` frame silently loses its ORA-00942\nmessage text.\n\nIts generator also had to start advancing the TCP sequence number by the\nbytes actually sent. Numbering the segments 1, 2, 3 was harmless with\ntwo frames, but the third then overlaps the second and is read as a\nretransmission rather than dissected.\n\nBoth commits build individually with `-Werror`; at the tip the TNS tests\npass, clang-tidy is clean, and the fixtures regenerate byte-identically.\n\n### Not changed\n\nThe chunk lengths inside the `0xFE` form are single bytes here. That's\nthe 11g shape this dissector decodes throughout — 12.2 and later prefix\neach chunk with a variable-length ub4 instead, and telling the two apart\nneeds the field version negotiated during the handshake, which isn't\nthreaded through the dissector. Left alone, with a comment recording it\nso it isn't \"fixed\" in the wrong direction.",
+  "state": "merged",
+  "created_at": "2026-09-08T13:27:57.534Z",
+  "updated_at": "2026-09-09T09:01:03.444Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-09-09T09:01:03.482Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "tns_dalc_fixes",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 62913,
+    "username": "lemenkov",
+    "public_email": "",
+    "name": "Peter Lemenkov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/305bd72c5208635a0f52fe4bfdbe7b7e5d682775d264bdae0cb298bf4d1efba0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/lemenkov"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    }
+  ],
+  "source_project_id": 25510003,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "bc79ca878c1e8fc66d5b09dd42aaeba7c62f47fb",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-09-08T13:28:06.192Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26415",
+  "references": {
+    "short": "!26415",
+    "relative": "!26415",
+    "full": "wireshark/wireshark!26415"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26415",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "4",
+  "latest_build_started_at": "2026-09-09T08:28:14.984Z",
+  "latest_build_finished_at": "2026-09-09T09:00:59.802Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2832274127,
+    "iid": 109440,
+    "project_id": 7898047,
+    "sha": "18e0e7e693a72c2db9fa2eafc36352d7fa1c8a56",
+    "ref": "refs/merge-requests/26415/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-09T08:28:07.373Z",
+    "updated_at": "2026-09-09T09:00:59.823Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2832274127"
+  },
+  "head_pipeline": {
+    "id": 2832274127,
+    "iid": 109440,
+    "project_id": 7898047,
+    "sha": "18e0e7e693a72c2db9fa2eafc36352d7fa1c8a56",
+    "ref": "refs/merge-requests/26415/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-09T08:28:07.373Z",
+    "updated_at": "2026-09-09T09:00:59.823Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2832274127",
+    "before_sha": "18e0e7e693a72c2db9fa2eafc36352d7fa1c8a56",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-09-09T08:28:14.984Z",
+    "finished_at": "2026-09-09T09:00:59.802Z",
+    "committed_at": null,
+    "duration": 1573,
+    "queued_duration": 7,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2832274127",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "81773f4125749a636935016200c5ca196b3bda0c",
+    "head_sha": "bc79ca878c1e8fc66d5b09dd42aaeba7c62f47fb",
+    "start_sha": "2440fc176411a0f07b0d4bb6995afdeec0631c22"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "9b53440ae91e4916b0a7b57b7318fe412c0fbdb2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3807378550,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-09T08:27:51.358Z",
+          "updated_at": "2026-09-09T08:27:52.024Z",
+          "system": true,
+          "noteable_id": 529458439,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26415,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b98a49224489585054f7214b7cd9c1a4b0ab3ca5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3807378987,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 4",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-09T08:27:52.939Z",
+          "updated_at": "2026-09-09T08:27:52.955Z",
+          "system": true,
+          "noteable_id": 529458439,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26415,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -661,16 +661,30 @@ static int get_sb4_custom(tvbuff_t *tvb, int offset, int *result)\n \treturn first_byte + 1;\n }\n \n-/* Decode a DALC (Data-Length-And-Content) blob: either a single\n- * length-prefixed run, an empty marker (0), or a multi-chunk form\n- * (0xFE / 254) where successive (len, bytes) pairs are concatenated\n- * and terminated by a 0-length chunk. Returns the number of bytes\n- * consumed from the tvb and, when content is non-empty, a UTF-8\n- * string allocated from pinfo->pool. */\n+/* Decode a DALC (Data-Length-And-Content) blob. The leading byte is a\n+ * length only in the middle of its range:\n+ *\n+ *   0x00        empty\n+ *   0x01..0xFD  that many data bytes follow\n+ *   0xFE        chunked: (len, bytes) pairs until a 0-length chunk\n+ *   0xFF        null - a marker only, no data follows\n+ *\n+ * The null marker consumes just itself. Reading it as a length would\n+ * claim 255 bytes that are not there and misalign every field after\n+ * it, so it has to be spelled out rather than left to the default.\n+ *\n+ * The chunk lengths in the 0xFE form are single bytes here, which is\n+ * the 11g shape this dissector decodes throughout; 12.2 and later\n+ * prefix each chunk with a variable-length ub4 instead. Telling the\n+ * two apart needs the field version negotiated during the handshake,\n+ * which is not threaded through yet.\n+ *\n+ * Returns the number of bytes consumed from the tvb and, when content\n+ * is non-empty, a UTF-8 string allocated from pinfo->pool. */\n static int get_dalc_custom(tvbuff_t *tvb, packet_info *pinfo, int offset, const char **out_str)\n {\n \tuint8_t first = tvb_get_uint8(tvb, offset);\n-\tif ( first == 0 )\n+\tif ( first == 0 || first == 255 )\n \t{\n \t\tif ( out_str )\n \t\t\t*out_str = NULL;\n@@ -700,6 +714,23 @@ static int get_dalc_custom(tvbuff_t *tvb, packet_info *pinfo, int offset, const\n \treturn o - offset;\n }\n \n+/* Decode a bytes_with_length / str_with_length field: a ub4 count, and\n+ * a DALC carrying the value only when that count is non-zero. The count\n+ * is not simply a byte to step over - an empty field is the count\n+ * alone, so reading a DALC anyway consumes whatever follows it.\n+ * Returns bytes consumed; *out_str (when non-NULL) gets the string, or\n+ * NULL when the field is empty. */\n+static int get_field_with_length(tvbuff_t *tvb, packet_info *pinfo, int offset, const char **out_str)\n+{\n+\tint count = 0;\n+\tint used = get_sb4_custom(tvb, offset, &count);\n+\tif ( out_str )\n+\t\t*out_str = NULL;\n+\tif ( count > 0 )\n+\t\tused += get_dalc_custom(tvb, pinfo, offset + used, out_str);\n+\treturn used;\n+}\n+\n static void vsnum_to_vstext_basecustom(char *result, uint32_t vsnum)\n {\n \t/*\n@@ -1021,28 +1052,26 @@ static void dissect_tns_data(tvbuff_t *tvb, int offset, packet_info *pinfo, prot\n \t\t\t/* padding ub2 + successful iterations ub4 */\n \t\t\toffset += get_sb4_custom(tvb, offset, &v);\n \t\t\toffset += get_sb4_custom(tvb, offset, &v);\n-\t\t\t/* oerrdd (logical rowid) DALC — skipped */\n-\t\t\toffset += get_dalc_custom(tvb, pinfo, offset, NULL);\n-\n+\t\t\t/* oerrdd (logical rowid), a bytes_with_length — skipped */\n+\t\t\toffset += get_field_with_length(tvb, pinfo, offset, NULL);\n+\n+\t\t\t/* Batch error arrays (array DML). The code and offset arrays\n+\t\t\t * are each a ub4 count followed by one DALC packing that many\n+\t\t\t * ub4 values back to back; the message array is a ub4 count,\n+\t\t\t * an indicator byte, and then that many str_with_length\n+\t\t\t * entries each with a 2-byte trailer. All three counts are\n+\t\t\t * zero for an ordinary statement. */\n \t\t\tint n_codes = 0, n_offs = 0, n_msgs = 0;\n \t\t\tint nb_start = offset;\n \t\t\toffset += get_sb4_custom(tvb, offset, &n_codes);\n \t\t\tproto_tree_add_int(oer_tree, hf_tns_data_oer_n_batch_errcodes, tvb, nb_start, offset - nb_start, n_codes);\n \t\t\tif ( n_codes > 0 )\n-\t\t\t{\n-\t\t\t\toffset += 1;\n-\t\t\t\tfor ( int i = 0; i < n_codes; i++ )\n-\t\t\t\t\toffset += get_sb4_custom(tvb, offset, &v);\n-\t\t\t}\n+\t\t\t\toffset += get_dalc_custom(tvb, pinfo, offset, NULL);\n \t\t\tnb_start = offset;\n \t\t\toffset += get_sb4_custom(tvb, offset, &n_offs);\n \t\t\tproto_tree_add_int(oer_tree, hf_tns_data_oer_n_batch_offsets, tvb, nb_start, offset - nb_start, n_offs);\n \t\t\tif ( n_offs > 0 )\n-\t\t\t{\n-\t\t\t\toffset += 1;\n-\t\t\t\tfor ( int i = 0; i < n_offs; i++ )\n-\t\t\t\t\toffset += get_sb4_custom(tvb, offset, &v);\n-\t\t\t}\n+\t\t\t\toffset += get_dalc_custom(tvb, pinfo, offset, NULL);\n \t\t\tnb_start = offset;\n \t\t\toffset += get_sb4_custom(tvb, offset, &n_msgs);\n \t\t\tproto_tree_add_int(oer_tree, hf_tns_data_oer_n_batch_messages, tvb, nb_start, offset - nb_start, n_msgs);\n@@ -1051,8 +1080,7 @@ static void dissect_tns_data(tvbuff_t *tvb, int offset, packet_info *pinfo, prot\n \t\t\t\toffset += 1;\n \t\t\t\tfor ( int i = 0; i < n_msgs; i++ )\n \t\t\t\t{\n-\t\t\t\t\toffset += get_sb4_custom(tvb, offset, &v);\n-\t\t\t\t\toffset += get_dalc_custom(tvb, pinfo, offset, NULL);\n+\t\t\t\t\toffset += get_field_with_length(tvb, pinfo, offset, NULL);\n \t\t\t\t\toffset += 2;\n \t\t\t\t}\n \t\t\t}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tns.c",
+      "old_path": "epan/dissectors/packet-tns.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -5,11 +5,15 @@\n # Copyright 1998 Gerald Combs\n #\n # SPDX-License-Identifier: GPL-2.0-or-later\n-\"\"\"Generate test/captures/tns_oer.pcap with two TTI_OER frames:\n+\"\"\"Generate test/captures/tns_oer.pcap with three TTI_OER frames:\n \n     Frame 1 — successful DML: call_status=0, rowcount=3, err_code=0\n     Frame 2 — failure        : err_code=1 (\"ORA-00001: unique constraint (...)\n                                 violated\") with message text\n+    Frame 3 — failure whose message is the 0xFF null marker, which stands for\n+                                itself and carries no data after it\n+    Frame 4 — failure with a non-empty oerrdd, so that field is a ub4 count\n+                                followed by a DALC rather than a bare DALC\n \n Bytes are constructed by hand in the Oracle 11g wire shape.\n \"\"\"\n@@ -46,8 +50,16 @@ def dalc(s: bytes | None) -> bytes:\n     return out\n \n \n+def bytes_with_length(s: bytes | None) -> bytes:\n+    \"\"\"A ub4 count, and a DALC carrying the value only when it is non-empty.\"\"\"\n+    if not s:\n+        return ub4(0)\n+    return ub4(len(s)) + dalc(s)\n+\n+\n def build_oer(call_status: int, rowcount: int, err_code: int, cursor_id: int,\n-              message: bytes | None) -> bytes:\n+              message: bytes | None, message_raw: bytes | None = None,\n+              oerrdd: bytes | None = None) -> bytes:\n     b = b\"\\x04\"                       # TTI_OER token\n     b += ub4(call_status)\n     b += ub4(0)                       # end-to-end seq#\n@@ -68,12 +80,12 @@ def build_oer(call_status: int, rowcount: int, err_code: int, cursor_id: int,\n     b += b\"\\x00\\x00\"                  # statement #, call #\n     b += ub4(0)                       # padding (ub2 in 11g)\n     b += ub4(1)                       # successful iterations\n-    b += dalc(None)                   # oerrdd (logical rowid)\n+    b += bytes_with_length(oerrdd)    # oerrdd (logical rowid)\n     b += ub4(0)                       # num batch errcodes\n     b += ub4(0)                       # num batch offsets\n     b += ub4(0)                       # num batch messages\n     if err_code != 0:\n-        b += dalc(message or b\"\")\n+        b += message_raw if message_raw is not None else dalc(message or b\"\")\n     return b\n \n \n@@ -81,6 +93,15 @@ frames = [\n     build_oer(call_status=0, rowcount=3, err_code=0, cursor_id=42, message=None),\n     build_oer(call_status=0, rowcount=0, err_code=1, cursor_id=42,\n               message=b\"ORA-00001: unique constraint (TEST.PK) violated\\n\"),\n+    # A null message. 0xFF is a marker, not a length of 255 - reading it as\n+    # one walks off the end of the frame.\n+    build_oer(call_status=0, rowcount=0, err_code=1722, cursor_id=9,\n+              message=None, message_raw=b\"\\xff\"),\n+    # A logical rowid in oerrdd. Read as a bare DALC the count byte is taken\n+    # for a length, and every field after it lands one field early.\n+    build_oer(call_status=0, rowcount=0, err_code=942, cursor_id=7,\n+              message=b\"ORA-00942: table or view does not exist\\n\",\n+              oerrdd=b\"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\"),\n ]\n \n \n@@ -102,7 +123,7 @@ def tcp_checksum(src: bytes, dst: bytes, seg: bytes) -> int:\n     return (~s) & 0xFFFF\n \n \n-def wrap(body: bytes, seq: int) -> bytes:\n+def wrap(body: bytes, seq: int, ident: int) -> bytes:\n     # TNS DATA framing (10 bytes).\n     tns = struct.pack(\">HhBBhh\", len(body) + 10, 0, 6, 0, 0, 0) + body\n \n@@ -120,7 +141,7 @@ def wrap(body: bytes, seq: int) -> bytes:\n     seg = tcp + tns\n \n     ip_total = 20 + len(seg)\n-    ip_no = struct.pack(\">BBHHHBBH\", 0x45, 0, ip_total, seq, 0x4000, 64, 6, 0) + src_ip + dst_ip\n+    ip_no = struct.pack(\">BBHHHBBH\", 0x45, 0, ip_total, ident, 0x4000, 64, 6, 0) + src_ip + dst_ip\n     ip = ip_no[:10] + struct.pack(\">H\", ipv4_checksum(ip_no)) + ip_no[12:]\n     return ip + seg\n \n@@ -128,8 +149,12 @@ def wrap(body: bytes, seq: int) -> bytes:\n out = os.path.join(os.path.dirname(__file__), \"tns_oer.pcap\")\n with open(out, \"wb\") as f:\n     f.write(struct.pack(\"<IHHIIII\", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 101))\n+    # Sequence numbers have to advance by the bytes actually sent, or TCP\n+    # reads the later frames as retransmissions and never dissects them.\n+    seq = 1\n     for i, body in enumerate(frames):\n-        pkt = wrap(body, seq=i + 1)\n+        pkt = wrap(body, seq=seq, ident=i + 1)\n         f.write(struct.pack(\"<IIII\", 0, i, len(pkt), len(pkt)))\n         f.write(pkt)\n+        seq += len(body) + 10  # TNS DATA header\n print(f\"wrote {out} ({os.path.getsize(out)} bytes, {len(frames)} frames)\")\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/_gen_tns_oer.py",
+      "old_path": "test/captures/_gen_tns_oer.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files a/test/captures/tns_oer.pcap and b/test/captures/tns_oer.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/tns_oer.pcap",
+      "old_path": "test/captures/tns_oer.pcap",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1354,8 +1354,9 @@ class TestDissectTns:\n     def test_tns_oer(self, cmd_tshark, capture_file, test_env):\n         '''TTI_OER (Oracle Error Return) decodes call_status, rowcount,\n         err_code, cursor_id, and the trailing ORA-NNNNN message text.\n-        Two frames: a successful DML (rowcount=3, err=0) and a failed\n-        DML (err=1, with message body).'''\n+        Four frames: a successful DML (rowcount=3, err=0), a failed DML\n+        (err=1, with message body), one whose message is the null marker,\n+        and one carrying a non-empty oerrdd.'''\n         stdout = subprocess.check_output((cmd_tshark,\n             '-r', capture_file('tns_oer.pcap'),\n             '-d', 'tcp.port==1521,tns',\n@@ -1366,11 +1367,32 @@ class TestDissectTns:\n             '-e', 'tns.data_oer.cursor_id',\n             '-e', 'tns.data_oer.message',\n         ), encoding='utf-8', env=test_env)\n-        rows = [r.split('\\t') for r in stdout.strip().splitlines()]\n-        assert len(rows) == 2, rows\n+        # Not stdout.strip(): the last row ends in an empty field, and\n+        # stripping would take the tab that holds it with the newline.\n+        rows = [r.split('\\t') for r in stdout.splitlines() if r]\n+        assert len(rows) == 4, rows\n         assert rows[0] == ['0', '3', '0', '42', ''], rows[0]\n         assert rows[1][0] == '0' and rows[1][2] == '1' and rows[1][3] == '42', rows[1]\n         assert 'ORA-00001' in rows[1][4], rows[1]\n+        # 0xFF is the null marker and stands for itself. Read as a length it\n+        # claims 255 bytes that are not there.\n+        assert rows[2][2] == '1722' and rows[2][3] == '9', rows[2]\n+        assert rows[2][4] == '', rows[2]\n+        # oerrdd is a ub4 count and then a DALC, not a bare DALC. Taking the\n+        # count for a length puts every later field one field early, and the\n+        # message is the first thing that visibly goes missing.\n+        assert rows[3][2] == '942' and rows[3][3] == '7', rows[3]\n+        assert 'ORA-00942' in rows[3][4], rows[3]\n+\n+    def test_tns_oer_no_malformed(self, cmd_tshark, capture_file, test_env):\n+        '''No OER frame may be reported as malformed.'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+            '-r', capture_file('tns_oer.pcap'),\n+            '-d', 'tcp.port==1521,tns',\n+            '-Y', '_ws.malformed',\n+            '-T', 'fields', '-e', 'frame.number',\n+        ), encoding='utf-8', env=test_env)\n+        assert stdout.strip() == '', stdout\n \n class TestDecompressMongo:\n     def test_decompress_zstd(self, cmd_tshark, features, capture_file, test_env):\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissection.py",
+      "old_path": "test/suite_dissection.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "bc79ca878c1e8fc66d5b09dd42aaeba7c62f47fb",
+      "short_id": "bc79ca87",
+      "created_at": "2026-09-08T15:13:00.000+02:00",
+      "parent_ids": [
+        "f7ebcd39c4e027e734e501f54c71e6a269bcccc1"
+      ],
+      "title": "TNS: Read a bytes_with_length as a count and a value",
+      "message": "TNS: Read a bytes_with_length as a count and a value\n\nA bytes_with_length / str_with_length field is a ub4 count followed\nby a DALC, and the DALC is there only when the count is non-zero.\nThe OER decoder read the oerrdd and the batch-error message entries\nas a bare DALC instead.\n\nAn empty field is the count alone — a single zero byte — which a\nbare DALC read also consumes in one byte, so the two agree on every\ncapture where the field is empty. That is every capture anyone\nnormally sees, which is why this went unnoticed. As soon as the\nfield carries something the count byte is mistaken for a length,\nthe value's own length byte is mistaken for the next field, and the\nrest of the block decodes one field early: on a real error the\nORA-NNNNN message quietly disappears.\n\nAdd get_field_with_length for the shape and use it in both places.\n\nThe batch error-code and offset arrays get the same treatment from\nthe other side: each is a count and then one DALC packing that many\nub4 values, not a byte to skip followed by the values inline. Both\nreadings consume the same bytes while the packed values fit a short\nDALC, but only one keeps working when the array grows past that.\n\nThe fixture gains a fourth frame carrying a logical rowid in\noerrdd, which loses its ORA-00942 message text without this.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-08T15:04:49.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T15:13:00.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/bc79ca878c1e8fc66d5b09dd42aaeba7c62f47fb"
+    },
+    {
+      "id": "f7ebcd39c4e027e734e501f54c71e6a269bcccc1",
+      "short_id": "f7ebcd39",
+      "created_at": "2026-09-08T15:13:00.000+02:00",
+      "parent_ids": [
+        "81773f4125749a636935016200c5ca196b3bda0c"
+      ],
+      "title": "TNS: Read the DALC null marker as a marker",
+      "message": "TNS: Read the DALC null marker as a marker\n\nA DALC's leading byte is a length only in the middle of its range.\n0x00 is empty, 0xFE opens the chunked form, and 0xFF is a null\nmarker that stands for itself with no data behind it. The decoder\nhandled the first two and let 0xFF fall through to the plain\nlength branch, where it claims 255 bytes that are not there: every\nfield after it lands at the wrong offset, and near the end of a\npacket the read runs off the frame and the whole thing is reported\nas malformed.\n\nGive the marker its own branch, consuming just itself. Spelling it\nout next to the empty case also documents the range, so the next\nreader doesn't have to infer which byte values are lengths.\n\nWhile here, record what the chunk lengths in the 0xFE form are:\nsingle bytes, the 11g shape decoded throughout this dissector.\n12.2 and later prefix each chunk with a variable-length ub4\ninstead, and telling the two apart needs the field version\nnegotiated during the handshake, which isn't threaded through yet.\n\nThe fixture gains a third frame whose message is the null marker,\nwhich is reported as a malformed packet without the fix. Its\ngenerator also had to start advancing the TCP sequence number by\nthe bytes actually sent — numbering the segments 1, 2, 3 was\nharmless while there were two, but the third frame then overlaps\nthe second and is read as a retransmission rather than dissected.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-08T15:03:43.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T15:13:00.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/f7ebcd39c4e027e734e501f54c71e6a269bcccc1"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2011545139,
+      "head_commit_sha": "bc79ca878c1e8fc66d5b09dd42aaeba7c62f47fb",
+      "base_commit_sha": "81773f4125749a636935016200c5ca196b3bda0c",
+      "start_commit_sha": "2440fc176411a0f07b0d4bb6995afdeec0631c22",
+      "created_at": "2026-09-08T13:28:03.758Z",
+      "merge_request_id": 529458439,
+      "state": "collected",
+      "real_size": "4",
+      "patch_id_sha": "cfefa77a5457ad7da4add30bbf9490db39710648"
+    }
+  ]
+}

@@ -1,0 +1,643 @@
+{
+  "id": 529318562,
+  "iid": 26411,
+  "project_id": 7898047,
+  "title": "TNS: Decode variable-length integers, long strings, piggyback calls and two TTC bodies",
+  "description": "The first of several TNS/TTC series. It carries the pieces everything\nlater depends on, and nothing that depends on them, so it can be\nreviewed on its own.\n\nThis supersedes !3586, which carried the same work from 2021 to 2022\nand was closed in May 2024. Five of the seven commits here come from\nthat branch, rebased forward onto a current tree; the two TTC body\ndecoders are new. The review !3586 received is answered below.\n\n### What's here\n\n* `TNS: Add test` — a first dissection test for the existing code.\n* `TNS: Fix decoding of a complex lengthy strings` — strings over 64\n  bytes use a chunked form the dissector rendered as garbage. The\n  helper takes its scope from `pinfo` rather than the\n  `wmem_packet_scope()` that has since gone away.\n* `TNS: Add TSeq field` — names the sequence byte.\n* `TNS: Add sb4 decoding helper and dispatch on the OCI id` — most\n  Oracle integers are a width byte followed by that many big-endian\n  magnitude bytes. `get_sb4_custom()` decodes one; the OCI function\n  dispatch is its first caller, and the two arrive together because a\n  static helper with no caller does not survive `-Werror`.\n* `TNS: Proper piggyback decoding` — decodes the cursor list that\n  follows the piggyback id and sequence number.\n* `TNS: Decode TTI_DTY (Set Datatypes) body` — the handshake blob:\n  charsets, capability header, identity map and the type-override\n  list, with native type ids and NLS charset ids named.\n* `TNS: Decode TTI_OER (Oracle Error Return) body` — call status, DML\n  rowcount, ORA-NNNNN code and the human-readable error text, which is\n  also appended to the Info column.\n\n### Answering the review on !3586\n\n@geraldcombs raised two points there: the piggyback loop trusted a\ncursor count that could reach `UINT32_MAX`, and the sb4 width switch\nneeded a `default:`. Both were answered at the time with\n`DISSECTOR_ASSERT`, which proto.h reserves for bugs in a dissector,\nnot for packets somebody else malformed — so a crafted count or a\nwidth byte of 5 aborted dissection with \"Dissector bug, protocol TNS\"\ninstead of flagging the packet.\n\nBoth now report through expert infos instead\n(`tns.data.piggyback.cursors.invalid`, and a zero result that steps\nover just the width byte), fixed inside the commits that introduced\nthem so no commit in this series ships the assert.\n`test/captures/tns_malformed.pcap` is a two-frame hostile fixture for\nexactly those two inputs, and the test asserts both the malformed\nreport and the absence of any dissector bug.\n\n### Testing\n\nEvery commit builds individually with `-Werror`. At the tip: the TNS\ntests in `suite_dissection` pass, clang-tidy and both API checkers are\nclean, and the malformed capture produces no dissector bug.\n\nCapture fixtures are synthesised by the `test/captures/_gen_tns_*.py`\nscripts next to them, with no external dependencies, and reproduce\nbyte-identically.",
+  "state": "merged",
+  "created_at": "2026-09-08T08:50:39.454Z",
+  "updated_at": "2026-09-08T13:04:17.753Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-09-08T13:04:17.885Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "tns_foundations",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 62913,
+    "username": "lemenkov",
+    "public_email": "",
+    "name": "Peter Lemenkov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/305bd72c5208635a0f52fe4bfdbe7b7e5d682775d264bdae0cb298bf4d1efba0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/lemenkov"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    }
+  ],
+  "source_project_id": 25510003,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "8f1afe2013c29c9cab9c4fa592b196c2bb2589f5",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": false,
+  "force_remove_source_branch": false,
+  "prepared_at": "2026-09-08T08:50:44.780Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26411",
+  "references": {
+    "short": "!26411",
+    "relative": "!26411",
+    "full": "wireshark/wireshark!26411"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26411",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "10",
+  "latest_build_started_at": "2026-09-08T12:40:05.155Z",
+  "latest_build_finished_at": "2026-09-08T13:04:09.860Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2829562350,
+    "iid": 109393,
+    "project_id": 7898047,
+    "sha": "81773f4125749a636935016200c5ca196b3bda0c",
+    "ref": "refs/merge-requests/26411/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-08T12:40:01.227Z",
+    "updated_at": "2026-09-08T13:04:09.877Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2829562350"
+  },
+  "head_pipeline": {
+    "id": 2829562350,
+    "iid": 109393,
+    "project_id": 7898047,
+    "sha": "81773f4125749a636935016200c5ca196b3bda0c",
+    "ref": "refs/merge-requests/26411/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-08T12:40:01.227Z",
+    "updated_at": "2026-09-08T13:04:09.877Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2829562350",
+    "before_sha": "81773f4125749a636935016200c5ca196b3bda0c",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-09-08T12:40:05.155Z",
+    "finished_at": "2026-09-08T13:04:09.860Z",
+    "committed_at": null,
+    "duration": 1443,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2829562350",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "41871247179bbc6a5249bb4aa071c6a995512939",
+    "head_sha": "8f1afe2013c29c9cab9c4fa592b196c2bb2589f5",
+    "start_sha": "0ae245b39a0b073ad35796b161ff4db8b156a46d"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "116c455d9b182a1d65e618ac1dee8ec15a60a6be",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3801485170,
+          "type": null,
+          "body": "mentioned in merge request !3586",
+          "author": {
+            "id": 62913,
+            "username": "lemenkov",
+            "public_email": "",
+            "name": "Peter Lemenkov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/305bd72c5208635a0f52fe4bfdbe7b7e5d682775d264bdae0cb298bf4d1efba0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/lemenkov"
+          },
+          "created_at": "2026-09-08T08:51:45.596Z",
+          "updated_at": "2026-09-08T08:51:45.598Z",
+          "system": true,
+          "noteable_id": 529318562,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26411,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "112132399cedd6eac81d96d452e57a85b35d9fc5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3801895943,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>3d6c2900 - TNS: Proper piggyback decoding</li><li>3d40fd7a - TNS: Decode TTI_DTY (Set Datatypes) body</li><li>8f1afe20 - TNS: Decode TTI_OER (Oracle Error Return) body</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/26411/diffs?diff_id=2010977707&start_sha=fe98d6c840eeeb118d54476566d03189e8ff6e66)",
+          "author": {
+            "id": 62913,
+            "username": "lemenkov",
+            "public_email": "",
+            "name": "Peter Lemenkov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/305bd72c5208635a0f52fe4bfdbe7b7e5d682775d264bdae0cb298bf4d1efba0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/lemenkov"
+          },
+          "created_at": "2026-09-08T10:08:54.526Z",
+          "updated_at": "2026-09-08T10:08:54.528Z",
+          "system": true,
+          "noteable_id": 529318562,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26411,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "abe73e0d6838dfa20fbb676602875d24e5002eee",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3802712521,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-08T12:39:45.786Z",
+          "updated_at": "2026-09-08T12:39:45.793Z",
+          "system": true,
+          "noteable_id": 529318562,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26411,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3af43bd47bec6b5353b793f312f1ef5a919fbe4b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3802712905,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 2",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-08T12:39:49.145Z",
+          "updated_at": "2026-09-08T12:39:49.147Z",
+          "system": true,
+          "noteable_id": 529318562,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26411,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "eac7dd18523b1a097bd430a1476e4235716ad303",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3802991091,
+          "type": null,
+          "body": "mentioned in merge request !26415",
+          "author": {
+            "id": 62913,
+            "username": "lemenkov",
+            "public_email": "",
+            "name": "Peter Lemenkov",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/305bd72c5208635a0f52fe4bfdbe7b7e5d682775d264bdae0cb298bf4d1efba0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/lemenkov"
+          },
+          "created_at": "2026-09-08T13:28:06.041Z",
+          "updated_at": "2026-09-08T13:28:06.043Z",
+          "system": true,
+          "noteable_id": 529318562,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26411,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tns.c",
+      "old_path": "epan/dissectors/packet-tns.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,128 @@\n+#!/usr/bin/env python3\n+#\n+# Wireshark - Network traffic analyzer\n+# By Gerald Combs <gerald@wireshark.org>\n+# Copyright 1998 Gerald Combs\n+#\n+# SPDX-License-Identifier: GPL-2.0-or-later\n+\"\"\"Generate test/captures/tns_dty.pcap — a TTI_DTY (Set Datatypes) request.\n+\n+The TTI_DTY body is the one an Oracle client sends when it negotiates\n+us7ascii, wrapped in the 10-byte TNS DATA framing, and emitted as a single TCP segment to port\n+1521 inside an IPv4 datagram (LINKTYPE_RAW, no Ethernet header).\n+\n+This gives the dissector a deterministic, license-clean fixture for the\n+SQLNET_SET_DATATYPES decoder without needing a live Oracle capture.\n+\"\"\"\n+import os\n+import struct\n+\n+TTI_DTY_BODY = bytes.fromhex(\n+    \"02670367030126060100006a0101060101010101010029900307030001004f013704\"\n+    \"000000000c0000060001010702000000000000010101000202010003030100040401\"\n+    \"0005050100060601000707010008080100090901000a0a01000b0b01000c0c01000d\"\n+    \"0d01000e0e01000f0f01001010010011110100121201001313010014140100151501\"\n+    \"00161601001717010018180100191901001a1a01001b1b01001c1c01001d1d01001e\"\n+    \"1e01001f1f0100202001002121010022220100232301002424010025250100262601\"\n+    \"002727010028280100292901002a2a01002b2b01002c2c01002d2d01002e2e01002f\"\n+    \"2f010030300100313101003232010033330100343401003535010036360100373701\"\n+    \"0038380100393901003a3a01003b3b01003c3c01003d3d01003e3e01003f3f010040\"\n+    \"40010041410100424201004343010044440100454501004646010047470100484801\"\n+    \"00494901004a4a01004b4b01004c4c01004d4d01004e4e01004f4f01005050010051\"\n+    \"51010052520100535301005454010055550100565601005757010058580100595901\"\n+    \"005a5a01005b5b01005c5c01005d5d01005e5e01005f5f0100606001006161010062\"\n+    \"620100636301006464010065650100666601006767010068680100696901006a6a01\"\n+    \"006b6b01006c6c01006d6d01006e6e01006f6f010070700100717101007272010073\"\n+    \"7301007474010075750100767601007777010078780100797901007a7a01007b7b01\"\n+    \"007c7c01007d7d01007e7e01007f7f01008080010081810100828201008383010084\"\n+    \"84010085850100868601008787010088880100898901008a8a01008b8b01008c8c01\"\n+    \"008d8d01008e8e01008f8f0100909001009191010092920100939301009494010095\"\n+    \"950100969601009797010098980100999901009a9a01009b9b01009c9c01009d9d01\"\n+    \"009e9e01009f9f0100a0a00100a1a10100a2a20100a3a30100a4a40100a5a50100a6\"\n+    \"a60100a7a70100a8a80100a9a90100aaaa0100abab0100acac0100adad0100aeae01\"\n+    \"00afaf0100b0b00100b1b10100b2b20100b3b30100b4b40100b5b50100b6b60100b7\"\n+    \"b70100b8b80100b9b90100baba0100bbbb0100bcbc0100bdbd0100bebe0100bfbf01\"\n+    \"00c0c00100c1c10100c2c20100c3c30100c4c40100c5c50100c6c60100c7c70100c8\"\n+    \"c80100c9c90100caca0100cbcb0100cccc0100cdcd0100cece0100cfcf0100d0d001\"\n+    \"00d1d10100d2d20100d3d30100d4d40100d5d50100d6d60100d7d70100d8d80100d9\"\n+    \"d90100dada0100dbdb0100dcdc0100dddd0100dede0100dfdf0100e0e00100e1e101\"\n+    \"00e2e20100e3e30100e4e40100e5e50100e6e60100e7e70100e8e80100e9e90100ea\"\n+    \"ea0100ebeb0100ecec0100eded0100eeee0100efef0100f0f00100f1f10100f2f201\"\n+    \"00f3f30100f4f40100f5f5010002020a0003020a0004020a000501010006020a0007\"\n+    \"020a00090101000c0c0a000d000e000f170100100011001200130014001500160027\"\n+    \"7801003a0044020a00450046004a0006005b020a005e0101005f1701006060010061\"\n+    \"600100680b010069006c6d01006e6f0100746601007600770079007a007b00880092\"\n+    \"920100930098020a0099020a009a020a009b0101009c0c0a00ac020a00d100030000\"\n+)\n+\n+# TNS DATA framing (Type=TNS_DATA=6).\n+tns_packet = struct.pack(\">HhBBhh\", len(TTI_DTY_BODY) + 10, 0, 6, 0, 0, 0) + TTI_DTY_BODY\n+\n+\n+def ipv4_checksum(header: bytes) -> int:\n+    s = 0\n+    for i in range(0, len(header), 2):\n+        s += (header[i] << 8) | header[i + 1]\n+    while s >> 16:\n+        s = (s & 0xFFFF) + (s >> 16)\n+    return (~s) & 0xFFFF\n+\n+\n+def tcp_checksum(src: bytes, dst: bytes, tcp_hdr_plus_data: bytes) -> int:\n+    pseudo = src + dst + b\"\\x00\\x06\" + struct.pack(\">H\", len(tcp_hdr_plus_data))\n+    buf = pseudo + tcp_hdr_plus_data\n+    if len(buf) % 2:\n+        buf += b\"\\x00\"\n+    s = 0\n+    for i in range(0, len(buf), 2):\n+        s += (buf[i] << 8) | buf[i + 1]\n+    while s >> 16:\n+        s = (s & 0xFFFF) + (s >> 16)\n+    return (~s) & 0xFFFF\n+\n+\n+src_ip = bytes([127, 0, 0, 1])\n+dst_ip = bytes([127, 0, 0, 1])\n+src_port = 54321\n+dst_port = 1521\n+\n+# TCP header: src_port, dst_port, seq, ack, dataofs/flags, win, csum, urg.\n+tcp_no_csum = struct.pack(\n+    \">HHIIBBHHH\",\n+    src_port, dst_port,\n+    1,            # seq\n+    0,            # ack\n+    0x50,         # data offset = 5 (20 bytes), no reserved bits\n+    0x18,         # flags: PSH|ACK\n+    65535,        # window\n+    0,            # checksum (computed below)\n+    0,            # urgent\n+)\n+csum = tcp_checksum(src_ip, dst_ip, tcp_no_csum + tns_packet)\n+tcp_hdr = tcp_no_csum[:16] + struct.pack(\">H\", csum) + tcp_no_csum[18:]\n+tcp_segment = tcp_hdr + tns_packet\n+\n+ip_total_len = 20 + len(tcp_segment)\n+ip_no_csum = struct.pack(\n+    \">BBHHHBBH\",\n+    0x45,         # version+ihl\n+    0,            # tos\n+    ip_total_len,\n+    1,            # id\n+    0x4000,       # flags=DF, frag=0\n+    64,           # ttl\n+    6,            # proto = TCP\n+    0,            # checksum\n+) + src_ip + dst_ip\n+ip_csum = ipv4_checksum(ip_no_csum)\n+ip_hdr = ip_no_csum[:10] + struct.pack(\">H\", ip_csum) + ip_no_csum[12:]\n+ip_packet = ip_hdr + tcp_segment\n+\n+# pcap global header — LINKTYPE_RAW = 101 (IPv4-only payload).\n+pcap_hdr = struct.pack(\"<IHHIIII\", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 101)\n+pkt_hdr = struct.pack(\"<IIII\", 0, 0, len(ip_packet), len(ip_packet))\n+\n+out = os.path.join(os.path.dirname(__file__), \"tns_dty.pcap\")\n+with open(out, \"wb\") as f:\n+    f.write(pcap_hdr + pkt_hdr + ip_packet)\n+print(f\"wrote {out} ({os.path.getsize(out)} bytes)\")\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/_gen_tns_dty.py",
+      "old_path": "test/captures/_gen_tns_dty.py",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,92 @@\n+#!/usr/bin/env python3\n+#\n+# Wireshark - Network traffic analyzer\n+# By Gerald Combs <gerald@wireshark.org>\n+# Copyright 1998 Gerald Combs\n+#\n+# SPDX-License-Identifier: GPL-2.0-or-later\n+\"\"\"Generate test/captures/tns_malformed.pcap with two hostile TTI piggyback\n+frames, both client -> server:\n+\n+    Frame 1 — cursor count of 256 in a packet with three bytes left after it\n+    Frame 2 — an Oracle variable-length integer whose width byte is 5, which\n+              is not one of the 0..4 widths the form allows\n+\n+Both numbers come straight off the wire, so a dissector must treat them as\n+malformed input rather than as something that cannot happen.\n+\n+Bytes are constructed by hand in the Oracle 11g wire shape.\n+\"\"\"\n+import os\n+import struct\n+\n+SQLNET_PIGGYBACK_FUNC = 17\n+\n+\n+def piggyback(cursors: bytes) -> bytes:\n+    \"\"\"A piggyback request body: function id, piggyback id, sequence, then\n+    the cursor count in whatever encoding the caller wants to try.\"\"\"\n+    return bytes([SQLNET_PIGGYBACK_FUNC, 0x01, 0x02]) + cursors\n+\n+\n+frames = [\n+    # ub4 width 2, value 0x0100 = 256 cursors, with nothing to hold them\n+    piggyback(b\"\\x02\\x01\\x00\"),\n+    # width byte 5 - outside the 0..4 the encoding defines\n+    piggyback(b\"\\x05\\x01\\x02\\x03\\x04\\x05\"),\n+]\n+\n+\n+def ipv4_checksum(h: bytes) -> int:\n+    s = sum(((h[i] << 8) | h[i + 1]) for i in range(0, len(h), 2))\n+    while s >> 16:\n+        s = (s & 0xFFFF) + (s >> 16)\n+    return (~s) & 0xFFFF\n+\n+\n+def tcp_checksum(src: bytes, dst: bytes, seg: bytes) -> int:\n+    pseudo = src + dst + b\"\\x00\\x06\" + struct.pack(\">H\", len(seg))\n+    buf = pseudo + seg\n+    if len(buf) % 2:\n+        buf += b\"\\x00\"\n+    s = sum(((buf[i] << 8) | buf[i + 1]) for i in range(0, len(buf), 2))\n+    while s >> 16:\n+        s = (s & 0xFFFF) + (s >> 16)\n+    return (~s) & 0xFFFF\n+\n+\n+def wrap(body: bytes, seq: int) -> bytes:\n+    # TNS DATA framing (10 bytes).\n+    tns = struct.pack(\">HhBBhh\", len(body) + 10, 0, 6, 0, 0, 0) + body\n+\n+    src_ip = bytes([10, 0, 0, 1])\n+    dst_ip = bytes([10, 0, 0, 2])\n+    # Client -> server (requests).\n+    tcp_no_csum = struct.pack(\n+        \">HHIIBBHHH\",\n+        54321, 1521,\n+        seq, 0,\n+        0x50, 0x18, 65535, 0, 0,\n+    )\n+    csum = tcp_checksum(src_ip, dst_ip, tcp_no_csum + tns)\n+    tcp = tcp_no_csum[:16] + struct.pack(\">H\", csum) + tcp_no_csum[18:]\n+    seg = tcp + tns\n+\n+    ip_total = 20 + len(seg)\n+    ip_no = struct.pack(\">BBHHHBBH\", 0x45, 0, ip_total, seq, 0x4000, 64, 6, 0) + src_ip + dst_ip\n+    ip = ip_no[:10] + struct.pack(\">H\", ipv4_checksum(ip_no)) + ip_no[12:]\n+    return ip + seg\n+\n+\n+out = os.path.join(os.path.dirname(__file__), \"tns_malformed.pcap\")\n+with open(out, \"wb\") as f:\n+    f.write(struct.pack(\"<IHHIIII\", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 101))\n+    # Sequence numbers accumulate: a later, shorter frame reusing an earlier\n+    # one's sequence space reads as a retransmission and is never dissected.\n+    seq = 1\n+    for i, body in enumerate(frames):\n+        pkt = wrap(body, seq)\n+        f.write(struct.pack(\"<IIII\", 0, i, len(pkt), len(pkt)))\n+        f.write(pkt)\n+        seq += len(body) + 10\n+print(f\"wrote {out} ({os.path.getsize(out)} bytes, {len(frames)} frames)\")\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/_gen_tns_malformed.py",
+      "old_path": "test/captures/_gen_tns_malformed.py",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -0,0 +1,135 @@\n+#!/usr/bin/env python3\n+#\n+# Wireshark - Network traffic analyzer\n+# By Gerald Combs <gerald@wireshark.org>\n+# Copyright 1998 Gerald Combs\n+#\n+# SPDX-License-Identifier: GPL-2.0-or-later\n+\"\"\"Generate test/captures/tns_oer.pcap with two TTI_OER frames:\n+\n+    Frame 1 — successful DML: call_status=0, rowcount=3, err_code=0\n+    Frame 2 — failure        : err_code=1 (\"ORA-00001: unique constraint (...)\n+                                violated\") with message text\n+\n+Bytes are constructed by hand in the Oracle 11g wire shape.\n+\"\"\"\n+import os\n+import struct\n+import sys\n+\n+\n+def ub4(val: int) -> bytes:\n+    \"\"\"Variable-length unsigned integer in the Oracle ub4 form.\"\"\"\n+    if val == 0:\n+        return b\"\\x00\"\n+    if val <= 0xFF:\n+        return bytes([1, val])\n+    if val <= 0xFFFF:\n+        return bytes([2]) + struct.pack(\">H\", val)\n+    if val <= 0xFFFFFF:\n+        return bytes([3]) + struct.pack(\">I\", val)[1:]\n+    return bytes([4]) + struct.pack(\">I\", val)\n+\n+\n+def dalc(s: bytes | None) -> bytes:\n+    if not s:\n+        return b\"\\x00\"\n+    if len(s) < 254:\n+        return bytes([len(s)]) + s\n+    # Chunked form, 0xFE marker + (len, bytes)+ terminated by 0-length.\n+    out = b\"\\xfe\"\n+    while s:\n+        chunk = s[:64]\n+        s = s[64:]\n+        out += bytes([len(chunk)]) + chunk\n+    out += b\"\\x00\"\n+    return out\n+\n+\n+def build_oer(call_status: int, rowcount: int, err_code: int, cursor_id: int,\n+              message: bytes | None) -> bytes:\n+    b = b\"\\x04\"                       # TTI_OER token\n+    b += ub4(call_status)\n+    b += ub4(0)                       # end-to-end seq#\n+    b += ub4(rowcount)\n+    b += ub4(err_code)\n+    b += ub4(0)                       # array elem error #1\n+    b += ub4(0)                       # array elem error #2\n+    b += ub4(cursor_id)\n+    b += ub4(0)                       # error position\n+    b += b\"\\x00\" * 6                  # sql_type, fatal, flags, user_cursor_opts,\n+                                      #   upi_param, warn_flags\n+    b += ub4(0)                       # rowid.rba\n+    b += ub4(0)                       # rowid.partition_id\n+    b += b\"\\x00\"                      # rowid reserved\n+    b += ub4(0)                       # rowid.block_num\n+    b += ub4(0)                       # rowid.slot_num\n+    b += ub4(0)                       # os error\n+    b += b\"\\x00\\x00\"                  # statement #, call #\n+    b += ub4(0)                       # padding (ub2 in 11g)\n+    b += ub4(1)                       # successful iterations\n+    b += dalc(None)                   # oerrdd (logical rowid)\n+    b += ub4(0)                       # num batch errcodes\n+    b += ub4(0)                       # num batch offsets\n+    b += ub4(0)                       # num batch messages\n+    if err_code != 0:\n+        b += dalc(message or b\"\")\n+    return b\n+\n+\n+frames = [\n+    build_oer(call_status=0, rowcount=3, err_code=0, cursor_id=42, message=None),\n+    build_oer(call_status=0, rowcount=0, err_code=1, cursor_id=42,\n+              message=b\"ORA-00001: unique constraint (TEST.PK) violated\\n\"),\n+]\n+\n+\n+def ipv4_checksum(h: bytes) -> int:\n+    s = sum(((h[i] << 8) | h[i + 1]) for i in range(0, len(h), 2))\n+    while s >> 16:\n+        s = (s & 0xFFFF) + (s >> 16)\n+    return (~s) & 0xFFFF\n+\n+\n+def tcp_checksum(src: bytes, dst: bytes, seg: bytes) -> int:\n+    pseudo = src + dst + b\"\\x00\\x06\" + struct.pack(\">H\", len(seg))\n+    buf = pseudo + seg\n+    if len(buf) % 2:\n+        buf += b\"\\x00\"\n+    s = sum(((buf[i] << 8) | buf[i + 1]) for i in range(0, len(buf), 2))\n+    while s >> 16:\n+        s = (s & 0xFFFF) + (s >> 16)\n+    return (~s) & 0xFFFF\n+\n+\n+def wrap(body: bytes, seq: int) -> bytes:\n+    # TNS DATA framing (10 bytes).\n+    tns = struct.pack(\">HhBBhh\", len(body) + 10, 0, 6, 0, 0, 0) + body\n+\n+    src_ip = bytes([10, 0, 0, 2])\n+    dst_ip = bytes([10, 0, 0, 1])\n+    # Server -> client (replies), so dst_port is the client ephemeral port.\n+    tcp_no_csum = struct.pack(\n+        \">HHIIBBHHH\",\n+        1521, 54321,\n+        seq, 0,\n+        0x50, 0x18, 65535, 0, 0,\n+    )\n+    csum = tcp_checksum(src_ip, dst_ip, tcp_no_csum + tns)\n+    tcp = tcp_no_csum[:16] + struct.pack(\">H\", csum) + tcp_no_csum[18:]\n+    seg = tcp + tns\n+\n+    ip_total = 20 + len(seg)\n+    ip_no = struct.pack(\">BBHHHBBH\", 0x45, 0, ip_total, seq, 0x4000, 64, 6, 0) + src_ip + dst_ip\n+    ip = ip_no[:10] + struct.pack(\">H\", ipv4_checksum(ip_no)) + ip_no[12:]\n+    return ip + seg\n+\n+\n+out = os.path.join(os.path.dirname(__file__), \"tns_oer.pcap\")\n+with open(out, \"wb\") as f:\n+    f.write(struct.pack(\"<IHHIIII\", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 101))\n+    for i, body in enumerate(frames):\n+        pkt = wrap(body, seq=i + 1)\n+        f.write(struct.pack(\"<IIII\", 0, i, len(pkt), len(pkt)))\n+        f.write(pkt)\n+print(f\"wrote {out} ({os.path.getsize(out)} bytes, {len(frames)} frames)\")\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/_gen_tns_oer.py",
+      "old_path": "test/captures/_gen_tns_oer.py",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/tns_bad.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/tns_bad.pcap",
+      "old_path": "test/captures/tns_bad.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/tns_bad2.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/tns_bad2.pcap",
+      "old_path": "test/captures/tns_bad2.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/tns_dty.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/tns_dty.pcap",
+      "old_path": "test/captures/tns_dty.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/tns_malformed.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/tns_malformed.pcap",
+      "old_path": "test/captures/tns_malformed.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/tns_oer.pcap differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/tns_oer.pcap",
+      "old_path": "test/captures/tns_oer.pcap",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1291,6 +1291,87 @@ class TestDissectCommunityId:\n \n         self.check_baseline(dirs, stdout, 'communityid-filtered.txt')\n \n+class TestDissectTns:\n+    '''TNS (Oracle wire protocol) dissector tests, exercising two captures\n+    that previously tripped buffer-overrun / wrong-state bugs in the OPI\n+    parameter-value path.'''\n+\n+    def test_tns_malformed_piggyback(self, cmd_tshark, capture_file, test_env):\n+        '''A cursor count or an integer width chosen by the sender is malformed\n+        input, not a dissector bug.'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+            '-r', capture_file('tns_malformed.pcap'),\n+            '-d', 'tcp.port==1521,tns',\n+            '-V',\n+        ), encoding='utf-8', env=test_env)\n+        # A count larger than the packet is reported against the count itself\n+        assert grep_output(stdout, 'Cursor count is larger than the data left')\n+        # and neither frame may be blamed on the dissector\n+        assert not grep_output(stdout, 'Dissector bug')\n+\n+    def test_tns_bad(self, cmd_tshark, capture_file, test_env):\n+        stdout = subprocess.check_output((cmd_tshark,\n+            '-r', capture_file('tns_bad.pcap'),\n+            '-d', 'tcp.port==1521,tns',\n+            '-Y', 'tns.data_opi.param_value == \"06DE79977310E5B78E5A9493CB4FB3D6F5A0975F2B3B5D46737189DD4B7B92AA1A36B309D39D4471568CE287A52093BA\"',\n+        ), encoding='utf-8', env=test_env)\n+        assert 'Return OPI Parameter' in stdout\n+\n+    def test_tns_bad2(self, cmd_tshark, capture_file, test_env):\n+        stdout = subprocess.check_output((cmd_tshark,\n+            '-r', capture_file('tns_bad2.pcap'),\n+            '-d', 'tcp.port==1521,tns',\n+            '-Y', 'tns.data_opi.param_value == \"7BD0E1244A35B13E8E194519B105257020D2DAC3816B3C5F5A71D0A3E5C217C6E796E1B592719A0FD47B7A18EF8A0311\"',\n+        ), encoding='utf-8', env=test_env)\n+        assert 'Return OPI Parameter' in stdout\n+\n+    def test_tns_dty(self, cmd_tshark, capture_file, test_env):\n+        '''TTI_DTY (Set Datatypes) request: charset fields, capability\n+        header, table header, identity map, and ~50 type-override entries\n+        must all decode without losing sync.'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+            '-r', capture_file('tns_dty.pcap'),\n+            '-d', 'tcp.port==1521,tns',\n+            '-T', 'fields',\n+            '-e', 'tns.data_id',\n+            '-e', 'tns.data_setdt.charset_in',\n+            '-e', 'tns.data_setdt.charset_out',\n+            '-e', 'tns.data_setdt.caphdr.version',\n+            '-e', 'tns.data_setdt.override.client',\n+        ), encoding='utf-8', env=test_env)\n+        # data_id = 2 (Set Datatypes); charset = 871 (US7ASCII) both ways;\n+        # version triple in capability header = 0x260601 (38, 6, 1);\n+        # override client list ends with the 0 terminator and includes\n+        # both long entries (e.g. 91) and short entries (e.g. 13).\n+        fields = stdout.strip().split('\\t')\n+        assert fields[0] == '0x00000002', fields\n+        assert fields[1] == '871' and fields[2] == '871', fields\n+        assert fields[3] == '0x260601', fields\n+        clients = fields[4].split(',')\n+        assert clients[0] == '2' and clients[-1] == '0', clients\n+        assert '91' in clients and '13' in clients, clients\n+\n+    def test_tns_oer(self, cmd_tshark, capture_file, test_env):\n+        '''TTI_OER (Oracle Error Return) decodes call_status, rowcount,\n+        err_code, cursor_id, and the trailing ORA-NNNNN message text.\n+        Two frames: a successful DML (rowcount=3, err=0) and a failed\n+        DML (err=1, with message body).'''\n+        stdout = subprocess.check_output((cmd_tshark,\n+            '-r', capture_file('tns_oer.pcap'),\n+            '-d', 'tcp.port==1521,tns',\n+            '-T', 'fields',\n+            '-e', 'tns.data_oer.call_status',\n+            '-e', 'tns.data_oer.rowcount',\n+            '-e', 'tns.data_oer.err_code',\n+            '-e', 'tns.data_oer.cursor_id',\n+            '-e', 'tns.data_oer.message',\n+        ), encoding='utf-8', env=test_env)\n+        rows = [r.split('\\t') for r in stdout.strip().splitlines()]\n+        assert len(rows) == 2, rows\n+        assert rows[0] == ['0', '3', '0', '42', ''], rows[0]\n+        assert rows[1][0] == '0' and rows[1][2] == '1' and rows[1][3] == '42', rows[1]\n+        assert 'ORA-00001' in rows[1][4], rows[1]\n+\n class TestDecompressMongo:\n     def test_decompress_zstd(self, cmd_tshark, features, capture_file, test_env):\n         if not features.have_zstd:\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissection.py",
+      "old_path": "test/suite_dissection.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "8f1afe2013c29c9cab9c4fa592b196c2bb2589f5",
+      "short_id": "8f1afe20",
+      "created_at": "2026-09-08T12:06:32.000+02:00",
+      "parent_ids": [
+        "3d40fd7a17977d827c1d9f33c093dd13dda7817c"
+      ],
+      "title": "TNS: Decode TTI_OER (Oracle Error Return) body",
+      "message": "TNS: Decode TTI_OER (Oracle Error Return) body\n\nThe server emits a TTI_OER token at the end of every TTC response\n(success and failure) carrying the call status, DML rowcount,\nORA-NNNNN error code, cursor id, and — when the call failed — the\nhuman-readable \"ORA-NNNNN: ...\" message. The dissector recognised\nthe outer SQLNET_RETURN_STATUS message id but left the body opaque,\nso the most user-visible field on the entire response path (the\nerror text) wasn't shown.\n\nWalk the fields in the Oracle 11g shape (no extended ub4 error /\nub8 rowcount that 12c+ adds). All ub4 fields decode through the\nexisting get_sb4_custom helper. The trailing message DALC needs a\nnew get_dalc_custom helper that handles both the short\nlength-prefixed form and the 0xFE chunked form.\n\nWhen the message is non-empty the dissector appends it to the Info\ncolumn, so the error is visible in the packet list without\nexpanding the tree.\n\nFixture pcap is synthesised: two frames, one successful DML\n(rowcount=3, err=0) and one ORA-00001 with message body. Bytes\nconstructed by hand in the same field order, so the test fails\nimmediately if the layouts drift apart.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-05-28T03:16:51.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T12:06:32.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8f1afe2013c29c9cab9c4fa592b196c2bb2589f5"
+    },
+    {
+      "id": "3d40fd7a17977d827c1d9f33c093dd13dda7817c",
+      "short_id": "3d40fd7a",
+      "created_at": "2026-09-08T12:06:32.000+02:00",
+      "parent_ids": [
+        "3d6c2900b3f3098df3400475bb4c34192b5d3229"
+      ],
+      "title": "TNS: Decode TTI_DTY (Set Datatypes) body",
+      "message": "TNS: Decode TTI_DTY (Set Datatypes) body\n\nThe dissector recognised the SQLNET_SET_DATATYPES message id but\nleft the body opaque. Decode the fixed-shape blob the client sends\nduring the TTC handshake: charset_in / charset_out (LE u16),\nflag, the 39-byte capability header (with its version triple),\nthe 8-byte table header, the 980-byte identity map, and the\nvariable-length type-override list (4-byte long entries plus\n2-byte short entries, terminated by a 0 client-type).\n\nOverride entries label both the client type and the negotiated\nserver representation against a value_string table of TNS native\ntype ids (NUMBER, VARCHAR, CHAR, DATE, RAW, CLOB/BLOB/BFILE, ...).\nCharset fields render the well-known NLS character-set ids\n(US7ASCII, AL32UTF8, ...) likewise.\n\nThe layout was verified against a real Oracle XE 21c server, and\nmatches python-oracledb.\n\nA deterministic test fixture is generated from those same bytes\nwrapped in TNS framing + IPv4/TCP, so the dissector path is\ncovered without needing a live capture.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-05-28T03:11:49.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T12:06:32.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3d40fd7a17977d827c1d9f33c093dd13dda7817c"
+    },
+    {
+      "id": "3d6c2900b3f3098df3400475bb4c34192b5d3229",
+      "short_id": "3d6c2900",
+      "created_at": "2026-09-08T12:06:32.000+02:00",
+      "parent_ids": [
+        "4cca0dd991c91620762ddbaaf92f59d1c266f0dd"
+      ],
+      "title": "TNS: Proper piggyback decoding",
+      "message": "TNS: Proper piggyback decoding\n\nA response can carry piggyback calls ahead of the reply the client\nactually asked for. The dissector showed the piggyback id and the\nsequence number and then stopped, leaving the cursor list that\nfollows them unlabelled.\n\nDecode that list: a variable-length count, then that many cursor\nids, each rendered as tns.data.cursor.\n\nThe count comes off the wire and every cursor takes at least one\nbyte, so a count larger than the data left in the packet cannot be\nreal. Report it against the count itself and stop, rather than\nlooping on a number somebody else chose. A crafted count is\nmalformed input, not a bug in the dissector, so it gets an expert\ninfo rather than a DISSECTOR_ASSERT that would blame Wireshark for\na packet it merely read.\n\nThe fixture pcap is synthesised and hostile on purpose: one frame\nwith a cursor count of 256 and one with an integer width byte of 5.\nBoth used to abort the dissector with an assertion; the test now\nrequires the malformed report and the absence of any dissector bug.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2022-05-23T19:50:15.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T12:06:32.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3d6c2900b3f3098df3400475bb4c34192b5d3229"
+    },
+    {
+      "id": "4cca0dd991c91620762ddbaaf92f59d1c266f0dd",
+      "short_id": "4cca0dd9",
+      "created_at": "2026-09-08T10:27:26.000+02:00",
+      "parent_ids": [
+        "b33bad1e7f5e60bf6db37ea9aec98d16f308e530"
+      ],
+      "title": "TNS: Add sb4 decoding helper and dispatch on the OCI id",
+      "message": "TNS: Add sb4 decoding helper and dispatch on the OCI id\n\nThe Oracle wire format carries most of its integers in a variable-length\nform: a length byte, then that many big-endian magnitude bytes.\nget_sb4_custom() decodes one, and the user OCI function dispatch is its\nfirst caller - the two arrive in one commit because a static helper with\nnothing calling it does not survive -Werror.\n\nA width outside 0..4 is not a valid 1..4 byte integer, and that byte\ncomes straight off the wire, so the helper yields zero and steps over it\nrather than asserting. DISSECTOR_ASSERT is for catching bugs in a\ndissector, not for reporting a packet somebody else malformed.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2022-05-23T19:23:41.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T10:27:26.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/4cca0dd991c91620762ddbaaf92f59d1c266f0dd"
+    },
+    {
+      "id": "b33bad1e7f5e60bf6db37ea9aec98d16f308e530",
+      "short_id": "b33bad1e",
+      "created_at": "2026-09-08T10:27:26.000+02:00",
+      "parent_ids": [
+        "176a80ea0956e3432d8c0cfdb54cc8f085b27bbb"
+      ],
+      "title": "TNS: Add TSeq field",
+      "message": "TNS: Add TSeq field\n\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2022-05-22T19:33:53.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T10:27:26.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/b33bad1e7f5e60bf6db37ea9aec98d16f308e530"
+    },
+    {
+      "id": "176a80ea0956e3432d8c0cfdb54cc8f085b27bbb",
+      "short_id": "176a80ea",
+      "created_at": "2026-09-08T10:27:26.000+02:00",
+      "parent_ids": [
+        "96fb1775ac93426d7921fe31fcdb8a2caffb6216"
+      ],
+      "title": "TNS: Fix decoding of a complex lengthy strings",
+      "message": "TNS: Fix decoding of a complex lengthy strings\n\nStrings which are longer than 64 bytes are decoded very differently.\nSimply their format looks like this:\n\n . if size(Data) < 64:\n .         << size(Data)/1 byte, Data/Size bytes >>.\n .  else:\n .         << 254/1 byte, 64/1 byte, Data[0:63]/64 byte, ..., size(Data) rem 64/1 byte, Data[:size(Data) rem 64]/size(Data) rem 64,  0/1 byte >>\n\nThe helper takes the packet scope from pinfo rather than the\nwmem_packet_scope() that has since gone away, so that it builds\nagainst a current tree.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2021-07-08T00:57:52.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T10:27:26.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/176a80ea0956e3432d8c0cfdb54cc8f085b27bbb"
+    },
+    {
+      "id": "96fb1775ac93426d7921fe31fcdb8a2caffb6216",
+      "short_id": "96fb1775",
+      "created_at": "2026-09-08T10:27:26.000+02:00",
+      "parent_ids": [
+        "41871247179bbc6a5249bb4aa071c6a995512939"
+      ],
+      "title": "TNS: Add test",
+      "message": "TNS: Add test\n\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2021-04-21T23:11:59.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-08T10:27:26.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/96fb1775ac93426d7921fe31fcdb8a2caffb6216"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2010977707,
+      "head_commit_sha": "8f1afe2013c29c9cab9c4fa592b196c2bb2589f5",
+      "base_commit_sha": "41871247179bbc6a5249bb4aa071c6a995512939",
+      "start_commit_sha": "0ae245b39a0b073ad35796b161ff4db8b156a46d",
+      "created_at": "2026-09-08T10:08:54.059Z",
+      "merge_request_id": 529318562,
+      "state": "collected",
+      "real_size": "10",
+      "patch_id_sha": "3cff7a0aa7cea4d9559ebbf5dddefbda0e6bfe36"
+    },
+    {
+      "id": 2010749901,
+      "head_commit_sha": "fe98d6c840eeeb118d54476566d03189e8ff6e66",
+      "base_commit_sha": "41871247179bbc6a5249bb4aa071c6a995512939",
+      "start_commit_sha": "41871247179bbc6a5249bb4aa071c6a995512939",
+      "created_at": "2026-09-08T08:50:43.323Z",
+      "merge_request_id": 529318562,
+      "state": "without_files",
+      "real_size": "10",
+      "patch_id_sha": "8c3872d6438ddc833da15b662af5c8710ca8b07a"
+    }
+  ]
+}

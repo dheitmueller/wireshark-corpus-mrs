@@ -1,0 +1,334 @@
+{
+  "id": 529112202,
+  "iid": 26395,
+  "project_id": 7898047,
+  "title": "Bencode: Fix 64 bit integers, empty strings and truncated lists",
+  "description": "Three independent correctness and robustness bugs in the bencode\ndissector, found while working on rtpengine's control protocol but not\nspecific to it — `packet-bencode.c` is also used by the BitTorrent and\nBazaar dissectors.\n\n### 64 bit integers\n\nThe value accumulator was an `int32_t` with no overflow check, so\n`i4294967296e` was dissected as `0` and `i2147483648e` as\n`-2147483648`. Bencode does not bound its integers, and callers exceed\n32 bits routinely — a BitTorrent file length over 2 GiB, or an\nrtpengine byte counter in a statistics reply.\n\nWorth noting this was not merely a wrong number: `ival = (ival * 10) +\ndigit` on a signed 32 bit type is undefined behaviour once it wraps.\n\nThe value now accumulates into a `uint64_t`, anything that does not fit\nan `int64_t` is rejected rather than wrapped, and `bencode.int` widens\nto `FT_INT64`. **That last part is visible to display filters** — the\nfield changes type, though comparisons keep working.\n\n### The empty string\n\n`0:` is an ordinary bencode string, but the dispatcher only recognised\na length starting `1`-`9`, and a dictionary only looked for a value\nonce *more than* two bytes were left — which excludes `0:`, `le` and\n`de` alike. An empty value therefore aborted the decode of the entire\ndictionary containing it.\n\nrtpengine emits them. In one real capture a single empty value cost the\nremainder of its dictionary: before the fix, 73 strings dissected and\none \"Decode Aborted: Invalid Dictionary Value\"; after, 181 strings and\nno abort.\n\n### Truncated lists\n\nA list which consumed everything left asked for the remainder of the\ntvb, one byte past its end, and threw. `l7:comman` is enough to\nreproduce. The dictionary code already handled this correctly; the list\ndid not.\n\n### Testing\n\n`tshark` built clean; `tools/check_apis.py` and\n`tools/check_typed_item_calls.py` report no warnings.\n\nVerified against hand-built payloads covering `INT64_MIN`/`INT64_MAX`,\n`INT64_MAX + 1` (correctly rejected), empty strings in first, middle\nand last dictionary position, empty lists and dictionaries as values,\nand truncated input at every length. Also run over ~20k packets of real\nrtpengine traffic with no dissector exceptions.\n\nNo capture file is included: the suite has no bencode test today, and\nadding one is a larger change than these fixes warrant. Happy to add a\ncapture-driven test if you would prefer one.\n\nAssisted-by: Claude",
+  "state": "merged",
+  "created_at": "2026-09-07T18:05:44.707Z",
+  "updated_at": "2026-09-08T05:34:03.461Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2026-09-08T05:34:03.491Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "bencode_fixes",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 62913,
+    "username": "lemenkov",
+    "public_email": "",
+    "name": "Peter Lemenkov",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/305bd72c5208635a0f52fe4bfdbe7b7e5d682775d264bdae0cb298bf4d1efba0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/lemenkov"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    }
+  ],
+  "source_project_id": 25510003,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "c50538f42a37fae9d33aab930abfb32f5fb33c54",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": false,
+  "force_remove_source_branch": false,
+  "prepared_at": "2026-09-07T18:05:49.900Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26395",
+  "references": {
+    "short": "!26395",
+    "relative": "!26395",
+    "full": "wireshark/wireshark!26395"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26395",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-09-08T05:10:26.138Z",
+  "latest_build_finished_at": "2026-09-08T05:34:01.058Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2828285972,
+    "iid": 109353,
+    "project_id": 7898047,
+    "sha": "b2bc518e4da643c9eb6dcc11d1caea1eb795e765",
+    "ref": "refs/merge-requests/26395/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-08T05:10:25.067Z",
+    "updated_at": "2026-09-08T05:34:01.069Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2828285972"
+  },
+  "head_pipeline": {
+    "id": 2828285972,
+    "iid": 109353,
+    "project_id": 7898047,
+    "sha": "b2bc518e4da643c9eb6dcc11d1caea1eb795e765",
+    "ref": "refs/merge-requests/26395/train",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-08T05:10:25.067Z",
+    "updated_at": "2026-09-08T05:34:01.069Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/2828285972",
+    "before_sha": "b2bc518e4da643c9eb6dcc11d1caea1eb795e765",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2026-09-08T05:10:26.138Z",
+    "finished_at": "2026-09-08T05:34:01.058Z",
+    "committed_at": null,
+    "duration": 1413,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/2828285972",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "411f78566bed622a2ca2e6480c659486175db129",
+    "head_sha": "c50538f42a37fae9d33aab930abfb32f5fb33c54",
+    "start_sha": "27a028e726b0766379939d1bd37dc61b4b7211c9"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "8836ebba16fc636d8c93b0ecfe4cfeef877421f9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3800585167,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-08T05:10:20.173Z",
+          "updated_at": "2026-09-08T05:10:20.178Z",
+          "system": true,
+          "noteable_id": 529112202,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26395,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e176135f553dfc66139ed6c081ed8c8edc0f9083",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3800585308,
+          "type": null,
+          "body": "added this merge request to the [merge train](https://gitlab.com/wireshark/wireshark/-/merge_trains) at position 3",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2026-09-08T05:10:23.407Z",
+          "updated_at": "2026-09-08T05:10:23.408Z",
+          "system": true,
+          "noteable_id": 529112202,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26395,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -106,7 +106,8 @@ static int dissect_bencoding_str(tvbuff_t *tvb, packet_info *pinfo,\n static int dissect_bencoding_int(tvbuff_t *tvb, packet_info *pinfo,\n                                  unsigned offset, int length, proto_tree *tree, proto_item *ti, int treeadd)\n {\n-   int32_t ival  = 0;\n+   uint64_t uval = 0;\n+   int64_t ival;\n    int    neg   = 0;\n    int    izero = 0;\n    int    used;\n@@ -127,11 +128,20 @@ static int dissect_bencoding_int(tvbuff_t *tvb, packet_info *pinfo,\n \n       switch (ch) {\n       case 'e':\n+         /* A negative value may reach one further from zero than a positive one */\n+         if (uval > (uint64_t)INT64_MAX + (neg ? 1 : 0)) {\n+            proto_tree_add_expert(tree, pinfo, &ei_bencode_int, tvb, offset, used);\n+            return -1;\n+         }\n+         if (neg) {\n+            ival = (uval == (uint64_t)INT64_MAX + 1) ? INT64_MIN : -(int64_t)uval;\n+         } else {\n+            ival = (int64_t)uval;\n+         }\n          if (tree) {\n-            if (neg) ival = -ival;\n-            proto_tree_add_int(tree, hf_bencode_int, tvb, offset, used, ival);\n+            proto_tree_add_int64(tree, hf_bencode_int, tvb, offset, used, ival);\n             if (treeadd == 2) {\n-               proto_item_append_text(ti, \"  Value: %d\", ival);\n+               proto_item_append_text(ti, \"  Value: %\" PRId64, ival);\n             }\n          }\n          return used;\n@@ -150,7 +160,11 @@ static int dissect_bencoding_int(tvbuff_t *tvb, packet_info *pinfo,\n                break;\n             }\n             if (!izero && (ch >= '0') && (ch <= '9')) {\n-               ival = (ival * 10) + (ch - '0');\n+               if (uval > (UINT64_MAX - (uint64_t)(ch - '0')) / 10) {\n+                  proto_tree_add_expert(tree, pinfo, &ei_bencode_int, tvb, offset, used);\n+                  return -1;\n+               }\n+               uval = (uval * 10) + (uint64_t)(ch - '0');\n                break;\n             }\n          }\n@@ -209,7 +223,9 @@ static int dissect_bencoding_rec(tvbuff_t *tvb, packet_info *pinfo,\n          }\n \n          op2len = -1;\n-         if ((length - op1len) > 2) {\n+         /* The shortest values there are - \"0:\", \"le\" and \"de\" - are two\n+          * bytes long, so anything from two bytes on is worth a try */\n+         if ((length - op1len) >= 2) {\n             increment_dissection_depth(pinfo);\n             op2len = dissect_bencoding_rec(tvb, pinfo, offset + used + op1len, length - op1len, NULL, level + 1, NULL, 0);\n             decrement_dissection_depth(pinfo);\n@@ -262,14 +278,17 @@ static int dissect_bencoding_rec(tvbuff_t *tvb, packet_info *pinfo,\n       }\n       decrement_dissection_depth(pinfo);\n \n-      proto_tree_add_item(itree, hf_bencode_truncated_data, tvb, offset + used, -1, ENC_NA);\n+      /* Nothing may be left at all, and a -1 length would then reach past the\n+       * end of the tvb - the dictionary above gets this right already */\n+      proto_tree_add_item(itree, hf_bencode_truncated_data, tvb, offset + used, length ? -1 : 0, ENC_NA);\n       return -1;\n \n    case 'i':\n       return dissect_bencoding_int(tvb, pinfo, offset, length, tree, treei, treeadd);\n \n    default:\n-      if ((op >= '1') && (op <= '9')) {\n+      /* \"0:\" - the empty string - is as valid as any other one */\n+      if ((op >= '0') && (op <= '9')) {\n          return dissect_bencoding_str(tvb, pinfo, offset, length, tree, treei, treeadd);\n       }\n \n@@ -296,7 +315,7 @@ proto_register_bencode(void)\n         { \"String\", \"bencode.str\", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }\n       },\n       { &hf_bencode_int,\n-        { \"Integer\", \"bencode.int\", FT_INT32, BASE_DEC, NULL, 0x0, NULL, HFILL }\n+        { \"Integer\", \"bencode.int\", FT_INT64, BASE_DEC, NULL, 0x0, NULL, HFILL }\n       },\n       { &hf_bencode_dict,\n         { \"Dictionary\", \"bencode.dict\", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-bencode.c",
+      "old_path": "epan/dissectors/packet-bencode.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "c50538f42a37fae9d33aab930abfb32f5fb33c54",
+      "short_id": "c50538f4",
+      "created_at": "2026-09-07T20:01:00.000+02:00",
+      "parent_ids": [
+        "f7cd050aa904b25bcd0b206aaf74174f14929ee6"
+      ],
+      "title": "Bencode: Don't run past the end of a truncated list",
+      "message": "Bencode: Don't run past the end of a truncated list\n\nThe dictionary already asks for a zero length item when there is nothing\nleft to point at, but the list always asked for the remainder of the\ntvb - which is one byte past its end once the list has consumed\neverything, and threw. \"l7:comman\" was enough to hit it.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T17:11:08.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:01:00.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c50538f42a37fae9d33aab930abfb32f5fb33c54"
+    },
+    {
+      "id": "f7cd050aa904b25bcd0b206aaf74174f14929ee6",
+      "short_id": "f7cd050a",
+      "created_at": "2026-09-07T20:01:00.000+02:00",
+      "parent_ids": [
+        "bf2f9b08b8320721fdaa074977d47e12abbe9b9a"
+      ],
+      "title": "Bencode: Dissect the empty string",
+      "message": "Bencode: Dissect the empty string\n\n\"0:\" is a perfectly ordinary bencode string, but the dispatcher only\nrecognized a length starting with 1-9, and a dictionary only looked for\na value once more than two bytes were left - which rules out \"0:\", \"le\"\nand \"de\" alike. An empty string therefore aborted the decode of the\nwhole dictionary containing it.\n\nrtpengine sends them: in one of the captures at hand a single empty\nvalue cost the rest of its dictionary, taking the number of strings\ndissected in that file from 181 down to 73.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T17:06:13.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:01:00.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/f7cd050aa904b25bcd0b206aaf74174f14929ee6"
+    },
+    {
+      "id": "bf2f9b08b8320721fdaa074977d47e12abbe9b9a",
+      "short_id": "bf2f9b08",
+      "created_at": "2026-09-07T20:01:00.000+02:00",
+      "parent_ids": [
+        "411f78566bed622a2ca2e6480c659486175db129"
+      ],
+      "title": "Bencode: Dissect 64 bit integers",
+      "message": "Bencode: Dissect 64 bit integers\n\nThe accumulator was an int32_t and nothing checked it for overflow, so\n\"i4294967296e\" was shown as 0 and \"i2147483648e\" as -2147483648 - and\n\"ival = (ival * 10) + digit\" on a signed 32 bit type is undefined\nbehaviour once it wraps, not merely a wrong number.\n\nBencode integers are not bounded by the format, and its callers exceed\n32 bits routinely: a BitTorrent file length passes 2 GiB often enough,\nand rtpengine reports byte counters in its statistics replies.\n\nAccumulate into a uint64_t, refuse anything that does not fit an int64_t\ninstead of wrapping, and widen the field to FT_INT64.\n\nAssisted-by: Claude\nSigned-off-by: Peter Lemenkov <lemenkov@gmail.com>\n",
+      "author_name": "Peter Lemenkov",
+      "author_email": "lemenkov@gmail.com",
+      "authored_date": "2026-09-06T17:03:21.000+02:00",
+      "committer_name": "Peter Lemenkov",
+      "committer_email": "lemenkov@gmail.com",
+      "committed_date": "2026-09-07T20:01:00.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/bf2f9b08b8320721fdaa074977d47e12abbe9b9a"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2009735492,
+      "head_commit_sha": "c50538f42a37fae9d33aab930abfb32f5fb33c54",
+      "base_commit_sha": "411f78566bed622a2ca2e6480c659486175db129",
+      "start_commit_sha": "27a028e726b0766379939d1bd37dc61b4b7211c9",
+      "created_at": "2026-09-07T18:05:48.496Z",
+      "merge_request_id": 529112202,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "38d379089dae51c615471b625436b08d28e1907e"
+    }
+  ]
+}
