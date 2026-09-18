@@ -1,0 +1,419 @@
+{
+  "id": 282627390,
+  "iid": 14424,
+  "project_id": 7898047,
+  "title": "Telnet: vSPC: Complete dissection of VMOTION-GOAHEAD and VMOTION-PEER messages.",
+  "description": "Dissecting the VMware virtual serial port concentrator (vSPC) messages for `VMOTION-GOAHEAD` and `VMOTION-PEER` is made challenging by the fact that the two fields in those messages (\"sequence\" and \"secret\") are of no fixed size and have no delimiter.  The only way to correctly interpret their contents is by comparison against earlier packets in the conversation which carry _only_ the sequence number.  For `VMOTION-GOAHEAD`, this is easy, because a preceding message will be the `VMOTION-BEGIN` message which has only the sequence number, so the length of the contents of the `VMOTION-BEGIN` message is sufficient to decode the `VMOTION-GOAHEAD`.\n\nFor two-pass analysis, _any_ of the subsequent messages carrying only the sequence number may be used to obtain the length needed to decode the `VMOTION-GOAHEAD` and `VMOTION-PEER` messages.\n\n----\n\nFor one-pass analysis, `VMOTION-PEER` presents a more complex situation: There is (by definition) no earlier message in that _Telnet_ conversation which can be used to derive the length of the sequence number.  The only way to obtain the necessary length value is by tracking the actual _vMotion_ conversation as it moves from one Telnet connection (representing the running \"source\" VM's connection to the serial port concentrator) to the next (the \"destination\" VM being initialized and attempting to connect to the serial port concentrator).\n\nTo achieve this, a new conversation endpoint type, `CE_BLOB` is created.  Just one address is used to identify the vMotion conversation: The concatenation of the sequence and secret.\n\nThe final change in the series makes use of `CE_BLOB` to pass the sequence number length from the \"source\" Telnet connection to the \"destination\" Telnet connection, making it possible to decode `VMOTION-PEER` in one pass.  A new `CONVERSATION_VSPC_VMOTION` type is used for these conversations.\n\n----\n\nTesting: Use the attached [vspc-success-and-failure.pcapng.gz](/uploads/9824f992aeea66f2c57c366ed626b0c9/vspc-success-and-failure.pcapng.gz), which shows several synthetic vSPC conversations from a single VM which is migrating in a (fake) datacenter.  The command:\n\n```\ntshark -d tcp.port==13370,telnet -O telnet -r vspc-success-and-failure.pcapng.gz\n```\n\nshould suffice.  Note that only the final change in the series allows the `VMOTION_PEER` commands (e.g. as filtered with `-Y telnet.vmware.cmd==44'`) to be correctly dissected unless you also include the `-2` argument when running `tshark`.",
+  "state": "merged",
+  "created_at": "2024-02-16T07:22:03.522Z",
+  "updated_at": "2024-04-05T11:07:30.805Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2024-04-05T11:07:30.878Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "telnet",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7889756,
+    "username": "dariusd0",
+    "public_email": "",
+    "name": "dariusd0",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dariusd0"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 23335328,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "cc4f989805f7f210a6245f8ed9746d623c2693c5",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": false,
+  "prepared_at": "2024-02-16T07:22:10.319Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!14424",
+  "references": {
+    "short": "!14424",
+    "relative": "!14424",
+    "full": "wireshark/wireshark!14424"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/14424",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "4",
+  "latest_build_started_at": "2024-04-05T09:44:03.182Z",
+  "latest_build_finished_at": "2024-04-05T10:25:28.511Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1241399613,
+    "iid": 201,
+    "project_id": 23335328,
+    "sha": "1adbc017d42a614da064bd35459ec2d1b8ee232e",
+    "ref": "telnet",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-04-05T09:44:02.432Z",
+    "updated_at": "2024-04-05T10:25:28.527Z",
+    "web_url": "https://gitlab.com/dariusd0/wireshark/-/pipelines/1241399613"
+  },
+  "head_pipeline": {
+    "id": 1241507692,
+    "iid": 63521,
+    "project_id": 7898047,
+    "sha": "cc4f989805f7f210a6245f8ed9746d623c2693c5",
+    "ref": "refs/merge-requests/14424/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2024-04-05T11:07:10.235Z",
+    "updated_at": "2024-04-05T11:07:10.235Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1241507692",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1241507692",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "d6bc7d969d2f5a4fdb567038225f3bf57e3f4199",
+    "head_sha": "cc4f989805f7f210a6245f8ed9746d623c2693c5",
+    "start_sha": "d6bc7d969d2f5a4fdb567038225f3bf57e3f4199"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "db6c513b733547c9d95a716b9af2e1410fc1ab40",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1847959645,
+          "type": null,
+          "body": "added 510 commits\n\n<ul><li>c410b709...c84115f8 - 507 commits from branch <code>wireshark:master</code></li><li>a9700fda - Telnet: vSPC: Dissect &quot;sequence&quot; and &quot;secret&quot; in easy cases.</li><li>a12c719b - conversation: Add support for a &quot;blob&quot; conversation-element type.</li><li>1adbc017 - Telnet: vSPC: Track the &quot;vMotion conversation&quot;.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14424/diffs?diff_id=973685297&start_sha=c410b709494de6923d7bdb397ca4bd1cf21d64a9)",
+          "author": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "created_at": "2024-04-05T09:44:00.735Z",
+          "updated_at": "2024-04-05T09:44:00.739Z",
+          "system": true,
+          "noteable_id": 282627390,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14424,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9760c34bf451c7edc7a5c5e0bdae56e54cc16962",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1848123307,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>1adbc017...d6bc7d96 - 4 commits from branch <code>wireshark:master</code></li><li>d63bac4d - Telnet: vSPC: Dissect &quot;sequence&quot; and &quot;secret&quot; in easy cases.</li><li>ca4f2170 - conversation: Add support for a &quot;blob&quot; conversation-element type.</li><li>cc4f9898 - Telnet: vSPC: Track the &quot;vMotion conversation&quot;.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14424/diffs?diff_id=973781201&start_sha=1adbc017d42a614da064bd35459ec2d1b8ee232e)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-04-05T11:07:09.099Z",
+          "updated_at": "2024-04-05T11:07:09.104Z",
+          "system": true,
+          "noteable_id": 282627390,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14424,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a01c5e7963695cf28892abc4a95881058555af25",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1848123524,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-04-05T11:07:15.616Z",
+          "updated_at": "2024-04-05T11:07:15.636Z",
+          "system": true,
+          "noteable_id": 282627390,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14424,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -89,6 +89,7 @@ static int hf_telnet_vmware_cmd;\n static int hf_telnet_vmware_known_suboption_code;\n static int hf_telnet_vmware_unknown_subopt_code;\n static int hf_telnet_vmware_vmotion_sequence;\n+static int hf_telnet_vmware_vmotion_secret;\n static int hf_telnet_vmware_proxy_direction;\n static int hf_telnet_vmware_proxy_serviceUri;\n static int hf_telnet_vmware_vm_vc_uuid;\n@@ -224,6 +225,7 @@ typedef struct tn_opt {\n typedef struct _telnet_conv_info {\n   guint32   starttls_requested_in;  /* Frame of first sender of START_TLS FOLLOWS */\n   guint32   starttls_port;          /* Source port for first sender */\n+  gssize    vmotion_sequence_len;   /* Length of \"sequence\" field for VMware vSPC vMotion. */\n } telnet_conv_info_t;\n \n static void\n@@ -272,6 +274,7 @@ telnet_get_session(packet_info *pinfo)\n   telnet_info = (telnet_conv_info_t*)conversation_get_proto_data(conversation, proto_telnet);\n   if (!telnet_info) {\n     telnet_info = wmem_new0(wmem_file_scope(), telnet_conv_info_t);\n+    telnet_info->vmotion_sequence_len = -1;\n     conversation_add_proto_data(conversation, proto_telnet, telnet_info);\n   }\n   return telnet_info;\n@@ -1428,24 +1431,97 @@ dissect_vmware_subopt(packet_info *pinfo _U_, const char *optname _U_, tvbuff_t\n   case VMWARE_VMOTION_BEGIN:\n   case VMWARE_VMOTION_NOTNOW:\n   case VMWARE_VMOTION_PEER_OK:\n-  case VMWARE_VMOTION_COMPLETE:\n+  case VMWARE_VMOTION_COMPLETE: {\n     /* Data: sequence */\n+    telnet_conv_info_t *session = telnet_get_session(pinfo);\n+    if (session->vmotion_sequence_len < 0) {\n+      /*\n+       * There is nothing which _requires_ that the sequence length be constant\n+       * throughout a Telnet conversation, but all implementations currently\n+       * behave that way and here we assume it will be so.  If that changes,\n+       * subsequent VMOTION-GOAHEAD/VMOTION-PEER messages might be incorrectly\n+       * dissected, with bytes incorrectly assigned to the sequence or secret\n+       * fields.  This should not be a big deal.\n+       */\n+      session->vmotion_sequence_len = len;\n+    }\n     proto_tree_add_item(tree, hf_telnet_vmware_vmotion_sequence, tvb, offset, len, ENC_NA);\n     offset += len;\n     len = 0;\n+  }\n     break;\n \n   case VMWARE_VMOTION_GOAHEAD:\n-  case VMWARE_VMOTION_PEER:\n+  case VMWARE_VMOTION_PEER: {\n     /* Data: sequence secret */\n+    telnet_conv_info_t *session = telnet_get_session(pinfo);\n+\n     /*\n-     * TODO: With no delimiter between \"sequence\" and \"secret\", nor any other\n-     *       way of determining the lengths of those fields, dissecting them\n-     *       will require tracking the vMotion conversation.  For now, ignore\n-     *       all data.\n+     * The lack of delimiter between \"sequence\" and \"secret\" makes dissection\n+     * challenging.  We need to track the \"vMotion conversation\", which spans\n+     * two Telnet conversations with different endpoints.  The vMotion\n+     * conversation is identified by a blob containing the concatenation of the\n+     * sequence and secret.\n      */\n-    offset += len;\n-    len = 0;\n+    if ((vmwcmd == VMWARE_VMOTION_GOAHEAD && session->vmotion_sequence_len >= 0) ||\n+        (vmwcmd == VMWARE_VMOTION_PEER && session->vmotion_sequence_len < 0)) {\n+      conversation_element_t conv_key[2] = {\n+        {\n+          .type = CE_BLOB,\n+          .blob = {\n+             .val = tvb_memdup(pinfo->pool, tvb, offset, len),\n+             .len = len,\n+          },\n+        },\n+        {\n+          .type = CE_CONVERSATION_TYPE,\n+          .conversation_type_val = CONVERSATION_VSPC_VMOTION,\n+        }\n+      };\n+      conversation_t *vmotion_conv = find_conversation_full(pinfo->num, conv_key);\n+\n+      if (vmwcmd == VMWARE_VMOTION_GOAHEAD && vmotion_conv == NULL) {\n+        /*\n+         * We have the full sequence and secret and we know the length of the\n+         * \"sequence\" field.  Stash it (or, really, its session) where we can\n+         * find it later.\n+         */\n+        vmotion_conv = conversation_new_full(pinfo->num, conv_key);\n+        conversation_add_proto_data(vmotion_conv, proto_telnet, session);\n+      } else if (vmwcmd == VMWARE_VMOTION_PEER && vmotion_conv != NULL) {\n+        /*\n+         * Try to find the length of the \"sequence\" field from the conversation\n+         * containing the VMOTION-GOAHEAD message.\n+         */\n+        telnet_conv_info_t const *source_session =\n+          (telnet_conv_info_t const *)conversation_get_proto_data(vmotion_conv, proto_telnet);\n+\n+        if (source_session != NULL) {\n+          session->vmotion_sequence_len = source_session->vmotion_sequence_len;\n+        }\n+        /* The secret is only used once, so the vMotion conversation ends here. */\n+        vmotion_conv->last_frame = pinfo->num;\n+      }\n+      wmem_free(pinfo->pool, (void *)conv_key[0].blob.val);\n+    }\n+    if (session->vmotion_sequence_len >= 0 && session->vmotion_sequence_len <= len) {\n+      proto_tree_add_item(tree, hf_telnet_vmware_vmotion_sequence, tvb, offset, (int)session->vmotion_sequence_len, ENC_NA);\n+      offset += session->vmotion_sequence_len;\n+      len -= session->vmotion_sequence_len;\n+\n+      proto_tree_add_item(tree, hf_telnet_vmware_vmotion_secret, tvb, offset, len, ENC_NA);\n+      offset += len;\n+      len = 0;\n+    } else {\n+      /*\n+       * With no delimiter between \"sequence\" and \"secret\", nor any other way\n+       * of determining the lengths of those fields, we lack the information to\n+       * be able to dissect this.  Skip it.\n+       */\n+      offset += len;\n+      len = 0;\n+    }\n+  }\n     break;\n \n   case VMWARE_VMOTION_ABORT:\n@@ -2441,6 +2517,10 @@ proto_register_telnet(void)\n       { \"vMotion sequence\", \"telnet.vmware.vmotion.sequence\", FT_BYTES, BASE_NONE,\n         NULL, 0, NULL, HFILL }\n     },\n+    { &hf_telnet_vmware_vmotion_secret,\n+      { \"vMotion secret\", \"telnet.vmware.vmotion.secret\", FT_BYTES, BASE_NONE,\n+        NULL, 0, NULL, HFILL }\n+    },\n     { &hf_telnet_vmware_proxy_direction,\n       { \"Proxy Direction\", \"telnet.vmware.proxy.direction\", FT_CHAR, BASE_HEX,\n         VALS(vmware_proxy_direction_vals), 0, NULL, HFILL }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-telnet.c",
+      "old_path": "epan/dissectors/packet-telnet.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -80,6 +80,7 @@ static const char *type_names[] = {\n     \"uint64\",\n     \"int\",\n     \"int64\",\n+    \"blob\",\n };\n \n /*\n@@ -205,6 +206,14 @@ static char* conversation_element_list_values(conversation_element_t *elements)\n         case CE_INT64:\n             g_string_append_printf(value_str, \"%\" PRId64, cur_el->int64_val);\n             break;\n+        case CE_BLOB:\n+        {\n+            size_t l;\n+            uint8_t const *p;\n+            for (l = cur_el->blob.len, p = cur_el->blob.val; l > 0; l--, p++)\n+                g_string_append_printf(value_str, \"%02x\", *p);\n+        }\n+            break;\n         }\n     }\n     return g_string_free(value_str, FALSE);\n@@ -388,6 +397,11 @@ conversation_hash_element_list(gconstpointer v)\n             tmp_addr.data = &element->int64_val;\n             hash_val = add_address_to_hash(hash_val, &tmp_addr);\n             break;\n+        case CE_BLOB:\n+            tmp_addr.len = (int) element->blob.len;\n+            tmp_addr.data = element->blob.val;\n+            hash_val = add_address_to_hash(hash_val, &tmp_addr);\n+            break;\n         case CE_CONVERSATION_TYPE:\n             tmp_addr.len = (int) sizeof(element->conversation_type_val);\n             tmp_addr.data = &element->conversation_type_val;\n@@ -456,6 +470,12 @@ conversation_match_element_list(gconstpointer v1, gconstpointer v2)\n                 return FALSE;\n             }\n             break;\n+        case CE_BLOB:\n+            if (element1->blob.len != element2->blob.len ||\n+                (element1->blob.len > 0 && memcmp(element1->blob.val, element2->blob.val, element1->blob.len) != 0)) {\n+                return FALSE;\n+            }\n+            break;\n         case CE_CONVERSATION_TYPE:\n             if (element1->conversation_type_val != element2->conversation_type_val) {\n                 return FALSE;\n@@ -714,6 +734,8 @@ conversation_t *conversation_new_full(const guint32 setup_frame, conversation_el\n             copy_address_wmem(wmem_file_scope(), &conv_key[i].addr_val, &elements[i].addr_val);\n         } else if (conv_key[i].type == CE_STRING) {\n             conv_key[i].str_val = wmem_strdup(wmem_file_scope(), elements[i].str_val);\n+        } else if (conv_key[i].type == CE_BLOB) {\n+            conv_key[i].blob.val = wmem_memdup(wmem_file_scope(), elements[i].blob.val, elements[i].blob.len);\n         }\n     }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/conversation.c",
+      "old_path": "epan/conversation.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -103,7 +103,8 @@ typedef enum {\n     CONVERSATION_IDN,\n     CONVERSATION_IP,\t\t/* IP */\n     CONVERSATION_IPV6,\t\t/* IPv6 */\n-    CONVERSATION_ETH     \t/* ETHERNET */\n+    CONVERSATION_ETH,\t\t/* ETHERNET */\n+    CONVERSATION_VSPC_VMOTION,\t/* VMware vSPC vMotion (Telnet) */\n } conversation_type;\n \n /*\n@@ -166,6 +167,7 @@ typedef enum {\n     CE_UINT64,              /* 64-bit unsigned integer */\n     CE_INT,                 /* signed integer */\n     CE_INT64,               /* signed integer */\n+    CE_BLOB,                /* arbitrary binary data */\n } conversation_element_type;\n \n /**\n@@ -200,6 +202,10 @@ typedef struct conversation_element {\n         uint64_t uint64_val;\n         int int_val;\n         int64_t int64_val;\n+        struct {\n+            const uint8_t *val;\n+            size_t len;\n+        } blob;\n     };\n } conversation_element_t;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/conversation.h",
+      "old_path": "epan/conversation.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -37,6 +37,7 @@ fill_named_table(void *key, void *value _U_, void *user_data)\n         int uint64_count = 1;\n         int int_count = 1;\n         int int64_count = 1;\n+        int blob_count = 1;\n         for (const conversation_element_t *cur_el = elements; ; cur_el++) {\n             QString title;\n             switch (cur_el->type) {\n@@ -61,6 +62,9 @@ fill_named_table(void *key, void *value _U_, void *user_data)\n             case CE_INT64:\n                 title = QString(\"Int64 %1\").arg(int64_count++);\n                 break;\n+            case CE_BLOB:\n+                title = QString(\"Blob %1\").arg(blob_count++);\n+                break;\n             case CE_CONVERSATION_TYPE:\n                 html_table->append(QString(\"<th>Endpoint</th>\"));\n                 goto title_done;\n@@ -98,6 +102,9 @@ title_done:\n         case CE_INT64:\n             val = QString::number(cur_el->int64_val);\n             break;\n+        case CE_BLOB:\n+            val = QString(QByteArray::fromRawData((const char *)cur_el->blob.val, (int)cur_el->blob.len).toHex());\n+            break;\n         case CE_CONVERSATION_TYPE:\n             html_table->append(QString(\"<td>%1</td>\").arg(QString::number(cur_el->conversation_type_val)));\n             goto val_done;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/conversation_hash_tables_dialog.cpp",
+      "old_path": "ui/qt/conversation_hash_tables_dialog.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "cc4f989805f7f210a6245f8ed9746d623c2693c5",
+      "short_id": "cc4f9898",
+      "created_at": "2024-04-05T11:07:05.000+00:00",
+      "parent_ids": [
+        "ca4f217083ed6d62160330f63b3cfd746f9bb0e2"
+      ],
+      "title": "Telnet: vSPC: Track the \"vMotion conversation\".",
+      "message": "Telnet: vSPC: Track the \"vMotion conversation\".\n\nFully dissect the VMOTION-PEER message, even in a one-pass dissection or when\nthe VMOTION-PEER-OK message was not captured.  This requires that we correlate\nthis Telnet conversation with the earlier one carrying the VMOTION-GOAHEAD\nmessage, and extracting the length of the sequence number from there.\n",
+      "author_name": "Darius Davis",
+      "author_email": "darius-wireshark@free-range.com.au",
+      "authored_date": "2024-02-06T13:00:27.000+10:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2024-04-05T11:07:05.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/cc4f989805f7f210a6245f8ed9746d623c2693c5"
+    },
+    {
+      "id": "ca4f217083ed6d62160330f63b3cfd746f9bb0e2",
+      "short_id": "ca4f2170",
+      "created_at": "2024-04-05T11:07:05.000+00:00",
+      "parent_ids": [
+        "d63bac4d7744cd6cafe20ccc379ae90b0313f721"
+      ],
+      "title": "conversation: Add support for a \"blob\" conversation-element type.",
+      "message": "conversation: Add support for a \"blob\" conversation-element type.\n\nThe new CE_BLOB is similar to CE_STRING, but can include zeros within its\nvalue, is not NUL-terminated, and -- because it likely isn't printable text --\nis displayed as hexadecimal.\n",
+      "author_name": "Darius Davis",
+      "author_email": "darius-wireshark@free-range.com.au",
+      "authored_date": "2024-02-06T12:59:27.000+10:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2024-04-05T11:07:05.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ca4f217083ed6d62160330f63b3cfd746f9bb0e2"
+    },
+    {
+      "id": "d63bac4d7744cd6cafe20ccc379ae90b0313f721",
+      "short_id": "d63bac4d",
+      "created_at": "2024-04-05T11:07:05.000+00:00",
+      "parent_ids": [
+        "d6bc7d969d2f5a4fdb567038225f3bf57e3f4199"
+      ],
+      "title": "Telnet: vSPC: Dissect \"sequence\" and \"secret\" in easy cases.",
+      "message": "Telnet: vSPC: Dissect \"sequence\" and \"secret\" in easy cases.\n\nFor a VMOTION-GOAHEAD message, it is likely that we can use an earlier message\nin the same conversation to determine the length of the \"sequence\" field,\nallowing us to fully dissect that message.  In a two-pass analysis, even the\nlength from the VMOTION-PEER-OK message allows for dissection of the preceding\nVMOTION-PEER message.\n\nFor decoding the VMOTION-PEER message in one pass, it's going to require a bit\nmore work -- i.e. tracking the \"vMotion conversation\" across the two Telnet\nconversations.\n",
+      "author_name": "Darius Davis",
+      "author_email": "darius-wireshark@free-range.com.au",
+      "authored_date": "2024-02-06T11:13:57.000+10:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2024-04-05T11:07:05.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/d63bac4d7744cd6cafe20ccc379ae90b0313f721"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 973781201,
+      "head_commit_sha": "cc4f989805f7f210a6245f8ed9746d623c2693c5",
+      "base_commit_sha": "d6bc7d969d2f5a4fdb567038225f3bf57e3f4199",
+      "start_commit_sha": "d6bc7d969d2f5a4fdb567038225f3bf57e3f4199",
+      "created_at": "2024-04-05T11:07:08.241Z",
+      "merge_request_id": 282627390,
+      "state": "collected",
+      "real_size": "4",
+      "patch_id_sha": "125dc28a03551f9fa3cda59803caf8a553d94c13"
+    },
+    {
+      "id": 973685297,
+      "head_commit_sha": "1adbc017d42a614da064bd35459ec2d1b8ee232e",
+      "base_commit_sha": "c84115f8813a1a030352a8848f5a01181aef149d",
+      "start_commit_sha": "c84115f8813a1a030352a8848f5a01181aef149d",
+      "created_at": "2024-04-05T09:43:59.501Z",
+      "merge_request_id": 282627390,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "125dc28a03551f9fa3cda59803caf8a553d94c13"
+    },
+    {
+      "id": 926865849,
+      "head_commit_sha": "c410b709494de6923d7bdb397ca4bd1cf21d64a9",
+      "base_commit_sha": "456b8af98b3c4af5a299027b104aa4e9cae6b8d4",
+      "start_commit_sha": "456b8af98b3c4af5a299027b104aa4e9cae6b8d4",
+      "created_at": "2024-02-16T07:22:05.051Z",
+      "merge_request_id": 282627390,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": "125dc28a03551f9fa3cda59803caf8a553d94c13"
+    }
+  ]
+}

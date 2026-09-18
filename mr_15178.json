@@ -1,0 +1,261 @@
+{
+  "id": 293952392,
+  "iid": 15178,
+  "project_id": 7898047,
+  "title": "Qt: Work around Qt6 dataChanged pessimization",
+  "description": "A change in Qt 6.0 makes QAbstractItemView::dataChanged, when called\nwith multiple indices, determine exactly how much of the viewport\nrectangle is covered by the changed indices and only update that much\nof the viewport instead of always updating the entire viewport. This\nreduces CPU load when multiple indices, but not enough to span the\nentire viewport, are updated at once.\n( https://codereview.qt-project.org/c/qt/qtbase/+/285280\n  https://bugreports.qt.io/browse/QTBUG-58580\n)\n\nUnfortunately, if the number of indices is very large (much larger\nthan the total number of indices that can possibly be displayed in\nthe viewport), computing the union of the intersecting rectangle takes\norders of magnitude longer than unconditionally updating the whole\nviewport. ( https://bugreports.qt.io/browse/QTBUG-124173 )\n\nWhen the packetListModel wants to indicate that all packets may have\nchanged, this makes dataChanged scale linearly with the total number of\nrows/frames, whereas updating the viewport only scaled with the size of\nthe viewport but was unaffected by undisplayed packets. The calculation\nis unnecessary because we know the entire viewport is affected. On a\nsample modern workstation, measurements showed dataChanged taking 1 s\nwith 1.4 M packets and 9 s with 12 M packets. This signal can be issued\nquite often, e.g. if IP address lookup (DNS or MaxMindIP) is enabled, it\ncan be issued once per second at the packet_data_timer expiration for\nsome period of time as idle dissection occurs when opening the file.\n\nInstead of issuing dataChanged, we can issue layoutAboutToBeChanged()\n(in practice a no-op) and layoutChanged(), which causes the QTreeView\nto clear all information about its view items (d->viewItems.clear() in\nQTreeView::doItemsLayout), but without clearing the current and selected\nrow (unlike [begin|end]ResetModel.) This takes the same 5-8 ms in the\nsame test procedure as above in both the 1.4 M and 12 M packet tests.\n\nImproves #19486 considerably on Qt 6.\n\n\n(cherry picked from commit 5abfe91cc164d873e56c6f24a313b93b7d883a9e)",
+  "state": "merged",
+  "created_at": "2024-04-08T11:36:44.512Z",
+  "updated_at": "2024-04-08T12:53:19.967Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2024-04-08T12:53:12.423Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-4.0",
+  "source_branch": "cherry-pick-5abfe91c-2",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 7898047,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "b9d7838ebf451d02b5ac06ffa42f745b278841de",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-04-08T11:36:58.375Z",
+  "reference": "!15178",
+  "references": {
+    "short": "!15178",
+    "relative": "!15178",
+    "full": "wireshark/wireshark!15178"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/15178",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2024-04-08T11:36:51.084Z",
+  "latest_build_finished_at": "2024-04-08T11:47:51.409Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1244200062,
+    "iid": 63655,
+    "project_id": 7898047,
+    "sha": "b9d7838ebf451d02b5ac06ffa42f745b278841de",
+    "ref": "refs/merge-requests/15178/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-04-08T11:36:49.853Z",
+    "updated_at": "2024-04-08T11:47:51.434Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1244200062"
+  },
+  "head_pipeline": {
+    "id": 1244200062,
+    "iid": 63655,
+    "project_id": 7898047,
+    "sha": "b9d7838ebf451d02b5ac06ffa42f745b278841de",
+    "ref": "refs/merge-requests/15178/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-04-08T11:36:49.853Z",
+    "updated_at": "2024-04-08T11:47:51.434Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1244200062",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2024-04-08T11:36:51.084Z",
+    "finished_at": "2024-04-08T11:47:51.409Z",
+    "committed_at": null,
+    "duration": 660,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1244200062",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "49d03f5253c7ac6b1b2e7ef76362b0d3c0947be7",
+    "head_sha": "b9d7838ebf451d02b5ac06ffa42f745b278841de",
+    "start_sha": "49d03f5253c7ac6b1b2e7ef76362b0d3c0947be7"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b1cf945201057789418ae6fc4427ca2a04384662",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1850956498,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-04-08T12:53:06.072Z",
+          "updated_at": "2024-04-08T12:53:06.084Z",
+          "system": true,
+          "noteable_id": 293952392,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15178,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -176,26 +176,74 @@ void PacketListModel::clear() {\n \n void PacketListModel::invalidateAllColumnStrings()\n {\n+    // https://bugreports.qt.io/browse/QTBUG-58580\n+    // https://bugreports.qt.io/browse/QTBUG-124173\n+    // https://codereview.qt-project.org/c/qt/qtbase/+/285280\n+    //\n+    // In Qt 6, QAbstractItemView::dataChanged determines how much of the\n+    // viewport rectangle is covered by the changed indices and only updates\n+    // that much. Unfortunately, if the number of indices is very large,\n+    // computing the union of the intersecting rectangle takes much longer\n+    // than unconditionally updating the entire viewport. It increases linearly\n+    // with the total number of packets in the list, unlike updating the\n+    // viewport, which scales with the size of the viewport but is unaffected\n+    // by undisplayed packets.\n+    //\n+    // In particular, if the data for all of the model is invalidated, we\n+    // know we want to update the entire viewport and very much do not\n+    // want to waste time calculating the affected area. (This can take\n+    // 1 s with 1.4 M packets, 9 s with 12 M packets.)\n+    //\n+    // Issuing layoutAboutToBeChanged() and layoutChanged() causes the\n+    // QTreeView to clear all the information for each of the view items,\n+    // but without clearing the current and selected items (unlike\n+    // [begin|end]ResetModel.)\n+    //\n+    // Theoretically this is less efficient because dataChanged() has a list\n+    // of what roles changed and the other signals do not; in practice,\n+    // neither QTreeView::dataChanged nor QAbstractItemView::dataChanged\n+    // actually use the roles parameter, and just reset everything.\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutAboutToBeChanged();\n+#endif\n     PacketListRecord::invalidateAllRecords();\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutChanged();\n+#else\n     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1),\n             QVector<int>() << Qt::DisplayRole);\n+#endif\n }\n \n void PacketListModel::resetColumns()\n {\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutAboutToBeChanged();\n+#endif\n     if (cap_file_) {\n         PacketListRecord::resetColumns(&cap_file_->cinfo);\n     }\n \n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutChanged();\n+#else\n     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));\n+#endif\n     emit headerDataChanged(Qt::Horizontal, 0, columnCount() - 1);\n }\n \n void PacketListModel::resetColorized()\n {\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutAboutToBeChanged();\n+#endif\n     PacketListRecord::resetColorization();\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutChanged();\n+#else\n     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1),\n             QVector<int>() << Qt::BackgroundRole << Qt::ForegroundRole);\n+#endif\n }\n \n void PacketListModel::toggleFrameMark(const QModelIndexList &indeces)\n@@ -229,6 +277,9 @@ void PacketListModel::toggleFrameMark(const QModelIndexList &indeces)\n \n void PacketListModel::setDisplayedFrameMark(gboolean set)\n {\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutAboutToBeChanged();\n+#endif\n     foreach (PacketListRecord *record, visible_rows_) {\n         if (set) {\n             cf_mark_frame(cap_file_, record->frameData());\n@@ -236,8 +287,12 @@ void PacketListModel::setDisplayedFrameMark(gboolean set)\n             cf_unmark_frame(cap_file_, record->frameData());\n         }\n     }\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutChanged();\n+#else\n     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1),\n             QVector<int>() << Qt::BackgroundRole << Qt::ForegroundRole);\n+#endif\n }\n \n void PacketListModel::toggleFrameIgnore(const QModelIndexList &indeces)\n@@ -271,6 +326,9 @@ void PacketListModel::toggleFrameIgnore(const QModelIndexList &indeces)\n \n void PacketListModel::setDisplayedFrameIgnore(gboolean set)\n {\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutAboutToBeChanged();\n+#endif\n     foreach (PacketListRecord *record, visible_rows_) {\n         if (set) {\n             cf_ignore_frame(cap_file_, record->frameData());\n@@ -278,8 +336,12 @@ void PacketListModel::setDisplayedFrameIgnore(gboolean set)\n             cf_unignore_frame(cap_file_, record->frameData());\n         }\n     }\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutChanged();\n+#else\n     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1),\n             QVector<int>() << Qt::BackgroundRole << Qt::ForegroundRole << Qt::DisplayRole);\n+#endif\n }\n \n void PacketListModel::toggleFrameRefTime(const QModelIndex &rt_index)\n@@ -292,6 +354,9 @@ void PacketListModel::toggleFrameRefTime(const QModelIndex &rt_index)\n     frame_data *fdata = record->frameData();\n     if (!fdata) return;\n \n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutAboutToBeChanged();\n+#endif\n     if (fdata->ref_time) {\n         fdata->ref_time=0;\n         cap_file_->ref_time_count--;\n@@ -322,7 +387,11 @@ void PacketListModel::unsetAllFrameRefTime()\n     cap_file_->ref_time_count = 0;\n     cf_reftime_packets(cap_file_);\n     PacketListRecord::resetColumns(&cap_file_->cinfo);\n+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)\n+    emit layoutChanged();\n+#else\n     emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));\n+#endif\n }\n \n void PacketListModel::setMaximumRowHeight(int height)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/models/packet_list_model.cpp",
+      "old_path": "ui/qt/models/packet_list_model.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -997,6 +997,8 @@ void PacketList::setRecentColumnWidth(int col)\n \n void PacketList::drawCurrentPacket()\n {\n+    // XXX - Update for multi-select? If more than one packet is Selected,\n+    // this changes it so that only the Current packet is Selected.\n     QModelIndex current_index = currentIndex();\n     if (selectionModel() && current_index.isValid()) {\n         selectionModel()->clearSelection();\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/packet_list.cpp",
+      "old_path": "ui/qt/packet_list.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "b9d7838ebf451d02b5ac06ffa42f745b278841de",
+      "short_id": "b9d7838e",
+      "created_at": "2024-04-08T11:36:38.000+00:00",
+      "parent_ids": [
+        "49d03f5253c7ac6b1b2e7ef76362b0d3c0947be7"
+      ],
+      "title": "Qt: Work around Qt6 dataChanged pessimization",
+      "message": "Qt: Work around Qt6 dataChanged pessimization\n\nA change in Qt 6.0 makes QAbstractItemView::dataChanged, when called\nwith multiple indices, determine exactly how much of the viewport\nrectangle is covered by the changed indices and only update that much\nof the viewport instead of always updating the entire viewport. This\nreduces CPU load when multiple indices, but not enough to span the\nentire viewport, are updated at once.\n( https://codereview.qt-project.org/c/qt/qtbase/+/285280\n  https://bugreports.qt.io/browse/QTBUG-58580\n)\n\nUnfortunately, if the number of indices is very large (much larger\nthan the total number of indices that can possibly be displayed in\nthe viewport), computing the union of the intersecting rectangle takes\norders of magnitude longer than unconditionally updating the whole\nviewport. ( https://bugreports.qt.io/browse/QTBUG-124173 )\n\nWhen the packetListModel wants to indicate that all packets may have\nchanged, this makes dataChanged scale linearly with the total number of\nrows/frames, whereas updating the viewport only scaled with the size of\nthe viewport but was unaffected by undisplayed packets. The calculation\nis unnecessary because we know the entire viewport is affected. On a\nsample modern workstation, measurements showed dataChanged taking 1 s\nwith 1.4 M packets and 9 s with 12 M packets. This signal can be issued\nquite often, e.g. if IP address lookup (DNS or MaxMindIP) is enabled, it\ncan be issued once per second at the packet_data_timer expiration for\nsome period of time as idle dissection occurs when opening the file.\n\nInstead of issuing dataChanged, we can issue layoutAboutToBeChanged()\n(in practice a no-op) and layoutChanged(), which causes the QTreeView\nto clear all information about its view items (d->viewItems.clear() in\nQTreeView::doItemsLayout), but without clearing the current and selected\nrow (unlike [begin|end]ResetModel.) This takes the same 5-8 ms in the\nsame test procedure as above in both the 1.4 M and 12 M packet tests.\n\nImproves #19486 considerably on Qt 6.\n\n\n(cherry picked from commit 5abfe91cc164d873e56c6f24a313b93b7d883a9e)",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-04-07T16:57:23.000-04:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2024-04-08T11:36:38.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/b9d7838ebf451d02b5ac06ffa42f745b278841de"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 975236197,
+      "head_commit_sha": "b9d7838ebf451d02b5ac06ffa42f745b278841de",
+      "base_commit_sha": "49d03f5253c7ac6b1b2e7ef76362b0d3c0947be7",
+      "start_commit_sha": "49d03f5253c7ac6b1b2e7ef76362b0d3c0947be7",
+      "created_at": "2024-04-08T11:36:45.433Z",
+      "merge_request_id": 293952392,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "2005094d0c6c40f34b371970ad9be0103d0a9b82"
+    }
+  ]
+}

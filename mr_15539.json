@@ -1,0 +1,588 @@
+{
+  "id": 300008916,
+  "iid": 15539,
+  "project_id": 7898047,
+  "title": "Revert \"MySQL: Multibyte Collation Support\"",
+  "description": "This reverts commit c8322907459d37860042dc5ce7ac65c681692627 from wireshark/wireshark!15464\n\nBased on this comment: https://github.com/wireshark/wireshark/commit/c8322907459d37860042dc5ce7ac65c681692627#commitcomment-141627548\n\nCollations in MySQL are ranging between 1 and 323:\n```\nsql> SELECT MIN(ID),MAX(ID) FROM information_schema.collations;\n+---------+---------+\n| MIN(ID) | MAX(ID) |\n+---------+---------+\n|       1 |     323 |\n+---------+---------+\n1 row in set (0.0022 sec)\n\nsql> SELECT VERSION();\n+-----------+\n| VERSION() |\n+-----------+\n| 8.4.0     |\n+-----------+\n1 row in set (0.0004 sec)\n```\n\nThis means that the collation ID needs 2 bytes.\n\nAnother complication here is that there are character sets and collations. A single character usually has multiple collations, but only one collation is the default. In many places in code and documentation the terms character set and collation are unfortunately mixed.\n\n```\nsql> SELECT MIN(ID),MAX(ID) FROM information_schema.collations WHERE IS_DEFAULT='YES';\n+---------+---------+\n| MIN(ID) | MAX(ID) |\n+---------+---------+\n|       1 |     255 |\n+---------+---------+\n1 row in set (0.0021 sec)\n```\n\nAnd all default collations have ID's that are <=255.\n\nWhen connecting to a server the client sends a collation as part of the \"HandshakeResponse41\" (MySQL) / \"Login Request\" (Wireshark).\n\nThis is documented [here](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_handshake_response.html#sect_protocol_connection_phase_packets_protocol_handshake_response41).\n\n![image](/uploads/2f375f4d7798069910bdb8b40a4a2607/image.png)\n\nNote that [this](https://dev.mysql.com/doc/dev/mysql-server/latest/) is source code documentation including a protocol description. However this isn't an official protocol specification.\n\nMySQL Connector/Python doesn't send the collation as 1-byte but as 2-bytes as can be seen in network traces.\n\nThe comment mentioned in the beginning correctly states that MySQL Server only reads one byte and not two.\n\nNote that the lower byte is always in the same location, both with a client sending a 1 byte collation or a client sending a 2 byte collation. This is because there is a filler just before the collation which should always be set to all 0's.\n\nSo basically this is what the official MySQL Connector/Python is sending:\n```\n0x2F 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00\n<- coll -><-------------------------------------------------------- filler 22 x 0x00 --------------------------------->\n```\n\nThis is what MySQL Server reads:\n```\n0x2F 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00\n<col><-------------------------------------------------------- filler 23 x 0x00 -------------------------------------->\n```\n\nSo Conn/Py sends `0x012F` (`utf8mb4_ja_0900_as_cs`) and MySQL Server reads `0x2F` (`latin1_bin`).\n\nFor collations <=255 the first byte is `0x00` so what Conn/Py sends matches with what MySQL Server reads.\n\nNote that it is even safe for the server to read two bytes, matching what Conn/Py sends even for clients that only send 1 byte as the byte before that would be 0x00.\n\nThe questions here are:\n- Is MySQL Connector/Python correct (and the protocol description wrong/outdated, and the server as well)?\n- Or is MySQL Connector/Python wrong?\n- Do we want Wireshark to follow the documented behavior, or the behavior that's seen in the wild by an official connector? Note that 775c3be8387247f9fe6715f2773e7d33da579706 is also there to allow a possible protocol violation that's seen in the wild.\n\nMy *personal* opinions here:\n- As this is only seen in a single connector and not in the server it is more likely that the connector is wrong. This could change later if the server and/or docs gets updated.\n- We could wait for Oracle MySQL to clarify the behavior, but that will probably take too long.\n- I'm ok with reverting this or with keeping this in. If we revert this we probably should have some alert if the filler isn't all 0x00's. In addition to that we should add the updated collation back after this is done.\n- I think we should try to follow the documentation where possible and follow actual behavior of official released MySQL clients and servers where needed.\n- As both MySQL and MariaDB follow the protocol but have slight differences/extensions/etc we can't be too strict.\n\nRelated:\n- https://bugs.mysql.com/bug.php?id=114818 / http://github.com/mysql/mysql-server/pull/541\n- https://bugs.mysql.com/bug.php?id=114857 / http://github.com/mysql/mysql-connector-python/pull/96\n- https://bugs.mysql.com/bug.php?id=114832",
+  "state": "merged",
+  "created_at": "2024-05-06T06:44:16.598Z",
+  "updated_at": "2024-05-17T14:26:53.284Z",
+  "merged_by": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merge_user": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merged_at": "2024-05-06T09:58:13.580Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "revert_mysql_mb_col",
+  "user_notes_count": 2,
+  "upvotes": 1,
+  "downvotes": 0,
+  "author": {
+    "id": 5884947,
+    "username": "dveeden",
+    "public_email": "",
+    "name": "Daniël van Eeden",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dveeden"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 38285998,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "c55809463870edaf79811e5d6bcab51b42e1e3ff",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-05-06T06:44:22.599Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!15539",
+  "references": {
+    "short": "!15539",
+    "relative": "!15539",
+    "full": "wireshark/wireshark!15539"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/15539",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2024-05-06T07:42:46.546Z",
+  "latest_build_finished_at": "2024-05-06T08:39:23.197Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1279650837,
+    "iid": 170,
+    "project_id": 38285998,
+    "sha": "c55809463870edaf79811e5d6bcab51b42e1e3ff",
+    "ref": "revert_mysql_mb_col",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-05-06T07:42:43.908Z",
+    "updated_at": "2024-05-06T08:39:23.494Z",
+    "web_url": "https://gitlab.com/dveeden/wireshark/-/pipelines/1279650837"
+  },
+  "head_pipeline": {
+    "id": 1279650837,
+    "iid": 170,
+    "project_id": 38285998,
+    "sha": "c55809463870edaf79811e5d6bcab51b42e1e3ff",
+    "ref": "revert_mysql_mb_col",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-05-06T07:42:43.908Z",
+    "updated_at": "2024-05-06T08:39:23.494Z",
+    "web_url": "https://gitlab.com/dveeden/wireshark/-/pipelines/1279650837",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 5884947,
+      "username": "dveeden",
+      "public_email": "",
+      "name": "Daniël van Eeden",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+      "web_url": "https://gitlab.com/dveeden"
+    },
+    "started_at": "2024-05-06T07:42:46.546Z",
+    "finished_at": "2024-05-06T08:39:23.197Z",
+    "committed_at": null,
+    "duration": 3394,
+    "queued_duration": 2,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/dveeden/wireshark/-/pipelines/1279650837",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+    "head_sha": "c55809463870edaf79811e5d6bcab51b42e1e3ff",
+    "start_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "0ba2de511a6fb66024eddd9fa677be91bbe5ba8e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1893275130,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>99da8369 - MySQL: Update collation data</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/15539/diffs?diff_id=1000287261&start_sha=b8a57f87bfb6afd3ed508995ffb692d0a7300eae)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-05-06T06:50:05.690Z",
+          "updated_at": "2024-05-06T06:50:05.694Z",
+          "system": true,
+          "noteable_id": 300008916,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15539,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7cdd1a732e87b88e8c6deeafcc73740d346347b7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1893290845,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-05-06T07:03:58.321Z",
+          "updated_at": "2024-05-06T07:03:58.326Z",
+          "system": true,
+          "noteable_id": 300008916,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15539,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d3d6a38acdb5e4709e20bbc797340db3b4ee22a4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1893341888,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-05-06T07:41:44.227Z",
+          "updated_at": "2024-05-06T07:41:44.232Z",
+          "system": true,
+          "noteable_id": 300008916,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15539,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "39b7dfbe4905529dea87a5ae25f30072e94376ae",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1893343198,
+          "type": null,
+          "body": "added 36 commits\n\n<ul><li>99da8369...14cb7970 - 34 commits from branch <code>wireshark:master</code></li><li>33c5c85f - Revert &quot;MySQL: Multibyte Collation Support&quot;</li><li>c5580946 - MySQL: Update collation data</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/15539/diffs?diff_id=1000336147&start_sha=99da8369e19d21634cf1dfbcf90c8b5e79c90259)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-05-06T07:42:36.096Z",
+          "updated_at": "2024-05-06T07:42:36.101Z",
+          "system": true,
+          "noteable_id": 300008916,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15539,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9c3b1529ff6dbc6cb3b16fce90f4f3adaf156896",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1893352258,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-05-06T07:48:52.106Z",
+          "updated_at": "2024-05-06T07:48:52.112Z",
+          "system": true,
+          "noteable_id": 300008916,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15539,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3819f5ae836a2ff6b064c6093679b0f688f0c3b7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1893695850,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2024-05-06T09:57:52.826Z",
+          "updated_at": "2024-05-06T09:57:52.834Z",
+          "system": true,
+          "noteable_id": 300008916,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15539,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d703a043e6a73bb92b902f6979dc110c00583568",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 1910747342,
+          "type": "DiffNote",
+          "body": "I think this one should stay length 2:\n\nhttps://mariadb.com/kb/en/com_change_user/\nclaims both that \"[t]he packet is identical to the authentication packet in the connection handshake,\" but that the collation is an `int<2>`, unlike\nhttps://mariadb.com/kb/en/connection/#handshake-response-packet\nwhere it is an `int<1>`.\n\nhttps://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_com_change_user.html\nalso indicates that it is an `int<2>`.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-05-17T14:25:28.011Z",
+          "updated_at": "2024-05-17T14:25:28.011Z",
+          "system": false,
+          "noteable_id": 300008916,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+            "start_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+            "head_sha": "c55809463870edaf79811e5d6bcab51b42e1e3ff",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": 2414,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2414_2414",
+                "type": "old",
+                "old_line": 2414,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2414_2414",
+                "type": "old",
+                "old_line": 2414,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15539,
+          "commands_changes": {}
+        },
+        {
+          "id": 1910749416,
+          "type": "DiffNote",
+          "body": "vs https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_handshake_response.html\n\nWhich mentions that it's only the lower 8 bits.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-05-17T14:26:53.251Z",
+          "updated_at": "2024-05-17T14:26:53.251Z",
+          "system": false,
+          "noteable_id": 300008916,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+            "start_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+            "head_sha": "c55809463870edaf79811e5d6bcab51b42e1e3ff",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": 2414,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2414_2414",
+                "type": "old",
+                "old_line": 2414,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2414_2414",
+                "type": "old",
+                "old_line": 2414,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15539,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1957,18 +1957,18 @@ mysql_dissect_login(tvbuff_t *tvb, packet_info *pinfo, int offset,\n \t\tproto_tree_add_item(login_tree, hf_mysql_max_packet, tvb, offset, 4, ENC_LITTLE_ENDIAN);\n \t\toffset += 4;\n \n-\t\tproto_tree_add_item(login_tree, conn_data->is_mariadb_server ? hf_mariadb_collation : hf_mysql_collation, tvb, offset, 2, ENC_LITTLE_ENDIAN);\n-\t\toffset += 2; /* for charset */\n+\t\tproto_tree_add_item(login_tree, conn_data->is_mariadb_server ? hf_mariadb_collation : hf_mysql_collation, tvb, offset, 1, ENC_NA);\n+\t\toffset += 1; /* for charset */\n \n \t\tif (conn_data->is_mariadb_client){\n \t\t\t/* 19 bytes unused */\n-\t\t\tproto_tree_add_item(login_tree, hf_mysql_unused, tvb, offset, 18, ENC_NA);\n-\t\t\toffset += 18;\n+\t\t\tproto_tree_add_item(login_tree, hf_mysql_unused, tvb, offset, 19, ENC_NA);\n+\t\t\toffset += 19;\n \t\t\toffset= mariadb_dissect_caps_or_flags(tvb, offset, FT_UINT32, login_tree, hf_mariadb_extcaps_client, mariadb_extcaps_flags, &conn_data->mariadb_client_ext_caps);\n \t\t} else {\n \t\t\t/* 23 bytes unused */\n-\t\t\tproto_tree_add_item(login_tree, hf_mysql_unused, tvb, offset, 22, ENC_NA);\n-\t\t\toffset += 22;\n+\t\t\tproto_tree_add_item(login_tree, hf_mysql_unused, tvb, offset, 23, ENC_NA);\n+\t\t\toffset += 23;\n \t\t}\n \n \t} else { /* pre-4.1 */\n@@ -2411,7 +2411,7 @@ mysql_dissect_request(tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *\n \t\toffset += lenstr;\n \n \t\tif (tvb_reported_length_remaining(tvb, offset) > 0) {\n-\t\t\tproto_tree_add_item(req_tree, conn_data->is_mariadb_server ? hf_mariadb_collation : hf_mysql_collation, tvb, offset, 2, ENC_LITTLE_ENDIAN);\n+\t\t\tproto_tree_add_item(req_tree, conn_data->is_mariadb_server ? hf_mariadb_collation : hf_mysql_collation, tvb, offset, 1, ENC_NA);\n \t\t\toffset += 2; /* for charset */\n \t\t}\n \t\tmysql_set_conn_state(pinfo, conn_data, RESPONSE_OK);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mysql.c",
+      "old_path": "epan/dissectors/packet-mysql.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "c55809463870edaf79811e5d6bcab51b42e1e3ff",
+      "short_id": "c5580946",
+      "created_at": "2024-05-06T09:42:18.000+02:00",
+      "parent_ids": [
+        "33c5c85f109fc5a04ab9b5780deeb122c6bcf03c"
+      ],
+      "title": "MySQL: Update collation data",
+      "message": "MySQL: Update collation data\n",
+      "author_name": "Daniël van Eeden",
+      "author_email": "git@myname.nl",
+      "authored_date": "2024-05-06T08:47:33.000+02:00",
+      "committer_name": "Daniël van Eeden",
+      "committer_email": "git@myname.nl",
+      "committed_date": "2024-05-06T09:42:18.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c55809463870edaf79811e5d6bcab51b42e1e3ff"
+    },
+    {
+      "id": "33c5c85f109fc5a04ab9b5780deeb122c6bcf03c",
+      "short_id": "33c5c85f",
+      "created_at": "2024-05-06T09:42:18.000+02:00",
+      "parent_ids": [
+        "14cb79704013091cdf384d8fb1f981adc46cd24e"
+      ],
+      "title": "Revert \"MySQL: Multibyte Collation Support\"",
+      "message": "Revert \"MySQL: Multibyte Collation Support\"\n\nThis reverts commit c8322907459d37860042dc5ce7ac65c681692627.\n",
+      "author_name": "Daniël van Eeden",
+      "author_email": "git@myname.nl",
+      "authored_date": "2024-05-06T07:50:21.000+02:00",
+      "committer_name": "Daniël van Eeden",
+      "committer_email": "git@myname.nl",
+      "committed_date": "2024-05-06T09:42:18.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/33c5c85f109fc5a04ab9b5780deeb122c6bcf03c"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1000336147,
+      "head_commit_sha": "c55809463870edaf79811e5d6bcab51b42e1e3ff",
+      "base_commit_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+      "start_commit_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+      "created_at": "2024-05-06T07:42:35.281Z",
+      "merge_request_id": 300008916,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "e52283820b46921f708b00b0c98c6ec120c1cb0b"
+    },
+    {
+      "id": 1000287261,
+      "head_commit_sha": "99da8369e19d21634cf1dfbcf90c8b5e79c90259",
+      "base_commit_sha": "d5c90cf182db471e5d2c02cc16f7e0dd8bbc17de",
+      "start_commit_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+      "created_at": "2024-05-06T06:50:04.853Z",
+      "merge_request_id": 300008916,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "e52283820b46921f708b00b0c98c6ec120c1cb0b"
+    },
+    {
+      "id": 1000283081,
+      "head_commit_sha": "b8a57f87bfb6afd3ed508995ffb692d0a7300eae",
+      "base_commit_sha": "d5c90cf182db471e5d2c02cc16f7e0dd8bbc17de",
+      "start_commit_sha": "14cb79704013091cdf384d8fb1f981adc46cd24e",
+      "created_at": "2024-05-06T06:44:18.170Z",
+      "merge_request_id": 300008916,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "365836d11d7952c6211edc851a238c23bff71ddd"
+    }
+  ]
+}

@@ -1,0 +1,348 @@
+{
+  "id": 290696622,
+  "iid": 14970,
+  "project_id": 7898047,
+  "title": "I/O Graphs: Squeeze some bytes out of io_graph_item_t",
+  "description": "The min, max, and total members vary depending upon the hfinfo\nassociated with the graph (or aren't used at all), so make\nthem unions.\n\nWe don't need separate float and double members; floats can be\nrepresented as doubles (and that's how we graph them anyway.)\n\nFor the integer types, use doubles for the totals (as we've\nbeen doing; the integer total has been set but unused) because\nof possible overflow from summing many 64 bit integer fields.\nWe only use the total when graphing (where it is converted to\na double anyway, so we don't care about any lost precision\nfor unsigned 64 bit integers larger than 2^53.) For the min and\nmax use 64 bit integers because of that possible precision loss\n(so we always find the frame with the max and min value.)\n\nHave separate members for the min and max frame in the interval,\nso that we don't have to retap in order to find the max frame\nif we previously were looking for the min, and vice versa. (In\npractice, we were not retapping, so if we switched graph types\nthe frame numbers were wrong.)\n\nThis reduces sizeof(io_graph_item_t) from 152 bytes to 88 bytes\non a system with 64 bit time_t.\n\nLOAD graphs still require retapping, since the value stored in\nitem->time_tot for a LOAD graph is not the same as that stored\nin other graphs types. (Note however retapping doesn't occur\nwhen changing graph types, see above, and also LOAD graphs are\nbroken since eb4e2cca69c5057995ff7.) We might want to add in\nsome bytes later so that the value for LOAD graphs can be stored\non the initial tap pass alongside the other values.",
+  "state": "merged",
+  "created_at": "2024-03-25T12:08:02.868Z",
+  "updated_at": "2024-03-26T06:47:18.936Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2024-03-26T06:47:13.375Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "io_graph",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "350917786d04f4ade00fd03ce764f2e384174136",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-03-25T12:08:10.739Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!14970",
+  "references": {
+    "short": "!14970",
+    "relative": "!14970",
+    "full": "wireshark/wireshark!14970"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/14970",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "5",
+  "latest_build_started_at": "2024-03-25T12:08:07.039Z",
+  "latest_build_finished_at": "2024-03-25T12:38:18.823Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1226365130,
+    "iid": 62783,
+    "project_id": 7898047,
+    "sha": "27d5ec33a2cb93a1051a31f98a79a845ea8beb61",
+    "ref": "refs/merge-requests/14970/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-03-25T12:08:05.897Z",
+    "updated_at": "2024-03-25T12:38:18.833Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1226365130"
+  },
+  "head_pipeline": {
+    "id": 1227525213,
+    "iid": 62839,
+    "project_id": 7898047,
+    "sha": "350917786d04f4ade00fd03ce764f2e384174136",
+    "ref": "refs/merge-requests/14970/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2024-03-26T06:43:52.184Z",
+    "updated_at": "2024-03-26T06:43:52.184Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1227525213",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1227525213",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "070a974b48a0670b6c62ec1edd4dc3e9a38eb53d",
+    "head_sha": "350917786d04f4ade00fd03ce764f2e384174136",
+    "start_sha": "070a974b48a0670b6c62ec1edd4dc3e9a38eb53d"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "35c026bf471b42d6102d52822fad47102dcf72b5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1831298332,
+          "type": null,
+          "body": "added 22 commits\n\n<ul><li>27d5ec33...070a974b - 21 commits from branch <code>wireshark:master</code></li><li>35091778 - I/O Graphs: Squeeze some bytes out of io_graph_item_t</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14970/diffs?diff_id=963772355&start_sha=27d5ec33a2cb93a1051a31f98a79a845ea8beb61)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-03-26T06:43:48.817Z",
+          "updated_at": "2024-03-26T06:43:48.836Z",
+          "system": true,
+          "noteable_id": 290696622,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14970,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2a993fded99cfcc980f2b0b4ddd9560928ed42d4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1831302402,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-03-26T06:47:09.588Z",
+          "updated_at": "2024-03-26T06:47:09.601Z",
+          "system": true,
+          "noteable_id": 290696622,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14970,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2055,8 +2055,9 @@ int IOGraph::packetFromTime(double ts)\n     if (idx >= 0 && idx <= cur_idx_) {\n         switch (val_units_) {\n         case IOG_ITEM_UNIT_CALC_MAX:\n+            return items_[idx].max_frame_in_invl;\n         case IOG_ITEM_UNIT_CALC_MIN:\n-            return items_[idx].extreme_frame_in_invl;\n+            return items_[idx].min_frame_in_invl;\n         default:\n             return items_[idx].last_frame_in_invl;\n         }\n@@ -2067,7 +2068,9 @@ int IOGraph::packetFromTime(double ts)\n void IOGraph::clearAllData()\n {\n     cur_idx_ = -1;\n-    reset_io_graph_items(&items_[0], items_.size());\n+    if (items_.size()) {\n+        reset_io_graph_items(&items_[0], items_.size(), hf_index_);\n+    }\n     if (graph_) {\n         graph_->data()->clear();\n     }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/io_graph_dialog.cpp",
+      "old_path": "ui/qt/io_graph_dialog.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -48,8 +48,8 @@ class QCPAxisTickerDateTime;\n // can span no more than 4.66 days, and if we decrease the minimum interval\n // size without increasing this it would decrease proportionately (e.g.\n // for 1 μs no more than 16.8 s.)\n-// Each io_graph_item_t is 152 bytes on a LP64 system, so the max size\n-// we'll attempt to allocate for the array of items is 2.375 GiB\n+// Each io_graph_item_t is 88 bytes on a system with 64 bit time_t, so\n+// the max size we'll attempt to allocate for the array of items is 1.375 GiB\n // (plus a tiny amount extra for the std::vector bookkeeping.)\n // 2^24 = 16777216\n const int max_io_items_ = 1 << 24;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/io_graph_dialog.h",
+      "old_path": "ui/qt/io_graph_dialog.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -179,6 +179,28 @@ double get_io_graph_item(const io_graph_item_t *items_, io_graph_item_unit_t val\n     case FT_INT48:\n     case FT_INT56:\n     case FT_INT64:\n+        switch (val_units_) {\n+        case IOG_ITEM_UNIT_CALC_SUM:\n+            value = item->double_tot;\n+            break;\n+        case IOG_ITEM_UNIT_CALC_MAX:\n+            value = item->int_max;\n+            break;\n+        case IOG_ITEM_UNIT_CALC_MIN:\n+            value = item->int_min;\n+            break;\n+        case IOG_ITEM_UNIT_CALC_AVERAGE:\n+            if (item->fields) {\n+                value = item->double_tot / item->fields;\n+            } else {\n+                value = 0;\n+            }\n+            break;\n+        default:\n+            break;\n+        }\n+        break;\n+\n     case FT_UINT8:\n     case FT_UINT16:\n     case FT_UINT24:\n@@ -187,16 +209,15 @@ double get_io_graph_item(const io_graph_item_t *items_, io_graph_item_unit_t val\n     case FT_UINT48:\n     case FT_UINT56:\n     case FT_UINT64:\n-    case FT_DOUBLE:\n         switch (val_units_) {\n         case IOG_ITEM_UNIT_CALC_SUM:\n             value = item->double_tot;\n             break;\n         case IOG_ITEM_UNIT_CALC_MAX:\n-            value = item->double_max;\n+            value = item->uint_max;\n             break;\n         case IOG_ITEM_UNIT_CALC_MIN:\n-            value = item->double_min;\n+            value = item->uint_min;\n             break;\n         case IOG_ITEM_UNIT_CALC_AVERAGE:\n             if (item->fields) {\n@@ -210,20 +231,21 @@ double get_io_graph_item(const io_graph_item_t *items_, io_graph_item_unit_t val\n         }\n         break;\n \n+    case FT_DOUBLE:\n     case FT_FLOAT:\n         switch (val_units_) {\n         case IOG_ITEM_UNIT_CALC_SUM:\n-            value = item->float_tot;\n+            value = item->double_tot;\n             break;\n         case IOG_ITEM_UNIT_CALC_MAX:\n-            value = item->float_max;\n+            value = item->double_max;\n             break;\n         case IOG_ITEM_UNIT_CALC_MIN:\n-            value = item->float_min;\n+            value = item->double_min;\n             break;\n         case IOG_ITEM_UNIT_CALC_AVERAGE:\n             if (item->fields) {\n-                value = (double)item->float_tot / item->fields;\n+                value = item->double_tot / item->fields;\n             } else {\n                 value = 0;\n             }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/io_graph_item.c",
+      "old_path": "ui/io_graph_item.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -41,24 +41,32 @@ typedef struct _io_graph_item_t {\n     guint32  frames;            /* always calculated, will hold number of frames*/\n     guint64  bytes;             /* always calculated, will hold number of bytes*/\n     guint64  fields;\n-    gint64   int_max;\n-    gint64   int_min;\n-    gint64   int_tot;\n-    /* XXX - Why do we always use 64-bit ints but split floats between\n-     * gfloat and gdouble?\n+    /* We use a double for totals because of overflow. For min and max,\n+     * unsigned 64 bit integers larger than 2^53 cannot all be represented\n+     * in a double, and this is useful for determining the frame with the\n+     * min or max value, even though for plotting it will be converted to a\n+     * double.\n      */\n-    gfloat   float_max;\n-    gfloat   float_min;\n-    gfloat   float_tot;\n-    gdouble  double_max;\n-    gdouble  double_min;\n-    gdouble  double_tot;\n-    nstime_t time_max;\n-    nstime_t time_min;\n-    nstime_t time_tot;\n-    guint32  first_frame_in_invl;\n-    guint32  extreme_frame_in_invl; /* frame with min/max value */\n-    guint32  last_frame_in_invl;\n+    union {\n+        nstime_t time_max;\n+        double   double_max;\n+        int64_t  int_max;\n+        uint64_t uint_max;\n+    };\n+    union {\n+        nstime_t time_min;\n+        double   double_min;\n+        int64_t  int_min;\n+        uint64_t uint_min;\n+    };\n+    union {\n+        nstime_t time_tot;\n+        double   double_tot;\n+    };\n+    uint32_t  first_frame_in_invl;\n+    uint32_t  min_frame_in_invl;\n+    uint32_t  max_frame_in_invl;\n+    uint32_t  last_frame_in_invl;\n } io_graph_item_t;\n \n /** Reset (zero) an io_graph_item_t.\n@@ -67,7 +75,7 @@ typedef struct _io_graph_item_t {\n  * @param count [in] The number of items in the array.\n  */\n static inline void\n-reset_io_graph_items(io_graph_item_t *items, gsize count) {\n+reset_io_graph_items(io_graph_item_t *items, gsize count, int hf_index _U_) {\n     io_graph_item_t *item;\n     gsize i;\n \n@@ -77,21 +85,70 @@ reset_io_graph_items(io_graph_item_t *items, gsize count) {\n         item->frames     = 0;\n         item->bytes      = 0;\n         item->fields     = 0;\n-        item->int_max    = 0;\n-        item->int_min    = 0;\n-        item->int_tot    = 0;\n-        item->float_max  = 0;\n-        item->float_min  = 0;\n-        item->float_tot  = 0;\n-        item->double_max = 0;\n-        item->double_min = 0;\n-        item->double_tot = 0;\n+        item->first_frame_in_invl = 0;\n+        item->min_frame_in_invl = 0;\n+        item->max_frame_in_invl = 0;\n+        item->last_frame_in_invl  = 0;\n+\n         nstime_set_zero(&item->time_max);\n         nstime_set_zero(&item->time_min);\n         nstime_set_zero(&item->time_tot);\n-        item->first_frame_in_invl = 0;\n-        item->extreme_frame_in_invl = 0;\n-        item->last_frame_in_invl  = 0;\n+\n+#if 0\n+        /* XXX - On C, type punning is explicitly allowed since C99 so\n+         * setting the nstime_t values to 0 is always sufficient.\n+         * On C++ that appears technically to be undefined behavior (though\n+         * I don't know of any compilers for which it doesn't work and I\n+         * can't get UBSAN to complain about it) and this would be safer.\n+         */\n+        if (hf_index > 0) {\n+\n+            switch (proto_registrar_get_ftype(hf_index)) {\n+\n+            case FT_INT8:\n+            case FT_INT16:\n+            case FT_INT24:\n+            case FT_INT32:\n+            case FT_INT40:\n+            case FT_INT48:\n+            case FT_INT56:\n+            case FT_INT64:\n+                item->int_max = 0;\n+                item->int_min = 0;\n+                item->double_tot = 0;\n+                break;\n+\n+            case FT_UINT8:\n+            case FT_UINT16:\n+            case FT_UINT24:\n+            case FT_UINT32:\n+            case FT_UINT40:\n+            case FT_UINT48:\n+            case FT_UINT56:\n+            case FT_UINT64:\n+                item->uint_max = 0;\n+                item->uint_min = 0;\n+                item->double_tot = 0;\n+                break;\n+\n+            case FT_DOUBLE:\n+            case FT_FLOAT:\n+                item->double_max = 0;\n+                item->double_min = 0;\n+                item->double_tot = 0;\n+                break;\n+\n+            case FT_RELATIVE_TIME:\n+                nstime_set_zero(&item->time_max);\n+                nstime_set_zero(&item->time_min);\n+                nstime_set_zero(&item->time_tot);\n+                break;\n+\n+            default:\n+                break;\n+            }\n+        }\n+#endif\n     }\n }\n \n@@ -181,21 +238,14 @@ update_io_graph_item(io_graph_item_t *items, int idx, packet_info *pinfo, epan_d\n             case FT_UINT32:\n                 new_uint64 = fvalue_get_uinteger(((field_info *)gp->pdata[i])->value);\n \n-                if ((new_uint64 > (guint64)item->int_max) || (item->fields == 0)) {\n-                    item->int_max = new_uint64;\n-                    item->double_max = (gdouble)new_uint64;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MAX) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                if ((new_uint64 > item->uint_max) || (item->fields == 0)) {\n+                    item->uint_max = new_uint64;\n+                    item->max_frame_in_invl = pinfo->num;\n                 }\n-                if ((new_uint64 < (guint64)item->int_min) || (item->fields == 0)) {\n-                    item->int_min = new_uint64;\n-                    item->double_min = (gdouble)new_uint64;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MIN) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                if ((new_uint64 < item->uint_min) || (item->fields == 0)) {\n+                    item->uint_min = new_uint64;\n+                    item->min_frame_in_invl = pinfo->num;\n                 }\n-                item->int_tot += new_uint64;\n                 item->double_tot += (gdouble)new_uint64;\n                 item->fields++;\n                 break;\n@@ -206,19 +256,12 @@ update_io_graph_item(io_graph_item_t *items, int idx, packet_info *pinfo, epan_d\n                 new_int64 = fvalue_get_sinteger(((field_info *)gp->pdata[i])->value);\n                 if ((new_int64 > item->int_max) || (item->fields == 0)) {\n                     item->int_max = new_int64;\n-                    item->double_max = (gdouble)new_int64;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MAX) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                    item->max_frame_in_invl = pinfo->num;\n                 }\n                 if ((new_int64 < item->int_min) || (item->fields == 0)) {\n                     item->int_min = new_int64;\n-                    item->double_min = (gdouble)new_int64;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MIN) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                    item->min_frame_in_invl = pinfo->num;\n                 }\n-                item->int_tot += new_int64;\n                 item->double_tot += (gdouble)new_int64;\n                 item->fields++;\n                 break;\n@@ -227,21 +270,14 @@ update_io_graph_item(io_graph_item_t *items, int idx, packet_info *pinfo, epan_d\n             case FT_UINT56:\n             case FT_UINT64:\n                 new_uint64 = fvalue_get_uinteger64(((field_info *)gp->pdata[i])->value);\n-                if ((new_uint64 > (guint64)item->int_max) || (item->fields == 0)) {\n-                    item->int_max = new_uint64;\n-                    item->double_max = (gdouble)new_uint64;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MAX) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                if ((new_uint64 > item->uint_max) || (item->fields == 0)) {\n+                    item->uint_max = new_uint64;\n+                    item->max_frame_in_invl = pinfo->num;\n                 }\n-                if ((new_uint64 < (guint64)item->int_min) || (item->fields == 0)) {\n-                    item->int_min = new_uint64;\n-                    item->double_min = (gdouble)new_uint64;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MIN) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                if ((new_uint64 < item->uint_min) || (item->fields == 0)) {\n+                    item->uint_min = new_uint64;\n+                    item->min_frame_in_invl = pinfo->num;\n                 }\n-                item->int_tot += new_uint64;\n                 item->double_tot += (gdouble)new_uint64;\n                 item->fields++;\n                 break;\n@@ -252,52 +288,37 @@ update_io_graph_item(io_graph_item_t *items, int idx, packet_info *pinfo, epan_d\n                 new_int64 = fvalue_get_sinteger64(((field_info *)gp->pdata[i])->value);\n                 if ((new_int64 > item->int_max) || (item->fields == 0)) {\n                     item->int_max = new_int64;\n-                    item->double_max = (gdouble)new_int64;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MAX) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                    item->max_frame_in_invl = pinfo->num;\n                 }\n                 if ((new_int64 < item->int_min) || (item->fields == 0)) {\n                     item->int_min = new_int64;\n-                    item->double_min = (gdouble)new_int64;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MIN) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                    item->min_frame_in_invl = pinfo->num;\n                 }\n-                item->int_tot += new_int64;\n                 item->double_tot += (gdouble)new_int64;\n                 item->fields++;\n                 break;\n             case FT_FLOAT:\n                 new_float = (gfloat)fvalue_get_floating(((field_info *)gp->pdata[i])->value);\n-                if ((new_float > item->float_max) || (item->fields == 0)) {\n-                    item->float_max = new_float;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MAX) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                if ((new_float > item->double_max) || (item->fields == 0)) {\n+                    item->double_max = new_float;\n+                    item->max_frame_in_invl = pinfo->num;\n                 }\n-                if ((new_float < item->float_min) || (item->fields == 0)) {\n-                    item->float_min = new_float;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MIN) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                if ((new_float < item->double_min) || (item->fields == 0)) {\n+                    item->double_min = new_float;\n+                    item->min_frame_in_invl = pinfo->num;\n                 }\n-                item->float_tot += new_float;\n+                item->double_tot += new_float;\n                 item->fields++;\n                 break;\n             case FT_DOUBLE:\n                 new_double = fvalue_get_floating(((field_info *)gp->pdata[i])->value);\n                 if ((new_double > item->double_max) || (item->fields == 0)) {\n                     item->double_max = new_double;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MAX) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                    item->max_frame_in_invl = pinfo->num;\n                 }\n                 if ((new_double < item->double_min) || (item->fields == 0)) {\n                     item->double_min = new_double;\n-                    if (item_unit == IOG_ITEM_UNIT_CALC_MIN) {\n-                        item->extreme_frame_in_invl = pinfo->num;\n-                    }\n+                    item->min_frame_in_invl = pinfo->num;\n                 }\n                 item->double_tot += new_double;\n                 item->fields++;\n@@ -311,8 +332,8 @@ update_io_graph_item(io_graph_item_t *items, int idx, packet_info *pinfo, epan_d\n                     guint64 t, pt; /* time in us */\n                     int j;\n                     /*\n-                     * Add the time this call spanned each interval according to its contribution\n-                     * to that interval.\n+                     * Add the time this call spanned each interval according to\n+                     * its contribution to that interval.\n                      */\n                     t = new_time->secs;\n                     t = t * 1000000 + new_time->nsecs / 1000;\n@@ -354,18 +375,14 @@ update_io_graph_item(io_graph_item_t *items, int idx, packet_info *pinfo, epan_d\n                               && (new_time->nsecs > item->time_max.nsecs))\n                          || (item->fields == 0)) {\n                         item->time_max = *new_time;\n-                        if (item_unit == IOG_ITEM_UNIT_CALC_MAX) {\n-                            item->extreme_frame_in_invl = pinfo->num;\n-                        }\n+                        item->max_frame_in_invl = pinfo->num;\n                     }\n                     if ( (new_time->secs<item->time_min.secs)\n                          || ( (new_time->secs == item->time_min.secs)\n                               && (new_time->nsecs < item->time_min.nsecs))\n                          || (item->fields == 0)) {\n                         item->time_min = *new_time;\n-                        if (item_unit == IOG_ITEM_UNIT_CALC_MIN) {\n-                            item->extreme_frame_in_invl = pinfo->num;\n-                        }\n+                        item->min_frame_in_invl = pinfo->num;\n                     }\n                     nstime_add(&item->time_tot, new_time);\n                     item->fields++;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/io_graph_item.h",
+      "old_path": "ui/io_graph_item.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -4310,7 +4310,7 @@ sharkd_session_process_frame_cb(epan_dissect_t *edt, proto_tree *tree, struct ep\n     sharkd_json_result_epilogue();\n }\n \n-#define SHARKD_IOGRAPH_MAX_ITEMS 250000 /* 250k limit of items is taken from wireshark-qt, on x86_64 sizeof(io_graph_item_t) is 152, so single graph can take max 36 MB */\n+#define SHARKD_IOGRAPH_MAX_ITEMS 250000 /* 250k limit of items is taken from wireshark-qt, on x86_64 sizeof(io_graph_item_t) is 88, so single graph can take max 21 MB */\n \n struct sharkd_iograph\n {\n@@ -4344,14 +4344,14 @@ sharkd_iograph_packet(void *g, packet_info *pinfo, epan_dissect_t *edt, const vo\n             int new_size = idx + 1024;\n \n             graph->items = (io_graph_item_t *) g_realloc(graph->items, sizeof(io_graph_item_t) * new_size);\n-            reset_io_graph_items(&graph->items[graph->space_items], new_size - graph->space_items);\n+            reset_io_graph_items(&graph->items[graph->space_items], new_size - graph->space_items, graph->hf_index);\n \n             graph->space_items = new_size;\n         }\n         else if (graph->items == NULL)\n         {\n             graph->items = g_new(io_graph_item_t, graph->space_items);\n-            reset_io_graph_items(graph->items, graph->space_items);\n+            reset_io_graph_items(graph->items, graph->space_items, graph->hf_index);\n         }\n \n         graph->num_items = idx + 1;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd_session.c",
+      "old_path": "sharkd_session.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "350917786d04f4ade00fd03ce764f2e384174136",
+      "short_id": "35091778",
+      "created_at": "2024-03-26T06:43:43.000+00:00",
+      "parent_ids": [
+        "070a974b48a0670b6c62ec1edd4dc3e9a38eb53d"
+      ],
+      "title": "I/O Graphs: Squeeze some bytes out of io_graph_item_t",
+      "message": "I/O Graphs: Squeeze some bytes out of io_graph_item_t\n\nThe min, max, and total members vary depending upon the hfinfo\nassociated with the graph (or aren't used at all), so make\nthem unions.\n\nWe don't need separate float and double members; floats can be\nrepresented as doubles (and that's how we graph them anyway.)\n\nFor the integer types, use doubles for the totals (as we've\nbeen doing; the integer total has been set but unused) because\nof possible overflow from summing many 64 bit integer fields.\nWe only use the total when graphing (where it is converted to\na double anyway, so we don't care about any lost precision\nfor unsigned 64 bit integers larger than 2^53.) For the min and\nmax use 64 bit integers because of that possible precision loss\n(so we always find the frame with the max and min value.)\n\nHave separate members for the min and max frame in the interval,\nso that we don't have to retap in order to find the max frame\nif we previously were looking for the min, and vice versa. (In\npractice, we were not retapping, so if we switched graph types\nthe frame numbers were wrong.)\n\nThis reduces sizeof(io_graph_item_t) from 152 bytes to 88 bytes\non a system with 64 bit time_t.\n\nLOAD graphs still require retapping, since the value stored in\nitem->time_tot for a LOAD graph is not the same as that stored\nin other graphs types. (Note however retapping doesn't occur\nwhen changing graph types, see above, and also LOAD graphs are\nbroken since eb4e2cca69c5057995ff7.) We might want to add in\nsome bytes later so that the value for LOAD graphs can be stored\non the initial tap pass alongside the other values.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-03-24T21:01:01.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2024-03-26T06:43:43.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/350917786d04f4ade00fd03ce764f2e384174136"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 963772355,
+      "head_commit_sha": "350917786d04f4ade00fd03ce764f2e384174136",
+      "base_commit_sha": "070a974b48a0670b6c62ec1edd4dc3e9a38eb53d",
+      "start_commit_sha": "070a974b48a0670b6c62ec1edd4dc3e9a38eb53d",
+      "created_at": "2024-03-26T06:43:46.328Z",
+      "merge_request_id": 290696622,
+      "state": "collected",
+      "real_size": "5",
+      "patch_id_sha": "c1e09612e66487371da86ae02c2089666889205f"
+    },
+    {
+      "id": 962907777,
+      "head_commit_sha": "27d5ec33a2cb93a1051a31f98a79a845ea8beb61",
+      "base_commit_sha": "f6454f6dd3b507b6846290647411fb9aaa828e4d",
+      "start_commit_sha": "f6454f6dd3b507b6846290647411fb9aaa828e4d",
+      "created_at": "2024-03-25T12:08:04.265Z",
+      "merge_request_id": 290696622,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": "c1e09612e66487371da86ae02c2089666889205f"
+    }
+  ]
+}

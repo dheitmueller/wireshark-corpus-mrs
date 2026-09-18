@@ -1,0 +1,320 @@
+{
+  "id": 280274379,
+  "iid": 14288,
+  "project_id": 7898047,
+  "title": "dfilter: Handle null arguments to min, max",
+  "description": "min and max need to handle null arguments where the GPtrArray\nis null, generated when there have been other opcodes between\nthe field loading and the function. (They are ignored, not\ntreated as zero, so they don't change the minimum.)\n\nPrevents crashes with filters where a field does not exist in the tree:\n\nmin(tcp.srcport * 10, tcp.dstport * 10) == 800\nmin(len(tcp.payload), len(udp.payload)) == 153\nmin(len(tcp.payload[2:]) + 2, len(udp.payload[2:]) + 2) == 153\n\nwhere a register is loaded where it has not had its GPtrArray created:\n\n./run/dftest 'min(len(tcp.payload), len(udp.payload))'\nFilter:\n min(len(tcp.payload), len(udp.payload))\n\nInstructions:\n 0000 READ_TREE        tcp.payload      -> R1\n 0001 IF_FALSE_GOTO    3\n 0002 LENGTH           R1               -> R2\n 0003 STACK_PUSH       R2\n 0004 READ_TREE        udp.payload      -> R3\n 0005 IF_FALSE_GOTO    7\n 0006 LENGTH           R3               -> R4\n 0007 STACK_PUSH       R4\n 0008 CALL_FUNCTION    min(R2, R4)      -> R0\n 0009 STACK_POP        [2]\n 0010 IF_FALSE_GOTO    12\n 0011 NOT_ALL_ZERO     R0\n 0012 RETURN\n\nRelated to fcb6bb576388e8a8ef4b657d794a80f008a99ff7\n(Prior to that commit, this worked because a NULL pointer is a\nvalid, empty GSList.)\n\n\n(cherry picked from commit e972a755d2d0f25f6b51d4ac3932ebe652cba4f0)",
+  "state": "merged",
+  "created_at": "2024-02-06T16:52:13.748Z",
+  "updated_at": "2024-02-07T07:42:47.364Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2024-02-07T07:42:45.590Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-4.2",
+  "source_branch": "cherry-pick-e972a755",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 7898047,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0b72cc234291b2316fb27b7143fc0ed9eb3825dc",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-02-06T16:52:43.002Z",
+  "reference": "!14288",
+  "references": {
+    "short": "!14288",
+    "relative": "!14288",
+    "full": "wireshark/wireshark!14288"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/14288",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2024-02-07T00:12:14.863Z",
+  "latest_build_finished_at": "2024-02-07T00:26:00.259Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1167016479,
+    "iid": 60249,
+    "project_id": 7898047,
+    "sha": "0b72cc234291b2316fb27b7143fc0ed9eb3825dc",
+    "ref": "refs/merge-requests/14288/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-02-07T00:12:13.812Z",
+    "updated_at": "2024-02-07T00:26:00.267Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1167016479"
+  },
+  "head_pipeline": {
+    "id": 1167016479,
+    "iid": 60249,
+    "project_id": 7898047,
+    "sha": "0b72cc234291b2316fb27b7143fc0ed9eb3825dc",
+    "ref": "refs/merge-requests/14288/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-02-07T00:12:13.812Z",
+    "updated_at": "2024-02-07T00:26:00.267Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1167016479",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2024-02-07T00:12:14.863Z",
+    "finished_at": "2024-02-07T00:26:00.259Z",
+    "committed_at": null,
+    "duration": 824,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1167016479",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "fc343eb8fd478ce34ed8c82eba67503b1677f4c6",
+    "head_sha": "0b72cc234291b2316fb27b7143fc0ed9eb3825dc",
+    "start_sha": "fc343eb8fd478ce34ed8c82eba67503b1677f4c6"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "d4838e5634d46ca6454c88478c18fb0a14770445",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1761371007,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>0b72cc23 - dfilter: Handle null arguments to min, max</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14288/diffs?diff_id=917041896&start_sha=32a2bb66827db71398d2c7b06707cd7e44e97681)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-02-07T00:12:12.024Z",
+          "updated_at": "2024-02-07T00:12:12.042Z",
+          "system": true,
+          "noteable_id": 280274379,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14288,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "266a145a2465f945f8f13af68239ea2a0b770941",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1761681643,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-02-07T07:42:40.969Z",
+          "updated_at": "2024-02-07T07:42:40.982Z",
+          "system": true,
+          "noteable_id": 280274379,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14288,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -176,10 +176,12 @@ df_func_compare(GSList *stack, uint32_t arg_count, df_cell_t *retval,\n \n     for (args = stack, i = 0; i < arg_count; args = args->next, i++) {\n         arg1 = args->data;\n-        for (unsigned j = 0; j < arg1->len; j++) {\n-            arg_fvalue = arg1->pdata[j];\n-            if (fv_ret == NULL || fv_cmp(arg_fvalue, fv_ret)) {\n-                fv_ret = arg_fvalue;\n+        if (arg1 != NULL) {\n+            for (unsigned j = 0; j < arg1->len; j++) {\n+                arg_fvalue = arg1->pdata[j];\n+                if (fv_ret == NULL || fv_cmp(arg_fvalue, fv_ret)) {\n+                    fv_ret = arg_fvalue;\n+                }\n             }\n         }\n     }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dfilter/dfunctions.c",
+      "old_path": "epan/dfilter/dfunctions.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1428,7 +1428,9 @@ stack_pop(dfilter_t *df, dfvm_value_t *arg1)\n \n \tfor (unsigned i = 0; i < count; i++) {\n \t\t/* Free top of stack data. */\n-\t\tg_ptr_array_unref(df->function_stack->data);\n+\t\tif (df->function_stack->data) {\n+\t\t\tg_ptr_array_unref(df->function_stack->data);\n+\t\t}\n \t\t/* Remove top of stack. */\n \t\tdf->function_stack = g_slist_delete_link(df->function_stack, df->function_stack);\n \t}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dfilter/dfvm.c",
+      "old_path": "epan/dfilter/dfvm.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -85,3 +85,11 @@ class TestFunctionNested:\n     def test_function_nested_1(self, checkDFilterCount):\n         dfilter = 'abs(min(tcp.srcport, tcp.dstport)) == 80'\n         checkDFilterCount(dfilter, 1)\n+\n+    def test_function_nested_2(self, checkDFilterCount):\n+        dfilter = 'min(tcp.srcport * 10, tcp.dstport * 10, udp.srcport * 10, udp.dstport * 10) == 800'\n+        checkDFilterCount(dfilter, 1)\n+\n+    def test_function_nested_3(self, checkDFilterCount):\n+        dfilter = 'min(len(tcp.payload), len(udp.payload)) == 153'\n+        checkDFilterCount(dfilter, 1)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dfilter/group_function.py",
+      "old_path": "test/suite_dfilter/group_function.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "0b72cc234291b2316fb27b7143fc0ed9eb3825dc",
+      "short_id": "0b72cc23",
+      "created_at": "2024-02-06T19:11:28.000-05:00",
+      "parent_ids": [
+        "fc343eb8fd478ce34ed8c82eba67503b1677f4c6"
+      ],
+      "title": "dfilter: Handle null arguments to min, max",
+      "message": "dfilter: Handle null arguments to min, max\n\nmin and max need to handle null arguments where the GPtrArray\nis null, generated when there have been other opcodes between\nthe field loading and the function. (They are ignored, not\ntreated as zero, so they don't change the minimum.)\n\nPrevents crashes with filters where a field does not exist in the tree:\n\nmin(tcp.srcport * 10, tcp.dstport * 10) == 800\nmin(len(tcp.payload), len(udp.payload)) == 153\nmin(len(tcp.payload[2:]) + 2, len(udp.payload[2:]) + 2) == 153\n\nwhere a register is loaded where it has not had its GPtrArray created:\n\n./run/dftest 'min(len(tcp.payload), len(udp.payload))'\nFilter:\n min(len(tcp.payload), len(udp.payload))\n\nInstructions:\n 0000 READ_TREE        tcp.payload      -> R1\n 0001 IF_FALSE_GOTO    3\n 0002 LENGTH           R1               -> R2\n 0003 STACK_PUSH       R2\n 0004 READ_TREE        udp.payload      -> R3\n 0005 IF_FALSE_GOTO    7\n 0006 LENGTH           R3               -> R4\n 0007 STACK_PUSH       R4\n 0008 CALL_FUNCTION    min(R2, R4)      -> R0\n 0009 STACK_POP        [2]\n 0010 IF_FALSE_GOTO    12\n 0011 NOT_ALL_ZERO     R0\n 0012 RETURN\n\nRelated to fcb6bb576388e8a8ef4b657d794a80f008a99ff7\n(Prior to that commit, this worked because a NULL pointer is a\nvalid, empty GSList.)\n\n(backported from commit e972a755d2d0f25f6b51d4ac3932ebe652cba4f0)\nOne of the tests used doesn't work on 4.2 where the grammar is\nmore restrictive.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-02-06T07:17:10.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2024-02-06T19:11:28.000-05:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0b72cc234291b2316fb27b7143fc0ed9eb3825dc"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 917041896,
+      "head_commit_sha": "0b72cc234291b2316fb27b7143fc0ed9eb3825dc",
+      "base_commit_sha": "fc343eb8fd478ce34ed8c82eba67503b1677f4c6",
+      "start_commit_sha": "fc343eb8fd478ce34ed8c82eba67503b1677f4c6",
+      "created_at": "2024-02-07T00:12:11.107Z",
+      "merge_request_id": 280274379,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "1cecb140c9400511929585ad4c00672895535dc7"
+    },
+    {
+      "id": 916709427,
+      "head_commit_sha": "32a2bb66827db71398d2c7b06707cd7e44e97681",
+      "base_commit_sha": "fc343eb8fd478ce34ed8c82eba67503b1677f4c6",
+      "start_commit_sha": "fc343eb8fd478ce34ed8c82eba67503b1677f4c6",
+      "created_at": "2024-02-06T16:52:16.412Z",
+      "merge_request_id": 280274379,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "653bc418d7199e919ec0c36c7ab258282ce99c12"
+    }
+  ]
+}

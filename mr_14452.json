@@ -1,0 +1,795 @@
+{
+  "id": 282978394,
+  "iid": 14452,
+  "project_id": 7898047,
+  "title": "Telnet: Include a packet summary in Info column.",
+  "description": "Here's a \"before and after\" for the dissection of the first 30 frames of [the telnet-cooked.pcap sample capture](https://gitlab.com/wireshark/wireshark/-/wikis/SampleCaptures):\n```\n    1 Chat 12:12:38.387203  192.168.0.2 → 192.168.0.1  TCP 74 1550 → 23 [SYN] Seq=0 Win=32120 Len=0 MSS=1460 SACK_PERM TSval=10233636 TSecr=0 WS=1\n    2 Note 12:12:38.389728  192.168.0.1 → 192.168.0.2  TCP 74 23 → 1550 [SYN, ACK] Seq=0 Ack=1 Win=17376 Len=0 MSS=1448 WS=1 TSval=2467372 TSecr=10233636\n    3  12:12:38.389775  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=1 Ack=1 Win=32120 Len=0 TSval=10233636 TSecr=2467372\n    4  12:12:38.391363  192.168.0.2 → 192.168.0.1  TELNET 93 Telnet Data ...\n    5  12:12:38.537538  192.168.0.1 → 192.168.0.2  TELNET 69 Telnet Data ...\n    6  12:12:38.537605  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=28 Ack=4 Win=32120 Len=0 TSval=10233651 TSecr=2467372\n    7  12:12:38.537777  192.168.0.2 → 192.168.0.1  TELNET 69 Telnet Data ...\n    8  12:12:38.539149  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=4 Ack=31 Win=17376 Len=0 TSval=2467372 TSecr=10233651\n    9  12:12:38.540860  192.168.0.1 → 192.168.0.2  TELNET 91 Telnet Data ...\n   10  12:12:38.541068  192.168.0.2 → 192.168.0.1  TELNET 130 Telnet Data ...\n   11  12:12:38.542187  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=29 Ack=95 Win=17312 Len=0 TSval=2467372 TSecr=10233651\n   12  12:12:38.542780  192.168.0.1 → 192.168.0.2  TELNET 84 Telnet Data ...\n   13  12:12:38.542859  192.168.0.2 → 192.168.0.1  TELNET 75 Telnet Data ...\n   14  12:12:38.543849  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=47 Ack=104 Win=17367 Len=0 TSval=2467372 TSecr=10233651\n   15  12:12:38.546219  192.168.0.1 → 192.168.0.2  TELNET 90 Telnet Data ...\n   16  12:12:38.546430  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=104 Ack=71 Win=32120 Len=0 TSval=10233652 TSecr=2467372\n   17  12:12:38.547047  192.168.0.2 → 192.168.0.1  TELNET 151 Telnet Data ...\n   18 Error 12:12:38.548221  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [PSH, ACK] Seq=104 Ack=71 Win=32120 Len=0 TSval=10233652 TSecr=2467372\n   19  12:12:38.568470  192.168.0.1 → 192.168.0.2  TELNET 69 Telnet Data ...\n   20  12:12:38.568581  192.168.0.2 → 192.168.0.1  TELNET 69 Telnet Data ...\n   21  12:12:38.569718  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=74 Ack=192 Win=17373 Len=0 TSval=2467372 TSecr=10233654\n   22  12:12:38.583509  192.168.0.1 → 192.168.0.2  TELNET 78 Telnet Data ...\n   23  12:12:38.583630  192.168.0.2 → 192.168.0.1  TELNET 72 Telnet Data ...\n   24  12:12:38.584705  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=86 Ack=198 Win=17370 Len=0 TSval=2467372 TSecr=10233655\n   25  12:12:38.585489  192.168.0.1 → 192.168.0.2  TELNET 81 Telnet Data ...\n   26  12:12:38.596419  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=198 Ack=101 Win=32120 Len=0 TSval=10233657 TSecr=2467372\n   27  12:12:38.597730  192.168.0.1 → 192.168.0.2  TELNET 98 Telnet Data ...\n   28  12:12:38.616442  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=198 Ack=133 Win=32120 Len=0 TSval=10233659 TSecr=2467372\n   29  12:12:39.705066  192.168.0.1 → 192.168.0.2  TELNET 73 Telnet Data ...\n   30  12:12:39.716432  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=198 Ack=140 Win=32120 Len=0 TSval=10233769 TSecr=2467374\n```\nbecomes:\n```\n    1 Chat 12:12:38.387203  192.168.0.2 → 192.168.0.1  TCP 74 1550 → 23 [SYN] Seq=0 Win=32120 Len=0 MSS=1460 SACK_PERM TSval=10233636 TSecr=0 WS=1\n    2 Note 12:12:38.389728  192.168.0.1 → 192.168.0.2  TCP 74 23 → 1550 [SYN, ACK] Seq=0 Ack=1 Win=17376 Len=0 MSS=1448 WS=1 TSval=2467372 TSecr=10233636\n    3  12:12:38.389775  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=1 Ack=1 Win=32120 Len=0 TSval=10233636 TSecr=2467372\n    4  12:12:38.391363  192.168.0.2 → 192.168.0.1  TELNET 93 Do Suppress Go Ahead, Will Terminal Type, Will Negotiate About Window Size, Will Terminal Speed, Will Remote Flow Control, Will Linemode, Will New Environment Option, Do Status, Will X Display Location\n    5  12:12:38.537538  192.168.0.1 → 192.168.0.2  TELNET 69 Do Authentication Option\n    6  12:12:38.537605  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=28 Ack=4 Win=32120 Len=0 TSval=10233651 TSecr=2467372\n    7  12:12:38.537777  192.168.0.2 → 192.168.0.1  TELNET 69 Won't Authentication Option\n    8  12:12:38.539149  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=4 Ack=31 Win=17376 Len=0 TSval=2467372 TSecr=10233651\n    9  12:12:38.540860  192.168.0.1 → 192.168.0.2  TELNET 91 Will Suppress Go Ahead, Do Terminal Type, Do Negotiate About Window Size, Do Terminal Speed, Do Remote Flow Control, Do Linemode, Suboption Linemode\n   10  12:12:38.541068  192.168.0.2 → 192.168.0.1  TELNET 130 Suboption Negotiate About Window Size, Suboption Linemode, Do Suppress Go Ahead, Suboption Linemode\n   11  12:12:38.542187  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=29 Ack=95 Win=17312 Len=0 TSval=2467372 TSecr=10233651\n   12  12:12:38.542780  192.168.0.1 → 192.168.0.2  TELNET 84 Do New Environment Option, Will Status, Do X Display Location, Will Encryption Option, Do Encryption Option, Do Environment Option\n   13  12:12:38.542859  192.168.0.2 → 192.168.0.1  TELNET 75 Don't Encryption Option, Won't Encryption Option, Won't Environment Option\n   14  12:12:38.543849  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=47 Ack=104 Win=17367 Len=0 TSval=2467372 TSecr=10233651\n   15  12:12:38.546219  192.168.0.1 → 192.168.0.2  TELNET 90 Suboption Terminal Speed, Suboption X Display Location, Suboption New Environment Option, Suboption Terminal Type\n   16  12:12:38.546430  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=104 Ack=71 Win=32120 Len=0 TSval=10233652 TSecr=2467372\n   17  12:12:38.547047  192.168.0.2 → 192.168.0.1  TELNET 151 Suboption Terminal Speed, Suboption X Display Location, Suboption New Environment Option, Suboption Terminal Type\n   18 Error 12:12:38.548221  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [PSH, ACK] Seq=104 Ack=71 Win=32120 Len=0 TSval=10233652 TSecr=2467372\n   19  12:12:38.568470  192.168.0.1 → 192.168.0.2  TELNET 69 Do Echo\n   20  12:12:38.568581  192.168.0.2 → 192.168.0.1  TELNET 69 Won't Echo\n   21  12:12:38.569718  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=74 Ack=192 Win=17373 Len=0 TSval=2467372 TSecr=10233654\n   22  12:12:38.583509  192.168.0.1 → 192.168.0.2  TELNET 78 Will Echo, Suboption Remote Flow Control, Won't Echo\n   23  12:12:38.583630  192.168.0.2 → 192.168.0.1  TELNET 72 Do Echo, Don't Echo\n   24  12:12:38.584705  192.168.0.1 → 192.168.0.2  TCP 66 23 → 1550 [ACK] Seq=86 Ack=198 Win=17370 Len=0 TSval=2467372 TSecr=10233655\n   25  12:12:38.585489  192.168.0.1 → 192.168.0.2  TELNET 81 Suboption Linemode\n   26  12:12:38.596419  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=198 Ack=101 Win=32120 Len=0 TSval=10233657 TSecr=2467372\n   27  12:12:38.597730  192.168.0.1 → 192.168.0.2  TELNET 98 32 bytes data\n   28  12:12:38.616442  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=198 Ack=133 Win=32120 Len=0 TSval=10233659 TSecr=2467372\n   29  12:12:39.705066  192.168.0.1 → 192.168.0.2  TELNET 73 7 bytes data\n   30  12:12:39.716432  192.168.0.2 → 192.168.0.1  TCP 66 1550 → 23 [ACK] Seq=198 Ack=140 Win=32120 Len=0 TSval=10233769 TSecr=2467374\n```\n\nThere is a risk that the info column text could be lengthy in some rare cases.  If that ends up being a problem, we can limit it to the first 10 (?) elements of the packet's contents.",
+  "state": "merged",
+  "created_at": "2024-02-19T04:26:16.450Z",
+  "updated_at": "2024-02-20T14:30:54.460Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2024-02-20T14:30:52.208Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "telnet-2",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7889756,
+    "username": "dariusd0",
+    "public_email": "",
+    "name": "dariusd0",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dariusd0"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 23335328,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "8bdc10c6ca6f8caddad6425726f971161f38157f",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-02-19T04:26:21.288Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!14452",
+  "references": {
+    "short": "!14452",
+    "relative": "!14452",
+    "full": "wireshark/wireshark!14452"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/14452",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2024-02-20T12:58:20.864Z",
+  "latest_build_finished_at": "2024-02-20T13:26:39.315Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1183477311,
+    "iid": 60950,
+    "project_id": 7898047,
+    "sha": "8bdc10c6ca6f8caddad6425726f971161f38157f",
+    "ref": "refs/merge-requests/14452/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-02-20T12:58:18.286Z",
+    "updated_at": "2024-02-20T13:26:39.586Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1183477311"
+  },
+  "head_pipeline": {
+    "id": 1183477311,
+    "iid": 60950,
+    "project_id": 7898047,
+    "sha": "8bdc10c6ca6f8caddad6425726f971161f38157f",
+    "ref": "refs/merge-requests/14452/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-02-20T12:58:18.286Z",
+    "updated_at": "2024-02-20T13:26:39.586Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1183477311",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2024-02-20T12:58:20.864Z",
+    "finished_at": "2024-02-20T13:26:39.315Z",
+    "committed_at": null,
+    "duration": 1695,
+    "queued_duration": 2,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1183477311",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "aa64b079a40cc3457385e013c14ea393dcd732c5",
+    "head_sha": "8bdc10c6ca6f8caddad6425726f971161f38157f",
+    "start_sha": "aa64b079a40cc3457385e013c14ea393dcd732c5"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "dd5279f385249c6749078924ea785c0fc60e7cec",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1779460174,
+          "type": "DiffNote",
+          "body": "Probably faster and easier just to keep the unconditional `col_set_str` above instead of changing it to clear the column. `col_set_str` is for const strings and doesn't do a string copy, it's likely easier than having this test here.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-02-19T17:08:12.575Z",
+          "updated_at": "2024-02-20T02:03:25.908Z",
+          "system": false,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "start_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "head_sha": "69caccb104a6adf68625f109a78ccb0cbccb02ba",
+            "old_path": "epan/dissectors/packet-telnet.c",
+            "new_path": "epan/dissectors/packet-telnet.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2199,
+            "line_range": {
+              "start": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              },
+              "end": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "resolved_at": "2024-02-20T02:03:25.908Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        },
+        {
+          "id": 1780129451,
+          "type": "DiffNote",
+          "body": "Thanks for reviewing my change.\n\nBut... I don't quite follow your suggestion.  I need to clear the column so that I have empty space to start appending into.  The `\"Telnet Data...\"` string is now only used as a fallback for in case nothing else was put into the column.  Are you saying I should clear the column with `col_set_str(pinfo->cinfo, COL_INFO, \"\")` to avoid the need to check `col_get_writable` later?  I will still need to use `strlen` (or some other check) to see whether anything has been put in the column during the dissection.\n\nOr I guess I could leave `\"Telnet Data...\"` in the column initially, add tracking of the number of items dissected, use `col_set_xxx` when the first item is added, and `col_append_xxx` for subsequent entries... which would also eliminate the problem of a possible packet containing a large number of entries producing excessively long text here.  It would also eliminate the possibility of a blank column if an exception occurs.  Hmmmm.  I might try this approach.",
+          "author": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "created_at": "2024-02-20T00:22:31.911Z",
+          "updated_at": "2024-02-20T02:03:25.908Z",
+          "system": false,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "start_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "head_sha": "69caccb104a6adf68625f109a78ccb0cbccb02ba",
+            "old_path": "epan/dissectors/packet-telnet.c",
+            "new_path": "epan/dissectors/packet-telnet.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2199,
+            "line_range": {
+              "start": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              },
+              "end": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "resolved_at": "2024-02-20T02:03:25.908Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        },
+        {
+          "id": 1780195556,
+          "type": "DiffNote",
+          "body": "Right, I was thinking about avoiding the blank column if an exception occurs. It's a little annoying bookkeeping either way, to be sure.\n\n> col_set_xxx when the first item is added, \n\nImportantly, this has to be `col_add_[fl]str` if the added string is not a static `const char*` but is instead dynamically allocated. `col_add_str` copies. (For that reason there aren't `col_set_[fl]str`, so I'm sure you would have figured it out. It does occasionally cause issues, though.)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-02-20T01:27:18.124Z",
+          "updated_at": "2024-02-20T02:03:25.908Z",
+          "system": false,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "start_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "head_sha": "69caccb104a6adf68625f109a78ccb0cbccb02ba",
+            "old_path": "epan/dissectors/packet-telnet.c",
+            "new_path": "epan/dissectors/packet-telnet.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2199,
+            "line_range": {
+              "start": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              },
+              "end": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "resolved_at": "2024-02-20T02:03:25.908Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        },
+        {
+          "id": 1780220629,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/14452/diffs?diff_id=929476627&start_sha=69caccb104a6adf68625f109a78ccb0cbccb02ba#d2c797869fb191a58e859bdd344a96e1b45a6484_2199_2229)",
+          "author": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "created_at": "2024-02-20T01:59:05.784Z",
+          "updated_at": "2024-02-20T01:59:05.784Z",
+          "system": true,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "start_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "head_sha": "69caccb104a6adf68625f109a78ccb0cbccb02ba",
+            "old_path": "epan/dissectors/packet-telnet.c",
+            "new_path": "epan/dissectors/packet-telnet.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2199,
+            "line_range": {
+              "start": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              },
+              "end": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        },
+        {
+          "id": 1780222184,
+          "type": "DiffNote",
+          "body": "Yep, I made the `col_set_str` mistake along the way and got a column of binary mess. :smile:\n\nAnnoying bookkeeping is done and posted as an update in this merge request.  I think it makes an agreeable improvement to the usability of the Telnet dissection, so the annoyance was probably worthwhile.\n\nThanks again for the feedback and guidance.",
+          "author": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "created_at": "2024-02-20T02:03:24.350Z",
+          "updated_at": "2024-02-20T02:03:25.908Z",
+          "system": false,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "start_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+            "head_sha": "69caccb104a6adf68625f109a78ccb0cbccb02ba",
+            "old_path": "epan/dissectors/packet-telnet.c",
+            "new_path": "epan/dissectors/packet-telnet.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2199,
+            "line_range": {
+              "start": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              },
+              "end": {
+                "line_code": "d2c797869fb191a58e859bdd344a96e1b45a6484_2191_2199",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2199
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "resolved_at": "2024-02-20T02:03:25.908Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3bf496cfebfcdded8ddbea9ba18a0396a2dd815f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1780220632,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>87017cfc - Telnet: Include a packet summary in Info column.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14452/diffs?diff_id=929476627&start_sha=69caccb104a6adf68625f109a78ccb0cbccb02ba)",
+          "author": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "created_at": "2024-02-20T01:59:06.294Z",
+          "updated_at": "2024-02-20T01:59:06.298Z",
+          "system": true,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8e4476a15356a03b311ee80d96401e07a20249fa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1780220914,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>87017cfc...9a67fac8 - 5 commits from branch <code>wireshark:master</code></li><li>65e29abd - Telnet: Include a packet summary in Info column.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14452/diffs?diff_id=929476860&start_sha=87017cfc1da1736d42c0eedbc1f9dbd1815ced24)",
+          "author": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "created_at": "2024-02-20T02:00:00.829Z",
+          "updated_at": "2024-02-20T02:00:00.834Z",
+          "system": true,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ab298673c9d478cf5a76cc15bf8a06d099d31f51",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1780222195,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 7889756,
+            "username": "dariusd0",
+            "public_email": "",
+            "name": "dariusd0",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/f0f4a609abaf984c9cfe277f1321b8db104aea7290fcbb7fb0c5749a00d32e39?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dariusd0"
+          },
+          "created_at": "2024-02-20T02:03:25.943Z",
+          "updated_at": "2024-02-20T02:03:25.952Z",
+          "system": true,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9b4df360a73a23f132f7483160bc2c598804ff3a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1780975303,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>65e29abd...11350a71 - 5 commits from branch <code>wireshark:master</code></li><li>28be9213 - Telnet: Include a packet summary in Info column.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14452/diffs?diff_id=929999032&start_sha=65e29abd59c1a8141f2fb5d0c073c04192812e0c)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-02-20T11:34:07.899Z",
+          "updated_at": "2024-02-20T11:34:07.905Z",
+          "system": true,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e528d71106df41cc89a49f861593a2ffbf81cdcb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1781225285,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>aa64b079 - 1 commit from branch <code>wireshark:master</code></li><li>8bdc10c6 - Telnet: Include a packet summary in Info column.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14452/diffs?diff_id=930134032&start_sha=28be9213ed901728cbc6171c6ee9554a82672e5c)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-02-20T12:58:15.443Z",
+          "updated_at": "2024-02-20T12:58:15.450Z",
+          "system": true,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "89dc25a8452d57de7ed7bfc7c755af06eab33475",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1781439196,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-02-20T14:30:11.820Z",
+          "updated_at": "2024-02-20T14:30:11.834Z",
+          "system": true,
+          "noteable_id": 282978394,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14452,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -19,6 +19,8 @@\n #include <epan/packet.h>\n #include <epan/expert.h>\n #include <epan/asn1.h>\n+#include <wsutil/str_util.h>\n+#include <wsutil/utf8_entities.h>\n #include \"packet-kerberos.h\"\n #include \"packet-tls-utils.h\"\n #include \"packet-tn3270.h\"\n@@ -275,6 +277,34 @@ telnet_get_session(packet_info *pinfo)\n   return telnet_info;\n }\n \n+/* Record some data/negotiation/subnegotiation in the \"Info\" column. */\n+static void\n+add_telnet_info_str(packet_info *pinfo, guint *num_items, const char *str)\n+{\n+  const guint max_info_items = 5; /* Arbitrary limit so the column doesn't end up too wide. */\n+\n+  if (*num_items == 0) {\n+    /* Replace the default info text. */\n+    col_add_str(pinfo->cinfo, COL_INFO, str);\n+  } else if (*num_items < max_info_items) {\n+    col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, str);\n+  } else if (*num_items == max_info_items) {\n+    /* Too many to display.  Finish with an ellipsis. */\n+    col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, UTF8_HORIZONTAL_ELLIPSIS);\n+  }\n+  (*num_items)++;\n+}\n+\n+/* Record in the \"Info\" column that a number of Telnet data bytes arrived. */\n+static void\n+add_telnet_data_bytes_str(packet_info *pinfo, guint *num_items, guint len)\n+{\n+  char str[30];\n+\n+  snprintf(str, sizeof str, \"%u byte%s data\", len, plurality(len, \"\", \"s\"));\n+  add_telnet_info_str(pinfo, num_items, str);\n+}\n+\n static void\n dissect_string_subopt(packet_info *pinfo, const char *optname, tvbuff_t *tvb, int offset, int len,\n                       proto_tree *tree, proto_item *item)\n@@ -1999,7 +2029,7 @@ telnet_suboption_name(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int*\n }\n \n static int\n-telnet_command(packet_info *pinfo, proto_tree *telnet_tree, tvbuff_t *tvb, int start_offset)\n+telnet_command(packet_info *pinfo, proto_tree *telnet_tree, tvbuff_t *tvb, int start_offset, guint *num_info_items)\n {\n   int    offset = start_offset;\n   guchar optcode;\n@@ -2041,6 +2071,9 @@ telnet_command(packet_info *pinfo, proto_tree *telnet_tree, tvbuff_t *tvb, int s\n   }\n \n   proto_item_set_text(cmd_item, \"%s\", optname);\n+  if (optcode != TN_SE) {\n+    add_telnet_info_str(pinfo, num_info_items, optname);\n+  }\n \n   if (optcode == TN_SB) {\n     offset = telnet_sub_option(pinfo, subopt_tree, subopt_item, tvb, start_offset);\n@@ -2136,9 +2169,10 @@ dissect_telnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _\n   guint       is_tn5250 = 0;\n   int         data_len;\n   gint        iac_offset;\n+  guint       num_info_items = 0;\n \n   col_set_str(pinfo->cinfo, COL_PROTOCOL, \"TELNET\");\n-  col_set_str(pinfo->cinfo, COL_INFO, \"Telnet Data ...\");\n+  col_set_str(pinfo->cinfo, COL_INFO, \"Telnet Data\" UTF8_HORIZONTAL_ELLIPSIS);\n \n   is_tn3270 = find_tn3270_conversation(pinfo);\n   is_tn5250 = find_tn5250_conversation(pinfo);\n@@ -2159,6 +2193,7 @@ dissect_telnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _\n        */\n       data_len = iac_offset - offset;\n       if (data_len > 0) {\n+        add_telnet_data_bytes_str(pinfo, &num_info_items, data_len);\n         if (is_tn3270) {\n           next_tvb = tvb_new_subset_length(tvb, offset, data_len);\n           call_dissector(tn3270_handle, next_tvb, pinfo, telnet_tree);\n@@ -2171,7 +2206,7 @@ dissect_telnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _\n       /*\n        * Now interpret the command.\n        */\n-      offset = telnet_command(pinfo, telnet_tree, tvb, iac_offset);\n+      offset = telnet_command(pinfo, telnet_tree, tvb, iac_offset, &num_info_items);\n     } else {\n       /* get more data if tn3270 */\n       if (is_tn3270 || is_tn5250) {\n@@ -2184,7 +2219,10 @@ dissect_telnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _\n        * is the last of the data in the packet.\n        * Add it to the tree, a line at a time, and then quit.\n        */\n-      telnet_add_text(telnet_tree, tvb, offset, len);\n+      if (len > 0) {\n+        add_telnet_data_bytes_str(pinfo, &num_info_items, len);\n+        telnet_add_text(telnet_tree, tvb, offset, len);\n+      }\n       break;\n     }\n   }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-telnet.c",
+      "old_path": "epan/dissectors/packet-telnet.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "8bdc10c6ca6f8caddad6425726f971161f38157f",
+      "short_id": "8bdc10c6",
+      "created_at": "2024-02-20T12:58:11.000+00:00",
+      "parent_ids": [
+        "aa64b079a40cc3457385e013c14ea393dcd732c5"
+      ],
+      "title": "Telnet: Include a packet summary in Info column.",
+      "message": "Telnet: Include a packet summary in Info column.\n",
+      "author_name": "Darius Davis",
+      "author_email": "darius-wireshark@free-range.com.au",
+      "authored_date": "2024-02-19T06:56:03.000+10:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2024-02-20T12:58:11.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8bdc10c6ca6f8caddad6425726f971161f38157f"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 930134032,
+      "head_commit_sha": "8bdc10c6ca6f8caddad6425726f971161f38157f",
+      "base_commit_sha": "aa64b079a40cc3457385e013c14ea393dcd732c5",
+      "start_commit_sha": "aa64b079a40cc3457385e013c14ea393dcd732c5",
+      "created_at": "2024-02-20T12:58:14.297Z",
+      "merge_request_id": 282978394,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "d455254437e36569fc6b5b311dd9c8a35afc6f93"
+    },
+    {
+      "id": 929999032,
+      "head_commit_sha": "28be9213ed901728cbc6171c6ee9554a82672e5c",
+      "base_commit_sha": "11350a714ad5447055d4ed113efdc032cd1026ce",
+      "start_commit_sha": "11350a714ad5447055d4ed113efdc032cd1026ce",
+      "created_at": "2024-02-20T11:34:06.972Z",
+      "merge_request_id": 282978394,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "d455254437e36569fc6b5b311dd9c8a35afc6f93"
+    },
+    {
+      "id": 929476860,
+      "head_commit_sha": "65e29abd59c1a8141f2fb5d0c073c04192812e0c",
+      "base_commit_sha": "9a67fac86f694f1313680825c7746777bee969af",
+      "start_commit_sha": "9a67fac86f694f1313680825c7746777bee969af",
+      "created_at": "2024-02-20T01:59:59.516Z",
+      "merge_request_id": 282978394,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "d455254437e36569fc6b5b311dd9c8a35afc6f93"
+    },
+    {
+      "id": 929476627,
+      "head_commit_sha": "87017cfc1da1736d42c0eedbc1f9dbd1815ced24",
+      "base_commit_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+      "start_commit_sha": "9a67fac86f694f1313680825c7746777bee969af",
+      "created_at": "2024-02-20T01:59:04.535Z",
+      "merge_request_id": 282978394,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "d455254437e36569fc6b5b311dd9c8a35afc6f93"
+    },
+    {
+      "id": 928331691,
+      "head_commit_sha": "69caccb104a6adf68625f109a78ccb0cbccb02ba",
+      "base_commit_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+      "start_commit_sha": "4cfbe0f5c19a41a278db968b789cb99e68a39d0c",
+      "created_at": "2024-02-19T04:26:17.753Z",
+      "merge_request_id": 282978394,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "be85112ed02bb20ac07d9e5c685af3cb5fef9a0d"
+    }
+  ]
+}

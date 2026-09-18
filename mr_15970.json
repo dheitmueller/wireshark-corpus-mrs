@@ -1,0 +1,250 @@
+{
+  "id": 308473576,
+  "iid": 15970,
+  "project_id": 7898047,
+  "title": "capinfos: Fix printing packet comment headers with -TM",
+  "description": "Commit 45772de9 added support for printing packet comments to\n`capinfos` with new flags `-p`/`-P` as well as including them in the\nmachine-readable `-M` and table report machine-readable `-TM` outputs.\nUnfortunately, the commit contained a bug when `-TM` was specified\ncausing none of the `Packet %d Comment` headers for packet comments\nbeing printed.  This made the output decidedly less machine-readable.\nThis commit fixes this bug, ensuring that `-TM` output includes the\ncorrect headers for captures containing packet comments.\n\nPreviously, in `print_stats_table_header` we used `g_malloc0` to\nallocate a buffer `buf` large enough to hold the `Packet %d Comment`\nheader for any packet with a frame number from 1 to 2^64.\nUnfortunately, since this buffer was initialized with `NULL` bytes,\nusing `strlen(buf)` as the `n` argument to `snprintf` when writing the\n`Packet %d Comment` header to `buf` always led to it writing 0 bytes\nto `buf`.  This is turn led `print_stats_table_header_label` to always\nget an empty string as its argument, meaning no `Packet %d Comment`\nheader was printed.  The result of this bug was that the actual packet\ncomment values were printed, but without the accompanying `Packet %d\nComment` header.\n\nBelow is an example of the previous, broken behavior:\n\n    $ capinfos -TM comment-test.pcapng\n    File name\tFile type\tFile encapsulation\tFile time precision\tPacket size limit\tPacket size limit min (inferred)\tPacket size limit max (inferred)\tNumber of packets\tFile size (bytes)\tData size (bytes)\tCapture duration (seconds)\tStart time\tEnd time\tData byte rate (bytes/sec)\tData bit rate (bits/sec)\tAverage packet size (bytes)\tAverage packet rate (packets/sec)\tSHA256\tSHA1\tStrict time order\tCapture hardware\tCapture oper-sys\tCapture application\tCapture comment\n    /root/comment-test.pcapng\tpcapng\tether\tmicroseconds\t(not set)\tn/a\tn/a\t19\t3944\t2990\t2.660439\t2022-12-24 17:31:05.387079\t2022-12-24 17:31:08.047518\t1123.87\t8991.00\t157.37\t7.14\te3ab39da3be87894a58e622dd08505b94f37bc5e478099037dcd03333a87c8b3\t5afe04e6f4d5f485aad8b38ee42c54ee4fd6256e\tTrue\t\t\tEditcap (Wireshark) 3.6.19 (Git commit c38a01f797b1)\t\tFrame two comment\tFrame 6 has a comment\tFrame 10 with _markdown_ **markdown**\\r\\n\\r\\n## Headers too\\r\\n\\r\\n[and a link!](https://www.google.com)\tFrame 14 comment multiline\\n\\nHello there!\n\nand here is an example of the new, fixed behavior:\n\n    $ capinfos -TM comment-test.pcapng\n    File name\tFile type\tFile encapsulation\tFile time precision\tPacket size limit\tPacket size limit min (inferred)\tPacket size limit max (inferred)\tNumber of packets\tFile size (bytes)\tData size (bytes)\tCapture duration (seconds)\tStart time\tEnd time\tData byte rate (bytes/sec)\tData bit rate (bits/sec)\tAverage packet size (bytes)\tAverage packet rate (packets/sec)\tSHA256\tSHA1\tStrict time order\tCapture hardware\tCapture oper-sys\tCapture application\tCapture comment\tPacket 2 Comment\tPacket 6 Comment\tPacket 10 Comment\tPacket 14 Comment\n    /home/niels/Downloads/comment-test.pcapng\tpcapng\tether\tmicroseconds\t(not set)\tn/a\tn/a\t19\t3944\t2990\t2.660439\t2022-12-24 12:31:05.387079\t2022-12-24 12:31:08.047518\t1123.87\t8991.00\t157.37\t7.14\te3ab39da3be87894a58e622dd08505b94f37bc5e478099037dcd03333a87c8b3\t5afe04e6f4d5f485aad8b38ee42c54ee4fd6256e\tTrue\t\t\tEditcap (Wireshark) 3.6.19 (Git commit c38a01f797b1)\t\tFrame two comment\tFrame 6 has a comment\tFrame 10 with _markdown_ **markdown**\\r\\n\\r\\n## Headers too\\r\\n\\r\\n[and a link!](https://www.google.com)\tFrame 14 comment multiline\\n\\nHello there!\n\n\n(cherry picked from commit 5a94fd5022d9a6100090fb0f22de99801cfc9101)\n\nCo-authored-by: Niels Widger <niels@qacafe.com>",
+  "state": "merged",
+  "created_at": "2024-06-14T12:34:15.036Z",
+  "updated_at": "2024-06-14T15:38:03.594Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2024-06-14T15:38:00.474Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-4.2",
+  "source_branch": "cherry-pick-5a94fd50",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 4457889,
+    "username": "nielswidger",
+    "public_email": "niels@qacafe.com",
+    "name": "Niels Widger",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/4457889/avatar.png?v=1724234496",
+    "web_url": "https://gitlab.com/nielswidger"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 48313390,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "f30a10ae2f120745fb5588e2720656dec61dd7c3",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-06-14T12:34:29.283Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!15970",
+  "references": {
+    "short": "!15970",
+    "relative": "!15970",
+    "full": "wireshark/wireshark!15970"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/15970",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2024-06-14T12:34:27.972Z",
+  "latest_build_finished_at": "2024-06-14T12:41:48.686Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1332715290,
+    "iid": 170,
+    "project_id": 48313390,
+    "sha": "f30a10ae2f120745fb5588e2720656dec61dd7c3",
+    "ref": "cherry-pick-5a94fd50",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-06-14T12:34:25.961Z",
+    "updated_at": "2024-06-14T12:41:48.770Z",
+    "web_url": "https://gitlab.com/nielswidger/wireshark/-/pipelines/1332715290"
+  },
+  "head_pipeline": {
+    "id": 1332715290,
+    "iid": 170,
+    "project_id": 48313390,
+    "sha": "f30a10ae2f120745fb5588e2720656dec61dd7c3",
+    "ref": "cherry-pick-5a94fd50",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-06-14T12:34:25.961Z",
+    "updated_at": "2024-06-14T12:41:48.770Z",
+    "web_url": "https://gitlab.com/nielswidger/wireshark/-/pipelines/1332715290",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 4457889,
+      "username": "nielswidger",
+      "public_email": "niels@qacafe.com",
+      "name": "Niels Widger",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/4457889/avatar.png?v=1724234496",
+      "web_url": "https://gitlab.com/nielswidger"
+    },
+    "started_at": "2024-06-14T12:34:27.972Z",
+    "finished_at": "2024-06-14T12:41:48.686Z",
+    "committed_at": null,
+    "duration": 440,
+    "queued_duration": 2,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/nielswidger/wireshark/-/pipelines/1332715290",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "83b9ca9263f61d788486c4132d2c97716b509fd2",
+    "head_sha": "f30a10ae2f120745fb5588e2720656dec61dd7c3",
+    "start_sha": "83b9ca9263f61d788486c4132d2c97716b509fd2"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "d6fa343ab43fc0e82c5c4259d7230d8cb719ab5a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1951160838,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-06-14T15:37:57.813Z",
+          "updated_at": "2024-06-14T15:37:57.829Z",
+          "system": true,
+          "noteable_id": 308473576,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 15970,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -694,6 +694,7 @@ print_stats_table_header(capture_info *cf_info)\n {\n     pkt_cmt *p;\n     char    *buf;\n+    gsize    buf_len;\n \n     putquote();\n     printf(\"File name\");\n@@ -731,10 +732,11 @@ print_stats_table_header(capture_info *cf_info)\n \n     if (pkt_comments && cf_info->pkt_cmts != NULL) {\n       /* Packet 2^64 Comment\" + NULL */\n-      buf = (char *)g_malloc0(strlen(\"Packet 18446744073709551616 Comment\") + 1);\n+      buf_len = strlen(\"Packet 18446744073709551616 Comment\") + 1;\n+      buf = (char *)g_malloc0(buf_len);\n \n       for (p = cf_info->pkt_cmts; p != NULL; p = p->next) {\n-        snprintf(buf, strlen(buf), \"Packet %d Comment\", p->recno);\n+        snprintf(buf, buf_len, \"Packet %d Comment\", p->recno);\n         print_stats_table_header_label(buf);\n       }\n     }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "capinfos.c",
+      "old_path": "capinfos.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "f30a10ae2f120745fb5588e2720656dec61dd7c3",
+      "short_id": "f30a10ae",
+      "created_at": "2024-06-14T12:33:51.000+00:00",
+      "parent_ids": [
+        "83b9ca9263f61d788486c4132d2c97716b509fd2"
+      ],
+      "title": "capinfos: Fix printing packet comment headers with -TM",
+      "message": "capinfos: Fix printing packet comment headers with -TM\n\nCommit 45772de9 added support for printing packet comments to\n`capinfos` with new flags `-p`/`-P` as well as including them in the\nmachine-readable `-M` and table report machine-readable `-TM` outputs.\nUnfortunately, the commit contained a bug when `-TM` was specified\ncausing none of the `Packet %d Comment` headers for packet comments\nbeing printed.  This made the output decidedly less machine-readable.\nThis commit fixes this bug, ensuring that `-TM` output includes the\ncorrect headers for captures containing packet comments.\n\nPreviously, in `print_stats_table_header` we used `g_malloc0` to\nallocate a buffer `buf` large enough to hold the `Packet %d Comment`\nheader for any packet with a frame number from 1 to 2^64.\nUnfortunately, since this buffer was initialized with `NULL` bytes,\nusing `strlen(buf)` as the `n` argument to `snprintf` when writing the\n`Packet %d Comment` header to `buf` always led to it writing 0 bytes\nto `buf`.  This is turn led `print_stats_table_header_label` to always\nget an empty string as its argument, meaning no `Packet %d Comment`\nheader was printed.  The result of this bug was that the actual packet\ncomment values were printed, but without the accompanying `Packet %d\nComment` header.\n\nBelow is an example of the previous, broken behavior:\n\n    $ capinfos -TM comment-test.pcapng\n    File name\tFile type\tFile encapsulation\tFile time precision\tPacket size limit\tPacket size limit min (inferred)\tPacket size limit max (inferred)\tNumber of packets\tFile size (bytes)\tData size (bytes)\tCapture duration (seconds)\tStart time\tEnd time\tData byte rate (bytes/sec)\tData bit rate (bits/sec)\tAverage packet size (bytes)\tAverage packet rate (packets/sec)\tSHA256\tSHA1\tStrict time order\tCapture hardware\tCapture oper-sys\tCapture application\tCapture comment\n    /root/comment-test.pcapng\tpcapng\tether\tmicroseconds\t(not set)\tn/a\tn/a\t19\t3944\t2990\t2.660439\t2022-12-24 17:31:05.387079\t2022-12-24 17:31:08.047518\t1123.87\t8991.00\t157.37\t7.14\te3ab39da3be87894a58e622dd08505b94f37bc5e478099037dcd03333a87c8b3\t5afe04e6f4d5f485aad8b38ee42c54ee4fd6256e\tTrue\t\t\tEditcap (Wireshark) 3.6.19 (Git commit c38a01f797b1)\t\tFrame two comment\tFrame 6 has a comment\tFrame 10 with _markdown_ **markdown**\\r\\n\\r\\n## Headers too\\r\\n\\r\\n[and a link!](https://www.google.com)\tFrame 14 comment multiline\\n\\nHello there!\n\nand here is an example of the new, fixed behavior:\n\n    $ capinfos -TM comment-test.pcapng\n    File name\tFile type\tFile encapsulation\tFile time precision\tPacket size limit\tPacket size limit min (inferred)\tPacket size limit max (inferred)\tNumber of packets\tFile size (bytes)\tData size (bytes)\tCapture duration (seconds)\tStart time\tEnd time\tData byte rate (bytes/sec)\tData bit rate (bits/sec)\tAverage packet size (bytes)\tAverage packet rate (packets/sec)\tSHA256\tSHA1\tStrict time order\tCapture hardware\tCapture oper-sys\tCapture application\tCapture comment\tPacket 2 Comment\tPacket 6 Comment\tPacket 10 Comment\tPacket 14 Comment\n    /home/niels/Downloads/comment-test.pcapng\tpcapng\tether\tmicroseconds\t(not set)\tn/a\tn/a\t19\t3944\t2990\t2.660439\t2022-12-24 12:31:05.387079\t2022-12-24 12:31:08.047518\t1123.87\t8991.00\t157.37\t7.14\te3ab39da3be87894a58e622dd08505b94f37bc5e478099037dcd03333a87c8b3\t5afe04e6f4d5f485aad8b38ee42c54ee4fd6256e\tTrue\t\t\tEditcap (Wireshark) 3.6.19 (Git commit c38a01f797b1)\t\tFrame two comment\tFrame 6 has a comment\tFrame 10 with _markdown_ **markdown**\\r\\n\\r\\n## Headers too\\r\\n\\r\\n[and a link!](https://www.google.com)\tFrame 14 comment multiline\\n\\nHello there!\n\n\n(cherry picked from commit 5a94fd5022d9a6100090fb0f22de99801cfc9101)\n\nCo-authored-by: Niels Widger <niels@qacafe.com>",
+      "author_name": "Niels Widger",
+      "author_email": "niels@qacafe.com",
+      "authored_date": "2024-06-14T12:33:51.000+00:00",
+      "committer_name": "Niels Widger",
+      "committer_email": "niels@qacafe.com",
+      "committed_date": "2024-06-14T12:33:51.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/f30a10ae2f120745fb5588e2720656dec61dd7c3"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1037464196,
+      "head_commit_sha": "f30a10ae2f120745fb5588e2720656dec61dd7c3",
+      "base_commit_sha": "83b9ca9263f61d788486c4132d2c97716b509fd2",
+      "start_commit_sha": "83b9ca9263f61d788486c4132d2c97716b509fd2",
+      "created_at": "2024-06-14T12:34:24.206Z",
+      "merge_request_id": 308473576,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "770e6d117015022a580b9cbe5259bb31589bd8d5"
+    }
+  ]
+}
