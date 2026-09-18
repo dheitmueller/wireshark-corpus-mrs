@@ -1,0 +1,1525 @@
+{
+  "id": 308678870,
+  "iid": 16006,
+  "project_id": 7898047,
+  "title": "MySQL: Add dissection of more types in binary protocol",
+  "description": "For captures that use the binary protocol that is used for prepared statements some field types weren't decoded or had issues.\n\n1. Some types were missing:\n- `FIELD_TYPE_INT24` (aka `MEDIUMINT`)\n- `FIELD_TYPE_YEAR`\n- `FIELD_TYPE_BIT`\n- `FIELD_TYPE_GEOMETRY`\n\n2. Decoding of string types with a binary collation (`BINARY`, `VARBINARY`, etc) didn't work if the binary value wasn't acceptable UTF-8 and/or contained null bytes.\n\nQuestions for reviewers: \n- ~~is the use of `ENC_NULL` that I use when `encoding = binary` acceptable?~~\n- should we define constants for the field types? (`MYSQL_FIELD_TYPE_BIT = 0x10`) or is the current use ok?\n- `mysql_dissect_exec_binary`, `mysql_dissect_exec_json` and `mysql_dissect_exec_string` are somewhat similar, especially with the check for binary encoding in `mysql_dissect_exec_string`. However I think this is ok, but I'm open for suggestions.\n- for `FIELD_TYPE_YEAR` it now says `Value (INT16): 2024`. We could make it say `Value (YEAR): 2024`. It could then also use `mysql.exec.field.year` instead of `mysql.exec.field.short`. But I'm not sure the extra effort for that is worth it. This is not the only type that has this issue.\n\nCode:\n```python\n#!/bin/python3\nfrom datetime import datetime\nimport mysql.connector\n\nc = mysql.connector.connect(\n    host='127.0.0.1',\n    user='root',\n    database='test',\n    ssl_disabled=True\n)\n\ncur = c.cursor(prepared=True)\n\ncur.execute(\"DROP TABLE IF EXISTS t1\");\ncur.execute(\"\"\"CREATE TABLE t1 (\nid INT PRIMARY KEY,\nj JSON,\nb1 BIT,\nb2 BINARY(25),\ni1 tinyint,\ni2 smallint,\ni3 mediumint,\ni4 int,\ni5 bigint,\ny year,\nd decimal(10,2),\ne ENUM('Y','N'),\ng GEOMETRY)\"\"\")\ncur.execute(\"\"\"INSERT INTO t1 VALUES(\n1,\n'{\"a\": [1,2,3]}',\n1,\n0x000000000101000000000000000000F03F0000000000000040,\n1,\n2,\n3,\n4,\n5,\n2024,\n1.2,\n'Y',\nST_GeomFromText('POINT(1 2)')\n)\"\"\")\n\ncur.execute('TABLE t1');\nfor r in cur:\n    print(r, \"\\n\")\n\nc.commit()\ncur.close()\n\nc.close()\n```\n\nCapture:\n[mysql_ps_types.pcapng](/uploads/d17d5abc13d08fba34240983aacb55a0/mysql_ps_types.pcapng)",
+  "state": "merged",
+  "created_at": "2024-06-16T17:57:32.221Z",
+  "updated_at": "2024-06-19T11:42:54.342Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2024-06-19T11:42:50.540Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "mysql_dissect_binary",
+  "user_notes_count": 7,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5884947,
+    "username": "dveeden",
+    "public_email": "",
+    "name": "Daniël van Eeden",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dveeden"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 38285998,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "16553ade767b9b003d733108f0d61614f85c9051",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-06-16T17:57:37.433Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!16006",
+  "references": {
+    "short": "!16006",
+    "relative": "!16006",
+    "full": "wireshark/wireshark!16006"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/16006",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2024-06-18T22:51:53.504Z",
+  "latest_build_finished_at": "2024-06-18T23:09:13.426Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1337990174,
+    "iid": 237,
+    "project_id": 38285998,
+    "sha": "1519b2e36197c9d0057ae509d3245cc3684b925b",
+    "ref": "mysql_dissect_binary",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-06-18T22:51:52.815Z",
+    "updated_at": "2024-06-18T23:09:13.454Z",
+    "web_url": "https://gitlab.com/dveeden/wireshark/-/pipelines/1337990174"
+  },
+  "head_pipeline": {
+    "id": 1338792642,
+    "iid": 66922,
+    "project_id": 7898047,
+    "sha": "16553ade767b9b003d733108f0d61614f85c9051",
+    "ref": "refs/merge-requests/16006/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2024-06-19T11:42:41.377Z",
+    "updated_at": "2024-06-19T11:42:41.377Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1338792642",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1338792642",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "e9acac70883c3a678a7f47cc699877931fa34bad",
+    "head_sha": "16553ade767b9b003d733108f0d61614f85c9051",
+    "start_sha": "e9acac70883c3a678a7f47cc699877931fa34bad"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "90e33b77c68013cf07ea989fa2d37b1ff326d8ff",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952297261,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>1a4abb16 - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1038266790&start_sha=aaea24114615c61a89371540b46c03110068ae06)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-16T17:58:44.625Z",
+          "updated_at": "2024-06-16T17:58:44.629Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "64eb82779757a34fdeb903c5527121d07e504541",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952297374,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>529d083e - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1038266881&start_sha=1a4abb161a49342cc7f58f3c1a7799321fbde203)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-16T18:00:02.659Z",
+          "updated_at": "2024-06-16T18:00:02.668Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e6cf4f1642fe10ee4c489ce262474a4067cdbd20",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952297426,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>18dd9d92 - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1038266928&start_sha=529d083e42032e87f71d67cda69606ecaf005529)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-16T18:00:32.812Z",
+          "updated_at": "2024-06-16T18:00:32.816Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "59dc2cf94fbcea2376344326d6b7723c382b5ba0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952298047,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>46b5663b - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1038267567&start_sha=18dd9d9268a66d1f5201ffdfb1de54852207a5ff)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-16T18:04:56.810Z",
+          "updated_at": "2024-06-16T18:04:56.829Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "59f5f7c5b7a34dcdcaab0504ea76d2ab740b5f4b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952298956,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-16T18:10:52.997Z",
+          "updated_at": "2024-06-16T18:10:53.002Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9a4a7151c0afc325a575873ec301b651487605de",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1953383650,
+          "type": "DiffNote",
+          "body": "ENC_NULL is exported by packet-tls-utils.h for cipher type, so it does not seem like a good idea to use it here. Use ENC_NA instead?",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2024-06-17T14:41:25.680Z",
+          "updated_at": "2024-06-18T07:09:34.371Z",
+          "system": false,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+            "start_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+            "head_sha": "46b5663bff649b8c1d127c52b54350d9615c569d",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1010,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1011_1010",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1010
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1011_1010",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1010
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "resolved_at": "2024-06-18T07:09:34.371Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        },
+        {
+          "id": 1954765000,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1039658782&start_sha=46b5663bff649b8c1d127c52b54350d9615c569d#440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1010_1012)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T07:09:02.776Z",
+          "updated_at": "2024-06-18T07:09:02.776Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+            "start_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+            "head_sha": "46b5663bff649b8c1d127c52b54350d9615c569d",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1010,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1011_1010",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1010
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1011_1010",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1010
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "07f2ec3faadbd7e3e862d3614e57d2e10190c92d",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1953383664,
+          "type": "DiffNote",
+          "body": "See previous comment above",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2024-06-17T14:41:26.332Z",
+          "updated_at": "2024-06-18T07:09:42.869Z",
+          "system": false,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+            "start_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+            "head_sha": "46b5663bff649b8c1d127c52b54350d9615c569d",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2217,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2206_2218",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2218
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2206_2218",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2218
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "resolved_at": "2024-06-18T07:09:42.869Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        },
+        {
+          "id": 1954765028,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1039658782&start_sha=46b5663bff649b8c1d127c52b54350d9615c569d#440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2217_2221)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T07:09:03.932Z",
+          "updated_at": "2024-06-18T07:09:03.932Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+            "start_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+            "head_sha": "46b5663bff649b8c1d127c52b54350d9615c569d",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2217,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2206_2218",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2218
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2206_2218",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2218
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "588ae91b94a3bd23b41606ccb1afc525e4485ea4",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1953383674,
+          "type": "DiffNote",
+          "body": "Maybe this part retrieving the param_len could be put in a function used by mysql_dissect_exec_json(), mysql_dissect_exec_string() and  mysql_dissect_exec_binary()",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2024-06-17T14:41:26.706Z",
+          "updated_at": "2024-06-18T15:12:56.126Z",
+          "system": false,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "start_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "head_sha": "0d5daa423bac447a1657aeb7ba684145a10f25b0",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": 2222,
+            "new_line": 2272,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2219_2269",
+                "type": null,
+                "old_line": 2219,
+                "new_line": 2269
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2219_2269",
+                "type": null,
+                "old_line": 2219,
+                "new_line": 2269
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "resolved_at": "2024-06-18T15:12:56.126Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        },
+        {
+          "id": 1954943350,
+          "type": "DiffNote",
+          "body": "changed this line in [version 7 of the diff](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1039758163&start_sha=0d5daa423bac447a1657aeb7ba684145a10f25b0#440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2272_2238)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T08:28:08.800Z",
+          "updated_at": "2024-06-18T08:28:08.800Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "start_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "head_sha": "0d5daa423bac447a1657aeb7ba684145a10f25b0",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": 2222,
+            "new_line": 2272,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2219_2269",
+                "type": null,
+                "old_line": 2219,
+                "new_line": 2269
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2219_2269",
+                "type": null,
+                "old_line": 2219,
+                "new_line": 2269
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        },
+        {
+          "id": 1954949904,
+          "type": "DiffNote",
+          "body": "There actually already was a function that pretty much did this: `tvb_get_fle()`. I've update the MR to use that instead.",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T08:31:16.023Z",
+          "updated_at": "2024-06-18T15:12:56.126Z",
+          "system": false,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "start_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "head_sha": "0d5daa423bac447a1657aeb7ba684145a10f25b0",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": 2222,
+            "new_line": 2272,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2219_2269",
+                "type": null,
+                "old_line": 2219,
+                "new_line": 2269
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2219_2269",
+                "type": null,
+                "old_line": 2219,
+                "new_line": 2269
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "resolved_at": "2024-06-18T15:12:56.126Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7a8ca1ea16e7b361d7b20750f3c1b169b0248ae3",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1953383683,
+          "type": "DiffNote",
+          "body": "Adding a specific hf (and thus filter) as you suggest would make sense I guess",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2024-06-17T14:41:27.061Z",
+          "updated_at": "2024-06-18T22:54:17.523Z",
+          "system": false,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "start_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "head_sha": "247354463e249686d8aaf89586d238c78757bf30",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1706,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1700_1703",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1703
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1700_1703",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1703
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "resolved_at": "2024-06-18T22:54:17.523Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        },
+        {
+          "id": 1955016014,
+          "type": "DiffNote",
+          "body": "So something like this?\n\n```c\n{ 0x0d, 0, mysql_dissect_exec_short, hf_mysql_exec_field_year }, // FIELD_TYPE_YEAR\n```\n\nOr just something like this?\n\n```c\n{ 0x0d, 0, mysql_dissect_exec_year }, // FIELD_TYPE_YEAR\n\n...\n\nstatic void\nmysql_dissect_exec_year(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding _U_)\n{\n\tmysql_dissect_exec_primitive(tvb, pinfo, param_offset, field_tree, hf_mysql_exec_field_year, 2);\n}\n```",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T08:59:09.322Z",
+          "updated_at": "2024-06-18T22:54:17.523Z",
+          "system": false,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "start_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "head_sha": "247354463e249686d8aaf89586d238c78757bf30",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1706,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1700_1703",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1703
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1700_1703",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1703
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "resolved_at": "2024-06-18T22:54:17.523Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        },
+        {
+          "id": 1956259761,
+          "type": "DiffNote",
+          "body": "I was thinking about the latter, as this is the pattern used in this dissector AFAICT",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2024-06-18T15:10:59.439Z",
+          "updated_at": "2024-06-18T22:54:17.523Z",
+          "system": false,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "start_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "head_sha": "247354463e249686d8aaf89586d238c78757bf30",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1706,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1700_1703",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1703
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1700_1703",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1703
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "resolved_at": "2024-06-18T22:54:17.523Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        },
+        {
+          "id": 1956992034,
+          "type": "DiffNote",
+          "body": "changed this line in [version 10 of the diff](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1040762099&start_sha=247354463e249686d8aaf89586d238c78757bf30#440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1706_1713)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T22:51:50.765Z",
+          "updated_at": "2024-06-18T22:51:50.765Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "start_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+            "head_sha": "247354463e249686d8aaf89586d238c78757bf30",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1706,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1700_1703",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1703
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1700_1703",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1703
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f6848b0daed27a672fa91aa3a53f38cdc4c2c770",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1954765045,
+          "type": null,
+          "body": "added 22 commits\n\n<ul><li>46b5663b...984b2ba8 - 21 commits from branch <code>wireshark:master</code></li><li>0d5daa42 - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1039658782&start_sha=46b5663bff649b8c1d127c52b54350d9615c569d)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T07:09:04.799Z",
+          "updated_at": "2024-06-18T07:09:04.809Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bf37e8f70266771e736ad2087f63e0bebdfc18e6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1954767540,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T07:10:21.263Z",
+          "updated_at": "2024-06-18T07:10:21.268Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7c8003544a9adc100652c178d622c7121dbcd399",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1954943364,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>b995b6d6 - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1039758163&start_sha=0d5daa423bac447a1657aeb7ba684145a10f25b0)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T08:28:09.161Z",
+          "updated_at": "2024-06-18T08:28:09.167Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9798c5469ae00fcb389639b1110f31694b529cfd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1954971610,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>fbd7675d - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1039775066&start_sha=b995b6d6061c54aabac869b3b79826af8f3e0874)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T08:40:23.791Z",
+          "updated_at": "2024-06-18T08:40:23.811Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f3db23ae4c84f472a4c71b076528ba0a211e0f54",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1955034311,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>24735446 - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1039814424&start_sha=fbd7675dd65772f5303c5805ca36708f18c74868)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T09:06:52.858Z",
+          "updated_at": "2024-06-18T09:06:52.863Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c1d8e5ea8b023c4053319f3cc66d230a571e993d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1956992036,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>65975639 - 1 commit from branch <code>wireshark:master</code></li><li>1519b2e3 - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1040762099&start_sha=247354463e249686d8aaf89586d238c78757bf30)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T22:51:50.939Z",
+          "updated_at": "2024-06-18T22:51:50.945Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "26392122a2ff8107f39bd9fdd953dc37ab2cf8e4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1956993379,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-18T22:54:17.577Z",
+          "updated_at": "2024-06-18T22:54:17.588Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f1858ecf040bf283900b180bfc345cb237137e31",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1957885663,
+          "type": null,
+          "body": "added 20 commits\n\n<ul><li>1519b2e3...e9acac70 - 19 commits from branch <code>wireshark:master</code></li><li>16553ade - MySQL: Add dissection of more types in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16006/diffs?diff_id=1041346444&start_sha=1519b2e36197c9d0057ae509d3245cc3684b925b)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-06-19T11:42:40.146Z",
+          "updated_at": "2024-06-19T11:42:40.150Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b633be00dcb47662b19061e9e5979066e7219983",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1957885827,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-06-19T11:42:46.170Z",
+          "updated_at": "2024-06-19T11:42:46.181Z",
+          "system": true,
+          "noteable_id": 308678870,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16006,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1009,7 +1009,7 @@ static charset_encoding_t charset_encoding_array[] =\n \t{ \"ascii\",\tENC_ASCII },\n \t// armscii8\n \t// big5\n-\t// binary\tENC_UTF_8 or ENC_WINDOWS_1252?\n+\t{ \"binary\",\tENC_NA},\n \t{ \"cp1250\",\tENC_WINDOWS_1250 },\n \t{ \"cp1251\",\tENC_WINDOWS_1251 },\n \t// cp1256\n@@ -1349,6 +1349,13 @@ static int hf_mysql_exec_param;\n static int hf_mysql_exec_unsigned;\n static int hf_mysql_exec_field_longlong;\n static int hf_mysql_exec_field_unsigned_longlong;\n+static int hf_mysql_exec_field_bit_length;\n+static int hf_mysql_exec_field_bit;\n+static int hf_mysql_exec_field_blob_length;\n+static int hf_mysql_exec_field_blob;\n+static int hf_mysql_exec_field_geometry_length;\n+static int hf_mysql_exec_field_geometry;\n+static int hf_mysql_exec_field_json_length;\n static int hf_mysql_exec_field_string_length;\n static int hf_mysql_exec_field_string;\n static int hf_mysql_exec_field_double;\n@@ -1360,6 +1367,7 @@ static int hf_mysql_exec_field_hour;\n static int hf_mysql_exec_field_minute;\n static int hf_mysql_exec_field_second;\n static int hf_mysql_exec_field_second_b;\n+static int hf_mysql_exec_field_int24;\n static int hf_mysql_exec_field_long;\n static int hf_mysql_exec_field_unsigned_long;\n static int hf_mysql_exec_field_tiny;\n@@ -1645,6 +1653,9 @@ static int mysql_dissect_eof(tvbuff_t *tvb, packet_info *pinfo, proto_item *pi,\n static int mysql_dissect_auth_switch_response(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree, mysql_conn_data_t *conn_data);\n static int mysql_dissect_auth_sha2(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree, mysql_conn_data_t *conn_data);\n static int mysql_dissect_loaddata(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree, mysql_conn_data_t *conn_data);\n+static void mysql_dissect_exec_bit(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n+static void mysql_dissect_exec_blob(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n+static void mysql_dissect_exec_geometry(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_string(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_json(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_datetime(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n@@ -1652,12 +1663,14 @@ static void mysql_dissect_exec_tiny(tvbuff_t *tvb, packet_info *pinfo, int *para\n static void mysql_dissect_exec_unsigned_tiny(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_short(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_unsigned_short(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n+static void mysql_dissect_exec_int24(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_long(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_unsigned_long(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_float(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_double(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_longlong(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_unsigned_longlong(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n+static void mysql_dissect_exec_year(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static void mysql_dissect_exec_null(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding);\n static char mysql_dissect_exec_param(proto_item *req_tree, tvbuff_t *tvb, int *offset,\n \t\tint *param_offset, guint8 param_flags, packet_info *pinfo, unsigned encoding, bool queryattrs);\n@@ -1679,27 +1692,34 @@ static guint get_mysql_pdu_len(packet_info *pinfo, tvbuff_t *tvb, int offset, vo\n \n // type, unsigned, dissector\n static const mysql_exec_dissector_t mysql_exec_dissectors[] = {\n-\t{ 0x01, 0, mysql_dissect_exec_tiny },\n-\t{ 0x01, 1, mysql_dissect_exec_unsigned_tiny },\n-\t{ 0x02, 0, mysql_dissect_exec_short },\n-\t{ 0x02, 1, mysql_dissect_exec_unsigned_short },\n-\t{ 0x03, 0, mysql_dissect_exec_long },\n-\t{ 0x03, 1, mysql_dissect_exec_unsigned_long },\n-\t{ 0x04, 0, mysql_dissect_exec_float },\n-\t{ 0x05, 0, mysql_dissect_exec_double },\n-\t{ 0x06, 0, mysql_dissect_exec_null },\n-\t{ 0x07, 0, mysql_dissect_exec_datetime },\n-\t{ 0x07, 1, mysql_dissect_exec_datetime },\n-\t{ 0x08, 0, mysql_dissect_exec_longlong },\n-\t{ 0x08, 1, mysql_dissect_exec_unsigned_longlong },\n-\t{ 0x0a, 0, mysql_dissect_exec_datetime },\n-\t{ 0x0b, 0, mysql_dissect_exec_time },\n-\t{ 0x0c, 0, mysql_dissect_exec_datetime },\n-\t{ 0xf5, 0, mysql_dissect_exec_json },\n-\t{ 0xf6, 0, mysql_dissect_exec_string },\n-\t{ 0xfc, 0, mysql_dissect_exec_string },\n-\t{ 0xfd, 0, mysql_dissect_exec_string },\n-\t{ 0xfe, 0, mysql_dissect_exec_string },\n+\t{ 0x01, 0, mysql_dissect_exec_tiny },              // FIELD_TYPE_TINY\n+\t{ 0x01, 1, mysql_dissect_exec_unsigned_tiny },     // FIELD_TYPE_TINY\n+\t{ 0x02, 0, mysql_dissect_exec_short },             // FIELD_TYPE_SHORT\n+\t{ 0x02, 1, mysql_dissect_exec_unsigned_short },    // FIELD_TYPE_SHORT\n+\t{ 0x03, 0, mysql_dissect_exec_long },              // FIELD_TYPE_LONG\n+\t{ 0x03, 1, mysql_dissect_exec_unsigned_long },     // FIELD_TYPE_LONG\n+\t{ 0x04, 0, mysql_dissect_exec_float },             // FIELD_TYPE_FLOAT\n+\t{ 0x05, 0, mysql_dissect_exec_double },            // FIELD_TYPE_DOUBLE\n+\t{ 0x06, 0, mysql_dissect_exec_null },              // FIELD_TYPE_NULL\n+\t{ 0x07, 0, mysql_dissect_exec_datetime },          // FIELD_TYPE_TIMESTAMP\n+\t{ 0x07, 1, mysql_dissect_exec_datetime },          // FIELD_TYPE_TIMESTAMP\n+\t{ 0x08, 0, mysql_dissect_exec_longlong },          // FIELD_TYPE_LONGLONG\n+\t{ 0x08, 1, mysql_dissect_exec_unsigned_longlong }, // FIELD_TYPE_LONGLONG\n+\t{ 0x09, 0, mysql_dissect_exec_int24 },             // FIELD_TYPE_INT24\n+\t{ 0x09, 1, mysql_dissect_exec_int24 },             // FIELD_TYPE_INT24\n+\t{ 0x0a, 0, mysql_dissect_exec_datetime },          // FIELD_TYPE_DATE\n+\t{ 0x0b, 0, mysql_dissect_exec_time },              // FIELD_TYPE_TIME\n+\t{ 0x0c, 0, mysql_dissect_exec_datetime },          // FIELD_TYPE_DATETIME\n+\t{ 0x0d, 0, mysql_dissect_exec_year },              // FIELD_TYPE_YEAR\n+\t{ 0x0d, 1, mysql_dissect_exec_year },              // FIELD_TYPE_YEAR\n+\t{ 0x10, 1, mysql_dissect_exec_bit },               // FIELD_TYPE_BIT\n+\t{ 0x10, 1, mysql_dissect_exec_bit },               // FIELD_TYPE_BIT\n+\t{ 0xf5, 0, mysql_dissect_exec_json },              // FIELD_TYPE_JSON\n+\t{ 0xf6, 0, mysql_dissect_exec_string },            // FIELD_TYPE_NEWDECIMAL\n+\t{ 0xfc, 0, mysql_dissect_exec_blob },              // FIELD_TYPE_BLOB\n+\t{ 0xfd, 0, mysql_dissect_exec_string },            // FIELD_TYPE_VAR_STRING\n+\t{ 0xfe, 0, mysql_dissect_exec_string },            // FIELD_TYPE_STRING\n+\t{ 0xff, 0, mysql_dissect_exec_geometry },          // FIELD_TYPE_GEOMETRY\n \t{ 0x00, 0, NULL },\n };\n \n@@ -2181,31 +2201,65 @@ mysql_dissect_login(tvbuff_t *tvb, packet_info *pinfo, int offset,\n static void\n mysql_dissect_exec_string(tvbuff_t *tvb, packet_info *pinfo _U_, int *param_offset, proto_item *field_tree, unsigned encoding)\n {\n-\tguint32 param_len;\n+\tint lenfle;\n+\tguint64 param_len;\n \n-\tparam_len = tvb_get_guint8(tvb, *param_offset);\n+\tlenfle = tvb_get_fle(tvb, field_tree, *param_offset, &param_len, NULL);\n+\tproto_tree_add_item(field_tree, hf_mysql_exec_field_string_length, tvb, *param_offset, lenfle, ENC_ASCII);\n+\t*param_offset += lenfle;\n \n-\tswitch (param_len) {\n-\t\tcase 0xfc: /* 252 - 64k chars */\n-\t\t\t*param_offset += 1;\n-\t\t\tproto_tree_add_item_ret_uint(field_tree, hf_mysql_exec_field_string_length,\n-\t\t\t\t\t    tvb, *param_offset, 2, ENC_LITTLE_ENDIAN, &param_len);\n-\t\t\t*param_offset += 2;\n-\t\t\tbreak;\n-\t\tcase 0xfd: /* 64k - 16M chars */\n-\t\t\t*param_offset += 1;\n-\t\t\tproto_tree_add_item_ret_uint(field_tree, hf_mysql_exec_field_string_length,\n-\t\t\t\t\t    tvb, *param_offset, 3, ENC_LITTLE_ENDIAN, &param_len);\n-\t\t\t*param_offset += 3;\n-\t\t\tbreak;\n-\t\tdefault: /* < 252 chars */\n-\t\t\tproto_tree_add_item(field_tree, hf_mysql_exec_field_string_length,\n-\t\t\t\t\t    tvb, *param_offset, 1, ENC_NA);\n-\t\t\t*param_offset += 1;\n-\t\t\tbreak;\n+\tif (encoding == ENC_NA) {\n+\t\tproto_tree_add_item(field_tree, hf_mysql_exec_field_blob,\n+\t\t\t\ttvb, *param_offset, (gint)param_len, ENC_NA);\n+\t} else {\n+\t\t\tproto_tree_add_item(field_tree, hf_mysql_exec_field_string,\n+\t\t\t\ttvb, *param_offset, (gint)param_len, encoding);\n \t}\n-\tproto_tree_add_item(field_tree, hf_mysql_exec_field_string,\n-\t\t\t    tvb, *param_offset, param_len, encoding);\n+\t*param_offset += param_len;\n+}\n+\n+static void\n+mysql_dissect_exec_bit(tvbuff_t *tvb, packet_info *pinfo _U_, int *param_offset, proto_item *field_tree, unsigned encoding _U_)\n+{\n+\tint lenfle;\n+\tguint64 param_len;\n+\n+\tlenfle = tvb_get_fle(tvb, field_tree, *param_offset, &param_len, NULL);\n+\tproto_tree_add_item(field_tree, hf_mysql_exec_field_bit_length, tvb, *param_offset, lenfle, ENC_ASCII);\n+\t*param_offset += lenfle;\n+\n+\tproto_tree_add_item(field_tree, hf_mysql_exec_field_bit,\n+\t\t\t    tvb, *param_offset, (gint)param_len, ENC_NA);\n+\t*param_offset += param_len;\n+}\n+\n+static void\n+mysql_dissect_exec_blob(tvbuff_t *tvb, packet_info *pinfo _U_, int *param_offset, proto_item *field_tree, unsigned encoding _U_)\n+{\n+\tint lenfle;\n+\tguint64 param_len;\n+\n+\tlenfle = tvb_get_fle(tvb, field_tree, *param_offset, &param_len, NULL);\n+\tproto_tree_add_item(field_tree, hf_mysql_exec_field_blob_length, tvb, *param_offset, lenfle, ENC_ASCII);\n+\t*param_offset += lenfle;\n+\n+\tproto_tree_add_item(field_tree, hf_mysql_exec_field_blob,\n+\t\t\t    tvb, *param_offset, (gint)param_len, ENC_NA);\n+\t*param_offset += param_len;\n+}\n+\n+static void\n+mysql_dissect_exec_geometry(tvbuff_t *tvb, packet_info *pinfo _U_, int *param_offset, proto_item *field_tree, unsigned encoding _U_)\n+{\n+\tint lenfle;\n+\tguint64 param_len;\n+\n+\tlenfle = tvb_get_fle(tvb, field_tree, *param_offset, &param_len, NULL);\n+\tproto_tree_add_item(field_tree, hf_mysql_exec_field_geometry_length, tvb, *param_offset, lenfle, ENC_ASCII);\n+\t*param_offset += lenfle;\n+\n+\tproto_tree_add_item(field_tree, hf_mysql_exec_field_geometry,\n+\t\t\t    tvb, *param_offset, (gint)param_len, ENC_NA);\n \t*param_offset += param_len;\n }\n \n@@ -2214,32 +2268,15 @@ mysql_dissect_exec_json(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, pr\n {\n \tstatic dissector_handle_t json_handle;\n \ttvbuff_t *next_tvb;\n-\tguint32 param_len;\n+\tint lenfle;\n+\tguint64 param_len;\n \n \tjson_handle = find_dissector(\"json\");\n-\tparam_len = tvb_get_guint8(tvb, *param_offset);\n-\n-\tswitch (param_len) {\n-\t\tcase 0xfc: /* 252 - 64k chars */\n-\t\t\t*param_offset += 1;\n-\t\t\tproto_tree_add_item_ret_uint(field_tree, hf_mysql_exec_field_string_length,\n-\t\t\t\t\t    tvb, *param_offset, 2, ENC_LITTLE_ENDIAN, &param_len);\n-\t\t\t*param_offset += 2;\n-\t\t\tbreak;\n-\t\tcase 0xfd: /* 64k - 16M chars */\n-\t\t\t*param_offset += 1;\n-\t\t\tproto_tree_add_item_ret_uint(field_tree, hf_mysql_exec_field_string_length,\n-\t\t\t\t\t    tvb, *param_offset, 3, ENC_LITTLE_ENDIAN, &param_len);\n-\t\t\t*param_offset += 3;\n-\t\t\tbreak;\n-\t\tdefault: /* < 252 chars */\n-\t\t\tproto_tree_add_item(field_tree, hf_mysql_exec_field_string_length,\n-\t\t\t\t\t    tvb, *param_offset, 1, ENC_NA);\n-\t\t\t*param_offset += 1;\n-\t\t\tbreak;\n-\t}\n+\tlenfle = tvb_get_fle(tvb, field_tree, *param_offset, &param_len, NULL);\n+\tproto_tree_add_item(field_tree, hf_mysql_exec_field_json_length, tvb, *param_offset, lenfle, ENC_ASCII);\n+\t*param_offset += lenfle;\n \n-\tnext_tvb = tvb_new_subset_length(tvb, *param_offset, param_len);\n+\tnext_tvb = tvb_new_subset_length(tvb, *param_offset, (gint)param_len);\n \tcall_dissector_only(json_handle, next_tvb, pinfo, field_tree, NULL);\n \t*param_offset += param_len;\n }\n@@ -2326,6 +2363,13 @@ mysql_dissect_exec_unsigned_short(tvbuff_t *tvb, packet_info *pinfo, int *param_\n \tmysql_dissect_exec_primitive(tvb, pinfo, param_offset, field_tree, hf_mysql_exec_field_unsigned_short, 2);\n }\n \n+// Note that int24 is transferred in the binary protocol using 4 bytes, not 3.\n+static void\n+mysql_dissect_exec_int24(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding _U_)\n+{\n+\tmysql_dissect_exec_primitive(tvb, pinfo, param_offset, field_tree, hf_mysql_exec_field_int24, 4);\n+}\n+\n static void\n mysql_dissect_exec_long(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding _U_)\n {\n@@ -2362,6 +2406,12 @@ mysql_dissect_exec_unsigned_longlong(tvbuff_t *tvb, packet_info *pinfo, int *par\n \tmysql_dissect_exec_primitive(tvb, pinfo, param_offset, field_tree, hf_mysql_exec_field_unsigned_longlong, 8);\n }\n \n+static void\n+mysql_dissect_exec_year(tvbuff_t *tvb, packet_info *pinfo, int *param_offset, proto_item *field_tree, unsigned encoding _U_)\n+{\n+\tmysql_dissect_exec_primitive(tvb, pinfo, param_offset, field_tree, hf_mysql_exec_field_year, 2);\n+}\n+\n static void\n mysql_dissect_exec_null(tvbuff_t *tvb _U_, packet_info *pinfo _U_, int *param_offset _U_, proto_item *field_tree _U_, unsigned encoding _U_)\n {}\n@@ -5788,6 +5838,41 @@ void proto_register_mysql(void)\n \t\tFT_UINT64, BASE_DEC, NULL, 0x0,\n \t\tNULL, HFILL }},\n \n+\t\t{ &hf_mysql_exec_field_bit_length,\n+\t\t{ \"Length (Bit)\", \"mysql.exec.field.bit.length\",\n+\t\tFT_UINT24, BASE_DEC, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n+\t\t{ &hf_mysql_exec_field_bit,\n+\t\t{ \"Value (Bit)\", \"mysql.exec.field.bit\",\n+\t\tFT_BYTES, BASE_NONE, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n+\t\t{ &hf_mysql_exec_field_blob_length,\n+\t\t{ \"Length (BLOB)\", \"mysql.exec.field.blob.length\",\n+\t\tFT_UINT24, BASE_DEC, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n+\t\t{ &hf_mysql_exec_field_blob,\n+\t\t{ \"Value (BLOB)\", \"mysql.exec.field.blob\",\n+\t\tFT_BYTES, BASE_NONE, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n+\t\t{ &hf_mysql_exec_field_geometry_length,\n+\t\t{ \"Length (Geometry)\", \"mysql.exec.field.geometry.length\",\n+\t\tFT_UINT24, BASE_DEC, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n+\t\t{ &hf_mysql_exec_field_geometry,\n+\t\t{ \"Value (Geometry)\", \"mysql.exec.field.geometry\",\n+\t\tFT_BYTES, BASE_NONE, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n+\t\t{ &hf_mysql_exec_field_json_length,\n+\t\t{ \"Length (JSON)\", \"mysql.exec.field.json.length\",\n+\t\tFT_UINT24, BASE_DEC, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n \t\t{ &hf_mysql_exec_field_string_length,\n \t\t{ \"Length (String)\", \"mysql.exec.field.string.length\",\n \t\tFT_UINT24, BASE_DEC, NULL, 0x0,\n@@ -5843,6 +5928,11 @@ void proto_register_mysql(void)\n \t\tFT_INT32, BASE_DEC, NULL, 0x0,\n \t\tNULL, HFILL }},\n \n+\t\t{ &hf_mysql_exec_field_int24,\n+\t\t{ \"Value (INT24)\", \"mysql.exec.field.int24\",\n+\t\tFT_INT32, BASE_DEC, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n \t\t{ &hf_mysql_exec_field_long,\n \t\t{ \"Value (INT32)\", \"mysql.exec.field.long\",\n \t\tFT_INT32, BASE_DEC, NULL, 0x0,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mysql.c",
+      "old_path": "epan/dissectors/packet-mysql.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "16553ade767b9b003d733108f0d61614f85c9051",
+      "short_id": "16553ade",
+      "created_at": "2024-06-19T11:42:36.000+00:00",
+      "parent_ids": [
+        "e9acac70883c3a678a7f47cc699877931fa34bad"
+      ],
+      "title": "MySQL: Add dissection of more types in binary protocol",
+      "message": "MySQL: Add dissection of more types in binary protocol\n",
+      "author_name": "Daniël van Eeden",
+      "author_email": "git@myname.nl",
+      "authored_date": "2024-06-16T19:45:04.000+02:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2024-06-19T11:42:36.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/16553ade767b9b003d733108f0d61614f85c9051"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1041346444,
+      "head_commit_sha": "16553ade767b9b003d733108f0d61614f85c9051",
+      "base_commit_sha": "e9acac70883c3a678a7f47cc699877931fa34bad",
+      "start_commit_sha": "e9acac70883c3a678a7f47cc699877931fa34bad",
+      "created_at": "2024-06-19T11:42:39.402Z",
+      "merge_request_id": 308678870,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "4152ff18d38433a8e21b2c76757dbd6ace47206b"
+    },
+    {
+      "id": 1040762099,
+      "head_commit_sha": "1519b2e36197c9d0057ae509d3245cc3684b925b",
+      "base_commit_sha": "6597563934c8ac017bea2b646436833f6aee7c49",
+      "start_commit_sha": "0f77268bc8554ec2ac56c2a673b1594c0ab46d44",
+      "created_at": "2024-06-18T22:51:49.203Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "4152ff18d38433a8e21b2c76757dbd6ace47206b"
+    },
+    {
+      "id": 1039814424,
+      "head_commit_sha": "247354463e249686d8aaf89586d238c78757bf30",
+      "base_commit_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+      "start_commit_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+      "created_at": "2024-06-18T09:06:51.886Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "eeb20da88aa88466e85425893c3dabba2867b753"
+    },
+    {
+      "id": 1039775066,
+      "head_commit_sha": "fbd7675dd65772f5303c5805ca36708f18c74868",
+      "base_commit_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+      "start_commit_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+      "created_at": "2024-06-18T08:40:21.583Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "7434c3a0fd4ae590a59220627c297ec9b659067c"
+    },
+    {
+      "id": 1039758163,
+      "head_commit_sha": "b995b6d6061c54aabac869b3b79826af8f3e0874",
+      "base_commit_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+      "start_commit_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+      "created_at": "2024-06-18T08:28:07.412Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "8d18cff80db674c8795d8e3d27eb323abdeed339"
+    },
+    {
+      "id": 1039658782,
+      "head_commit_sha": "0d5daa423bac447a1657aeb7ba684145a10f25b0",
+      "base_commit_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+      "start_commit_sha": "984b2ba803111d39ac336fc7ca43d97da3e44ca5",
+      "created_at": "2024-06-18T07:09:01.109Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "7b7baa1faf3d1b14f1131c7c4e8d33b703d6226e"
+    },
+    {
+      "id": 1038267567,
+      "head_commit_sha": "46b5663bff649b8c1d127c52b54350d9615c569d",
+      "base_commit_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+      "start_commit_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+      "created_at": "2024-06-16T18:04:55.471Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "40385e8d3f1e114bc332b2280f571efc8e137ba1"
+    },
+    {
+      "id": 1038266928,
+      "head_commit_sha": "18dd9d9268a66d1f5201ffdfb1de54852207a5ff",
+      "base_commit_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+      "start_commit_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+      "created_at": "2024-06-16T18:00:32.157Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "1982c6a2fdbd2df397c17dbc4ec20ed9f1e1f14b"
+    },
+    {
+      "id": 1038266881,
+      "head_commit_sha": "529d083e42032e87f71d67cda69606ecaf005529",
+      "base_commit_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+      "start_commit_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+      "created_at": "2024-06-16T18:00:01.909Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "1982c6a2fdbd2df397c17dbc4ec20ed9f1e1f14b"
+    },
+    {
+      "id": 1038266790,
+      "head_commit_sha": "1a4abb161a49342cc7f58f3c1a7799321fbde203",
+      "base_commit_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+      "start_commit_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+      "created_at": "2024-06-16T17:58:44.008Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "621de9b209995c1c072fea5d2687ddac809ee412"
+    },
+    {
+      "id": 1038266707,
+      "head_commit_sha": "aaea24114615c61a89371540b46c03110068ae06",
+      "base_commit_sha": "8c6619efd64f7a18e829803ae8e85d0067f9f68a",
+      "start_commit_sha": "03d88c9f41f50f4cb1e6f6c24a802b9437086520",
+      "created_at": "2024-06-16T17:57:33.608Z",
+      "merge_request_id": 308678870,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "621de9b209995c1c072fea5d2687ddac809ee412"
+    }
+  ]
+}

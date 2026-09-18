@@ -1,0 +1,401 @@
+{
+  "id": 308682615,
+  "iid": 16009,
+  "project_id": 7898047,
+  "title": "MySQL: Add tree item for each field in binary protocol",
+  "description": "In the binary protocol that is used with prepared statements it wasn't clear which fields in the tree belonged to which field/column in the result. This was especially the case with datetime/timestamp results.\n\nCode:\n```python\n#!/bin/python3\nfrom datetime import datetime\nimport mysql.connector\n\nc = mysql.connector.connect(\n    host='127.0.0.1',\n    user='root',\n    database='test',\n    ssl_disabled=True\n)\n\ncur = c.cursor(prepared=True)\n\ncur.execute(\"DROP TABLE IF EXISTS t1\");\ncur.execute(\"\"\"CREATE TABLE t1 (\nid INT PRIMARY KEY,\nt1 timestamp,\nt2 timestamp(6),\nd1 datetime,\nd2 datetime(6),\nj JSON,\nb1 BIT,\nb2 BINARY(25),\ni1 tinyint,\ni2 smallint,\ni3 mediumint,\ni4 int,\ni5 bigint,\ny year,\nd decimal(10,2),\ne ENUM('Y','N'),\ng GEOMETRY)\"\"\")\ncur.execute(\"\"\"INSERT INTO t1 VALUES(\n1,\nNOW(),\nNOW(6),\nNOW(),\nNOW(6),\n'{\"a\": [1,2,3]}',\n1,\n0x000000000101000000000000000000F03F0000000000000040,\n1,\n2,\n3,\n4,\n5,\n2024,\n1.2,\n'Y',\nST_GeomFromText('POINT(1 2)')\n)\"\"\")\n\ncur.execute('TABLE t1');\nfor r in cur:\n    print(r, \"\\n\")\n\nc.commit()\ncur.close()\n\nc.close()\n```\n\nCapture:\n[mysql_ps_datetime_timestamp.pcapng](/uploads/a8434326ded2e62e1b32943252a1f74e/mysql_ps_datetime_timestamp.pcapng)\n\nExample output with this PR:\n\n![image](/uploads/8f97a2354958089e4f2d6cde999132ee/image.png)\n\nExample without this PR:\n\n![image](/uploads/ebd64a8820c75e4c9e63e5914cf48870/image.png)\n\nQuestions for reviewers:\n- This sets the `end` in the call to `proto_tree_add_subtree()` to `-1`, which might not be ok.\n- Another option would be to have datetime/timestamp use a single item instead of multiple.\n- For strings etc. the length is put into an item in the tree. However this is kinda duplicating what's on the status line (screenshot below shows `16` twice). This is less confusing than the issue with datetime/timestamp, but also causing multiple items per column/field.\n\n![image](/uploads/5b6d94e4d9606d176800fc24d79d99cb/image.png)",
+  "state": "merged",
+  "created_at": "2024-06-16T19:59:33.591Z",
+  "updated_at": "2024-06-17T06:42:06.283Z",
+  "merged_by": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merge_user": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merged_at": "2024-06-17T06:42:06.313Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "mysql_binary_field",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5884947,
+    "username": "dveeden",
+    "public_email": "",
+    "name": "Daniël van Eeden",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dveeden"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 38285998,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "f5170aa507c7495c2cc527aaf70a611572db2f08",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-06-16T19:59:39.391Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!16009",
+  "references": {
+    "short": "!16009",
+    "relative": "!16009",
+    "full": "wireshark/wireshark!16009"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/16009",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2024-06-17T06:14:43.621Z",
+  "latest_build_finished_at": "2024-06-17T06:42:04.819Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1334648191,
+    "iid": 66810,
+    "project_id": 7898047,
+    "sha": "f5170aa507c7495c2cc527aaf70a611572db2f08",
+    "ref": "refs/merge-requests/16009/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-06-17T06:14:42.346Z",
+    "updated_at": "2024-06-17T06:42:04.830Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1334648191"
+  },
+  "head_pipeline": {
+    "id": 1334648191,
+    "iid": 66810,
+    "project_id": 7898047,
+    "sha": "f5170aa507c7495c2cc527aaf70a611572db2f08",
+    "ref": "refs/merge-requests/16009/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-06-17T06:14:42.346Z",
+    "updated_at": "2024-06-17T06:42:04.830Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1334648191",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 279822,
+      "username": "alagoutte",
+      "public_email": "",
+      "name": "Alexis La Goutte",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+      "web_url": "https://gitlab.com/alagoutte"
+    },
+    "started_at": "2024-06-17T06:14:43.621Z",
+    "finished_at": "2024-06-17T06:42:04.819Z",
+    "committed_at": null,
+    "duration": 1640,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1334648191",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "2fdbb6ee0a712c2f69d807100c717f3a41b1ac84",
+    "head_sha": "f5170aa507c7495c2cc527aaf70a611572db2f08",
+    "start_sha": "2fdbb6ee0a712c2f69d807100c717f3a41b1ac84"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "ca29aec21ec6640fb21ec6f8d2dfc7006f626dcd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952323710,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-16T20:01:20.387Z",
+          "updated_at": "2024-06-16T20:01:20.394Z",
+          "system": true,
+          "noteable_id": 308682615,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16009,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6f8134c41dd37eff2b5b70c56fbb332ebfe466a0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952327138,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2024-06-16T20:06:06.797Z",
+          "updated_at": "2024-06-16T20:06:06.803Z",
+          "system": true,
+          "noteable_id": 308682615,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16009,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4918eea7976600b99fd99e95c8f92dd2c0a51d16",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952500112,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2024-06-17T06:14:33.131Z",
+          "updated_at": "2024-06-17T06:14:33.143Z",
+          "system": true,
+          "noteable_id": 308682615,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16009,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e019e54304a55730cf1c993e529e44e782a776c4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952500275,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>0b127b4e...2fdbb6ee - 5 commits from branch <code>wireshark:master</code></li><li>f5170aa5 - MySQL: Add tree item for each field in binary protocol</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/16009/diffs?diff_id=1038401606&start_sha=0b127b4eb3481e5e19573e9532b1a3a7ffc1e03a)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2024-06-17T06:14:40.467Z",
+          "updated_at": "2024-06-17T06:14:40.471Z",
+          "system": true,
+          "noteable_id": 308682615,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16009,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bebbdaf245ac3a2af4202ae1d7e628243be45c4b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1952500305,
+          "type": null,
+          "body": "enabled an automatic merge when all merge checks for f5170aa507c7495c2cc527aaf70a611572db2f08 pass",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2024-06-17T06:14:43.282Z",
+          "updated_at": "2024-06-17T06:14:43.287Z",
+          "system": true,
+          "noteable_id": 308682615,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16009,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1144,6 +1144,7 @@ static gint ett_connattrs_attr;\n static gint ett_mysql_field;\n static gint ett_binlog_event;\n static gint ett_binlog_event_hb_v2;\n+static gint ett_mysql_binary_field;\n \n /* protocol fields */\n static int hf_mysql_caps_server;\n@@ -3640,6 +3641,9 @@ static int\n mysql_dissect_binary_row_packet(tvbuff_t *tvb, packet_info *pinfo, proto_item *pi, int offset, proto_tree *tree, mysql_conn_data_t *conn_data _U_, const mysql_frame_data_t *my_frame_data)\n {\n \tint fieldpos;\n+\tproto_item* ti;\n+\tproto_tree* bf_tree;\n+\n \tif (my_frame_data->field_metas.count) {\n \n \t\t/* null bitmap */\n@@ -3656,7 +3660,11 @@ mysql_dissect_binary_row_packet(tvbuff_t *tvb, packet_info *pinfo, proto_item *p\n \t\t\tif ((null_buffer[(fieldpos + 2) / 8] & (1 << ((fieldpos + 2) % 8))) == 0) {\n \t\t\t\t// data is not null\n \t\t\t\tif (tvb_reported_length_remaining(tvb, offset) > 0) {\n-\t\t\t\t\tif (!mysql_dissect_binary_row_value(tvb, pinfo, pi, &offset, tree, my_frame_data->field_metas.types[fieldpos], my_frame_data->field_metas.flags[fieldpos], my_frame_data->field_metas.encodings[fieldpos]))\n+\t\t\t\t\tbf_tree = proto_tree_add_subtree(tree, tvb, offset, -1, ett_mysql_binary_field, &ti, \"Binary Field\");\n+\t\t\t\t\tif (!mysql_dissect_binary_row_value(tvb, pinfo, pi, &offset, bf_tree,\n+\t\t\t\t\t                                    my_frame_data->field_metas.types[fieldpos],\n+\t\t\t\t\t                                    my_frame_data->field_metas.flags[fieldpos],\n+\t\t\t\t\t\t\t\t\t\t\t\t\t\tmy_frame_data->field_metas.encodings[fieldpos]))\n \t\t\t\t\t\tbreak;\n \t\t\t\t}\n \t\t\t} else {\n@@ -6034,6 +6042,7 @@ void proto_register_mysql(void)\n \t\t&ett_binlog_event_hb_v2,\n \t\t&ett_mysql_fragment,\n \t\t&ett_mysql_fragments,\n+\t\t&ett_mysql_binary_field,\n \t};\n \n \tstatic ei_register_info ei[] = {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mysql.c",
+      "old_path": "epan/dissectors/packet-mysql.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "f5170aa507c7495c2cc527aaf70a611572db2f08",
+      "short_id": "f5170aa5",
+      "created_at": "2024-06-17T06:14:36.000+00:00",
+      "parent_ids": [
+        "2fdbb6ee0a712c2f69d807100c717f3a41b1ac84"
+      ],
+      "title": "MySQL: Add tree item for each field in binary protocol",
+      "message": "MySQL: Add tree item for each field in binary protocol\n",
+      "author_name": "Daniël van Eeden",
+      "author_email": "git@myname.nl",
+      "authored_date": "2024-06-16T21:53:41.000+02:00",
+      "committer_name": "Alexis La Goutte",
+      "committer_email": "alexis.lagoutte@gmail.com",
+      "committed_date": "2024-06-17T06:14:36.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/f5170aa507c7495c2cc527aaf70a611572db2f08"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1038401606,
+      "head_commit_sha": "f5170aa507c7495c2cc527aaf70a611572db2f08",
+      "base_commit_sha": "2fdbb6ee0a712c2f69d807100c717f3a41b1ac84",
+      "start_commit_sha": "2fdbb6ee0a712c2f69d807100c717f3a41b1ac84",
+      "created_at": "2024-06-17T06:14:39.740Z",
+      "merge_request_id": 308682615,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "3ccbc2ceda215aa1d1b7b78e063aa5d5cd3b3fca"
+    },
+    {
+      "id": 1038279991,
+      "head_commit_sha": "0b127b4eb3481e5e19573e9532b1a3a7ffc1e03a",
+      "base_commit_sha": "0b2b1cc49816e6bd3ebd804f89f3d09b7779b800",
+      "start_commit_sha": "0b2b1cc49816e6bd3ebd804f89f3d09b7779b800",
+      "created_at": "2024-06-16T19:59:34.965Z",
+      "merge_request_id": 308682615,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "3ccbc2ceda215aa1d1b7b78e063aa5d5cd3b3fca"
+    }
+  ]
+}

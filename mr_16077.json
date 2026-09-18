@@ -1,0 +1,278 @@
+{
+  "id": 310157622,
+  "iid": 16077,
+  "project_id": 7898047,
+  "title": "pidl: More cherry-picks from upstream Samba",
+  "description": "More squashed cherry-picks. Ping #15408\n[skip ci]\n\n    commit 1aec742575252d1efcc47a8e9023889bfb0e5709\n    Author: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n    Date:   Thu Oct 31 09:35:19 2019 +1300\n\n        pidl: check the size of pulled arrays of arrays\n\n        We were accidentally checking the memory just past the array instead of\n        checking each member.\n\n        This could have led to the size of some arrays not being checked.\n\n        Found by Michael Hanselmann using Honggfuzz and an fuzzer for Samba's\n        NDR layer.\n\n        BUG: https://bugzilla.samba.org/show_bug.cgi?id=13877\n\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-programmed-with: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Andrew Bartlett <abartlet@samba.org>\n\n    commit 1af1ebe54aefd436b6ed80cb99a30282d5abd495\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Mon Nov 11 15:02:30 2019 +1300\n\n        librpc: Unify packet dumping on ndr_pull() failure\n\n        There were two duplicate implementations of packet dumping just for the s4 RPC server!\n\n        This unifies them and makes them easier to find because they are not triggered\n        from the generated server stub any more.\n\n        The behaviour have unified on setting \"dcesrv:stubs directory\" and\n        being compiled with --enable-developer.\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Samuel Cabrero <scabrero@samba.org>\n\n        Autobuild-User(master): Andrew Bartlett <abartlet@samba.org>\n        Autobuild-Date(master): Wed Nov 20 02:14:56 UTC 2019 on sn-devel-184\n\n    commit 42ac80fb46cfb485e8c4a26d455fa784fdd1daed\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Sat Nov 16 08:54:42 2019 +1300\n\n        ndr: Include the caller location in ndr_{pull,push}_error() messages\n\n        This should aid in debugging NDR parse failures.\n\n        Use the ABI bump to again exclude ndr_table_misc incorrectly\n        added in ABI 0.2.1.\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Andreas Schneider <asn@samba.org>\n\n        Autobuild-User(master): Andreas Schneider <asn@cryptomilk.org>\n        Autobuild-Date(master): Tue Nov 19 14:47:46 UTC 2019 on sn-devel-184\n\n    commit f38077ea5ee0a8d3d18970e3e183c3ee516fa121\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Tue Oct 29 21:19:05 2019 +0000\n\n        pidl: Handle obtaining objects from a fixed-size array\n\n        Previously we would assume the array head was the talloc context\n        however this is not the case if the array is a fixed size inline array\n        within the parent struct.\n\n        In that case the overall object's talloc context is the correct\n        context to reference.\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Pair-programmed-with: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Noel Power <npower@samba.org>\n\n        Autobuild-User(master): Noel Power <npower@samba.org>\n        Autobuild-Date(master): Thu Nov 14 17:36:49 UTC 2019 on sn-devel-184\n\n    commit 1261894ecaebc1a3340c42e818be25caa69f6364\n    Author: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n    Date:   Tue Oct 29 11:58:32 2019 +1300\n\n        pidl/python: allocate objects with ref pointers\n\n        Struct members that are marked as ref pointers need to have an object\n        allocated for them.\n\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-programmed-with: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Noel Power <npower@samba.org>\n\n    commit 78521577eb11d2d601768f3c521549793341a450\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Mon Nov 4 12:15:26 2019 +1300\n\n        pidl: Generate compatability wrappers for ndr_print functions\n\n        This creates wrappers that are compatible with the functions called by\n        ndrdump which have an extra \"int flags\" parameter for NDR_IN and\n        NDR_OUT.  This will make ndrdump of public structures work again.\n\n        BUG: https://bugzilla.samba.org/show_bug.cgi?id=14191\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-progammed-with: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n\n    commit 1bd1ae0593a233465cbd5c381199bd0fc2cb476f\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Mon Nov 4 12:19:29 2019 +1300\n\n        pidl: Generate the trailing ndr_table even if the UUID is not set\n\n        This allows ndrdump to dump many more public structures because most\n        of these are not in files with a UUID as they are not RPC protocols.\n\n        BUG: https://bugzilla.samba.org/show_bug.cgi?id=14191\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-progammed-with: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n\n    commit dddef1b8224a2977c6e8b56af83429b36d6119ad\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Mon Nov 4 12:17:41 2019 +1300\n\n        pidl: Allow the compilation of the ndr_table to be skiped\n\n        libnetapi.idl defines a large number of functions a nopull,nopush and\n        no replacement is provided.\n\n        This will allow the ndr_table to be generated for all other IDL files\n        that may have public structures that could usefully be dumped by\n        ndrdump.\n\n        BUG: https://bugzilla.samba.org/show_bug.cgi?id=14191\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-progammed-with: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>",
+  "state": "merged",
+  "created_at": "2024-06-21T23:56:34.602Z",
+  "updated_at": "2024-06-22T00:02:08.560Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2024-06-22T00:02:05.263Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "pidl_rebase",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0abae4e5c3e951d826e4793ab23bdae2e2d5d56a",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-06-21T23:56:41.891Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!16077",
+  "references": {
+    "short": "!16077",
+    "relative": "!16077",
+    "full": "wireshark/wireshark!16077"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/16077",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "4",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": {
+    "id": 1342943595,
+    "iid": 67063,
+    "project_id": 7898047,
+    "sha": "0abae4e5c3e951d826e4793ab23bdae2e2d5d56a",
+    "ref": "refs/merge-requests/16077/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2024-06-21T23:56:36.989Z",
+    "updated_at": "2024-06-21T23:56:36.989Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1342943595",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1342943595",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "a990934b560adc8ab5ceed2d7ab1f7ef5939eb5c",
+    "head_sha": "0abae4e5c3e951d826e4793ab23bdae2e2d5d56a",
+    "start_sha": "a990934b560adc8ab5ceed2d7ab1f7ef5939eb5c"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b41aa32270ef307491edc356f90ab245b7aa3273",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1962789263,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-06-22T00:02:01.853Z",
+          "updated_at": "2024-06-22T00:02:01.892Z",
+          "system": true,
+          "noteable_id": 310157622,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 16077,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -125,8 +125,6 @@ static NTSTATUS $name\\__op_ndr_pull(struct dcesrv_call_state *dce_call, TALLOC_C\n         /* unravel the NDR for the packet */\n \tstatus = dcerpc_table_$name.calls[opnum].ndr_pull(pull, NDR_IN, *r);\n \tif (!NT_STATUS_IS_OK(status)) {\n-\t\tdcerpc_log_packet(&dcerpc_table_$name, opnum, NDR_IN,\n-\t\t\t\t  &dce_call->pkt.u.request.stub_and_verifier);\n \t\tdce_call->fault_code = DCERPC_FAULT_NDR;\n \t\treturn NT_STATUS_NET_WRITE_FAULT;\n \t}\n@@ -152,8 +150,6 @@ pidl \"\n \t}\n \n \tif (dce_call->fault_code != 0) {\n-\t\tdcerpc_log_packet(&dcerpc_table_$name, opnum, NDR_IN,\n-\t\t\t\t  &dce_call->pkt.u.request.stub_and_verifier);\n \t\treturn NT_STATUS_NET_WRITE_FAULT;\n \t}\n \n@@ -175,8 +171,6 @@ pidl \"\n \t}\n \n \tif (dce_call->fault_code != 0) {\n-\t\tdcerpc_log_packet(&dcerpc_table_$name, opnum, NDR_IN,\n-\t\t\t\t  &dce_call->pkt.u.request.stub_and_verifier);\n \t\treturn NT_STATUS_NET_WRITE_FAULT;\n \t}\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/pidl/lib/Parse/Pidl/Samba4/COM/Stub.pm",
+      "old_path": "tools/pidl/lib/Parse/Pidl/Samba4/COM/Stub.pm",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -1247,10 +1247,14 @@ sub ParseElementPullLevel\n \n \t\tif ($deferred and ContainsDeferred($e, $l)) {\n \t\t\t$self->pidl(\"for ($counter = 0; $counter < ($length); $counter++) {\");\n+\t\t\t$self->defer(\"for ($counter = 0; $counter < ($length); $counter++) {\");\n+\t\t\t$self->defer_indent;\n \t\t\t$self->indent;\n \t\t\t$self->ParseElementPullLevel($e,GetNextLevel($e,$l), $ndr, $var_name, $env, 0, 1);\n \t\t\t$self->deindent;\n+\t\t\t$self->defer_deindent;\n \t\t\t$self->pidl(\"}\");\n+\t\t\t$self->defer(\"}\");\n \t\t}\n \n \t\t$self->ParseMemCtxPullEnd($e, $l, $ndr);\n@@ -1920,7 +1924,7 @@ sub ParseUnionPushPrimitives($$$$)\n \t}\n \tif (! $have_default) {\n \t\t$self->pidl(\"default:\");\n-\t\t$self->pidl(\"\\treturn ndr_push_error($ndr, NDR_ERR_BAD_SWITCH, \\\"Bad switch value \\%u at \\%s\\\", level, __location__);\");\n+\t\t$self->pidl(\"\\treturn ndr_push_error($ndr, NDR_ERR_BAD_SWITCH, \\\"Bad switch value \\%u\\\", level);\");\n \t}\n \t$self->deindent;\n \t$self->pidl(\"}\");\n@@ -1956,7 +1960,7 @@ sub ParseUnionPushDeferred($$$$)\n \t}\n \tif (! $have_default) {\n \t\t$self->pidl(\"default:\");\n-\t\t$self->pidl(\"\\treturn ndr_push_error($ndr, NDR_ERR_BAD_SWITCH, \\\"Bad switch value \\%u at \\%s\\\", level, __location__);\");\n+\t\t$self->pidl(\"\\treturn ndr_push_error($ndr, NDR_ERR_BAD_SWITCH, \\\"Bad switch value \\%u\\\", level);\");\n \t}\n \t$self->deindent;\n \t$self->pidl(\"}\");\n@@ -2768,7 +2772,7 @@ sub StructEntry($$)\n \t$self->pidl(\"\\t\\t.struct_size = sizeof($type_decl),\");\n \t$self->pidl(\"\\t\\t.ndr_push = (ndr_push_flags_fn_t) ndr_push_$d->{NAME},\");\n \t$self->pidl(\"\\t\\t.ndr_pull = (ndr_pull_flags_fn_t) ndr_pull_$d->{NAME},\");\n-\t$self->pidl(\"\\t\\t.ndr_print = (ndr_print_function_t) ndr_print_$d->{NAME},\");\n+\t$self->pidl(\"\\t\\t.ndr_print = (ndr_print_function_t) ndr_print_flags_$d->{NAME},\");\n \t$self->pidl(\"\\t},\");\n \treturn 1;\n }\n@@ -2788,7 +2792,6 @@ sub FunctionTable($$)\n \t}\n \treturn if ($#{$interface->{FUNCTIONS}}+1 == 0 and\n \t\t   $count_public_structs == 0);\n-\treturn unless defined ($interface->{PROPERTIES}->{uuid});\n \n \tforeach my $d (@{$interface->{INHERITED_FUNCTIONS}},@{$interface->{FUNCTIONS}}) {\n \t\t$self->FunctionCallPipes($d);\n@@ -2832,16 +2835,18 @@ sub FunctionTable($$)\n \t\t$interface->{PROPERTIES}->{authservice} = \"\\\"host\\\"\";\n \t}\n \n-\t$self->AuthServiceStruct($interface->{NAME}, \n+\t$self->AuthServiceStruct($interface->{NAME},\n \t\t                     $interface->{PROPERTIES}->{authservice});\n \n \t$self->pidl(\"\\nconst struct ndr_interface_table ndr_table_$interface->{NAME} = {\");\n \t$self->pidl(\"\\t.name\\t\\t= \\\"$interface->{NAME}\\\",\");\n-\t$self->pidl(\"\\t.syntax_id\\t= {\");\n-\t$self->pidl(\"\\t\\t\" . print_uuid($interface->{UUID}) .\",\");\n-\t$self->pidl(\"\\t\\tNDR_$uname\\_VERSION\");\n-\t$self->pidl(\"\\t},\");\n-\t$self->pidl(\"\\t.helpstring\\t= NDR_$uname\\_HELPSTRING,\");\n+\tif (defined $interface->{PROPERTIES}->{uuid}) {\n+\t\t$self->pidl(\"\\t.syntax_id\\t= {\");\n+\t\t$self->pidl(\"\\t\\t\" . print_uuid($interface->{UUID}) .\",\");\n+\t\t$self->pidl(\"\\t\\tNDR_$uname\\_VERSION\");\n+\t\t$self->pidl(\"\\t},\");\n+\t\t$self->pidl(\"\\t.helpstring\\t= NDR_$uname\\_HELPSTRING,\");\n+\t}\n \t$self->pidl(\"\\t.num_calls\\t= $count,\");\n \t$self->pidl(\"\\t.calls\\t\\t= $interface->{NAME}\\_calls,\");\n \t$self->pidl(\"\\t.num_public_structs\\t= $count_public_structs,\");\n@@ -2910,7 +2915,15 @@ sub HeaderInterface($$$)\n \n \t\tif(!defined $interface->{PROPERTIES}->{helpstring}) { $interface->{PROPERTIES}->{helpstring} = \"NULL\"; }\n \t\t$self->pidl_hdr(\"#define NDR_$name\\_HELPSTRING $interface->{PROPERTIES}->{helpstring}\");\n+\t}\n \n+\tmy $count_public_structs = 0;\n+\tforeach my $d (@{$interface->{TYPES}}) {\n+\t        next unless (has_property($d, \"public\"));\n+\t\t$count_public_structs += 1;\n+\t}\n+\tif ($#{$interface->{FUNCTIONS}}+1 > 0 or\n+\t\t   $count_public_structs > 0) {\n \t\t$self->pidl_hdr(\"extern const struct ndr_interface_table ndr_table_$interface->{NAME};\");\n \t}\n \n@@ -3014,6 +3027,18 @@ sub ParseTypePrintFunction($$$)\n \n \t$self->pidl_hdr(\"void \".TypeFunctionName(\"ndr_print\", $e).\"(struct ndr_print *ndr, const char *name, $args);\");\n \n+\tif (has_property($e, \"public\")) {\n+                $self->pidl(\"static void \".TypeFunctionName(\"ndr_print_flags\", $e).\n+                             \"(struct ndr_print *$ndr, const char *name, int unused, $args)\"\n+                             );\n+\t\t$self->pidl(\"{\");\n+\t\t$self->indent;\n+\t\t$self->pidl(TypeFunctionName(\"ndr_print\", $e).\"($ndr, name, $varname);\");\n+\t\t$self->deindent;\n+\t\t$self->pidl(\"}\");\n+\t\t$self->pidl(\"\");\n+\t}\n+\n \treturn if (has_property($e, \"noprint\"));\n \n \t$self->pidl(\"_PUBLIC_ void \".TypeFunctionName(\"ndr_print\", $e).\"(struct ndr_print *$ndr, const char *name, $args)\");\n@@ -3093,7 +3118,16 @@ sub ParseInterface($$$)\n \t\t($needed->{\"ndr_print_$d->{NAME}\"}) && $self->ParseFunctionPrint($d);\n \t}\n \n+        # Allow compilation of generated files where replacement functions\n+        # for structures declared nopull/nopush have not been provided.\n+        #\n+        # This makes sense when only the print functions are used\n+        #\n+        # Otherwise the ndr_table XXX will reference these\n+\n+        $self->pidl(\"#ifndef SKIP_NDR_TABLE_$interface->{NAME}\");\n \t$self->FunctionTable($interface);\n+        $self->pidl(\"#endif /* SKIP_NDR_TABLE_$interface->{NAME} */\");\n \n \t$self->pidl_hdr(\"#endif /* _HEADER_NDR_$interface->{NAME} */\");\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/pidl/lib/Parse/Pidl/Samba4/NDR/Parser.pm",
+      "old_path": "tools/pidl/lib/Parse/Pidl/Samba4/NDR/Parser.pm",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -120,9 +120,6 @@ static NTSTATUS $name\\__op_ndr_pull(struct dcesrv_call_state *dce_call, TALLOC_C\n         /* unravel the NDR for the packet */\n \tndr_err = ndr_table_$name.calls[opnum].ndr_pull(pull, NDR_IN, *r);\n \tif (!NDR_ERR_CODE_IS_SUCCESS(ndr_err)) {\n-\t\tdcerpc_log_packet(dce_call->conn->packet_log_dir, \n-\t\t\t\t  &ndr_table_$name, opnum, NDR_IN,\n-\t\t\t\t  &dce_call->pkt.u.request.stub_and_verifier);\n \t\tdce_call->fault_code = DCERPC_FAULT_NDR;\n \t\treturn NT_STATUS_NET_WRITE_FAULT;\n \t}\n@@ -145,9 +142,6 @@ pidl \"\n \t}\n \n \tif (dce_call->fault_code != 0) {\n-\t\tdcerpc_log_packet(dce_call->conn->packet_log_dir, \n-\t\t          &ndr_table_$name, opnum, NDR_IN,\n-\t\t\t\t  &dce_call->pkt.u.request.stub_and_verifier);\n \t\treturn NT_STATUS_NET_WRITE_FAULT;\n \t}\n \n@@ -169,9 +163,6 @@ pidl \"\n \t}\n \n \tif (dce_call->fault_code != 0) {\n-\t\tdcerpc_log_packet(dce_call->conn->packet_log_dir,\n-\t\t          &ndr_table_$name, opnum, NDR_IN,\n-\t\t\t\t  &dce_call->pkt.u.request.stub_and_verifier);\n \t\treturn NT_STATUS_NET_WRITE_FAULT;\n \t}\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/pidl/lib/Parse/Pidl/Samba4/NDR/Server.pm",
+      "old_path": "tools/pidl/lib/Parse/Pidl/Samba4/NDR/Server.pm",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    },
+    {
+      "diff": "@@ -499,7 +499,62 @@ sub PythonFunctionStruct($$$$)\n \t$self->pidl(\"static PyObject *py_$name\\_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)\");\n \t$self->pidl(\"{\");\n \t$self->indent;\n-\t$self->pidl(\"return pytalloc_new($cname, type);\");\n+\n+\t# This creates a new, zeroed C structure and python object.\n+\t# Thse may not be valid or sensible values, but this is as\n+\t# well as we can do.\n+\n+\t$self->pidl(\"PyObject *self = pytalloc_new($cname, type);\");\n+\n+\t# If there are any children that are ref pointers, we need to\n+\t# allocate something for them to point to just as the pull\n+\t# routine will when parsing the stucture from NDR.\n+\t#\n+\t# We then make those pointers point to zeroed memory\n+\t#\n+\t# A ref pointer is a pointer in the C structure but a scalar\n+\t# on the wire. It is for a remote function like:\n+\t#\n+\t# int foo(int *i)\n+\t#\n+\t# This may be called with the pointer by reference eg foo(&i)\n+\t#\n+\t# That is why this only goes as far as the next level; deeply\n+\t# nested pointer chains will end in a NULL.\n+\n+\tmy @ref_elements;\n+\tforeach my $e (@{$fn->{ELEMENTS}}) {\n+\t\tif (has_property($e, \"ref\") && ! has_property($e, \"charset\")) {\n+\t\t\tif (!has_property($e, 'in') && !has_property($e, 'out')) {\n+\t\t\t\tdie \"ref pointer that is not in or out\";\n+\t\t\t}\n+\t\t\tpush @ref_elements, $e;\n+\t\t}\n+\t}\n+\tif (@ref_elements) {\n+\t\t$self->pidl(\"$cname *_self = ($cname *)pytalloc_get_ptr(self);\");\n+\t\t$self->pidl(\"TALLOC_CTX *mem_ctx = pytalloc_get_mem_ctx(self);\");\n+\t\tforeach my $e (@ref_elements) {\n+\t\t\tmy $ename = $e->{NAME};\n+\t\t\tmy $t = mapTypeName($e->{TYPE});\n+\t\t\tmy $p = $e->{ORIGINAL}->{POINTERS} // 1;\n+\t\t\tif ($p > 1) {\n+\t\t\t\t$self->pidl(\"/* a pointer to a NULL pointer */\");\n+\t\t\t\t$t .= ' ' . '*' x ($p - 1);\n+\t\t\t}\n+\n+\t\t\t# We checked in the loop above that each ref\n+\t\t\t# pointer is in or out (or both)\n+\t\t\tif (has_property($e, 'in')) {\n+\t\t\t\t$self->pidl(\"_self->in.$ename = talloc_zero(mem_ctx, $t);\");\n+\t\t\t}\n+\n+\t\t\tif (has_property($e, 'out')) {\n+\t\t\t\t$self->pidl(\"_self->out.$ename = talloc_zero(mem_ctx, $t);\");\n+\t\t\t}\n+\t\t}\n+\t}\n+\t$self->pidl(\"return self;\");\n \t$self->deindent;\n \t$self->pidl(\"}\");\n \t$self->pidl(\"\");\n@@ -2234,7 +2289,11 @@ sub ConvertObjectToPythonLevel($$$$$$$)\n \t\t\t$self->indent;\n \t\t\tmy $member_var = \"py_$e->{NAME}_$l->{LEVEL_INDEX}\";\n \t\t\t$self->pidl(\"PyObject *$member_var;\");\n-\t\t\t$self->ConvertObjectToPythonLevel($var_name, $env, $e, $nl, $var_name.\"[$counter]\", $member_var, $fail, $recurse);\n+\t\t\tif (ArrayDynamicallyAllocated($e, $l)) {\n+\t\t\t\t$self->ConvertObjectToPythonLevel($var_name, $env, $e, $nl, $var_name.\"[$counter]\", $member_var, $fail, $recurse);\n+\t\t\t} else {\n+\t\t\t\t$self->ConvertObjectToPythonLevel($mem_ctx, $env, $e, $nl, $var_name.\"[$counter]\", $member_var, $fail, $recurse);\n+\t\t\t}\n \t\t\t$self->pidl(\"PyList_SetItem($py_var, $counter, $member_var);\");\n \t\t\t$self->deindent;\n \t\t\t$self->pidl(\"}\");\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/pidl/lib/Parse/Pidl/Samba4/Python.pm",
+      "old_path": "tools/pidl/lib/Parse/Pidl/Samba4/Python.pm",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "0abae4e5c3e951d826e4793ab23bdae2e2d5d56a",
+      "short_id": "0abae4e5",
+      "created_at": "2024-06-21T19:50:51.000-04:00",
+      "parent_ids": [
+        "a990934b560adc8ab5ceed2d7ab1f7ef5939eb5c"
+      ],
+      "title": "pidl: More cherry-picks from upstream Samba",
+      "message": "pidl: More cherry-picks from upstream Samba\n\nMore squashed cherry-picks. Ping #15408\n[skip ci]\n\n    commit 1aec742575252d1efcc47a8e9023889bfb0e5709\n    Author: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n    Date:   Thu Oct 31 09:35:19 2019 +1300\n\n        pidl: check the size of pulled arrays of arrays\n\n        We were accidentally checking the memory just past the array instead of\n        checking each member.\n\n        This could have led to the size of some arrays not being checked.\n\n        Found by Michael Hanselmann using Honggfuzz and an fuzzer for Samba's\n        NDR layer.\n\n        BUG: https://bugzilla.samba.org/show_bug.cgi?id=13877\n\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-programmed-with: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Andrew Bartlett <abartlet@samba.org>\n\n    commit 1af1ebe54aefd436b6ed80cb99a30282d5abd495\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Mon Nov 11 15:02:30 2019 +1300\n\n        librpc: Unify packet dumping on ndr_pull() failure\n\n        There were two duplicate implementations of packet dumping just for the s4 RPC server!\n\n        This unifies them and makes them easier to find because they are not triggered\n        from the generated server stub any more.\n\n        The behaviour have unified on setting \"dcesrv:stubs directory\" and\n        being compiled with --enable-developer.\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Samuel Cabrero <scabrero@samba.org>\n\n        Autobuild-User(master): Andrew Bartlett <abartlet@samba.org>\n        Autobuild-Date(master): Wed Nov 20 02:14:56 UTC 2019 on sn-devel-184\n\n    commit 42ac80fb46cfb485e8c4a26d455fa784fdd1daed\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Sat Nov 16 08:54:42 2019 +1300\n\n        ndr: Include the caller location in ndr_{pull,push}_error() messages\n\n        This should aid in debugging NDR parse failures.\n\n        Use the ABI bump to again exclude ndr_table_misc incorrectly\n        added in ABI 0.2.1.\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Andreas Schneider <asn@samba.org>\n\n        Autobuild-User(master): Andreas Schneider <asn@cryptomilk.org>\n        Autobuild-Date(master): Tue Nov 19 14:47:46 UTC 2019 on sn-devel-184\n\n    commit f38077ea5ee0a8d3d18970e3e183c3ee516fa121\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Tue Oct 29 21:19:05 2019 +0000\n\n        pidl: Handle obtaining objects from a fixed-size array\n\n        Previously we would assume the array head was the talloc context\n        however this is not the case if the array is a fixed size inline array\n        within the parent struct.\n\n        In that case the overall object's talloc context is the correct\n        context to reference.\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Pair-programmed-with: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Noel Power <npower@samba.org>\n\n        Autobuild-User(master): Noel Power <npower@samba.org>\n        Autobuild-Date(master): Thu Nov 14 17:36:49 UTC 2019 on sn-devel-184\n\n    commit 1261894ecaebc1a3340c42e818be25caa69f6364\n    Author: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n    Date:   Tue Oct 29 11:58:32 2019 +1300\n\n        pidl/python: allocate objects with ref pointers\n\n        Struct members that are marked as ref pointers need to have an object\n        allocated for them.\n\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-programmed-with: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Reviewed-by: Noel Power <npower@samba.org>\n\n    commit 78521577eb11d2d601768f3c521549793341a450\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Mon Nov 4 12:15:26 2019 +1300\n\n        pidl: Generate compatability wrappers for ndr_print functions\n\n        This creates wrappers that are compatible with the functions called by\n        ndrdump which have an extra \"int flags\" parameter for NDR_IN and\n        NDR_OUT.  This will make ndrdump of public structures work again.\n\n        BUG: https://bugzilla.samba.org/show_bug.cgi?id=14191\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-progammed-with: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n\n    commit 1bd1ae0593a233465cbd5c381199bd0fc2cb476f\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Mon Nov 4 12:19:29 2019 +1300\n\n        pidl: Generate the trailing ndr_table even if the UUID is not set\n\n        This allows ndrdump to dump many more public structures because most\n        of these are not in files with a UUID as they are not RPC protocols.\n\n        BUG: https://bugzilla.samba.org/show_bug.cgi?id=14191\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-progammed-with: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n\n    commit dddef1b8224a2977c6e8b56af83429b36d6119ad\n    Author: Andrew Bartlett <abartlet@samba.org>\n    Date:   Mon Nov 4 12:17:41 2019 +1300\n\n        pidl: Allow the compilation of the ndr_table to be skiped\n\n        libnetapi.idl defines a large number of functions a nopull,nopush and\n        no replacement is provided.\n\n        This will allow the ndr_table to be generated for all other IDL files\n        that may have public structures that could usefully be dumped by\n        ndrdump.\n\n        BUG: https://bugzilla.samba.org/show_bug.cgi?id=14191\n\n        Signed-off-by: Andrew Bartlett <abartlet@samba.org>\n        Signed-off-by: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n        Pair-progammed-with: Douglas Bagnall <douglas.bagnall@catalyst.net.nz>\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-06-21T19:50:51.000-04:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2024-06-21T19:50:51.000-04:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0abae4e5c3e951d826e4793ab23bdae2e2d5d56a"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 1044303615,
+      "head_commit_sha": "0abae4e5c3e951d826e4793ab23bdae2e2d5d56a",
+      "base_commit_sha": "a990934b560adc8ab5ceed2d7ab1f7ef5939eb5c",
+      "start_commit_sha": "a990934b560adc8ab5ceed2d7ab1f7ef5939eb5c",
+      "created_at": "2024-06-21T23:56:36.227Z",
+      "merge_request_id": 310157622,
+      "state": "collected",
+      "real_size": "4",
+      "patch_id_sha": "184e025f92e6bb5a1f0aa709e3291af68a4af67e"
+    }
+  ]
+}
