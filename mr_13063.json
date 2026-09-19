@@ -1,0 +1,331 @@
+{
+  "id": 261684467,
+  "iid": 13063,
+  "project_id": 7898047,
+  "title": "Thrift: Update field_id in all sub-dissector functions.",
+  "description": "When creating sub-dissectors, the `dissect_thrift_t_<type>()` functions did not update the `thrift_opt->previous_field_id` value.\n\nWhile the sub-dissectors could do it themselves, it was tedious and error-prone. Additionally, if it was not done, the generic dissector could erroneously detect a field order mismatch, generating a warning in the tree.\n\n```c\n// None of the previous calls modified thrift_opt->previous_field_id, it’s still 0\noffset = dissect_thrift_t_string(tvb, pinfo, omega_tree, offset, thrift_opt, TRUE, 6, hf_omega_create_user_user_id);\n// 6 is greater than 0, no problem. But no update either, so thrift_opt->previous_field_id = 0\noffset = dissect_thrift_t_struct(tvb, pinfo, omega_tree, offset, thrift_opt, TRUE, 5, hf_omega_create_user_user_fields, ett_omega_user_db_record, omega_user_db_record);\n// Issue 1: 5 is greater than 0, no problem detected although we should have seen that 5 is less than 6.\n// Then, the structure omega_user_db_record contains 17 fields numbered 0 to 16, so now thrift_opt->previous_field_id = 16\noffset = dissect_thrift_t_bool(tvb, pinfo, omega_tree, offset, thrift_opt, TRUE, 7, hf_omega_create_user_enable_progress);\n// Issue 2: This call \"saw\" that 7 is less than 16, raising the issue thrift.unordered_field_id\n```\n\nThe purpose of this patch is to do the update automatically instead of relying on the sub-dissector to update `previous_field_id` after each call.\n\nThere are 2 additional trivial fixes in the patch:\n* `TBP_THRIFT_FID_LEN` was used instead of `TBP_THRIFT_I16_LEN` (both with the same value 2 so no impact on the behavior).\n* The message itself was a copy of the one from thrift.undefined_field_id.",
+  "state": "merged",
+  "created_at": "2023-11-05T11:37:48.154Z",
+  "updated_at": "2023-11-05T13:03:24.280Z",
+  "merged_by": {
+    "id": 6722527,
+    "username": "pquantin",
+    "public_email": "",
+    "name": "Pascal Quantin",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+    "web_url": "https://gitlab.com/pquantin"
+  },
+  "merge_user": {
+    "id": 6722527,
+    "username": "pquantin",
+    "public_email": "",
+    "name": "Pascal Quantin",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+    "web_url": "https://gitlab.com/pquantin"
+  },
+  "merged_at": "2023-11-05T13:03:24.302Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "thrift",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7724340,
+    "username": "EnigmaTriton",
+    "public_email": "",
+    "name": "Triton Circonflexe",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+    "web_url": "https://gitlab.com/EnigmaTriton"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 27561501,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "6646a33a5406a2b88f84b6db8a09b7c4b573735b",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": false,
+  "force_remove_source_branch": false,
+  "prepared_at": "2023-11-05T11:37:54.282Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!13063",
+  "references": {
+    "short": "!13063",
+    "relative": "!13063",
+    "full": "wireshark/wireshark!13063"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/13063",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-11-05T12:51:38.806Z",
+  "latest_build_finished_at": "2023-11-05T13:03:22.797Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1061520089,
+    "iid": 55439,
+    "project_id": 7898047,
+    "sha": "6646a33a5406a2b88f84b6db8a09b7c4b573735b",
+    "ref": "refs/merge-requests/13063/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-11-05T12:51:37.407Z",
+    "updated_at": "2023-11-05T13:03:22.806Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1061520089"
+  },
+  "head_pipeline": {
+    "id": 1061520089,
+    "iid": 55439,
+    "project_id": 7898047,
+    "sha": "6646a33a5406a2b88f84b6db8a09b7c4b573735b",
+    "ref": "refs/merge-requests/13063/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-11-05T12:51:37.407Z",
+    "updated_at": "2023-11-05T13:03:22.806Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1061520089",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6722527,
+      "username": "pquantin",
+      "public_email": "",
+      "name": "Pascal Quantin",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+      "web_url": "https://gitlab.com/pquantin"
+    },
+    "started_at": "2023-11-05T12:51:38.806Z",
+    "finished_at": "2023-11-05T13:03:22.797Z",
+    "committed_at": null,
+    "duration": 703,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1061520089",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "ac72413cdd216a862dd2d0b7a1fd553c7f65f8bf",
+    "head_sha": "6646a33a5406a2b88f84b6db8a09b7c4b573735b",
+    "start_sha": "ac72413cdd216a862dd2d0b7a1fd553c7f65f8bf"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "4ae07d0e06d00ae74093f07806ef113dd3b72a46",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1634679225,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>bf6d07ee...ac72413c - 2 commits from branch <code>wireshark:master</code></li><li>6646a33a - Thrift: Update field_id in all sub-dissector functions.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/13063/diffs?diff_id=835555173&start_sha=bf6d07eec9eb7cfef20470833eb5e92015148704)",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-11-05T12:51:35.662Z",
+          "updated_at": "2023-11-05T12:51:35.667Z",
+          "system": true,
+          "noteable_id": 261684467,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13063,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9c9c059fecc2efc15aae2921b64d52ad8e8133c7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1634679251,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-11-05T12:51:48.661Z",
+          "updated_at": "2023-11-05T12:51:48.668Z",
+          "system": true,
+          "noteable_id": 261684467,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13063,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2aff6bbb862e0fd45cef71c69fcd3e29da286c27",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1634679275,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 6646a33a5406a2b88f84b6db8a09b7c4b573735b succeeds",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-11-05T12:51:59.262Z",
+          "updated_at": "2023-11-05T12:51:59.269Z",
+          "system": true,
+          "noteable_id": 261684467,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13063,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -323,7 +323,6 @@ static int dissect_thrift_binary_type(tvbuff_t *tvb, packet_info *pinfo, proto_t\n static int dissect_thrift_compact_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int *offset, thrift_option_data_t *thrift_opt, proto_tree *header_tree, int type, proto_item *type_pi);\n static int dissect_thrift_t_struct_expert(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *seq, expert_field* ei);\n \n-\n /*=====BEGIN GENERIC HELPERS=====*/\n /* Check that the 4-byte value match a Thrift Strict TBinaryProtocol version\n  * - 0x8001 The version itself\n@@ -965,6 +964,9 @@ dissect_thrift_t_bool(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int o\n     proto_tree_add_item(tree, hf_id, tvb, offset, TBP_THRIFT_BOOL_LEN, ENC_BIG_ENDIAN);\n     offset += TBP_THRIFT_BOOL_LEN;\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n \n@@ -987,6 +989,9 @@ dissect_thrift_t_i8(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int off\n     proto_tree_add_item(tree, hf_id, tvb, offset, TBP_THRIFT_I8_LEN, ENC_BIG_ENDIAN);\n     offset += TBP_THRIFT_I8_LEN;\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n \n@@ -1014,9 +1019,12 @@ dissect_thrift_t_i16(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int of\n         return THRIFT_REQUEST_REASSEMBLY;\n     } else {\n         proto_tree_add_item(tree, hf_id, tvb, offset, TBP_THRIFT_I16_LEN, ENC_BIG_ENDIAN);\n-        offset += TBP_THRIFT_FID_LEN;\n+        offset += TBP_THRIFT_I16_LEN;\n     }\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n \n@@ -1047,6 +1055,9 @@ dissect_thrift_t_i32(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int of\n         offset += TBP_THRIFT_I32_LEN;\n     }\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n \n@@ -1077,6 +1088,9 @@ dissect_thrift_t_i64(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int of\n         offset += TBP_THRIFT_I64_LEN;\n     }\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n \n@@ -1102,6 +1116,9 @@ dissect_thrift_t_double(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n     }\n     offset += TBP_THRIFT_DOUBLE_LEN;\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n \n@@ -1125,6 +1142,9 @@ dissect_thrift_t_uuid(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int o\n     proto_tree_add_item(tree, hf_id, tvb, offset, TBP_THRIFT_UUID_LEN, ENC_BIG_ENDIAN);\n     offset += TBP_THRIFT_UUID_LEN;\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n \n@@ -1209,6 +1229,9 @@ dissect_thrift_t_string_enc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n     proto_tree_add_item(tree, hf_id, tvb, offset, str_len, encoding);\n     offset = offset + str_len;\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n \n@@ -1473,32 +1496,45 @@ dissect_thrift_c_list_set(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, i\n int\n dissect_thrift_t_list(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *elt)\n {\n+    int result;\n     if (thrift_opt->tprotocol & PROTO_THRIFT_COMPACT) {\n-        return dissect_thrift_c_list_set(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, elt, TRUE);\n+        result = dissect_thrift_c_list_set(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, elt, TRUE);\n     } else {\n-        return dissect_thrift_b_linear(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, NULL, elt, DE_THRIFT_T_LIST);\n+        result = dissect_thrift_b_linear(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, NULL, elt, DE_THRIFT_T_LIST);\n     }\n+\n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n+    return result;\n }\n \n int\n dissect_thrift_t_set(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *elt)\n {\n+    int result;\n     if (thrift_opt->tprotocol & PROTO_THRIFT_COMPACT) {\n-        return dissect_thrift_c_list_set(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, elt, FALSE);\n+        result = dissect_thrift_c_list_set(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, elt, FALSE);\n     } else {\n-        return dissect_thrift_b_linear(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, NULL, elt, DE_THRIFT_T_SET);\n+        result = dissect_thrift_b_linear(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, NULL, elt, DE_THRIFT_T_SET);\n+    }\n+\n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n     }\n+    return result;\n }\n \n int\n dissect_thrift_t_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *key, const thrift_member_t *value)\n {\n+    int result;\n     /* Get the current state of dissection. */\n     DISSECTOR_ASSERT(thrift_opt);\n     DISSECTOR_ASSERT(thrift_opt->canary == THRIFT_OPTION_DATA_CANARY);\n \n     if ((thrift_opt->tprotocol & PROTO_THRIFT_COMPACT) == 0) {\n-        return dissect_thrift_b_linear(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, key, value, DE_THRIFT_T_MAP);\n+        result = dissect_thrift_b_linear(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, key, value, DE_THRIFT_T_MAP);\n     } else {\n         proto_tree *sub_tree = NULL;\n         proto_item *container_pi;\n@@ -1591,8 +1627,13 @@ dissect_thrift_t_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int of\n         if (container_pi && offset > 0) {\n             proto_item_set_end(container_pi, tvb, offset);\n         }\n-        return offset;\n+        result = offset;\n     }\n+\n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n+    return result;\n }\n \n int\n@@ -1719,6 +1760,9 @@ dissect_thrift_t_struct_expert(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr\n         proto_item_set_end(type_pi, tvb, offset);\n     }\n \n+    if (is_field) {\n+        thrift_opt->previous_field_id = field_id;\n+    }\n     return offset;\n }\n /*=====END SUB-DISSECTION=====*/\n@@ -3510,7 +3554,7 @@ proto_register_thrift(void)\n         { &ei_thrift_varint_too_large, { \"thrift.varint_too_large\", PI_PROTOCOL, PI_ERROR, \"Thrift varint value too large for target integer type.\", EXPFILL } },\n         { &ei_thrift_undefined_field_id, { \"thrift.undefined_field_id\", PI_PROTOCOL, PI_NOTE, \"Field id not defined by sub-dissector, using generic Thrift dissector.\", EXPFILL } },\n         { &ei_thrift_negative_field_id, { \"thrift.negative_field_id\", PI_PROTOCOL, PI_NOTE, \"Encountered unexpected negative field id, possibly an old application.\", EXPFILL } },\n-        { &ei_thrift_unordered_field_id, { \"thrift.unordered_field_id\", PI_PROTOCOL, PI_WARN, \"Field id not defined by sub-dissector, using generic Thrift dissector.\", EXPFILL } },\n+        { &ei_thrift_unordered_field_id, { \"thrift.unordered_field_id\", PI_PROTOCOL, PI_WARN, \"Field id not in strictly increasing order.\", EXPFILL } },\n         { &ei_thrift_application_exception, { \"thrift.application_exception\", PI_PROTOCOL, PI_NOTE, \"The application recognized the method but rejected the content.\", EXPFILL } },\n         { &ei_thrift_protocol_exception, { \"thrift.protocol_exception\", PI_PROTOCOL, PI_WARN, \"The application was not able to handle the request.\", EXPFILL } },\n         { &ei_thrift_too_many_subtypes, { \"thrift.too_many_subtypes\", PI_PROTOCOL, PI_ERROR, \"Too many level of sub-types nesting.\", EXPFILL } },\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-thrift.c",
+      "old_path": "epan/dissectors/packet-thrift.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "6646a33a5406a2b88f84b6db8a09b7c4b573735b",
+      "short_id": "6646a33a",
+      "created_at": "2023-11-05T12:51:31.000+00:00",
+      "parent_ids": [
+        "ac72413cdd216a862dd2d0b7a1fd553c7f65f8bf"
+      ],
+      "title": "Thrift: Update field_id in all sub-dissector functions.",
+      "message": "Thrift: Update field_id in all sub-dissector functions.\n",
+      "author_name": "Triton Circonflexe",
+      "author_email": "triton@kumal.info",
+      "authored_date": "2023-11-05T11:55:12.000+01:00",
+      "committer_name": "Pascal Quantin",
+      "committer_email": "pascal@wireshark.org",
+      "committed_date": "2023-11-05T12:51:31.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/6646a33a5406a2b88f84b6db8a09b7c4b573735b"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 835555173,
+      "head_commit_sha": "6646a33a5406a2b88f84b6db8a09b7c4b573735b",
+      "base_commit_sha": "ac72413cdd216a862dd2d0b7a1fd553c7f65f8bf",
+      "start_commit_sha": "ac72413cdd216a862dd2d0b7a1fd553c7f65f8bf",
+      "created_at": "2023-11-05T12:51:34.856Z",
+      "merge_request_id": 261684467,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "73c74fb04d141ac9ccc8d0aaab72dd7e6321b480"
+    },
+    {
+      "id": 835545144,
+      "head_commit_sha": "bf6d07eec9eb7cfef20470833eb5e92015148704",
+      "base_commit_sha": "426e26f11ae6a2896109f430877d495d0bd8455e",
+      "start_commit_sha": "426e26f11ae6a2896109f430877d495d0bd8455e",
+      "created_at": "2023-11-05T11:37:50.032Z",
+      "merge_request_id": 261684467,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "73c74fb04d141ac9ccc8d0aaab72dd7e6321b480"
+    }
+  ]
+}

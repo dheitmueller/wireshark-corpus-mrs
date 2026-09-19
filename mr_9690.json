@@ -1,0 +1,595 @@
+{
+  "id": 203502076,
+  "iid": 9690,
+  "project_id": 7898047,
+  "title": "wiretap, pcapng: Distinguish WTAP_ENCAP_UNKNOWN and _NONE",
+  "description": "WTAP_ENCAP_UNKNOWN is used for two different cases:\n1. Encapsulation type values that are unsupported by libwiretap or\nbogus values (and thus \"unknown\" to libwiretap).\n\n2. An initial state where the encapsulation type is \"not yet\" known\nfor a file type like pcapng without a single encapsulation type in the\nheader, before any packets or interfaces that set the encapsulation type\nhave been read. (If the file has no packets, this may be the value after\nthe file is entirely read in.) This can be the value when an output file\nis written out simultaneously with reading an input file, rather than\nreading the entire input file first, and, e.g., there is a custom block\nbefore any IDBs.\n\nThe first case can never be handled when writing out a file, but the\nsecond case can possibly be handled, so long as (for pcapng) IDBs\nare available to write when they become necessary, or (for file\ntypes like pcap with a single link-layer type in the header) the\nwriter waits until a link-layer type is seen to create the output\nheader. (It is possible, of course, that writing would fail in the\nmiddle if an unsupported encapsulation type appears, or if the\nencapsulation becomes per-packet for file types that don't support that,\nbut that is an unavoidable risk when writing without reading the entire\ninput file(s).)\n\nIntroduce WTAP_ENCAP_NONE for the second case, and use it for pcapng,\nwhere we guarantee that any necessary IDBs will be passed along.\nContinue to use WTAP_ENCAP_UNKNOWN for the first case.\n\nAllow pcapng files to open a file for writing with WTAP_ENCAP_NONE.\n\nThere are some other file types that support per-packet link-types,\nand could also use WTAP_ENCAP_NONE, but they require more work to\ngenerate IDBs. (Note that all of them currently are impossible to\nwrite to pcapng when they have multiple encapsulations, even if\nthe encapsulations are all supported by pcapng, because they don't\nproperly generate IDBs.)\n\nRemove the workaround in ef43fd48b4f981392a0c61b5e9a804e8f9c85eb4\nfor tshark writing to pcapng when the source file is WTAP_ENCAP_UNKNOWN,\nsince now such files will be WTAP_ENCAP_NONE and work properly (and\nalso work in editcap, mergcap, etc.)\n\nAlong with 8cddc32d35e36d9962495c3d4358842ea88aac41, fix #18449.",
+  "state": "merged",
+  "created_at": "2023-02-04T19:14:36.041Z",
+  "updated_at": "2023-02-07T15:02:20.403Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2023-02-07T15:02:18.308Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "pcapng_encap_none",
+  "user_notes_count": 5,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "ca230a59e05b1a2b89faeaec33e6396c9344c81f",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-02-04T19:14:42.071Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!9690",
+  "references": {
+    "short": "!9690",
+    "relative": "!9690",
+    "full": "wireshark/wireshark!9690"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/9690",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2023-02-07T13:33:25.644Z",
+  "latest_build_finished_at": "2023-02-07T14:25:27.837Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 769900054,
+    "iid": 42369,
+    "project_id": 7898047,
+    "sha": "ca230a59e05b1a2b89faeaec33e6396c9344c81f",
+    "ref": "refs/merge-requests/9690/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-02-07T13:33:24.902Z",
+    "updated_at": "2023-02-07T14:25:27.847Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/769900054"
+  },
+  "head_pipeline": {
+    "id": 769900054,
+    "iid": 42369,
+    "project_id": 7898047,
+    "sha": "ca230a59e05b1a2b89faeaec33e6396c9344c81f",
+    "ref": "refs/merge-requests/9690/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-02-07T13:33:24.902Z",
+    "updated_at": "2023-02-07T14:25:27.847Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/769900054",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2023-02-07T13:33:25.644Z",
+    "finished_at": "2023-02-07T14:25:27.837Z",
+    "committed_at": null,
+    "duration": 3121,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/769900054",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "e8db896c624ca142c13eaac3ba96afa91b67d9db",
+    "head_sha": "ca230a59e05b1a2b89faeaec33e6396c9344c81f",
+    "start_sha": "e8db896c624ca142c13eaac3ba96afa91b67d9db"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "32976193414753d548085d907725239ce83ecc2a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1266054738,
+          "type": null,
+          "body": "@LarsVoelker, you wrote the workaround for the issue of using tshark with pcapng files that had a custom block before any interfaces. Can you test to see if this works for you?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-02-05T13:33:43.206Z",
+          "updated_at": "2023-02-05T13:33:43.206Z",
+          "system": false,
+          "noteable_id": 203502076,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9690,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8e25cc23529cf9cfedad1714c2fa5e77e7d1d527",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1266056889,
+          "type": null,
+          "body": "There are a few file types that create IDBs (autosar_dlt, blf, erf, iptrace) that could probably use `WTAP_ENCAP_NONE` the same as pcapng to support reading and writing with the command line tools that don't read in the entire file first. (Maybe not for autosar_dlt, since it looks like in reality it only supports a single encapsulation type?)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-02-05T13:43:28.882Z",
+          "updated_at": "2023-02-05T14:52:52.537Z",
+          "system": false,
+          "noteable_id": 203502076,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9690,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4f22bc443900a5ff5ce097b85728271a80b51a04",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1266146930,
+          "type": null,
+          "body": "I will try to take a look on Monday.",
+          "author": {
+            "id": 6878858,
+            "username": "LarsVoelker",
+            "public_email": "",
+            "name": "Dr. Lars Völker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/cccf2084a0438673e9e09f07ed0a5035f6e8815d3d5d888db0023a757c8dce8c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/LarsVoelker"
+          },
+          "created_at": "2023-02-05T23:03:43.076Z",
+          "updated_at": "2023-02-05T23:03:43.076Z",
+          "system": false,
+          "noteable_id": 203502076,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9690,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e4e138db508e10b71ba59d7578a53fff4e131a56",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1266455179,
+          "type": null,
+          "body": "I compiled it and tried the old file in tshark and I did not get the error. :smile:",
+          "author": {
+            "id": 6878858,
+            "username": "LarsVoelker",
+            "public_email": "",
+            "name": "Dr. Lars Völker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/cccf2084a0438673e9e09f07ed0a5035f6e8815d3d5d888db0023a757c8dce8c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/LarsVoelker"
+          },
+          "created_at": "2023-02-06T09:00:14.356Z",
+          "updated_at": "2023-02-06T09:00:14.356Z",
+          "system": false,
+          "noteable_id": 203502076,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9690,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c93a1aed99a1939d57bbabfa2efd4a46b93f1502",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1268550060,
+          "type": null,
+          "body": "Thanks! This should make it work with the other command lines tools like editcap and mergecap as well, instead of just tshark.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-02-07T12:37:17.200Z",
+          "updated_at": "2023-02-07T12:37:17.200Z",
+          "system": false,
+          "noteable_id": 203502076,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9690,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "56d798f22e688a7b1c07f0dea504b9411eb0a89e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1268550342,
+          "type": null,
+          "body": "added 25 commits\n\n<ul><li>46f3f75c...c62aa67d - 24 commits from branch <code>wireshark:master</code></li><li>8fd2881f - wiretap, pcapng: Distinguish WTAP_ENCAP_UNKNOWN and _NONE</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9690/diffs?diff_id=597112956&start_sha=46f3f75cbba1918ffd2ebe951f2c9199d8f3f480)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-02-07T12:37:28.030Z",
+          "updated_at": "2023-02-07T12:37:28.031Z",
+          "system": true,
+          "noteable_id": 203502076,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9690,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "edd4e300a2c0df557add8a6516192318684a5372",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1268766982,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>e8db896c - 1 commit from branch <code>wireshark:master</code></li><li>ca230a59 - wiretap, pcapng: Distinguish WTAP_ENCAP_UNKNOWN and _NONE</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9690/diffs?diff_id=597187041&start_sha=8fd2881fec718473927f3b8449d24dd8d5632dde)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-02-07T13:33:22.975Z",
+          "updated_at": "2023-02-07T13:33:22.977Z",
+          "system": true,
+          "noteable_id": 203502076,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9690,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0b874f67a377fe2bb2e473d8ac18ef86950b0c57",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1268975739,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-02-07T15:02:13.544Z",
+          "updated_at": "2023-02-07T15:02:13.549Z",
+          "system": true,
+          "noteable_id": 203502076,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9690,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -77,6 +77,7 @@ class BackTrace:\n # Some values from wiretap; wiretap should be a shared\n # libray and a Python module should be created for it so\n # this program could just write a libpcap file directly.\n+WTAP_ENCAP_NONE                       = -2\n WTAP_ENCAP_PER_PACKET                 = -1\n WTAP_ENCAP_UNKNOWN                    = 0\n WTAP_ENCAP_ETHERNET                   = 1\n@@ -133,6 +134,7 @@ wtap_to_pcap_map = {\n \n \n wtap_name = {\n+        WTAP_ENCAP_NONE                       : \"None\",\n         WTAP_ENCAP_UNKNOWN                    : \"Unknown\",\n         WTAP_ENCAP_ETHERNET                   : \"Ethernet\",\n         WTAP_ENCAP_TOKEN_RING                 : \"Token-Ring\",\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/pkt-from-core.py",
+      "old_path": "tools/pkt-from-core.py",
+      "a_mode": "100755",
+      "b_mode": "100755",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -2291,10 +2291,19 @@ wtap_dump_init_dumper(int file_type_subtype, wtap_compression_type compression_t\n \t\t\t\tg_array_append_val(wdh->interface_data, descr);\n \t\t\t}\n \t\t}\n-\t} else {\n+\t} else if (params->encap != WTAP_ENCAP_NONE) {\n \t\tint snaplen;\n \n-\t\t// XXX IDBs should be optional.\n+\t\t// Generate a fake IDB if we don't have one, unless the\n+\t\t// file encapsulation is none. (WTAP_ENCAP_NONE either\n+\t\t// means that there are no interfaces, or they will be\n+\t\t// provided later when reading the file in single-pass mode.)\n+\t\t//\n+\t\t// XXX File types should provide their own IDBs (possibly\n+\t\t// fake ones generated by wtap_add_generated_idb()), in\n+\t\t// order to support being used as inputs for mergecap where\n+\t\t// pcapng is the output. This doesn't work for files with\n+\t\t// WTAP_ENCAP_PER_PACKET.\n \t\tdescr = wtap_block_create(WTAP_BLOCK_IF_ID_AND_INFO);\n \t\tdescr_mand = (wtapng_if_descr_mandatory_t*)wtap_block_get_mandatory_data(descr);\n \t\tdescr_mand->wtap_encap = params->encap;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/file_access.c",
+      "old_path": "wiretap/file_access.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -269,6 +269,7 @@ static ws_enum_t all_enums[] = {\n     ENUM(WTAP_ENCAP_ATM_PDUS),\n     ENUM(WTAP_ENCAP_ATM_PDUS_UNTRUNCATED),\n     ENUM(WTAP_ENCAP_ATM_RFC1483),\n+    ENUM(WTAP_ENCAP_ATSC_ALP),\n     ENUM(WTAP_ENCAP_AUERSWALD_LOG),\n     ENUM(WTAP_ENCAP_AUTOSAR_DLT),\n     ENUM(WTAP_ENCAP_AX25),\n@@ -408,6 +409,7 @@ static ws_enum_t all_enums[] = {\n     ENUM(WTAP_ENCAP_NETTL_X25),\n     ENUM(WTAP_ENCAP_NFC_LLCP),\n     ENUM(WTAP_ENCAP_NFLOG),\n+    ENUM(WTAP_ENCAP_NONE),\n     ENUM(WTAP_ENCAP_NORDIC_BLE),\n     ENUM(WTAP_ENCAP_NSTRACE_1_0),\n     ENUM(WTAP_ENCAP_NSTRACE_2_0),\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/introspection-enums.c",
+      "old_path": "wiretap/introspection-enums.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1621,7 +1621,7 @@ pcapng_read_if_descr_block(wtap *wth, FILE_T fh, pcapng_block_header_t *bh,\n      * so it probably doesn't have a single encapsulation for all\n      * packets in the file.\n      */\n-    if (wth->file_encap == WTAP_ENCAP_UNKNOWN) {\n+    if (wth->file_encap == WTAP_ENCAP_NONE) {\n         wth->file_encap = if_descr_mand->wtap_encap;\n     } else {\n         if (wth->file_encap != if_descr_mand->wtap_encap) {\n@@ -3097,7 +3097,7 @@ pcapng_read_systemd_journal_export_block(wtap *wth, FILE_T fh, pcapng_block_head\n      */\n     wblock->internal = FALSE;\n \n-    if (wth->file_encap == WTAP_ENCAP_UNKNOWN) {\n+    if (wth->file_encap == WTAP_ENCAP_NONE) {\n         /*\n          * Nothing (most notably an IDB) has set a file encap at this point.\n          * Do so here.\n@@ -3666,7 +3666,7 @@ pcapng_open(wtap *wth, int *err, gchar **err_info)\n     wtap_block_unref(wblock.block);\n     wblock.block = NULL;\n \n-    wth->file_encap = WTAP_ENCAP_UNKNOWN;\n+    wth->file_encap = WTAP_ENCAP_NONE;\n     wth->snapshot_length = 0;\n     wth->file_tsprec = WTAP_TSPREC_UNKNOWN;\n     pcapng = g_new(pcapng_t, 1);\n@@ -6323,6 +6323,10 @@ static int pcapng_dump_can_write_encap(int wtap_encap)\n     if (wtap_encap == WTAP_ENCAP_PER_PACKET)\n         return 0;\n \n+    /* No encapsulation type (yet) is supported. */\n+    if (wtap_encap == WTAP_ENCAP_NONE)\n+        return 0;\n+\n     /* Is it a filetype-specific encapsulation that we support? */\n     if (pcapng_encap_is_ft_specific(wtap_encap)) {\n         return 0;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/pcapng.c",
+      "old_path": "wiretap/pcapng.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -212,7 +212,8 @@ wtap_add_generated_idb(wtap *wth)\n \tint snaplen;\n \n \tws_assert(wth->file_encap != WTAP_ENCAP_UNKNOWN &&\n-\t    wth->file_encap != WTAP_ENCAP_PER_PACKET);\n+\t    wth->file_encap != WTAP_ENCAP_PER_PACKET &&\n+\t    wth->file_encap != WTAP_ENCAP_NONE);\n \tws_assert(wth->file_tsprec != WTAP_TSPREC_UNKNOWN &&\n \t    wth->file_tsprec != WTAP_TSPREC_PER_PACKET);\n \n@@ -1249,8 +1250,10 @@ wtap_register_encap_type(const char *description, const char *name)\n const char *\n wtap_encap_name(int encap)\n {\n-\tif (encap < WTAP_ENCAP_PER_PACKET || encap >= WTAP_NUM_ENCAP_TYPES)\n+\tif (encap < WTAP_ENCAP_NONE || encap >= WTAP_NUM_ENCAP_TYPES)\n \t\treturn \"illegal\";\n+\telse if (encap == WTAP_ENCAP_NONE)\n+\t\treturn \"none\";\n \telse if (encap == WTAP_ENCAP_PER_PACKET)\n \t\treturn \"per-packet\";\n \telse\n@@ -1261,8 +1264,10 @@ wtap_encap_name(int encap)\n const char *\n wtap_encap_description(int encap)\n {\n-\tif (encap < WTAP_ENCAP_PER_PACKET || encap >= WTAP_NUM_ENCAP_TYPES)\n+\tif (encap < WTAP_ENCAP_NONE || encap >= WTAP_NUM_ENCAP_TYPES)\n \t\treturn \"Illegal\";\n+\telse if (encap == WTAP_ENCAP_NONE)\n+\t\treturn \"None\";\n \telse if (encap == WTAP_ENCAP_PER_PACKET)\n \t\treturn \"Per packet\";\n \telse\n@@ -1665,6 +1670,7 @@ wtap_read(wtap *wth, wtap_rec *rec, Buffer *buf, int *err,\n \t\t * encapsulation type.\n \t\t */\n \t\tws_assert(rec->rec_header.packet_header.pkt_encap != WTAP_ENCAP_PER_PACKET);\n+\t\tws_assert(rec->rec_header.packet_header.pkt_encap != WTAP_ENCAP_NONE);\n \t}\n \n \treturn TRUE;\t/* success */\n@@ -1821,6 +1827,7 @@ wtap_seek_read(wtap *wth, gint64 seek_off, wtap_rec *rec, Buffer *buf,\n \t\t * encapsulation type.\n \t\t */\n \t\tws_assert(rec->rec_header.packet_header.pkt_encap != WTAP_ENCAP_PER_PACKET);\n+\t\tws_assert(rec->rec_header.packet_header.pkt_encap != WTAP_ENCAP_NONE);\n \t}\n \n \treturn TRUE;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap.c",
+      "old_path": "wiretap/wtap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -31,7 +31,17 @@ extern \"C\" {\n  * don't have a single encapsulation type for all packets in the file.\n  *\n  * WTAP_ENCAP_UNKNOWN is returned by \"wtap_pcap_encap_to_wtap_encap()\"\n- * if it's handed an unknown encapsulation.\n+ * if it's handed an unknown encapsulation. It is also used by file\n+ * types for encapsulations which are unsupported by libwiretap.\n+ *\n+ * WTAP_ENCAP_NONE is an initial value used by file types like pcapng\n+ * that do not have a single file level encapsulation type. If and when\n+ * something that indicate encapsulation is read, the encapsulation will\n+ * change (possibly to WTAP_ENCAP_PER_PACKET) and appropriate IDBs will\n+ * be generated. If a file type uses this value, it MUST provide IDBs\n+ * (possibly fake) when the encapsulation changes; otherwise, it should\n+ * return WTAP_ENCAP_UNKNOWN so that attempts to write an output file\n+ * without reading the entire input file first fail gracefully.\n  *\n  * WTAP_ENCAP_FDDI_BITSWAPPED is for FDDI captures on systems where the\n  * MAC addresses you get from the hardware are bit-swapped.  Ideally,\n@@ -74,6 +84,7 @@ extern \"C\" {\n  *     what older versions of \"libpcap\" on Linux turn the Ethernet\n  *     header for loopback interfaces into (0.6.0 and later versions\n  *     leave the Ethernet header alone and make it DLT_EN10MB). */\n+#define WTAP_ENCAP_NONE                         -2\n #define WTAP_ENCAP_PER_PACKET                   -1\n #define WTAP_ENCAP_UNKNOWN                        0\n #define WTAP_ENCAP_ETHERNET                       1\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap.h",
+      "old_path": "wiretap/wtap.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -3623,24 +3623,11 @@ process_cap_file(capture_file *cf, char *save_file, int out_file_type,\n     wtap_dump_params params = WTAP_DUMP_PARAMS_INIT;\n     char        *shb_user_appl;\n     pass_status_t first_pass_status, second_pass_status;\n-    gboolean pcapng_pcapng_workaround = false;\n-    wtapng_iface_descriptions_t if_tmp;\n \n     if (save_file != NULL) {\n         /* Set up to write to the capture file. */\n         wtap_dump_params_init_no_idbs(&params, cf->provider.wth);\n \n-        /* workaround for pcapng -> pcapng (e.g., when pcapng starts with a custom block) */\n-        if (out_file_type == wtap_pcapng_file_type_subtype() && params.encap == WTAP_ENCAP_UNKNOWN) {\n-            pcapng_pcapng_workaround = true;\n-            params.encap = WTAP_ENCAP_PER_PACKET;\n-            params.dont_copy_idbs = true; /* make sure this stay true */\n-            if (params.idb_inf->interface_data != NULL) {\n-                /* lets fake an interface, which is not copied anyway */\n-                g_array_insert_val(params.idb_inf->interface_data, 0, if_tmp);\n-            }\n-        }\n-\n         /* If we don't have an application name add TShark */\n         if (wtap_block_get_string_option_value(g_array_index(params.shb_hdrs, wtap_block_t, 0), OPT_SHB_USERAPPL, &shb_user_appl) != WTAP_OPTTYPE_SUCCESS) {\n             /* this is free'd by wtap_block_unref() later */\n@@ -3664,11 +3651,6 @@ process_cap_file(capture_file *cf, char *save_file, int out_file_type,\n                     &err, &err_info);\n         }\n \n-        if (pcapng_pcapng_workaround) {\n-            /* remove the fake interface before it will be used */\n-            g_array_remove_index((params.idb_inf->interface_data), 0);\n-        }\n-\n         g_free(params.idb_inf);\n         params.idb_inf = NULL;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tshark.c",
+      "old_path": "tshark.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "ca230a59e05b1a2b89faeaec33e6396c9344c81f",
+      "short_id": "ca230a59",
+      "created_at": "2023-02-07T13:33:20.000+00:00",
+      "parent_ids": [
+        "e8db896c624ca142c13eaac3ba96afa91b67d9db"
+      ],
+      "title": "wiretap, pcapng: Distinguish WTAP_ENCAP_UNKNOWN and _NONE",
+      "message": "wiretap, pcapng: Distinguish WTAP_ENCAP_UNKNOWN and _NONE\n\nWTAP_ENCAP_UNKNOWN is used for two different cases:\n1. Encapsulation type values that are unsupported by libwiretap or\nbogus values (and thus \"unknown\" to libwiretap).\n\n2. An initial state where the encapsulation type is \"not yet\" known\nfor a file type like pcapng without a single encapsulation type in the\nheader, before any packets or interfaces that set the encapsulation type\nhave been read. (If the file has no packets, this may be the value after\nthe file is entirely read in.) This can be the value when an output file\nis written out simultaneously with reading an input file, rather than\nreading the entire input file first, and, e.g., there is a custom block\nbefore any IDBs.\n\nThe first case can never be handled when writing out a file, but the\nsecond case can possibly be handled, so long as (for pcapng) IDBs\nare available to write when they become necessary, or (for file\ntypes like pcap with a single link-layer type in the header) the\nwriter waits until a link-layer type is seen to create the output\nheader. (It is possible, of course, that writing would fail in the\nmiddle if an unsupported encapsulation type appears, or if the\nencapsulation becomes per-packet for file types that don't support that,\nbut that is an unavoidable risk when writing without reading the entire\ninput file(s).)\n\nIntroduce WTAP_ENCAP_NONE for the second case, and use it for pcapng,\nwhere we guarantee that any necessary IDBs will be passed along.\nContinue to use WTAP_ENCAP_UNKNOWN for the first case.\n\nAllow pcapng files to open a file for writing with WTAP_ENCAP_NONE.\n\nThere are some other file types that support per-packet link-types,\nand could also use WTAP_ENCAP_NONE, but they require more work to\ngenerate IDBs. (Note that all of them currently are impossible to\nwrite to pcapng when they have multiple encapsulations, even if\nthe encapsulations are all supported by pcapng, because they don't\nproperly generate IDBs.)\n\nRemove the workaround in ef43fd48b4f981392a0c61b5e9a804e8f9c85eb4\nfor tshark writing to pcapng when the source file is WTAP_ENCAP_UNKNOWN,\nsince now such files will be WTAP_ENCAP_NONE and work properly (and\nalso work in editcap, mergcap, etc.)\n\nAlong with 8cddc32d35e36d9962495c3d4358842ea88aac41, fix #18449.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2023-02-04T13:49:10.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-02-07T13:33:20.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/ca230a59e05b1a2b89faeaec33e6396c9344c81f"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 597187041,
+      "head_commit_sha": "ca230a59e05b1a2b89faeaec33e6396c9344c81f",
+      "base_commit_sha": "e8db896c624ca142c13eaac3ba96afa91b67d9db",
+      "start_commit_sha": "e8db896c624ca142c13eaac3ba96afa91b67d9db",
+      "created_at": "2023-02-07T13:33:22.242Z",
+      "merge_request_id": 203502076,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 597112956,
+      "head_commit_sha": "8fd2881fec718473927f3b8449d24dd8d5632dde",
+      "base_commit_sha": "c62aa67d2ce6b1d1ec35365eeee690ca68e908a4",
+      "start_commit_sha": "c62aa67d2ce6b1d1ec35365eeee690ca68e908a4",
+      "created_at": "2023-02-07T12:37:27.274Z",
+      "merge_request_id": 203502076,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 595220762,
+      "head_commit_sha": "46f3f75cbba1918ffd2ebe951f2c9199d8f3f480",
+      "base_commit_sha": "8cddc32d35e36d9962495c3d4358842ea88aac41",
+      "start_commit_sha": "8cddc32d35e36d9962495c3d4358842ea88aac41",
+      "created_at": "2023-02-04T19:14:37.360Z",
+      "merge_request_id": 203502076,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,1191 @@
+{
+  "id": 234329037,
+  "iid": 11322,
+  "project_id": 7898047,
+  "title": "DHCPFO: Add Microsoft-specific hostname options",
+  "description": "This is related to issue #19178.\n\nSample capture with Windows Server 2012 R2: [dhcpserver-w2012r2-server1-failover.pcapng](/uploads/50492c3e6862fe98114ec370d191fabc/dhcpserver-w2012r2-server1-failover.pcapng)\n\n- 31 = \"microsoft-client-hostname\"\n- 35 = \"microsoft-server-hostname\"\n\nHowever, the hostnames are in some 16-bit character format:\n\n```\n0000   64 00 68 00 63 00 70 00 74 00 65 00 73 00 74 00   d.h.c.p.t.e.s.t.\n0010   63 00 6c 00 69 00 65 00 6e 00 74 00 00 00         c.l.i.e.n.t...\n```\n(for \"dhcptestclient\")\n\nApparently this does not work:\n\n```\n\tconst guint8 *ms_client_hostname_str;\n...\n\t\tcase DHCP_FO_PD_MS_CLIENT_HOSTNAME:\n\t\t\tproto_tree_add_item_ret_string(option_tree,\n\t\t\t    hf_dhcpfo_ms_client_hostname, tvb, offset,\n\t\t\t    option_length, ENC_UTF_16, pinfo->pool, &ms_client_hostname_str);\n\t\t\tproto_item_append_text(oi,\", \\\"%s\\\"\",\n\t\t\t    format_text(pinfo->pool, ms_client_hostname_str, option_length));\n\t\t\tbreak;\n...\n\t\t{&hf_dhcpfo_ms_client_hostname,\n\t\t\t{\"Client hostname (Microsoft-specific)\", \"dhcpfo.msclienthostname\",\n\t\t\tFT_STRING, BASE_NONE, NULL, 0,\n\t\t\tNULL, HFILL }\n\t\t},\n```\n\nI basically copied the logic from `vendor-class` option handling and used `ENC_UTF_16` instead of `ENC_ASCII`, but apparently that is not correct way because the resulting text is \"搀栀挀瀀琀攀猀琀挀氀椀攀渀琀\".\n\nAny suggestions how to decode the string in this kind of case? I already tried to declare the string as `const guint16` but that errors out when compiling.",
+  "state": "merged",
+  "created_at": "2023-07-03T18:36:54.597Z",
+  "updated_at": "2023-07-05T06:58:46.194Z",
+  "merged_by": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merge_user": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merged_at": "2023-07-05T06:58:46.226Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "dhcpfo-ms-options",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7558431,
+    "username": "markkuleinio",
+    "public_email": "",
+    "name": "Markku Leiniö",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+    "web_url": "https://gitlab.com/markkuleinio"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 47348091,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "5fb94c8a1a980c8b37f72f956156742d5f5532f7",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-07-03T18:37:08.254Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!11322",
+  "references": {
+    "short": "!11322",
+    "relative": "!11322",
+    "full": "wireshark/wireshark!11322"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/11322",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-07-05T06:45:05.123Z",
+  "latest_build_finished_at": "2023-07-05T06:58:44.923Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 921164347,
+    "iid": 48787,
+    "project_id": 7898047,
+    "sha": "5fb94c8a1a980c8b37f72f956156742d5f5532f7",
+    "ref": "refs/merge-requests/11322/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-07-05T06:45:03.823Z",
+    "updated_at": "2023-07-05T06:58:44.932Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/921164347"
+  },
+  "head_pipeline": {
+    "id": 921164347,
+    "iid": 48787,
+    "project_id": 7898047,
+    "sha": "5fb94c8a1a980c8b37f72f956156742d5f5532f7",
+    "ref": "refs/merge-requests/11322/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-07-05T06:45:03.823Z",
+    "updated_at": "2023-07-05T06:58:44.932Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/921164347",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 279822,
+      "username": "alagoutte",
+      "public_email": "",
+      "name": "Alexis La Goutte",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+      "web_url": "https://gitlab.com/alagoutte"
+    },
+    "started_at": "2023-07-05T06:45:05.123Z",
+    "finished_at": "2023-07-05T06:58:44.923Z",
+    "committed_at": null,
+    "duration": 819,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/921164347",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "91bb3c91ac5ed2a6f775cfa91df8d875d42f1738",
+    "head_sha": "5fb94c8a1a980c8b37f72f956156742d5f5532f7",
+    "start_sha": "91bb3c91ac5ed2a6f775cfa91df8d875d42f1738"
+  },
+  "merge_error": null,
+  "first_contribution": true,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "6725e312f0265a384b8879d3f545e5d7464c7e91",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455652317,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>9b95e0df - 1 commit from branch <code>wireshark:master</code></li><li>59222af2 - DHCPFO: Add Microsoft-specific hostname options</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=724385342&start_sha=25d448b35f60195c05108fbbb9d2cf91eab74a14)",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T18:37:18.071Z",
+          "updated_at": "2023-07-03T18:37:18.075Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d051a45c8f5a1092d35cbc5c6c5049075f1ca780",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455656185,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T18:42:39.324Z",
+          "updated_at": "2023-07-03T18:42:39.327Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "350ec72456efb092937eaac90cafc094b6b6e4dc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455660122,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T18:49:09.100Z",
+          "updated_at": "2023-07-03T18:49:09.103Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bc6d3bd6fac96f5be7b840952e1034a347d807e0",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1455665828,
+          "type": "DiffNote",
+          "body": "MS is using little endian here => `ENC_UTF_16|ENC_LITTLE_ENDIAN`",
+          "author": {
+            "id": 6518606,
+            "username": "uhei",
+            "public_email": "",
+            "name": "Uli Heilmeier",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6518606/avatar.png?v=1789794790",
+            "web_url": "https://gitlab.com/uhei"
+          },
+          "created_at": "2023-07-03T18:59:48.203Z",
+          "updated_at": "2023-07-03T19:13:25.928Z",
+          "system": false,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+            "start_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+            "head_sha": "59222af27a707932fdb10aa2906eea218aadf06a",
+            "old_path": "epan/dissectors/packet-dhcp-failover.c",
+            "new_path": "epan/dissectors/packet-dhcp-failover.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 822,
+            "line_range": {
+              "start": {
+                "line_code": "ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_810_822",
+                "type": "new",
+                "old_line": null,
+                "new_line": 822
+              },
+              "end": {
+                "line_code": "ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_810_822",
+                "type": "new",
+                "old_line": null,
+                "new_line": 822
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "resolved_at": "2023-07-03T19:57:50.214Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        },
+        {
+          "id": 1455673097,
+          "type": "DiffNote",
+          "body": "changed this line in [version 3 of the diff](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=724401438&start_sha=59222af27a707932fdb10aa2906eea218aadf06a#ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_822_822)",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T19:12:38.993Z",
+          "updated_at": "2023-07-03T19:12:38.993Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+            "start_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+            "head_sha": "59222af27a707932fdb10aa2906eea218aadf06a",
+            "old_path": "epan/dissectors/packet-dhcp-failover.c",
+            "new_path": "epan/dissectors/packet-dhcp-failover.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 822,
+            "line_range": {
+              "start": {
+                "line_code": "ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_810_822",
+                "type": "new",
+                "old_line": null,
+                "new_line": 822
+              },
+              "end": {
+                "line_code": "ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_810_822",
+                "type": "new",
+                "old_line": null,
+                "new_line": 822
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4771a451370dc1db3e2c609c401a7491417796d8",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1455665829,
+          "type": "DiffNote",
+          "body": "`ENC_UTF_16|ENC_LITTLE_ENDIAN`",
+          "author": {
+            "id": 6518606,
+            "username": "uhei",
+            "public_email": "",
+            "name": "Uli Heilmeier",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6518606/avatar.png?v=1789794790",
+            "web_url": "https://gitlab.com/uhei"
+          },
+          "created_at": "2023-07-03T18:59:48.652Z",
+          "updated_at": "2023-07-03T18:59:48.652Z",
+          "system": false,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+            "start_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+            "head_sha": "59222af27a707932fdb10aa2906eea218aadf06a",
+            "old_path": "epan/dissectors/packet-dhcp-failover.c",
+            "new_path": "epan/dissectors/packet-dhcp-failover.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 830,
+            "line_range": {
+              "start": {
+                "line_code": "ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_810_830",
+                "type": "new",
+                "old_line": null,
+                "new_line": 830
+              },
+              "end": {
+                "line_code": "ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_810_830",
+                "type": "new",
+                "old_line": null,
+                "new_line": 830
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "resolved_at": "2023-07-03T19:57:57.558Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        },
+        {
+          "id": 1455673099,
+          "type": "DiffNote",
+          "body": "changed this line in [version 3 of the diff](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=724401438&start_sha=59222af27a707932fdb10aa2906eea218aadf06a#ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_830_830)",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T19:12:39.171Z",
+          "updated_at": "2023-07-03T19:12:39.171Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+            "start_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+            "head_sha": "59222af27a707932fdb10aa2906eea218aadf06a",
+            "old_path": "epan/dissectors/packet-dhcp-failover.c",
+            "new_path": "epan/dissectors/packet-dhcp-failover.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 830,
+            "line_range": {
+              "start": {
+                "line_code": "ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_810_830",
+                "type": "new",
+                "old_line": null,
+                "new_line": 830
+              },
+              "end": {
+                "line_code": "ebc8b8bc9ada5e37e38cd727fb74c4e5e28c26a3_810_830",
+                "type": "new",
+                "old_line": null,
+                "new_line": 830
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "87ad5c3f9d96cb6477fc91f6feb3194143ce9b95",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455673102,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>d39c8ba7 - Fix string encoding</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=724401438&start_sha=59222af27a707932fdb10aa2906eea218aadf06a)",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T19:12:39.335Z",
+          "updated_at": "2023-07-03T19:12:39.337Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4eba36ed7e97bfae868851707e2b45c8ce6fcb45",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455721617,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>fc242639 - Fix hostname string length calculation</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=724420966&start_sha=d39c8ba7808bc3cbebb9142cc3eba5b1a6bb9abe)",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T19:57:04.682Z",
+          "updated_at": "2023-07-03T19:57:04.684Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "626a337c3b2bbce111d310614a3f13f71bfb875d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455723354,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T19:57:57.583Z",
+          "updated_at": "2023-07-03T19:57:57.590Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "64baab4507b629b5e8b8a8b5965f4a9270760875",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455729538,
+          "type": null,
+          "body": "Thanks @uhei, these seem to work now:\n\n```\n        DHCP Style Option, microsoft-client-hostname (31), \"dhcptestclient\"\n            Option Code: microsoft-client-hostname (31)\n            Length: 30\n            Client hostname (Microsoft-specific): dhcptestclient\n        DHCP Style Option, microsoft-server-hostname (35), \"SERVER2012R2-1\"\n            Option Code: microsoft-server-hostname (35)\n            Length: 30\n            Server hostname (Microsoft-specific): SERVER2012R2-1\n```",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T20:01:39.616Z",
+          "updated_at": "2023-07-03T20:01:39.616Z",
+          "system": false,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6c702822d92c0671483d462e9be96a5efdff31e2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455730187,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T20:02:00.343Z",
+          "updated_at": "2023-07-03T20:02:00.346Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a1497d8064b0741ff33d31822bfb6d8c8df1d5bd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1455730190,
+          "type": null,
+          "body": "changed title from **{-Draft: -}DHCPFO: Add Microsoft-specific options** to **DHCPFO: Add Microsoft-specific {+hostname +}options**",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-03T20:02:00.380Z",
+          "updated_at": "2023-07-03T20:02:00.382Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a374c1aabda36a9ae1edbf76e7ea9883b4ff7923",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1456219412,
+          "type": null,
+          "body": "mentioned in issue #19184",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-04T08:24:49.764Z",
+          "updated_at": "2023-07-04T08:24:49.766Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0479555a6e11d09997d4c3f4aa3a6c9424fc5c14",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1457132177,
+          "type": null,
+          "body": "added 16 commits\n\n<ul><li>fc242639...b018efe2 - 15 commits from branch <code>wireshark:master</code></li><li>1f940e7f - Merge branch wireshark:master into dhcpfo-ms-options</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=725384114&start_sha=fc242639b6b5a3b323716d7a1db60115e60e7216)",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-04T17:48:07.383Z",
+          "updated_at": "2023-07-04T17:48:07.384Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "00baf099f8a2455109e2139603178bc359623851",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1457214769,
+          "type": "DiscussionNote",
+          "body": "This needs to be rebased as a single commit onto HEAD of master.",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2023-07-04T19:27:52.125Z",
+          "updated_at": "2023-07-04T19:27:52.125Z",
+          "system": false,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-07-05T06:44:07.894Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bd4bb99b962dafcd7c7d20bb7a504888ff1f57dc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1457481478,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>b5ef351b - 1 commit from branch <code>wireshark:master</code></li><li>51316312 - Merge branch wireshark:master into dhcpfo-ms-options</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=725625760&start_sha=1f940e7fd398081e482aee4a5e1a9159c5cff6de)",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-05T06:15:55.080Z",
+          "updated_at": "2023-07-05T06:15:55.083Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "81aaf2d78f6b56b722cd6c92ff2dc452fd5b7b51",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1457489728,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>0d68c708 - DHCPFO: Add Microsoft-specific hostname options</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=725632682&start_sha=513163129c15dd3b66d11ef7f984c6dad52084ab)",
+          "author": {
+            "id": 7558431,
+            "username": "markkuleinio",
+            "public_email": "",
+            "name": "Markku Leiniö",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7558431/avatar.png?v=1789663372",
+            "web_url": "https://gitlab.com/markkuleinio"
+          },
+          "created_at": "2023-07-05T06:26:39.918Z",
+          "updated_at": "2023-07-05T06:26:39.920Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "78bfab6f2da08eaf764d8c2d53b6fa58bd36065e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1457505431,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-07-05T06:44:07.915Z",
+          "updated_at": "2023-07-05T06:44:07.919Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "28fe1bb99f088eab3ddf19f42dafe804a774535b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1457506264,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>0d68c708...91bb3c91 - 2 commits from branch <code>wireshark:master</code></li><li>5fb94c8a - DHCPFO: Add Microsoft-specific hostname options</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11322/diffs?diff_id=725645645&start_sha=0d68c7081800831a7f7cf66687209c6591fc6d28)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-07-05T06:45:02.010Z",
+          "updated_at": "2023-07-05T06:45:02.011Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6a6a8d1ad49037974214623379fe9c8ae5695be3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1457506391,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-07-05T06:45:10.566Z",
+          "updated_at": "2023-07-05T06:45:10.570Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8f04a663681fc622ce4b69ac52976ffe5efee1c0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1457506497,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 5fb94c8a1a980c8b37f72f956156742d5f5532f7 succeeds",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-07-05T06:45:17.370Z",
+          "updated_at": "2023-07-05T06:45:17.372Z",
+          "system": true,
+          "noteable_id": 234329037,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11322,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -89,6 +89,8 @@ static int hf_dhcpfo_tls_request = -1;\n static int hf_dhcpfo_tls_reply = -1;\n static int hf_dhcpfo_serverflag = -1;\n static int hf_dhcpfo_options = -1;\n+static int hf_dhcpfo_ms_client_hostname = -1;\n+static int hf_dhcpfo_ms_server_hostname = -1;\n \n /* Initialize the subtree pointers */\n static gint ett_dhcpfo = -1;\n@@ -152,6 +154,8 @@ static const value_string failover_vals[] =\n #define DHCP_FO_PD_TLS_REQUEST                  27\n #define DHCP_FO_PD_VENDOR_CLASS                 28\n #define DHCP_FO_PD_VENDOR_OPTION                29\n+#define DHCP_FO_PD_MS_CLIENT_HOSTNAME           31\n+#define DHCP_FO_PD_MS_SERVER_HOSTNAME           35\n \n \n static const value_string option_code_vals[] =\n@@ -185,6 +189,8 @@ static const value_string option_code_vals[] =\n \t{DHCP_FO_PD_TLS_REQUEST,\t\t\t\"TLS-request\"},\n \t{DHCP_FO_PD_VENDOR_CLASS,\t\t\t\"vendor-class\"},\n \t{DHCP_FO_PD_VENDOR_OPTION,\t\t\t\"vendor-option\"},\n+\t{DHCP_FO_PD_MS_CLIENT_HOSTNAME,\t\t\t\"microsoft-client-hostname\"},\n+\t{DHCP_FO_PD_MS_SERVER_HOSTNAME,\t\t\t\"microsoft-server-hostname\"},\n \t{0, NULL}\n \n };\n@@ -314,6 +320,8 @@ dissect_dhcpfo_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da\n \tguint32 mclt;\n \tguint8 server_state;\n \tguint32 max_unacked_bndupd, receive_timer;\n+\tconst guint8 *ms_client_hostname_str;\n+\tconst guint8 *ms_server_hostname_str;\n \n /* Make entries in Protocol column and Info column on summary display */\n \tcol_set_str(pinfo->cinfo, COL_PROTOCOL, \"DHCPFO\");\n@@ -807,6 +815,25 @@ dissect_dhcpfo_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da\n \t\tcase DHCP_FO_PD_REPLY_OPTION:\n \t\t\tproto_tree_add_item(option_tree, hf_dhcpfo_options, tvb, offset, option_length, ENC_NA);\n \t\t\tbreak;\n+\n+\t\tcase DHCP_FO_PD_MS_CLIENT_HOSTNAME:\n+\t\t\tproto_tree_add_item_ret_string(option_tree,\n+\t\t\t    hf_dhcpfo_ms_client_hostname, tvb, offset,\n+\t\t\t    option_length, ENC_UTF_16|ENC_LITTLE_ENDIAN, pinfo->pool, &ms_client_hostname_str);\n+\t\t\t/* With UTF-16 the string length is half the data length, minus the zero-termination */\n+\t\t\tproto_item_append_text(oi,\", \\\"%s\\\"\",\n+\t\t\t    format_text(pinfo->pool, ms_client_hostname_str, option_length/2-1));\n+\t\t\tbreak;\n+\n+\t\tcase DHCP_FO_PD_MS_SERVER_HOSTNAME:\n+\t\t\tproto_tree_add_item_ret_string(option_tree,\n+\t\t\t    hf_dhcpfo_ms_server_hostname, tvb, offset,\n+\t\t\t    option_length, ENC_UTF_16|ENC_LITTLE_ENDIAN, pinfo->pool, &ms_server_hostname_str);\n+\t\t\t/* With UTF-16 the string length is half the data length, minus the zero-termination */\n+\t\t\tproto_item_append_text(oi,\", \\\"%s\\\"\",\n+\t\t\t    format_text(pinfo->pool, ms_server_hostname_str, option_length/2-1));\n+\t\t\tbreak;\n+\n \t\tdefault:\n \t\t\tbreak;\n \t\t}\n@@ -1090,6 +1117,18 @@ proto_register_dhcpfo(void)\n \t\t\tNULL, HFILL }\n \t\t},\n \n+\t\t{&hf_dhcpfo_ms_client_hostname,\n+\t\t\t{\"Client hostname (Microsoft-specific)\", \"dhcpfo.msclienthostname\",\n+\t\t\tFT_STRING, BASE_NONE, NULL, 0,\n+\t\t\tNULL, HFILL }\n+\t\t},\n+\n+\t\t{&hf_dhcpfo_ms_server_hostname,\n+\t\t\t{\"Server hostname (Microsoft-specific)\", \"dhcpfo.msserverhostname\",\n+\t\t\tFT_STRING, BASE_NONE, NULL, 0,\n+\t\t\tNULL, HFILL }\n+\t\t},\n+\n \t};\n \n /* Setup protocol subtree array */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-dhcp-failover.c",
+      "old_path": "epan/dissectors/packet-dhcp-failover.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "5fb94c8a1a980c8b37f72f956156742d5f5532f7",
+      "short_id": "5fb94c8a",
+      "created_at": "2023-07-05T06:44:58.000+00:00",
+      "parent_ids": [
+        "91bb3c91ac5ed2a6f775cfa91df8d875d42f1738"
+      ],
+      "title": "DHCPFO: Add Microsoft-specific hostname options",
+      "message": "DHCPFO: Add Microsoft-specific hostname options\n\n31 = \"microsoft-client-hostname\"\n35 = \"microsoft-server-hostname\"\n",
+      "author_name": "Markku Leiniö",
+      "author_email": "markku@iki.fi",
+      "authored_date": "2023-07-03T18:10:45.000+03:00",
+      "committer_name": "Alexis La Goutte",
+      "committer_email": "alexis.lagoutte@gmail.com",
+      "committed_date": "2023-07-05T06:44:58.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/5fb94c8a1a980c8b37f72f956156742d5f5532f7"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 725645645,
+      "head_commit_sha": "5fb94c8a1a980c8b37f72f956156742d5f5532f7",
+      "base_commit_sha": "91bb3c91ac5ed2a6f775cfa91df8d875d42f1738",
+      "start_commit_sha": "91bb3c91ac5ed2a6f775cfa91df8d875d42f1738",
+      "created_at": "2023-07-05T06:45:01.026Z",
+      "merge_request_id": 234329037,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 725632682,
+      "head_commit_sha": "0d68c7081800831a7f7cf66687209c6591fc6d28",
+      "base_commit_sha": "b5ef351bf7dcf1d76f386d4d72b8ad955e4cc090",
+      "start_commit_sha": "b5ef351bf7dcf1d76f386d4d72b8ad955e4cc090",
+      "created_at": "2023-07-05T06:26:39.239Z",
+      "merge_request_id": 234329037,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 725625760,
+      "head_commit_sha": "513163129c15dd3b66d11ef7f984c6dad52084ab",
+      "base_commit_sha": "b5ef351bf7dcf1d76f386d4d72b8ad955e4cc090",
+      "start_commit_sha": "b5ef351bf7dcf1d76f386d4d72b8ad955e4cc090",
+      "created_at": "2023-07-05T06:15:52.740Z",
+      "merge_request_id": 234329037,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 725384114,
+      "head_commit_sha": "1f940e7fd398081e482aee4a5e1a9159c5cff6de",
+      "base_commit_sha": "b018efe2ac9c5c0b8329c2e5262bf1faed48bc5d",
+      "start_commit_sha": "b018efe2ac9c5c0b8329c2e5262bf1faed48bc5d",
+      "created_at": "2023-07-04T17:48:06.799Z",
+      "merge_request_id": 234329037,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 724420966,
+      "head_commit_sha": "fc242639b6b5a3b323716d7a1db60115e60e7216",
+      "base_commit_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+      "start_commit_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+      "created_at": "2023-07-03T19:57:04.005Z",
+      "merge_request_id": 234329037,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 724401438,
+      "head_commit_sha": "d39c8ba7808bc3cbebb9142cc3eba5b1a6bb9abe",
+      "base_commit_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+      "start_commit_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+      "created_at": "2023-07-03T19:12:38.324Z",
+      "merge_request_id": 234329037,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 724385342,
+      "head_commit_sha": "59222af27a707932fdb10aa2906eea218aadf06a",
+      "base_commit_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+      "start_commit_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+      "created_at": "2023-07-03T18:37:17.453Z",
+      "merge_request_id": 234329037,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 724385147,
+      "head_commit_sha": "25d448b35f60195c05108fbbb9d2cf91eab74a14",
+      "base_commit_sha": "ed6ab0569afdd2bf4e5001d51855f5b7f26f4011",
+      "start_commit_sha": "9b95e0df2c4f9af160ff835a752f9f5050f29e52",
+      "created_at": "2023-07-03T18:36:56.321Z",
+      "merge_request_id": 234329037,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

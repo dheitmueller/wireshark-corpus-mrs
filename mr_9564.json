@@ -1,0 +1,1741 @@
+{
+  "id": 200680747,
+  "iid": 9564,
+  "project_id": 7898047,
+  "title": "MySQL: Decode caching_sha2_password packets",
+  "description": "Decode more of the caching_sha2_password packets\n\nhttps://dev.mysql.com/doc/dev/mysql-server/latest/page_caching_sha2_authentication_exchanges.html\n\nhttps://github.com/mysql/mysql-server/blob/1bfe02bdad6604d54913c62614bde57a055c8332/sql-common/client_authentication.cc#L605-L607\n\nPackets with MySQL 8.0.32 on port 8032, use \"Decode as...\".\n[mysql.pcap](/uploads/d00004add5fbf75e75fca2e5959797d9/mysql.pcap)\n\nThis has:\n- Packet 8: `perform_full_authentication`\n- Packet 20: `request_public_key`\n- Packet 21: Public key\n- Packet 22: Caching_sha2_password response, Payload is encrypted with the public key.\n- Packet 44: `fast_auth_success`\n\nThe RSA public key isn't decoded. Saving it to a file allows me to do this:\n```\n$ openssl rsa -in /tmp/pubkey -pubin -noout -text\nPublic-Key: (2048 bit)\nModulus:\n    00:d1:50:02:cb:f6:d8:eb:43:11:b8:f5:ba:68:2c:\n    59:6e:2f:a8:d0:48:02:83:1c:c5:39:b6:f2:cc:37:\n    e7:4e:75:49:7a:03:97:6e:b7:5c:6e:ed:6a:22:51:\n    23:3f:29:fb:50:c0:5f:8d:0a:fe:56:e7:a2:26:f3:\n    e3:cf:63:3c:77:fe:86:5f:58:78:7d:8b:b0:5b:86:\n    c4:5c:15:68:e0:71:b1:33:c3:74:23:23:b5:05:88:\n    da:7c:e6:a8:51:e2:ff:34:8f:9b:2e:27:c7:ef:42:\n    a8:ac:87:12:51:1f:a1:f3:bf:43:01:0d:33:94:ac:\n    f9:bf:0a:43:60:dd:8b:57:18:9d:8c:5b:f2:e5:b6:\n    92:3e:2f:dc:b0:33:2a:8b:68:e2:b4:10:33:6c:d5:\n    bd:f7:63:bf:bf:d0:8f:9e:1e:5f:91:d4:4c:6b:69:\n    4c:3c:ac:51:68:f7:aa:03:0f:54:ec:20:26:46:a0:\n    1a:1d:90:1f:74:8e:64:62:78:f7:be:c3:85:bc:a2:\n    f6:76:41:3e:72:46:3c:b2:1e:47:da:eb:68:df:bf:\n    a6:83:aa:25:97:93:ec:c9:d3:1b:4a:eb:c5:1c:b7:\n    34:25:99:be:fa:87:a6:e7:3d:96:b1:90:5d:c6:6a:\n    21:a8:9f:05:a1:ce:37:5b:c2:0e:b7:1b:3e:60:03:\n    b0:bf\nExponent: 65537 (0x10001)\n```\n\nTo test this with MySQL:\n1. If SSL/TLS is used it won't use the public key. Use `--ssl-mode=DISABLED`.\n2. The public key can be requested from the server with `--get-server-public-key` or be specified with `--server-public-key-path`\n3. This needs MySQL 8.0 (server and client)\n4. Make sure the user is created with `caching_sha2_password`. This should be the default.\n5. To clear the cache and force `perform_full_authentication` again, restart the server.",
+  "state": "merged",
+  "created_at": "2023-01-20T23:19:40.125Z",
+  "updated_at": "2023-01-24T09:51:13.546Z",
+  "merged_by": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merge_user": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merged_at": "2023-01-24T09:51:13.592Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "caching_sha2_password",
+  "user_notes_count": 13,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5884947,
+    "username": "dveeden",
+    "public_email": "",
+    "name": "Daniël van Eeden",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dveeden"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 38285998,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "8ec198c272aa54060029296945552659d9df842d",
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-01-20T23:19:40.125Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!9564",
+  "references": {
+    "short": "!9564",
+    "relative": "!9564",
+    "full": "wireshark/wireshark!9564"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/9564",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-01-24T09:27:44.783Z",
+  "latest_build_finished_at": "2023-01-24T09:51:12.086Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 755800681,
+    "iid": 41801,
+    "project_id": 7898047,
+    "sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+    "ref": "refs/merge-requests/9564/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-01-24T09:27:43.950Z",
+    "updated_at": "2023-01-24T09:51:12.099Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/755800681"
+  },
+  "head_pipeline": {
+    "id": 755800681,
+    "iid": 41801,
+    "project_id": 7898047,
+    "sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+    "ref": "refs/merge-requests/9564/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-01-24T09:27:43.950Z",
+    "updated_at": "2023-01-24T09:51:12.099Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/755800681",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 279822,
+      "username": "alagoutte",
+      "public_email": "",
+      "name": "Alexis La Goutte",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+      "web_url": "https://gitlab.com/alagoutte"
+    },
+    "started_at": "2023-01-24T09:27:44.783Z",
+    "finished_at": "2023-01-24T09:51:12.086Z",
+    "committed_at": null,
+    "duration": 1407,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/755800681",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+    "head_sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+    "start_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b1cde0d5c660325d9cd0f040d585f6aa7f8a57c5",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248098210,
+          "type": "DiscussionNote",
+          "body": "@alagoutte is there a way to do PEM/RSA dissection? Or is there a better way to format the public key?",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-20T23:28:10.202Z",
+          "updated_at": "2023-01-21T13:31:12.101Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-01-23T09:42:06.676Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        },
+        {
+          "id": 1248232749,
+          "type": "DiscussionNote",
+          "body": "Do you have look packet-tls(-utils) dissector ? (or SSH ?)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-21T13:31:11.959Z",
+          "updated_at": "2023-01-21T13:31:11.959Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-01-23T09:42:06.676Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        },
+        {
+          "id": 1248482339,
+          "type": "DiscussionNote",
+          "body": "I search for a `gnutls_pubkey_import()` with `GNUTLS_X509_FMT_PEM` but it looks like there isn't anything for that yet. I think I'll leave that for now as there isn't much useful info in the RSA pubkey anyway.",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T20:32:23.379Z",
+          "updated_at": "2023-01-22T20:32:23.379Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-01-23T09:42:06.676Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d36ccd73a8eeed93ded262acc926273d93fab8da",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1248100649,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-20T23:37:19.221Z",
+          "updated_at": "2023-01-20T23:37:19.223Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3866c902e8ef2dbc0856f5471e5e7db5a3273e70",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248312967,
+          "type": "DiffNote",
+          "body": "'tree' is used, so no need for _U_",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-01-21T23:21:05.950Z",
+          "updated_at": "2023-01-21T23:21:05.950Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "d45a733258dea5297c59fce63f09a48aeb480bdf",
+            "start_sha": "39124f2f8f3419b624a9e3bab9fac4c2cfe23e18",
+            "head_sha": "6af7f96730da95faeed576ef8e950a148d2e8dbb",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 3622,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3565_3622",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3622
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3565_3622",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3622
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "resolved_at": "2023-01-22T15:11:04.056Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        },
+        {
+          "id": 1248426044,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/9564/diffs?diff_id=583530217&start_sha=6af7f96730da95faeed576ef8e950a148d2e8dbb#440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3622_3626)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T15:10:28.186Z",
+          "updated_at": "2023-01-22T15:10:28.186Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "d45a733258dea5297c59fce63f09a48aeb480bdf",
+            "start_sha": "39124f2f8f3419b624a9e3bab9fac4c2cfe23e18",
+            "head_sha": "6af7f96730da95faeed576ef8e950a148d2e8dbb",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 3622,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3565_3622",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3622
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3565_3622",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3622
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ea44baa50eb89d8a5c7ef4bdd3d1dd94a276ea14",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248312970,
+          "type": "DiffNote",
+          "body": "No need to initialise here - all paths set it.  Do you want capital 'U' (at line 3609) ?",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-01-21T23:21:06.158Z",
+          "updated_at": "2023-01-21T23:21:06.158Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "d45a733258dea5297c59fce63f09a48aeb480bdf",
+            "start_sha": "39124f2f8f3419b624a9e3bab9fac4c2cfe23e18",
+            "head_sha": "6af7f96730da95faeed576ef8e950a148d2e8dbb",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 3594,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3565_3594",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3594
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3565_3594",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3594
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "resolved_at": "2023-01-22T15:11:22.221Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        },
+        {
+          "id": 1248426046,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/9564/diffs?diff_id=583530217&start_sha=6af7f96730da95faeed576ef8e950a148d2e8dbb#440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3594_3597)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T15:10:28.397Z",
+          "updated_at": "2023-01-22T15:10:28.397Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "d45a733258dea5297c59fce63f09a48aeb480bdf",
+            "start_sha": "39124f2f8f3419b624a9e3bab9fac4c2cfe23e18",
+            "head_sha": "6af7f96730da95faeed576ef8e950a148d2e8dbb",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 3594,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3565_3594",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3594
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_3565_3594",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3594
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fdb4e09130489b0653e070a9cad8cc4743f73245",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248312971,
+          "type": "DiffNote",
+          "body": "Not used?",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-01-21T23:21:06.251Z",
+          "updated_at": "2023-01-21T23:21:06.251Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "start_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "head_sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 172,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_171_172",
+                "type": "new",
+                "old_line": null,
+                "new_line": 172
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_171_172",
+                "type": "new",
+                "old_line": null,
+                "new_line": 172
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "resolved_at": "2023-01-23T09:34:11.559Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3daa56e9c68940c85d073c02881353209368a0b9",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248312972,
+          "type": "DiffNote",
+          "body": "Not used?",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-01-21T23:21:06.348Z",
+          "updated_at": "2023-01-21T23:21:06.348Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "start_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "head_sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 171,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_171_171",
+                "type": "new",
+                "old_line": null,
+                "new_line": 171
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_171_171",
+                "type": "new",
+                "old_line": null,
+                "new_line": 171
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "resolved_at": "2023-01-23T09:34:13.360Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        },
+        {
+          "id": 1248424130,
+          "type": "DiffNote",
+          "body": "These are from https://github.com/mysql/mysql-server/blob/8.0/include/my_command.h#L95-L96 and are not strictly needed for this MR.",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T15:04:26.163Z",
+          "updated_at": "2023-01-22T15:04:26.163Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "start_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "head_sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 171,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_171_171",
+                "type": "new",
+                "old_line": null,
+                "new_line": 171
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_171_171",
+                "type": "new",
+                "old_line": null,
+                "new_line": 171
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "resolved_at": "2023-01-23T09:34:13.360Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a500c04ae91bb0a94317e20774dc23ca540818fb",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248312973,
+          "type": "DiffNote",
+          "body": "Should there be an entry here for AUTH_PUBKEY ?",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-01-21T23:21:06.449Z",
+          "updated_at": "2023-01-21T23:21:06.449Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "start_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "head_sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": 1255,
+            "new_line": 1268,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1255_1262",
+                "type": null,
+                "old_line": 1255,
+                "new_line": 1262
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_1255_1262",
+                "type": null,
+                "old_line": 1255,
+                "new_line": 1262
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "resolved_at": "2023-01-22T15:11:51.614Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bfb0e3e130bb45f69b5f1ed5a3edf508949bb727",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248312974,
+          "type": "DiffNote",
+          "body": "Always \"response EOF\", but fine.",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-01-21T23:21:06.541Z",
+          "updated_at": "2023-01-21T23:21:06.541Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "start_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "head_sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": 2522,
+            "new_line": 2539,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2522_2533",
+                "type": null,
+                "old_line": 2522,
+                "new_line": 2533
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2522_2533",
+                "type": null,
+                "old_line": 2522,
+                "new_line": 2533
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "resolved_at": "2023-01-23T09:36:20.892Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "54eaf7cf6663d0e7d273185aca2d68153458edc5",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248312975,
+          "type": "DiffNote",
+          "body": "Always \"caching_sha2_password\", but fine.",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-01-21T23:21:06.634Z",
+          "updated_at": "2023-01-21T23:21:06.634Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "start_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+            "head_sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+            "old_path": "epan/dissectors/packet-mysql.c",
+            "new_path": "epan/dissectors/packet-mysql.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2643,
+            "line_range": {
+              "start": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2628_2637",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2637
+              },
+              "end": {
+                "line_code": "440de33dd3bf27bff8a4c1ac1c8590f40c95d02b_2628_2637",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2637
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "resolved_at": "2023-01-23T09:36:24.714Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8e6ec4cb2b5bd316f4a62883ea4c41589eb649c9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1248426052,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>fcec70fc - Various small fixes</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9564/diffs?diff_id=583530217&start_sha=6af7f96730da95faeed576ef8e950a148d2e8dbb)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T15:10:29.124Z",
+          "updated_at": "2023-01-22T15:10:29.125Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cb7570c66d7f6652cc46e80d6224b226b6cf529e",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1248426330,
+          "type": "DiscussionNote",
+          "body": "@martin.r.mathieson thanks for reviewing. I've addressed most of the comments.",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T15:12:44.155Z",
+          "updated_at": "2023-01-23T09:37:46.794Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-01-23T09:41:59.032Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        },
+        {
+          "id": 1248861469,
+          "type": "DiscussionNote",
+          "body": "Thanks, my comments are all resolved.",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-01-23T09:37:46.665Z",
+          "updated_at": "2023-01-23T09:37:46.665Z",
+          "system": false,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-01-23T09:41:59.032Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9602ad806e7e1fe813861ead0c53688203794756",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1248485972,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>c1bc0682 - caching_sha2_password: dissect &#39;Client: Send encrypted password&#39; packets</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9564/diffs?diff_id=583573510&start_sha=fcec70fc428ce0ee7c537b22716ad6f740bd8a0d)",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T21:00:15.478Z",
+          "updated_at": "2023-01-22T21:00:15.480Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1fe583a79f07ab286b76803d1b28c3c260a7044f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1248486016,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T21:00:41.345Z",
+          "updated_at": "2023-01-22T21:00:41.347Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4714abe5d81138c7640afdc4e88eea49a917c3e0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1248486195,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2023-01-22T21:02:02.198Z",
+          "updated_at": "2023-01-22T21:02:02.201Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b1845d4dd69ff102a2127f8e68619d6f718b3a72",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1248868160,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-23T09:42:06.716Z",
+          "updated_at": "2023-01-23T09:42:06.723Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b202701e66f7c319f88b9b9a28cb062f141b1d1f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1248868336,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-23T09:42:14.416Z",
+          "updated_at": "2023-01-23T09:42:14.420Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a904818e9c0d252b514e534ce7f59cf8747ff523",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1248868476,
+          "type": null,
+          "body": "added 30 commits\n\n<ul><li>c1bc0682...67878353 - 27 commits from branch <code>wireshark:master</code></li><li>9a7c53fb - MySQL: Decode caching_sha2_password packets</li><li>dbab9e15 - Various small fixes</li><li>4a8a3445 - caching_sha2_password: dissect &#39;Client: Send encrypted password&#39; packets</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9564/diffs?diff_id=583822883&start_sha=c1bc0682edb4e0381660fa093fd1e9483bef0980)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-23T09:42:20.422Z",
+          "updated_at": "2023-01-23T09:42:20.423Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "86b7fe7c3347a2fc9dc14ab7cbddea8ab249bd49",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1250243308,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>4a8a3445...2691f87e - 5 commits from branch <code>wireshark:master</code></li><li>0258c888 - MySQL: Decode caching_sha2_password packets</li><li>2a685041 - Various small fixes</li><li>4a639dc3 - caching_sha2_password: dissect &#39;Client: Send encrypted password&#39; packets</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9564/diffs?diff_id=584816097&start_sha=4a8a34452706900946559f0e32ca91e454ca37e3)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-24T08:23:12.518Z",
+          "updated_at": "2023-01-24T08:23:12.519Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b1e23bf93236d3ffecf11320281c6902f6d873bd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1250243648,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 4a639dc31461b3ecc3472a76dd1278011e11519e succeeds",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-24T08:23:29.650Z",
+          "updated_at": "2023-01-24T08:23:29.653Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "69a2b0989696d4117cef20a8a7dcd3981600f454",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1250248341,
+          "type": null,
+          "body": "aborted the automatic merge because target branch was updated",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2023-01-24T08:27:02.832Z",
+          "updated_at": "2023-01-24T08:27:02.835Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1c0161f70c5673ef0369c5ae342fda9cb927e6c4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1250344667,
+          "type": null,
+          "body": "added 4 commits\n\n<ul><li>06fc6483 - 1 commit from branch <code>wireshark:master</code></li><li>18166cfe - MySQL: Decode caching_sha2_password packets</li><li>8cbc2c57 - Various small fixes</li><li>47fbd086 - caching_sha2_password: dissect &#39;Client: Send encrypted password&#39; packets</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9564/diffs?diff_id=584884862&start_sha=4a639dc31461b3ecc3472a76dd1278011e11519e)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-24T09:27:42.289Z",
+          "updated_at": "2023-01-24T09:27:42.291Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "400805d5d52e0c59c75f38a3aeb5a6e5f8eb7b0d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1250345083,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 47fbd0864c427cbe2f607ed3a0b379243b583688 succeeds",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-24T09:27:52.571Z",
+          "updated_at": "2023-01-24T09:27:52.573Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "759dc557381483681e252238d217b25c53f843f6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3023684873,
+          "type": null,
+          "body": "mentioned in merge request !23321",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2026-01-21T13:10:23.058Z",
+          "updated_at": "2026-01-21T13:10:23.069Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "11292b4a245c9828032ee82dd6a7e2a31c8d796a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3024278053,
+          "type": null,
+          "body": "mentioned in commit 6d60a5474c49ec155e9dbd2a83d44c44dc95cbfa",
+          "author": {
+            "id": 8399509,
+            "username": "mmann78",
+            "public_email": "",
+            "name": "Michael Mann",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fad119898ba16a3f8be2f765dcff399098444abd4f85a04d4c3ef415a2bbe3d9?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mmann78"
+          },
+          "created_at": "2026-01-21T16:12:57.363Z",
+          "updated_at": "2026-01-21T16:12:57.371Z",
+          "system": true,
+          "noteable_id": 200680747,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9564,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -168,6 +168,8 @@ void proto_reg_handoff_mysql(void);\n #define MYSQL_DAEMON              29\n #define MYSQL_BINLOG_DUMP_GTID    30 /* replication */\n #define MYSQL_RESET_CONNECTION    31\n+#define MYSQL_CLONE               32\n+#define MYSQL_SUBSCRIBE_GROUP_REPLICATION_STREAM  33\n \n /* MariaDB specific commands */\n #define MARIADB_STMT_BULK_EXECUTE 250\n@@ -251,6 +253,8 @@ static const value_string mysql_command_vals[] = {\n \t{MYSQL_DAEMON, \"Daemon\"},\n \t{MYSQL_BINLOG_DUMP_GTID, \"Send Binlog GTID\"},\n \t{MYSQL_RESET_CONNECTION, \"Reset Connection\"},\n+\t{MYSQL_CLONE, \"Native cloning\"},\n+\t{MYSQL_SUBSCRIBE_GROUP_REPLICATION_STREAM, \"Subscribe Group Repliction Stream\"},\n \t{MARIADB_STMT_BULK_EXECUTE, \"Execute Bulk Statement\"},\n \t{0, NULL}\n };\n@@ -1139,6 +1143,9 @@ static int hf_mysql_auth_switch_request_status = -1;\n static int hf_mysql_auth_switch_request_name = -1;\n static int hf_mysql_auth_switch_request_data = -1;\n static int hf_mysql_auth_switch_response_data = -1;\n+static int hf_mysql_sha2_auth = -1;\n+static int hf_mysql_sha2_response = -1;\n+static int hf_mysql_pubkey = -1;\n static int hf_mysql_compressed_packet_length = -1;\n static int hf_mysql_compressed_packet_length_uncompressed = -1;\n static int hf_mysql_compressed_packet_number = -1;\n@@ -1230,6 +1237,9 @@ typedef enum mysql_state {\n \tPREPARED_FIELDS,\n \tAUTH_SWITCH_REQUEST,\n \tAUTH_SWITCH_RESPONSE,\n+\tAUTH_SHA2,\n+\tAUTH_PUBKEY,\n+\tAUTH_SHA2_RESPONSE,\n \tBINLOG_DUMP\n } mysql_state_t;\n \n@@ -1252,6 +1262,9 @@ static const value_string state_vals[] = {\n \t{PREPARED_FIELDS,      \"fields in response to PREPARE\"},\n \t{AUTH_SWITCH_REQUEST,  \"authentication switch request\"},\n \t{AUTH_SWITCH_RESPONSE, \"authentication switch response\"},\n+\t{AUTH_SHA2,            \"caching_sha2_password\"},\n+\t{AUTH_PUBKEY,          \"public key request\"},\n+\t{AUTH_SHA2_RESPONSE,   \"caching_sha2_password response\"},\n \t{BINLOG_DUMP,          \"binlog event\"},\n \t{0, NULL}\n };\n@@ -1319,6 +1332,7 @@ static int mysql_dissect_response_prepare(tvbuff_t *tvb, packet_info *pinfo, int\n static int mysql_dissect_auth_switch_request(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree, mysql_conn_data_t *conn_data);\n static int mysql_dissect_eof(tvbuff_t *tvb, packet_info *pinfo, proto_item *pi, int offset, proto_tree *tree, mysql_conn_data_t *conn_data);\n static int mysql_dissect_auth_switch_response(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree, mysql_conn_data_t *conn_data);\n+static int mysql_dissect_auth_sha2(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree, mysql_conn_data_t *conn_data);\n static void mysql_dissect_exec_string(tvbuff_t *tvb, int *param_offset, proto_item *field_tree);\n static void mysql_dissect_exec_datetime(tvbuff_t *tvb, int *param_offset, proto_item *field_tree);\n static void mysql_dissect_exec_tiny(tvbuff_t *tvb, int *param_offset, proto_item *field_tree);\n@@ -1999,6 +2013,9 @@ mysql_dissect_request(tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *\n \tif(current_state == AUTH_SWITCH_RESPONSE){\n \t\treturn mysql_dissect_auth_switch_response(tvb, pinfo, offset, tree, conn_data);\n \t}\n+\tif(current_state == AUTH_SHA2){\n+\t\treturn mysql_dissect_auth_sha2(tvb, pinfo, offset, tree, conn_data);\n+\t}\n \n \trequest_item = proto_tree_add_item(tree, hf_mysql_request, tvb, offset, -1, ENC_NA);\n \treq_tree = proto_item_add_subtree(request_item, ett_request);\n@@ -2522,7 +2539,6 @@ mysql_dissect_response(tvbuff_t *tvb, packet_info *pinfo, int offset,\n \t\t\t\tproto_item_append_text(pi, \" - %s\", val_to_str(RESPONSE_EOF, state_vals, \"Unknown (%u)\"));\n \t\t\t\tmysql_set_conn_state(pinfo, conn_data, REQUEST);\n \t\t\t}\n-\n \t\t} else if (tvb_reported_length_remaining(tvb, offset) < 0xffffff) {\n \t\t\t// not an EOF\n \t\t\tif (current_state == AUTH_SWITCH_REQUEST) {\n@@ -2623,8 +2639,13 @@ mysql_dissect_response(tvbuff_t *tvb, packet_info *pinfo, int offset,\n \t\t\tbreak;\n \n \t\tcase AUTH_SWITCH_REQUEST:\n-\t\t\tproto_item_append_text(pi, \" - %s\", val_to_str(AUTH_SWITCH_REQUEST, state_vals, \"Unknown (%u)\"));\n-\t\t\toffset = mysql_dissect_auth_switch_request(tvb, pinfo, offset, tree, conn_data);\n+\t\t\tif (tvb_reported_length_remaining(tvb,offset) == 2) {\n+\t\t\t\tproto_item_append_text(pi, \" - %s\", val_to_str(AUTH_SHA2, state_vals, \"Unknown (%u)\"));\n+\t\t\t\toffset = mysql_dissect_auth_sha2(tvb, pinfo, offset, tree, conn_data);\n+\t\t\t} else {\n+\t\t\t\tproto_item_append_text(pi, \" - %s\", val_to_str(AUTH_SWITCH_REQUEST, state_vals, \"Unknown (%u)\"));\n+\t\t\t\toffset = mysql_dissect_auth_switch_request(tvb, pinfo, offset, tree, conn_data);\n+\t\t\t}\n \t\t\tbreak;\n \n \t\tdefault:\n@@ -3562,6 +3583,81 @@ mysql_dissect_auth_switch_response(tvbuff_t *tvb, packet_info *pinfo, int offset\n \treturn offset + tvb_reported_length_remaining(tvb, offset);\n \n }\n+\n+/*\n+ caching_sha2_password authentication state\n+\n+ Doc: https://dev.mysql.com/doc/dev/mysql-server/latest/page_caching_sha2_authentication_exchanges.html\n+*/\n+static int\n+mysql_dissect_auth_sha2(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree, mysql_conn_data_t *conn_data _U_)\n+{\n+\tcol_set_str(pinfo->cinfo, COL_INFO, \"Caching_sha2_password \" );\n+\tcol_set_fence(pinfo->cinfo, COL_INFO);\n+\n+\tif (tvb_reported_length_remaining(tvb,offset) == 2)\n+\t\toffset++;\n+\tchar *auth2_state;\n+\tguint8 c = tvb_get_guint8(tvb, offset);\n+\tswitch (c) {\n+\t\tcase 2:\n+\t\t\tauth2_state = \"request_public_key\";\n+\t\t\tmysql_set_conn_state(pinfo, conn_data, AUTH_PUBKEY);\n+\t\t\tbreak;\n+\t\tcase 3:\n+\t\t\tauth2_state = \"fast_auth_success\";\n+\t\t\tbreak;\n+\t\tcase 4:\n+\t\t\tauth2_state = \"perform_full_authentication\";\n+\t\t\tmysql_set_conn_state(pinfo, conn_data, AUTH_SHA2);\n+\t\t\tbreak;\n+\t\tdefault:\n+\t\t\tauth2_state = \"unknown\";\n+\t}\n+\tcol_append_str(pinfo->cinfo, COL_INFO, auth2_state);\n+\tproto_tree_add_string(tree, hf_mysql_sha2_auth, tvb, offset, 1, auth2_state);\n+\toffset++;\n+\n+\treturn offset + tvb_reported_length_remaining(tvb, offset);\n+}\n+\n+/*\n+ Public key as requested during caching_sha2_password authentication\n+*/\n+static int\n+mysql_dissect_pubkey(tvbuff_t *tvb, packet_info *pinfo, int offset,\n+\t\t       proto_tree *tree, mysql_conn_data_t *conn_data _U_, proto_item *pi _U_, mysql_state_t current_state _U_)\n+{\n+\ttvbuff_t *next_tvb;\n+\tcol_set_str(pinfo->cinfo, COL_INFO, \"Public key \" );\n+\tcol_set_fence(pinfo->cinfo, COL_INFO);\n+\tmysql_set_conn_state(pinfo, conn_data, AUTH_SHA2_RESPONSE);\n+\n+\toffset++;\n+\tgint len = tvb_reported_length_remaining(tvb, offset) - 1;\n+\tnext_tvb = tvb_new_subset_length(tvb, offset, len);\n+\tadd_new_data_source(pinfo, next_tvb, \"public key\");\n+\tproto_tree_add_item(tree, hf_mysql_pubkey, tvb, offset, len, ENC_ASCII);\n+\toffset += len;\n+\n+\treturn offset + tvb_reported_length_remaining(tvb,offset);\n+}\n+\n+/*\n+ If caching_sha2_password authentication is used over a non-secure channel\n+ then the authentication response (password) is encrypted with a RSA public key.\n+\n+ This means that we can't dissect this response without access to the RSA private key.\n+*/\n+static int\n+mysql_dissect_sha2_response(tvbuff_t *tvb, packet_info *pinfo _U_, int offset,\n+\t\t       proto_tree *tree _U_, mysql_conn_data_t *conn_data _U_, proto_item *pi _U_, mysql_state_t current_state _U_)\n+{\n+\tgint len = tvb_reported_length_remaining(tvb, offset);\n+\tproto_tree_add_item(tree, hf_mysql_sha2_response, tvb, offset, len, ENC_NA);\n+\treturn offset + tvb_reported_length_remaining(tvb, offset);\n+}\n+\n /*\n  get length of string in packet buffer\n \n@@ -3773,6 +3869,9 @@ dissect_mysql_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat\n \t\tif (packet_number == 0 && mysql_frame_data_p->state == UNDEFINED) {\n \t\t\tcol_set_str(pinfo->cinfo, COL_INFO, \"Server Greeting \");\n \t\t\toffset = mysql_dissect_greeting(tvb, pinfo, offset, mysql_tree, conn_data);\n+\t\t} else if (mysql_frame_data_p->state == AUTH_PUBKEY) {\n+\t\t\tcol_set_str(pinfo->cinfo, COL_INFO, \"Public key \");\n+\t\t\toffset = mysql_dissect_pubkey(tvb, pinfo, offset, mysql_tree, conn_data, ti, mysql_frame_data_p->state);\n \t\t} else {\n \t\t\tcol_set_str(pinfo->cinfo, COL_INFO, \"Response \");\n \t\t\toffset = mysql_dissect_response(tvb, pinfo, offset, mysql_tree, conn_data, ti, mysql_frame_data_p->state);\n@@ -3787,6 +3886,9 @@ dissect_mysql_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat\n \t\t\t\t\tconn_data->compressed_state = MYSQL_COMPRESS_INIT;\n \t\t\t\t}\n \t\t\t}\n+\t\t} else if (mysql_frame_data_p->state == AUTH_SHA2_RESPONSE) {\n+\t\t\tcol_set_str(pinfo->cinfo, COL_INFO, \"Caching_sha2_password response\");\n+\t\t\toffset = mysql_dissect_sha2_response(tvb, pinfo, offset, mysql_tree, conn_data, ti, mysql_frame_data_p->state);\n \t\t} else {\n \t\t\tcol_set_str(pinfo->cinfo, COL_INFO, \"Request\");\n \t\t\toffset = mysql_dissect_request(tvb, pinfo, offset, mysql_tree, conn_data, mysql_frame_data_p->state);\n@@ -4957,6 +5059,21 @@ void proto_register_mysql(void)\n \t\tFT_BYTES, BASE_NONE, NULL, 0x0,\n \t\tNULL, HFILL }},\n \n+\t\t{ &hf_mysql_sha2_auth,\n+\t\t{ \"SHA2 Auth State\", \"mysql.hf_mysql_sha2_auth.name\",\n+\t\tFT_STRING, BASE_NONE, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n+\t\t{ &hf_mysql_pubkey,\n+\t\t{ \"Public Key\", \"mysql.hf_mysql_pubkey\",\n+\t\tFT_STRINGZ, BASE_NONE, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n+\t\t{ &hf_mysql_sha2_response,\n+\t\t{ \"SHA2 Auth Response\", \"mysql.hf_mysql_sha2_response\",\n+\t\tFT_BYTES, BASE_NONE, NULL, 0x0,\n+\t\tNULL, HFILL }},\n+\n \t\t{ &hf_mysql_compressed_packet_length,\n \t\t{ \"Compressed Packet Length\", \"mysql.compressed_packet_length\",\n \t\tFT_UINT24, BASE_DEC, NULL,  0x0,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mysql.c",
+      "old_path": "epan/dissectors/packet-mysql.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+      "short_id": "47fbd086",
+      "created_at": "2023-01-24T09:27:37.000+00:00",
+      "parent_ids": [
+        "8cbc2c57f1b0a6f90ba034716581ccb3eb8364e3"
+      ],
+      "title": "caching_sha2_password: dissect 'Client: Send encrypted password' packets",
+      "message": "caching_sha2_password: dissect 'Client: Send encrypted password' packets\n",
+      "author_name": "Daniël van Eeden",
+      "author_email": "git@myname.nl",
+      "authored_date": "2023-01-22T21:59:59.000+01:00",
+      "committer_name": "Alexis La Goutte",
+      "committer_email": "alexis.lagoutte@gmail.com",
+      "committed_date": "2023-01-24T09:27:37.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/47fbd0864c427cbe2f607ed3a0b379243b583688"
+    },
+    {
+      "id": "8cbc2c57f1b0a6f90ba034716581ccb3eb8364e3",
+      "short_id": "8cbc2c57",
+      "created_at": "2023-01-24T09:27:37.000+00:00",
+      "parent_ids": [
+        "18166cfebec1cd4e19971e232aeeab86b19da179"
+      ],
+      "title": "Various small fixes",
+      "message": "Various small fixes\n\n- Address some code review comments\n- Add more info to the column\n",
+      "author_name": "Daniël van Eeden",
+      "author_email": "git@myname.nl",
+      "authored_date": "2023-01-22T16:10:14.000+01:00",
+      "committer_name": "Alexis La Goutte",
+      "committer_email": "alexis.lagoutte@gmail.com",
+      "committed_date": "2023-01-24T09:27:37.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8cbc2c57f1b0a6f90ba034716581ccb3eb8364e3"
+    },
+    {
+      "id": "18166cfebec1cd4e19971e232aeeab86b19da179",
+      "short_id": "18166cfe",
+      "created_at": "2023-01-24T09:27:37.000+00:00",
+      "parent_ids": [
+        "06fc6483b38fbbca427fa40c84a393af1b07f731"
+      ],
+      "title": "MySQL: Decode caching_sha2_password packets",
+      "message": "MySQL: Decode caching_sha2_password packets\n",
+      "author_name": "Daniël van Eeden",
+      "author_email": "git@myname.nl",
+      "authored_date": "2023-01-20T23:59:16.000+01:00",
+      "committer_name": "Alexis La Goutte",
+      "committer_email": "alexis.lagoutte@gmail.com",
+      "committed_date": "2023-01-24T09:27:37.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/18166cfebec1cd4e19971e232aeeab86b19da179"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 584884862,
+      "head_commit_sha": "47fbd0864c427cbe2f607ed3a0b379243b583688",
+      "base_commit_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+      "start_commit_sha": "06fc6483b38fbbca427fa40c84a393af1b07f731",
+      "created_at": "2023-01-24T09:27:39.948Z",
+      "merge_request_id": 200680747,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 584816097,
+      "head_commit_sha": "4a639dc31461b3ecc3472a76dd1278011e11519e",
+      "base_commit_sha": "2691f87ef9247e80581f9737b2cda5ba90aa7347",
+      "start_commit_sha": "2691f87ef9247e80581f9737b2cda5ba90aa7347",
+      "created_at": "2023-01-24T08:23:11.022Z",
+      "merge_request_id": 200680747,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 583822883,
+      "head_commit_sha": "4a8a34452706900946559f0e32ca91e454ca37e3",
+      "base_commit_sha": "6787835373ec224f1d52845f74ae617994bce599",
+      "start_commit_sha": "6787835373ec224f1d52845f74ae617994bce599",
+      "created_at": "2023-01-23T09:42:18.778Z",
+      "merge_request_id": 200680747,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 583573510,
+      "head_commit_sha": "c1bc0682edb4e0381660fa093fd1e9483bef0980",
+      "base_commit_sha": "d45a733258dea5297c59fce63f09a48aeb480bdf",
+      "start_commit_sha": "dda2ead9c052a87c4387d6e6b216aa4e6b49c0ce",
+      "created_at": "2023-01-22T21:00:13.692Z",
+      "merge_request_id": 200680747,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 583530217,
+      "head_commit_sha": "fcec70fc428ce0ee7c537b22716ad6f740bd8a0d",
+      "base_commit_sha": "d45a733258dea5297c59fce63f09a48aeb480bdf",
+      "start_commit_sha": "dda2ead9c052a87c4387d6e6b216aa4e6b49c0ce",
+      "created_at": "2023-01-22T15:10:27.314Z",
+      "merge_request_id": 200680747,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 583291139,
+      "head_commit_sha": "6af7f96730da95faeed576ef8e950a148d2e8dbb",
+      "base_commit_sha": "d45a733258dea5297c59fce63f09a48aeb480bdf",
+      "start_commit_sha": "39124f2f8f3419b624a9e3bab9fac4c2cfe23e18",
+      "created_at": "2023-01-20T23:19:41.389Z",
+      "merge_request_id": 200680747,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

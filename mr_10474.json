@@ -1,0 +1,957 @@
+{
+  "id": 220920627,
+  "iid": 10474,
+  "project_id": 7898047,
+  "title": "ntlmssp: fix decrypt error by decrypting verifier after payload",
+  "description": "Fix #19000 \n\nAs described in https://gitlab.com/wireshark/wireshark/-/issues/19000#note_1357871061, the issue was that the DCERPC calls the underlying dissector (NTLMSSP in our case) first to deal with the verifier `dissect_auth_verf`, then to deal with the payload `decode_encrypted_data`.\nThe issue is that previously, the NTLMSSP code to deal with the verifier also decrypted it. Actually it failed because it couldn't find the packet info which wasn't created yet. Then the payload was decrypted, before going to the next request.\nThe issue is that the verifier was never decrypted, and since the same RC4 cipher is used without reset for all subsequent requests, the cipher is shifted and it doesn't decrypt properly anymore.\n\nMy suggestion here is to skip decrypting the verifier, just storing its encrypted value. Then when the payload decryption is called, decrypt it, then call the function to finally decrypt the verifier. So the verifier is always decrypted after decrypting the payload, and before decrypting the next payload from the next request.\n\nI'm confident about that logic, but I'm not very confident with my code unfortunately 🤔, also because I don't know all the Wireshark concepts (the `tree`, the `key`, etc.) so please review it carefully 🔍\nI managed to not touch the dcerpc code itself, nor any other dissector, just NTLMSSP so the impact is minimal...\n\nOf course I confirm that the decryption of the entire RPC exchange from the PCAP shared in #19000 now works great! 🎉",
+  "state": "merged",
+  "created_at": "2023-04-29T22:39:46.727Z",
+  "updated_at": "2023-07-19T23:17:48.882Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2023-05-03T02:09:13.581Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "pr-fix-ntlmssp",
+  "user_notes_count": 6,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 9212371,
+    "username": "cnotin",
+    "public_email": "",
+    "name": "Clément Notin",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+    "web_url": "https://gitlab.com/cnotin"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 27762966,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "6d466cab13b9d4b599f421595060adc7794a573e",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-04-29T22:39:51.579Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10474",
+  "references": {
+    "short": "!10474",
+    "relative": "!10474",
+    "full": "wireshark/wireshark!10474"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10474",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-05-03T01:13:48.891Z",
+  "latest_build_finished_at": "2023-05-03T01:34:32.887Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 855328290,
+    "iid": 45539,
+    "project_id": 7898047,
+    "sha": "6d466cab13b9d4b599f421595060adc7794a573e",
+    "ref": "refs/merge-requests/10474/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-05-03T01:13:47.828Z",
+    "updated_at": "2023-05-03T01:34:32.897Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/855328290"
+  },
+  "head_pipeline": {
+    "id": 855328290,
+    "iid": 45539,
+    "project_id": 7898047,
+    "sha": "6d466cab13b9d4b599f421595060adc7794a573e",
+    "ref": "refs/merge-requests/10474/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-05-03T01:13:47.828Z",
+    "updated_at": "2023-05-03T01:34:32.897Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/855328290",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2023-05-03T01:13:48.891Z",
+    "finished_at": "2023-05-03T01:34:32.887Z",
+    "committed_at": null,
+    "duration": 1243,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/855328290",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "55db118c0fca8d8ba6823f129956ffc3fb69cc15",
+    "head_sha": "6d466cab13b9d4b599f421595060adc7794a573e",
+    "start_sha": "55db118c0fca8d8ba6823f129956ffc3fb69cc15"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "bdb26677567f351846dabd18afd834c58fd0c362",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1373239047,
+          "type": null,
+          "body": "marked this merge request as **draft**",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-04-29T22:44:29.695Z",
+          "updated_at": "2023-04-29T22:44:29.697Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e32f4b833132cbcc0ee46a4708e9e1e5eb04aaf8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1373248876,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-04-29T23:54:31.250Z",
+          "updated_at": "2023-04-29T23:54:31.253Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f73947dae0ef8d3fa83aa57a97b8505f03c03c97",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1373427661,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>2460b787 - ntlmssp: fix decrypt error by decrypting verifier after payload</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10474/diffs?diff_id=669188720&start_sha=9259dc70d8af57920898623b1a38a0d322e4dace)",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-04-30T21:04:28.835Z",
+          "updated_at": "2023-04-30T21:04:28.837Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5c7ecf106cb6ba250aa15195a4add711ba047d8c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1373429660,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>ca7e7c47 - ntlmssp: fix decrypt error by decrypting verifier after payload</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10474/diffs?diff_id=669189874&start_sha=2460b787db7ffc600e446e049872206fe11737e0)",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-04-30T21:14:04.236Z",
+          "updated_at": "2023-04-30T21:14:04.238Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b8e45d5c4f8891a6e44b7b3f52831bdc6b771ba3",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1373602395,
+          "type": "DiscussionNote",
+          "body": "need backport ?",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-01T08:23:50.511Z",
+          "updated_at": "2023-05-01T08:26:33.216Z",
+          "system": false,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-05-01T19:23:02.226Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        },
+        {
+          "id": 1373603715,
+          "type": "DiscussionNote",
+          "body": "Why not :) I don’t know what are your rules for backports usually! I don’t even know what older versions are still supported 😅 edit: this I guess https://wiki.wireshark.org/Development/LifeCycle\n\nShould I do it myself? Do you have any guide/doc that I could follow?\nEdit: I found a link here but it seems dead https://wiki.wireshark.org/Development/Roadmap",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-05-01T08:26:33.098Z",
+          "updated_at": "2023-05-01T08:32:58.417Z",
+          "system": false,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-05-01T19:23:02.226Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        },
+        {
+          "id": 1374035581,
+          "type": "DiscussionNote",
+          "body": "it is easy\n\nOnly backport fix but no enhance (but it is complicated sometime ^^)\n\nthere is an option on Gitlab GUI to make a cherry-pick of a commit (can be you or me but when i ask i will try to backport the issue)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-01T19:23:01.290Z",
+          "updated_at": "2023-05-01T19:26:20.946Z",
+          "system": false,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2023-05-01T19:23:02.226Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        },
+        {
+          "id": 1374037367,
+          "type": "DiscussionNote",
+          "body": "I'll try :smile: finishing something else and I'm on it!",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-05-01T19:25:55.062Z",
+          "updated_at": "2023-05-01T19:25:55.062Z",
+          "system": false,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "resolved_at": "2023-05-01T19:25:55.045Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        },
+        {
+          "id": 1374059856,
+          "type": "DiscussionNote",
+          "body": "-> https://gitlab.com/wireshark/wireshark/-/merge_requests/10489",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-05-01T20:01:37.856Z",
+          "updated_at": "2023-05-01T20:46:10.321Z",
+          "system": false,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "resolved_at": "2023-05-01T20:01:37.834Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a9fc5cef37684c570cdaf7cffc63ae5a40a179a5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1373602498,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-01T08:23:54.153Z",
+          "updated_at": "2023-05-01T08:23:54.158Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "46e2b9d5ec7a51bd2c72856ad1ebffe6a289158b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1373602511,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>ca7e7c47...2354e352 - 7 commits from branch <code>wireshark:master</code></li><li>c73e2d4b - ntlmssp: fix decrypt error by decrypting verifier after payload</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10474/diffs?diff_id=669300527&start_sha=ca7e7c47216144dc37ece6be1215a5f020c887b8)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-01T08:23:56.574Z",
+          "updated_at": "2023-05-01T08:23:56.575Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e6b06458be87df6a8d2e422ef1da76cf3f1071ca",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1373602721,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for c73e2d4be05b8147cebf8277fb1a2d321c8483d8 succeeds",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-01T08:24:13.990Z",
+          "updated_at": "2023-05-01T08:24:13.992Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f3046f822b4496150674e89cec2b047f1f23e612",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1373702129,
+          "type": null,
+          "body": "aborted the automatic merge because target branch was updated",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-05-01T11:24:32.205Z",
+          "updated_at": "2023-05-01T11:24:32.206Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5cd37664c3d6f678bb4c22c027a8ce3265e6f95c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1374035598,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-01T19:23:02.262Z",
+          "updated_at": "2023-05-01T19:23:02.268Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c0cae1a7aedd136291baf3a1ce1cf100ce7be91f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1374057351,
+          "type": null,
+          "body": "mentioned in merge request !10489",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-05-01T19:57:06.190Z",
+          "updated_at": "2023-05-01T19:57:06.192Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d364e1625d3a3ae5c1bdd9e16b5fd9ed8acba377",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1374059218,
+          "type": null,
+          "body": "It seems I rudely blocked this merge - is it ready?",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-05-01T20:00:29.850Z",
+          "updated_at": "2023-05-01T20:12:22.455Z",
+          "system": false,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "73e8a3b6332f06c9dedbaf3ea38cc851f3e14ee0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1374059688,
+          "type": null,
+          "body": "mentioned in merge request !10490",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-05-01T20:01:19.599Z",
+          "updated_at": "2023-05-01T20:01:19.602Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1645bd1473c973e664d066c8bb04f8ae8627bc00",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1375936750,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>c73e2d4b...55db118c - 6 commits from branch <code>wireshark:master</code></li><li>6d466cab - ntlmssp: fix decrypt error by decrypting verifier after payload</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10474/diffs?diff_id=670838922&start_sha=c73e2d4be05b8147cebf8277fb1a2d321c8483d8)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-05-03T01:13:46.039Z",
+          "updated_at": "2023-05-03T01:13:46.041Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a440b44a75f25ab76201a406c1c3da54c50687b7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1478112088,
+          "type": null,
+          "body": "mentioned in merge request !11446",
+          "author": {
+            "id": 9212371,
+            "username": "cnotin",
+            "public_email": "",
+            "name": "Clément Notin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/754f20cd853d2a458b844b869531b42ca938f65a7cd853b005cca66da6f391f8?s=80&d=identicon",
+            "web_url": "https://gitlab.com/cnotin"
+          },
+          "created_at": "2023-07-19T23:17:48.833Z",
+          "updated_at": "2023-07-19T23:17:48.835Z",
+          "system": true,
+          "noteable_id": 220920627,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10474,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -314,6 +314,8 @@ typedef struct _ntlmssp_packet_info {\n   guint8    verifier[NTLMSSP_KEY_LEN];\n   gboolean  payload_decrypted;\n   gboolean  verifier_decrypted;\n+  int       verifier_offset;\n+  guint32   verifier_block_length;\n } ntlmssp_packet_info;\n \n static int\n@@ -2190,8 +2192,10 @@ static tvbuff_t*\n decrypt_data_payload(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n                      packet_info *pinfo, proto_tree *tree _U_, gpointer key);\n static void\n-decrypt_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n-                 packet_info *pinfo, proto_tree *tree, gpointer key);\n+store_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length, packet_info *pinfo);\n+\n+static void\n+decrypt_verifier(tvbuff_t *tvb, packet_info *pinfo);\n \n static int\n dissect_ntlmssp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)\n@@ -2252,7 +2256,8 @@ dissect_ntlmssp_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi\n     tvb_memcpy(tvb, key, offset, ntlm_signature_size + ntlm_seq_size);\n     /* Try to decrypt */\n     decrypt_data_payload (tvb, offset+(ntlm_signature_size + ntlm_seq_size), encrypted_block_length-(ntlm_signature_size + ntlm_seq_size), pinfo, ntlmssp_tree, key);\n-    decrypt_verifier (tvb, offset, ntlm_signature_size + ntlm_seq_size, pinfo, ntlmssp_tree, key);\n+    store_verifier (tvb, offset, ntlm_signature_size + ntlm_seq_size, pinfo);\n+    decrypt_verifier (tvb, pinfo);\n     /* let's try to hook ourselves here */\n \n     offset += 12;\n@@ -2460,12 +2465,33 @@ dissect_ntlmssp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data\n   return tvb_captured_length(tvb);\n }\n \n+static void\n+store_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length, packet_info *pinfo)\n+{\n+  ntlmssp_packet_info *packet_ntlmssp_info;\n+\n+  packet_ntlmssp_info = (ntlmssp_packet_info*)p_get_proto_data(wmem_file_scope(), pinfo, proto_ntlmssp, NTLMSSP_PACKET_INFO_KEY);\n+  if (packet_ntlmssp_info == NULL) {\n+    /* We don't have any packet state, so create one */\n+    packet_ntlmssp_info = wmem_new0(wmem_file_scope(), ntlmssp_packet_info);\n+    p_add_proto_data(wmem_file_scope(), pinfo, proto_ntlmssp, NTLMSSP_PACKET_INFO_KEY, packet_ntlmssp_info);\n+  }\n+\n+  if (!packet_ntlmssp_info->verifier_decrypted) {\n+    /* Store all necessary info for later decryption */\n+    packet_ntlmssp_info->verifier_offset = offset;\n+    packet_ntlmssp_info->verifier_block_length = encrypted_block_length;\n+    /* Setup the buffer to decrypt to */\n+    tvb_memcpy(tvb, packet_ntlmssp_info->verifier,\n+      offset, MIN(encrypted_block_length, sizeof(packet_ntlmssp_info->verifier)));\n+  }\n+}\n+\n /*\n  * See page 45 of \"DCE/RPC over SMB\" by Luke Kenneth Casson Leighton.\n  */\n static void\n-decrypt_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n-                 packet_info *pinfo, proto_tree *tree, gpointer key)\n+decrypt_verifier(tvbuff_t *tvb, packet_info *pinfo)\n {\n   proto_tree          *decr_tree;\n   conversation_t      *conversation;\n@@ -2499,9 +2525,6 @@ decrypt_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n     return;\n   }\n \n-  if (key != NULL) {\n-    stored_packet_ntlmssp_info = (ntlmssp_packet_info *)g_hash_table_lookup(hash_packet, key);\n-  }\n   if (stored_packet_ntlmssp_info != NULL && stored_packet_ntlmssp_info->verifier_decrypted == TRUE) {\n       /* Mat TBD fprintf(stderr, \"Found a already decrypted packet\\n\");*/\n       /* In Theory it's aleady the case, and we should be more clever ... like just copying buffers ...*/\n@@ -2531,10 +2554,6 @@ decrypt_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n         return;\n       }\n \n-      /* Setup the buffer to decrypt to */\n-      tvb_memcpy(tvb, packet_ntlmssp_info->verifier,\n-                 offset, MIN(encrypted_block_length, sizeof(packet_ntlmssp_info->verifier)));\n-\n       /*if (!(NTLMSSP_NEGOTIATE_KEY_EXCH & packet_ntlmssp_info->flags)) {*/\n       if (conv_ntlmssp_info->flags & NTLMSSP_NEGOTIATE_EXTENDED_SECURITY) {\n         if ((NTLMSSP_NEGOTIATE_KEY_EXCH & conv_ntlmssp_info->flags)) {\n@@ -2552,7 +2571,7 @@ decrypt_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n          */\n         if (sign_key != NULL) {\n           check_buf = (guint8 *)wmem_alloc(wmem_packet_scope(), packet_ntlmssp_info->payload_len+4);\n-          tvb_memcpy(tvb, &sequence, offset+8, 4);\n+          tvb_memcpy(tvb, &sequence, packet_ntlmssp_info->verifier_offset+8, 4);\n           memcpy(check_buf, &sequence, 4);\n           memcpy(check_buf+4, packet_ntlmssp_info->decrypted_payload, packet_ntlmssp_info->payload_len);\n           if (ws_hmac_buffer(GCRY_MD_MD5, calculated_md5, check_buf, (int)(packet_ntlmssp_info->payload_len+4), sign_key, NTLMSSP_KEY_LEN)) {\n@@ -2567,7 +2586,7 @@ decrypt_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n       else {\n         /* The packet has a PAD then a checksum then a sequence and they are encoded in this order so we can decrypt all at once */\n         /* Do the actual decryption of the verifier */\n-        if (gcry_cipher_decrypt(rc4_handle, packet_ntlmssp_info->verifier, encrypted_block_length, NULL, 0)) {\n+        if (gcry_cipher_decrypt(rc4_handle, packet_ntlmssp_info->verifier, packet_ntlmssp_info->verifier_block_length, NULL, 0)) {\n           return;\n         }\n       }\n@@ -2579,8 +2598,8 @@ decrypt_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n          This is not needed when we just have EXTENDED SECURITY because the signature is not crypted\n          and it's also not needed when we have key exchange because server and client have independent keys */\n       if (!(NTLMSSP_NEGOTIATE_KEY_EXCH & conv_ntlmssp_info->flags) && !(NTLMSSP_NEGOTIATE_EXTENDED_SECURITY & conv_ntlmssp_info->flags)) {\n-        peer_block = (guint8 *)wmem_memdup(wmem_packet_scope(), packet_ntlmssp_info->verifier, encrypted_block_length);\n-        if (gcry_cipher_decrypt(rc4_handle_peer, peer_block, encrypted_block_length, NULL, 0)) {\n+        peer_block = (guint8 *)wmem_memdup(wmem_packet_scope(), packet_ntlmssp_info->verifier, packet_ntlmssp_info->verifier_block_length);\n+        if (gcry_cipher_decrypt(rc4_handle_peer, peer_block, packet_ntlmssp_info->verifier_block_length, NULL, 0)) {\n           return;\n         }\n       }\n@@ -2593,17 +2612,17 @@ decrypt_verifier(tvbuff_t *tvb, int offset, guint32 encrypted_block_length,\n   }\n   /* Show the decrypted buffer in a new window */\n   decr_tvb = tvb_new_child_real_data(tvb, packet_ntlmssp_info->verifier,\n-                                     encrypted_block_length,\n-                                     encrypted_block_length);\n+                                     packet_ntlmssp_info->verifier_block_length,\n+                                     packet_ntlmssp_info->verifier_block_length);\n   add_new_data_source(pinfo, decr_tvb,\n                       \"Decrypted NTLMSSP Verifier\");\n \n   /* Show the decrypted payload in the tree */\n-  decr_tree = proto_tree_add_subtree_format(tree, decr_tvb, 0, -1,\n+  decr_tree = proto_tree_add_subtree_format(NULL, decr_tvb, 0, -1,\n                            ett_ntlmssp, NULL,\n                            \"Decrypted Verifier (%d byte%s)\",\n-                           encrypted_block_length,\n-                           plurality(encrypted_block_length, \"\", \"s\"));\n+                           packet_ntlmssp_info->verifier_block_length,\n+                           plurality(packet_ntlmssp_info->verifier_block_length, \"\", \"s\"));\n \n   if (( conv_ntlmssp_info->flags & NTLMSSP_NEGOTIATE_EXTENDED_SECURITY)) {\n     proto_tree_add_item (decr_tree, hf_ntlmssp_verf_hmacmd5,\n@@ -2741,8 +2760,8 @@ dissect_ntlmssp_verf(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *\n     proto_tree_add_item (ntlmssp_tree, hf_ntlmssp_verf_body,\n                          tvb, offset, encrypted_block_length, ENC_NA);\n \n-    /* Try to decrypt */\n-    decrypt_verifier (tvb, offset, encrypted_block_length, pinfo, ntlmssp_tree, NULL);\n+    /* Extract and store the verifier for later decryption */\n+    store_verifier (tvb, offset, encrypted_block_length, pinfo);\n     /* let's try to hook ourselves here */\n \n     offset += 12;\n@@ -2766,6 +2785,8 @@ wrap_dissect_ntlmssp_payload_only(tvbuff_t *header_tvb _U_,\n   tvbuff_t *decrypted_tvb;\n \n   dissect_ntlmssp_payload_only(payload_tvb, pinfo, NULL, &decrypted_tvb);\n+  /* Now the payload is decrypted, we can then decrypt the verifier which was stored earlier */\n+  decrypt_verifier(payload_tvb, pinfo);\n   return decrypted_tvb;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ntlmssp.c",
+      "old_path": "epan/dissectors/packet-ntlmssp.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "6d466cab13b9d4b599f421595060adc7794a573e",
+      "short_id": "6d466cab",
+      "created_at": "2023-05-03T01:13:43.000+00:00",
+      "parent_ids": [
+        "55db118c0fca8d8ba6823f129956ffc3fb69cc15"
+      ],
+      "title": "ntlmssp: fix decrypt error by decrypting verifier after payload",
+      "message": "ntlmssp: fix decrypt error by decrypting verifier after payload\n",
+      "author_name": "Clément Notin",
+      "author_email": "clement@notin.org",
+      "authored_date": "2023-04-30T00:11:45.000+02:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-05-03T01:13:43.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/6d466cab13b9d4b599f421595060adc7794a573e"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 670838922,
+      "head_commit_sha": "6d466cab13b9d4b599f421595060adc7794a573e",
+      "base_commit_sha": "55db118c0fca8d8ba6823f129956ffc3fb69cc15",
+      "start_commit_sha": "55db118c0fca8d8ba6823f129956ffc3fb69cc15",
+      "created_at": "2023-05-03T01:13:45.329Z",
+      "merge_request_id": 220920627,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 669300527,
+      "head_commit_sha": "c73e2d4be05b8147cebf8277fb1a2d321c8483d8",
+      "base_commit_sha": "2354e352f901b6da8b5b83b1c07b1ff877ba65f8",
+      "start_commit_sha": "2354e352f901b6da8b5b83b1c07b1ff877ba65f8",
+      "created_at": "2023-05-01T08:23:55.720Z",
+      "merge_request_id": 220920627,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 669189874,
+      "head_commit_sha": "ca7e7c47216144dc37ece6be1215a5f020c887b8",
+      "base_commit_sha": "b1b27a8bcbc5ad1e43cf169d5ff4f3951dc6fb4b",
+      "start_commit_sha": "2354e352f901b6da8b5b83b1c07b1ff877ba65f8",
+      "created_at": "2023-04-30T21:14:03.529Z",
+      "merge_request_id": 220920627,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 669188720,
+      "head_commit_sha": "2460b787db7ffc600e446e049872206fe11737e0",
+      "base_commit_sha": "b1b27a8bcbc5ad1e43cf169d5ff4f3951dc6fb4b",
+      "start_commit_sha": "2354e352f901b6da8b5b83b1c07b1ff877ba65f8",
+      "created_at": "2023-04-30T21:04:28.170Z",
+      "merge_request_id": 220920627,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 669066727,
+      "head_commit_sha": "9259dc70d8af57920898623b1a38a0d322e4dace",
+      "base_commit_sha": "b1b27a8bcbc5ad1e43cf169d5ff4f3951dc6fb4b",
+      "start_commit_sha": "f18a3ddd526fc52b0e23ef67992f529a9a884c87",
+      "created_at": "2023-04-29T22:39:48.104Z",
+      "merge_request_id": 220920627,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

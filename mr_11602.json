@@ -1,0 +1,316 @@
+{
+  "id": 241250632,
+  "iid": 11602,
+  "project_id": 7898047,
+  "title": "extcap: Flush after writing the pcap header",
+  "description": "Call fflush in udpdump and ciscodump after writing the pcap header\nso that it is actually written out even if no packets have arrived yet.\n\nBy doing so, dumpcap no longer blocks in cap_pipe_open_live waiting\nfor the pcap header from the extcap pipe until the first packet is\ncaptured, but instead goes on to (attempt to) open its output.\n\nThis means that if we capture no packets that a capture file with\na header but no packet records will be created (and, if not a temp\nfile, will have to be cleaned up), but that is consistent with tshark\nand Wireshark behavior otherwise.\n\nThis means you can no longer do a capture to a FIFO or Named Pipe\nin this order:\n\n1) Start dumpcap\n2) Create the FIFO or Named Pipe\n3) Start the flow of packets to the UDP port\n\nwhich only worked when not dissecting packets. It was broken if tshark\nalso needed to dissect packets, but evaded the checks for if we were\nwriting to a FIFO or Named Pipe resulting in behavior mysterious to\nusers, such as only writing to one of the Named Pipe readers on Windows\n(or failing if there aren't enough instances), or having tshark and\nthe other pipe reader compete for the pipe input and eventually failing\non UN*X.\n\nInstead, the FIFO or Named Pipe needs to be created before launching\ndumpcap, or else an ordinary file will be created (on UN*X), or an\nerror about not being able to open the output (on Windows, since\nNamed Pipes have a magic prefix, and you can't create an ordinary\nfile with a named pipe filename.)\n\nFix #17900.\n\n\n(cherry picked from commit 9ad1ec1651689a39e86562d083a0794d6fcbc2c2)",
+  "state": "merged",
+  "created_at": "2023-08-04T07:47:35.234Z",
+  "updated_at": "2023-08-04T08:03:22.144Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2023-08-04T08:03:20.255Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-4.0",
+  "source_branch": "cherry-pick-9ad1ec16",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 7898047,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "56ef8662a99d30342ebefc419a651eb0eb1172da",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-08-04T07:47:40.477Z",
+  "reference": "!11602",
+  "references": {
+    "short": "!11602",
+    "relative": "!11602",
+    "full": "wireshark/wireshark!11602"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/11602",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-08-04T07:47:39.179Z",
+  "latest_build_finished_at": "2023-08-04T08:03:06.428Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 955648654,
+    "iid": 49895,
+    "project_id": 7898047,
+    "sha": "56ef8662a99d30342ebefc419a651eb0eb1172da",
+    "ref": "refs/merge-requests/11602/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-08-04T07:47:38.046Z",
+    "updated_at": "2023-08-04T08:03:06.436Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/955648654"
+  },
+  "head_pipeline": {
+    "id": 955648654,
+    "iid": 49895,
+    "project_id": 7898047,
+    "sha": "56ef8662a99d30342ebefc419a651eb0eb1172da",
+    "ref": "refs/merge-requests/11602/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-08-04T07:47:38.046Z",
+    "updated_at": "2023-08-04T08:03:06.436Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/955648654",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 5636682,
+      "username": "guyharris",
+      "public_email": "",
+      "name": "Guy Harris",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+      "web_url": "https://gitlab.com/guyharris"
+    },
+    "started_at": "2023-08-04T07:47:39.179Z",
+    "finished_at": "2023-08-04T08:03:06.428Z",
+    "committed_at": null,
+    "duration": 927,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/955648654",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "11fae9975dcf8d17274ba594dbc54f1b66996aa2",
+    "head_sha": "56ef8662a99d30342ebefc419a651eb0eb1172da",
+    "start_sha": "11fae9975dcf8d17274ba594dbc54f1b66996aa2"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "95534ffba7ec42f6029c3b878ed1a6b2a8a10794",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1500168348,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-08-04T07:47:46.844Z",
+          "updated_at": "2023-08-04T07:47:46.848Z",
+          "system": true,
+          "noteable_id": 241250632,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11602,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "99b00cab9abdb44cac366bd4e53624c9c17122d6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1500168740,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-08-04T07:48:05.424Z",
+          "updated_at": "2023-08-04T07:48:05.427Z",
+          "system": true,
+          "noteable_id": 241250632,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11602,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1873,6 +1873,8 @@ static int ssh_open_remote_connection(const ssh_params_t* ssh_params, const char\n \t\tgoto cleanup;\n \t}\n \n+\tfflush(fp);\n+\n \tws_debug(\"Create first ssh session\");\n \tsshs = create_ssh_connection(ssh_params, &err_info);\n \tif (!sshs) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "extcap/ciscodump.c",
+      "old_path": "extcap/ciscodump.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -177,6 +177,8 @@ static int setup_dumpfile(const char* fifo, FILE** fp)\n \t\treturn EXIT_FAILURE;\n \t}\n \n+\tfflush(*fp);\n+\n \treturn EXIT_SUCCESS;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "extcap/udpdump.c",
+      "old_path": "extcap/udpdump.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "56ef8662a99d30342ebefc419a651eb0eb1172da",
+      "short_id": "56ef8662",
+      "created_at": "2023-08-04T07:47:24.000+00:00",
+      "parent_ids": [
+        "11fae9975dcf8d17274ba594dbc54f1b66996aa2"
+      ],
+      "title": "extcap: Flush after writing the pcap header",
+      "message": "extcap: Flush after writing the pcap header\n\nCall fflush in udpdump and ciscodump after writing the pcap header\nso that it is actually written out even if no packets have arrived yet.\n\nBy doing so, dumpcap no longer blocks in cap_pipe_open_live waiting\nfor the pcap header from the extcap pipe until the first packet is\ncaptured, but instead goes on to (attempt to) open its output.\n\nThis means that if we capture no packets that a capture file with\na header but no packet records will be created (and, if not a temp\nfile, will have to be cleaned up), but that is consistent with tshark\nand Wireshark behavior otherwise.\n\nThis means you can no longer do a capture to a FIFO or Named Pipe\nin this order:\n\n1) Start dumpcap\n2) Create the FIFO or Named Pipe\n3) Start the flow of packets to the UDP port\n\nwhich only worked when not dissecting packets. It was broken if tshark\nalso needed to dissect packets, but evaded the checks for if we were\nwriting to a FIFO or Named Pipe resulting in behavior mysterious to\nusers, such as only writing to one of the Named Pipe readers on Windows\n(or failing if there aren't enough instances), or having tshark and\nthe other pipe reader compete for the pipe input and eventually failing\non UN*X.\n\nInstead, the FIFO or Named Pipe needs to be created before launching\ndumpcap, or else an ordinary file will be created (on UN*X), or an\nerror about not being able to open the output (on Windows, since\nNamed Pipes have a magic prefix, and you can't create an ordinary\nfile with a named pipe filename.)\n\nFix #17900.\n\n\n(cherry picked from commit 9ad1ec1651689a39e86562d083a0794d6fcbc2c2)",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2023-08-03T21:21:56.000-04:00",
+      "committer_name": "Guy Harris",
+      "committer_email": "gharris@sonic.net",
+      "committed_date": "2023-08-04T07:47:24.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/56ef8662a99d30342ebefc419a651eb0eb1172da"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 752781627,
+      "head_commit_sha": "56ef8662a99d30342ebefc419a651eb0eb1172da",
+      "base_commit_sha": "11fae9975dcf8d17274ba594dbc54f1b66996aa2",
+      "start_commit_sha": "11fae9975dcf8d17274ba594dbc54f1b66996aa2",
+      "created_at": "2023-08-04T07:47:35.592Z",
+      "merge_request_id": 241250632,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,355 @@
+{
+  "id": 236095136,
+  "iid": 11400,
+  "project_id": 7898047,
+  "title": "IPP: Support both IPP and IPPS",
+  "description": "IPP uses the same well known TCP port, 631, for running atop HTTP\n(which can upgrade to TLS, RFC 2817) as well as connections that\nstart out as HTTP over TLS (IPPS, RFC 7472). RFC 8010 notes that\nHTTP/2 is also an OPTIONAL transport type.\n\nDespite the clear admonition of RFC 8010 that:\n    the \"Content-Type\" of the message body in each request and response\n    MUST be \"application/ipp\"\nmany IPP implementations (e.g., on HP printers) often fail to include the\nContent-Type in their chunked responses.\n\nSo we register IPP in the HTTP port-based dissector so that packets\nwithout a Content-Type will still call the IPP dissector. (Note that\nIPP servers commonly will respond to normal HTTP and HTTPS requests\non port 631 just as they would on port 80 or 443, which is why it is\ngood that we check the Content-Type first. At least those non-IPP\nrequests and responses seem always to have the Content-Type.)\n\nWe can only have a single dissector in the TCP dissector table for port\n631. If we don't register a fake helper protocol that tries TLS, HTTP/2,\nand HTTP in order, then the others will be recognized heuristically. For\nnow at least, we are better off having TLS be the dissector set to the port,\nbecause the non-heuristic HTTP dissector never rejects packets. Even when\na packet doesn't look like HTTP and HTTP has never been seen, so the HTTP\ndissector doesn't add anything to the tree, it still claims to consume all\nthe bytes.\n\nWhen TCP calls a heuristic dissector, pinfo->match_uint does not get\nset. If pinfo->match_uint is neither the source nor destination port\n(and thus is probably set to IP_PROTO_TCP by the IP dissector), check\nthe HTTP port subdissector table using the source or destination port,\ndepending upon whether we have a request or a response.\n\nFix #18825",
+  "state": "merged",
+  "created_at": "2023-07-12T12:03:31.035Z",
+  "updated_at": "2023-07-13T11:25:30.305Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2023-07-13T11:25:28.494Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "ipp_tls",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "4b377dd250174e2303d2b96a328900b4cf82bdee",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-07-12T12:03:39.050Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!11400",
+  "references": {
+    "short": "!11400",
+    "relative": "!11400",
+    "full": "wireshark/wireshark!11400"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/11400",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-07-13T10:57:10.839Z",
+  "latest_build_finished_at": "2023-07-13T11:10:41.513Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 930005286,
+    "iid": 49098,
+    "project_id": 7898047,
+    "sha": "4b377dd250174e2303d2b96a328900b4cf82bdee",
+    "ref": "refs/merge-requests/11400/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-07-13T10:57:09.504Z",
+    "updated_at": "2023-07-13T11:10:41.520Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/930005286"
+  },
+  "head_pipeline": {
+    "id": 930005286,
+    "iid": 49098,
+    "project_id": 7898047,
+    "sha": "4b377dd250174e2303d2b96a328900b4cf82bdee",
+    "ref": "refs/merge-requests/11400/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-07-13T10:57:09.504Z",
+    "updated_at": "2023-07-13T11:10:41.520Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/930005286",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2023-07-13T10:57:10.839Z",
+    "finished_at": "2023-07-13T11:10:41.513Z",
+    "committed_at": null,
+    "duration": 810,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/930005286",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "8ecb0b53f2adcac20d0cd32b00f7411784667813",
+    "head_sha": "4b377dd250174e2303d2b96a328900b4cf82bdee",
+    "start_sha": "8ecb0b53f2adcac20d0cd32b00f7411784667813"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "a1cff738d370c858fcd1e10fcb107168252d9475",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1467773068,
+          "type": null,
+          "body": "added 4 commits\n\n<ul><li>1ab0450d...2f0fd347 - 3 commits from branch <code>wireshark:master</code></li><li>00597cb7 - IPP: Support both IPP and IPPS</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11400/diffs?diff_id=732782786&start_sha=1ab0450dfb05eb2484c33b91173931f96aaf9894)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-07-13T03:35:37.480Z",
+          "updated_at": "2023-07-13T03:35:37.483Z",
+          "system": true,
+          "noteable_id": 236095136,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11400,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ab4e760b46044c0ccd13a48f1f1dda12e398baba",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1468268293,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>8ecb0b53 - 1 commit from branch <code>wireshark:master</code></li><li>4b377dd2 - IPP: Support both IPP and IPPS</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11400/diffs?diff_id=733177719&start_sha=00597cb7976e68f9d4ed74087f4e7b72a88bfb26)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-07-13T10:57:07.902Z",
+          "updated_at": "2023-07-13T10:57:07.904Z",
+          "system": true,
+          "noteable_id": 236095136,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11400,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "37e8ac32de130d3c750f736a0d9cb50dcf6678f4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1468312765,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-07-13T11:25:25.650Z",
+          "updated_at": "2023-07-13T11:25:25.657Z",
+          "system": true,
+          "noteable_id": 236095136,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11400,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2209,8 +2209,25 @@ dissecting_body:\n \t\t * a media type and instead use a specified port.\n \t\t */\n \t\tif (handle == NULL) {\n-\t\t\thandle = dissector_get_uint_handle(port_subdissector_table,\n-\t\t\t    pinfo->match_uint);\n+\t\t\t/* If the HTTP dissector was called heuristically\n+\t\t\t * (or the HTTP dissector was called from the TLS\n+\t\t\t * dissector, which was called heuristically), then\n+\t\t\t * match_uint doesn't get set (or is likely set to\n+\t\t\t * 6 for IP_PROTO_TCP.) Some protocols (e.g., IPP)\n+\t\t\t * use the same specified port for both HTTP and\n+\t\t\t * HTTP over TLS, and one will be a heuristic match.\n+\t\t\t * In those cases, look at the src or dest port.\n+\t\t\t */\n+\t\t\tif (pinfo->match_uint == pinfo->srcport || pinfo->match_uint == pinfo->destport) {\n+\t\t\t\thandle = dissector_get_uint_handle(port_subdissector_table,\n+\t\t\t\t    pinfo->match_uint);\n+\t\t\t} else if (http_type == MEDIA_CONTAINER_HTTP_REQUEST) {\n+\t\t\t\thandle = dissector_get_uint_handle(port_subdissector_table,\n+\t\t\t\t    pinfo->destport);\n+\t\t\t} else if (http_type == MEDIA_CONTAINER_HTTP_RESPONSE) {\n+\t\t\t\thandle = dissector_get_uint_handle(port_subdissector_table,\n+\t\t\t\t    pinfo->srcport);\n+\t\t\t}\n \t\t}\n \n \t\tif (handle != NULL) {\n@@ -3976,6 +3993,10 @@ dissect_http_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data\n \tend_of_stream = (tcpinfo && IS_TH_FIN(tcpinfo->flags));\n \tdissect_http_on_stream(tvb, pinfo, tree, conv_data, end_of_stream, tcpinfo ? &tcpinfo->seq : NULL);\n \n+\t/* XXX - If we haven't seen any HTTP yet even after dissecting above,\n+\t * should we return 0 here so that heuristic dissectors can get a\n+\t * chance?\n+\t */\n \treturn tvb_captured_length(tvb);\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-http.c",
+      "old_path": "epan/dissectors/packet-http.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -22,6 +22,7 @@\n #include <epan/wmem_scopes.h>\n #include \"packet-http.h\"\n #include \"packet-media-type.h\"\n+#include \"packet-tls.h\"\n \n void proto_register_ipp(void);\n void proto_reg_handoff_ipp(void);\n@@ -1585,9 +1586,34 @@ void\n proto_reg_handoff_ipp(void)\n {\n     /*\n-     * Register ourselves as running atop HTTP and using port 631.\n+     * IPP uses the same well-known TCP port, 631, for both running atop HTTP\n+     * and atop HTTP over TLS (IPPS, RFC 7472). The latter includes both\n+     * connections that start out as HTTP and upgrade to using TLS (RFC 2817)\n+     * as well as connections that begin as TLS. Despite RFC 8010:\n+     *   the \"Content-Type\" of the message body in each request and response\n+     *   MUST be \"application/ipp\"\n+     * a number of implementations fail to include the Content-Type in their\n+     * chunked responses. (#18825, #5718, #6765).\n+     *\n+     * For that reason, we register IPP in the HTTP port-based dissector so\n+     * that packets without a Content-Type on port 631 will use this dissector.\n+     * (RFC 8010 also notes that HTTP/2 is an OPTIONAL transport layer; we\n+     * don't have a port-based dissector dissector for HTTP/2, but hopefully\n+     * any implementations that use HTTP/2 always send the Content-Type.)\n+     * Note we check for port-based dissectors after the Content-Type; this\n+     * is good because many IPP servers will respond to non-IPP HTTP requests\n+     * on port 631 just as they would on ports 80 or 443.\n+     *\n+     * We can only have a single dissector in the TCP dissector table for\n+     * port 631. If we don't register a fake helper protocol that tries\n+     * each of TLS, HTTP/2, and HTTP in order (cf. #16541, #18016), we're\n+     * currently better off having TLS be the registered dissector and HTTP\n+     * be detected heuristically, because the non-heuristic HTTP dissector\n+     * never rejects packets, even when it doesn't add anything to the tree.\n      */\n+    dissector_handle_t http_tls_handle = find_dissector_add_dependency(\"http-over-tls\", proto_ipp);\n     http_tcp_dissector_add(631, ipp_handle);\n+    ssl_dissector_add(631, http_tls_handle);\n     dissector_add_string(\"media_type\", \"application/ipp\", ipp_handle);\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ipp.c",
+      "old_path": "epan/dissectors/packet-ipp.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "4b377dd250174e2303d2b96a328900b4cf82bdee",
+      "short_id": "4b377dd2",
+      "created_at": "2023-07-13T10:57:04.000+00:00",
+      "parent_ids": [
+        "8ecb0b53f2adcac20d0cd32b00f7411784667813"
+      ],
+      "title": "IPP: Support both IPP and IPPS",
+      "message": "IPP: Support both IPP and IPPS\n\nIPP uses the same well known TCP port, 631, for running atop HTTP\n(which can upgrade to TLS, RFC 2817) as well as connections that\nstart out as HTTP over TLS (IPPS, RFC 7472). RFC 8010 notes that\nHTTP/2 is also an OPTIONAL transport type.\n\nDespite the clear admonition of RFC 8010 that:\n    the \"Content-Type\" of the message body in each request and response\n    MUST be \"application/ipp\"\nmany IPP implementations (e.g., on HP printers) often fail to include the\nContent-Type in their chunked responses.\n\nSo we register IPP in the HTTP port-based dissector so that packets\nwithout a Content-Type will still call the IPP dissector. (Note that\nIPP servers commonly will respond to normal HTTP and HTTPS requests\non port 631 just as they would on port 80 or 443, which is why it is\ngood that we check the Content-Type first. At least those non-IPP\nrequests and responses seem always to have the Content-Type.)\n\nWe can only have a single dissector in the TCP dissector table for port\n631. If we don't register a fake helper protocol that tries TLS, HTTP/2,\nand HTTP in order, then the others will be recognized heuristically. For\nnow at least, we are better off having TLS be the dissector set to the port,\nbecause the non-heuristic HTTP dissector never rejects packets. Even when\na packet doesn't look like HTTP and HTTP has never been seen, so the HTTP\ndissector doesn't add anything to the tree, it still claims to consume all\nthe bytes.\n\nWhen TCP calls a heuristic dissector, pinfo->match_uint does not get\nset. If pinfo->match_uint is neither the source nor destination port\n(and thus is probably set to IP_PROTO_TCP by the IP dissector), check\nthe HTTP port subdissector table using the source or destination port,\ndepending upon whether we have a request or a response.\n\nFix #18825\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2023-01-31T21:35:35.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-07-13T10:57:04.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/4b377dd250174e2303d2b96a328900b4cf82bdee"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 733177719,
+      "head_commit_sha": "4b377dd250174e2303d2b96a328900b4cf82bdee",
+      "base_commit_sha": "8ecb0b53f2adcac20d0cd32b00f7411784667813",
+      "start_commit_sha": "8ecb0b53f2adcac20d0cd32b00f7411784667813",
+      "created_at": "2023-07-13T10:57:07.038Z",
+      "merge_request_id": 236095136,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 732782786,
+      "head_commit_sha": "00597cb7976e68f9d4ed74087f4e7b72a88bfb26",
+      "base_commit_sha": "2f0fd3476e003218235b11d77c5e74de15290a49",
+      "start_commit_sha": "2f0fd3476e003218235b11d77c5e74de15290a49",
+      "created_at": "2023-07-13T03:35:36.866Z",
+      "merge_request_id": 236095136,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 732081176,
+      "head_commit_sha": "1ab0450dfb05eb2484c33b91173931f96aaf9894",
+      "base_commit_sha": "a43ba6452ae24cc7ffae3c4e5639fca7a96c9907",
+      "start_commit_sha": "a43ba6452ae24cc7ffae3c4e5639fca7a96c9907",
+      "created_at": "2023-07-12T12:03:32.926Z",
+      "merge_request_id": 236095136,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    }
+  ]
+}

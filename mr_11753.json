@@ -1,0 +1,832 @@
+{
+  "id": 244210639,
+  "iid": 11753,
+  "project_id": 7898047,
+  "title": "Thrift: Add support for expert info on exceptions in sub-dissectors",
+  "description": "While working on some sub-dissector, it occurred to me that there was no easy way for sub-dissector to mark the exceptions with specific expert info.\nIn fact, in some of the example sub-dissectors in the wiki, I had to use some workaround to mark the exceptions with expert info.\n\nThe first commit is there only to separate the documentation-related changes (comments only) that I saw since last update, I’ll squash everything before the merge.\n\nThe second commit is the real deal:\n* New field in the public structure `thrift_member_t` to hold a pointer to possible expert info related to a `struct` (which `exception`s really are).\n* New public `dissect_thrift_t_exception()` function with one more parameter (comparing to struct).\n* `dissect_thrift_t_struct()` implementation becomes just a call to the new function with the last parameter set to `NULL`.\n* In the implementation, we attach the expert info (if provided) to the structure.\n\nThe third commit implement the changes suggested by point 3 below.\n\nNow, I still have several points that might be worth discussing regarding the whole thing:\n1. The new expert info field is only available for structures but to all structures, including unions. Would it be pertinent to make it available for all types in case the sub-dissector has the use for it?\n   * All `dissect_thrift_t_<type>()` would have to be doubled or rather the new parameter would have to be added everywhere.\n   * :x: I would argue against it and consider the sub-dissectors to use this feature for exceptions only.\n2. All existing sub-dissectors will have to update their code to handle this new element when dealing with structure. Do you think it’s safe enough this way?\n   * The risk I see is that the uninitialized field leads to a crash if it happens to result in a non-NULL value but only for the sub-dissector which would have to be recompiled.\n   * The change remains quite straightforward and is taken care of with `:%s/\\({ \\)\\(\\.members = \\w\\+\\)\\( }\\)/\\1.s\\2, .s.expert_info = NULL\\3/g` in Vim. It will of course change depending on the editor used but the point is that a global automatic replacement does the work.\n   * Note: If we decide to generalize (first question), part of it can be taken care of in the `TMFILL` definition but containers, `binary`, `string`, and `struct`s will still need some changes.\n   * :white_check_mark: Since the change will only happen in a major version (hopefully 4.1/4.2 but it might be short so probably 4.3/4.4), the sub-dissectors will have to be recompiled anyway.\n3. Using `dissect_thrift_t_exception()` directly does not seem practical, do you think it would be better to keep it internal?\n   * Since the exception are always exclusive to each others and to the result, it seems much easier to use them through the definition of a `union` as demonstrated in the wiki page and the example sub-dissectors.\n   * If the sub-dissector wanted to do it anyway, they would have to add a switch on the field id of the reply (available in `thrift_opt->reply_field_id` as demonstrated in the first `TCustom` toy example. This switch would have to be done everywhere, which quickly become tedious.\n   * If made internal, I would probably rename it (dissect_thrift_t_struct_expert or something like that).\n   * :white_check_mark: I would think it’s better to keep it internal for simplicity.\n4. Since `thrift_opt->reply_field_id` would no longer be necessary given the new feature, do you think it would be pertinent to remove it in the process?\n   * While it would slightly simplify the code in `dissect_thrift_common()` by removing a block and reduce the size of `thrift_option_t`, it might break existing sub-dissectors (the `TCustom` sample does not really count).\n   * :x: I don’t think the gain is enough to break existing sub-dissectors (the change is much bigger than a replace-all).\n5. Do you know if there is any merged Thrift-based sub-dissector I should update in the process?\n   * :white_check_mark: I did not find any while searching for `packet-thrift.h` in `epan` and `plugin/epan` directories so I think it’s fine.\n6. Do you have any other remark/question/improvement proposal?\n\nEverything is fine on my side, I started using the new capability in my sub-dissectors.\n\n@AndersBroman @richvdh",
+  "state": "merged",
+  "created_at": "2023-08-19T19:20:34.433Z",
+  "updated_at": "2023-09-03T14:25:38.197Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2023-09-03T14:20:21.817Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "thrift",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7724340,
+    "username": "EnigmaTriton",
+    "public_email": "",
+    "name": "Triton Circonflexe",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+    "web_url": "https://gitlab.com/EnigmaTriton"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 27561501,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "3089eb7561fd776053098746228391d606e56cdc",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-08-19T19:20:40.341Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!11753",
+  "references": {
+    "short": "!11753",
+    "relative": "!11753",
+    "full": "wireshark/wireshark!11753"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/11753",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-09-03T10:17:39.001Z",
+  "latest_build_finished_at": "2023-09-03T10:53:20.659Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 990230596,
+    "iid": 110,
+    "project_id": 27561501,
+    "sha": "3089eb7561fd776053098746228391d606e56cdc",
+    "ref": "thrift",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-09-03T10:17:38.177Z",
+    "updated_at": "2023-09-03T10:53:20.668Z",
+    "web_url": "https://gitlab.com/EnigmaTriton/wireshark/-/pipelines/990230596"
+  },
+  "head_pipeline": {
+    "id": 990230596,
+    "iid": 110,
+    "project_id": 27561501,
+    "sha": "3089eb7561fd776053098746228391d606e56cdc",
+    "ref": "thrift",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-09-03T10:17:38.177Z",
+    "updated_at": "2023-09-03T10:53:20.668Z",
+    "web_url": "https://gitlab.com/EnigmaTriton/wireshark/-/pipelines/990230596",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 7724340,
+      "username": "EnigmaTriton",
+      "public_email": "",
+      "name": "Triton Circonflexe",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+      "web_url": "https://gitlab.com/EnigmaTriton"
+    },
+    "started_at": "2023-09-03T10:17:39.001Z",
+    "finished_at": "2023-09-03T10:53:20.659Z",
+    "committed_at": null,
+    "duration": 2141,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/EnigmaTriton/wireshark/-/pipelines/990230596",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "2b3dd31ad85fc6d1ff1c0206f7876598b3494dec",
+    "head_sha": "3089eb7561fd776053098746228391d606e56cdc",
+    "start_sha": "2b3dd31ad85fc6d1ff1c0206f7876598b3494dec"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "6b95a1db6f4b94018bbd702fbfb724f47b1dafee",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1519758381,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>43ccb08d - Add support for expert info on exceptions in sub-dissectors.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11753/diffs?diff_id=765233239&start_sha=0152e64e1ddf47d374c141e43995c3ad77c65647)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-19T20:25:28.206Z",
+          "updated_at": "2023-08-19T20:25:28.220Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b7ffaa9a66ecf3920d5b33dea13ec8781ce3c8ba",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1519760975,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-19T20:44:18.244Z",
+          "updated_at": "2023-08-19T20:44:18.246Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8e13cdfc45345a27673aefbcfe2d72b472dac805",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1519762330,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-19T20:49:58.860Z",
+          "updated_at": "2023-08-19T20:49:58.862Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "03dab6da49e9b95631bb4a489404a4f111a71764",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1520019378,
+          "type": null,
+          "body": "Looks good to me. I’ll update depending on remarks, then rebase & squash when we agree (fuzzing in progress).\n\n![exception_expert_info](/uploads/5d6352f1ce296599b961e738bbd1f6d3/exception_expert_info.png)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-20T20:35:39.340Z",
+          "updated_at": "2023-08-20T20:35:39.340Z",
+          "system": false,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "87bdbb8baed41cfdd6742ab0c0d96d6381043efc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1520356329,
+          "type": null,
+          "body": "added 17 commits\n\n<ul><li>43ccb08d...17cd9891 - 14 commits from branch <code>wireshark:master</code></li><li>43df40ff - Documentation improvements</li><li>36d2a7ba - Add support for expert info on exceptions in sub-dissectors.</li><li>5f50a067 - Keep stuct dissection with expert info internal</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11753/diffs?diff_id=765534244&start_sha=43ccb08d7b4527ff307fff43028926d2f03a67b8)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-21T05:29:55.119Z",
+          "updated_at": "2023-08-21T05:29:55.121Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4a187f47340351d40a5fb8c3a86387560827d452",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1520357436,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-21T05:30:36.870Z",
+          "updated_at": "2023-08-21T05:30:36.872Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f2ebe23a7175d135b3b361571bf10fc593e35d80",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1520363098,
+          "type": null,
+          "body": "I’ve committed the removal of `dissect_thrift_t_exception` from the public interface in a third commit as this is what fuzzing is running on (no issue so far).",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-21T05:33:28.418Z",
+          "updated_at": "2023-08-21T05:33:28.418Z",
+          "system": false,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a53ecdc379208b99f6aaa2bdd4a9280915c38eb1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1520369550,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>026ad5f1 - Keep struct dissection with expert info internal</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11753/diffs?diff_id=765537685&start_sha=5f50a0677fc2f27f44c785e89d5d5c808c77d0f3)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-21T05:36:06.945Z",
+          "updated_at": "2023-08-21T05:36:06.949Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "00b7b8f53c7a5e066bf18fa75dd77dafebe5031f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1520454084,
+          "type": null,
+          "body": "changed title from **Add support for expert info on exceptions in sub-dissectors{-.-}** to **{+Thrift: +}Add support for expert info on exceptions in sub-dissectors**",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-21T06:38:10.137Z",
+          "updated_at": "2023-08-21T06:38:10.139Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3d347177e58d02c2baf4df35622e4302f71539c4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1520607865,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-21T07:51:13.319Z",
+          "updated_at": "2023-08-21T07:51:13.321Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2b53a89149af0b1ee95cc50d43e413678628d132",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1522226359,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-08-22T06:11:40.152Z",
+          "updated_at": "2023-08-22T06:11:40.154Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ddb2aa2506917d850209711a1a9cf5750342abd1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1540673190,
+          "type": null,
+          "body": "I'm ok with the changes and can merge them if you think they are ready. Squash first?",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-09-03T06:35:28.840Z",
+          "updated_at": "2023-09-03T06:35:28.840Z",
+          "system": false,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b47922298f781c10990cb44cde1e67c06be83c0b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1540713498,
+          "type": null,
+          "body": "added 168 commits\n\n<ul><li>026ad5f1...2b3dd31a - 167 commits from branch <code>wireshark:master</code></li><li>3089eb75 - Add support for expert info on exceptions in sub-dissectors.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11753/diffs?diff_id=777628775&start_sha=026ad5f1b07789615084b8a9a3be45d13759e314)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-09-03T10:17:36.251Z",
+          "updated_at": "2023-09-03T10:17:36.253Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d9830e112381d6dae6b61bf34801a7e2d8343d29",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1540714268,
+          "type": null,
+          "body": "Thanks @AndersBroman,\n\nYes, changes are ready and are already used on my side.\n\nI just rebased and squashed everything so it should be ready to merge.\n\nJust to update the wiki properly: since the 4.1 branch is already there, this change will only appear in 4.3/4.4, right?",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-09-03T10:23:12.778Z",
+          "updated_at": "2023-09-03T10:35:17.883Z",
+          "system": false,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "32be1035c5487fc8c3ffebfe26efeecdf7938891",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1540750905,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-09-03T14:20:18.500Z",
+          "updated_at": "2023-09-03T14:20:18.517Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ecf8b396b3efb604593f341b52e9de332154e337",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1540751778,
+          "type": null,
+          "body": "mentioned in merge request !10129",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789776127",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2023-09-03T14:25:38.142Z",
+          "updated_at": "2023-09-03T14:25:38.145Z",
+          "system": true,
+          "noteable_id": 244210639,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11753,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -26,7 +26,6 @@\n \n #include <stdint.h>\n #include <epan/packet.h>\n-#include <epan/expert.h>\n #include <epan/prefs.h>\n #include <epan/proto_data.h>\n \n@@ -321,6 +320,7 @@ static const enum_val_t binary_display_options[] = {\n \n static int dissect_thrift_binary_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int *offset, thrift_option_data_t *thrift_opt, proto_tree *header_tree, int type, proto_item *type_pi);\n static int dissect_thrift_compact_type(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int *offset, thrift_option_data_t *thrift_opt, proto_tree *header_tree, int type, proto_item *type_pi);\n+static int dissect_thrift_t_struct_expert(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *seq, expert_field* ei);\n \n \n /*=====BEGIN GENERIC HELPERS=====*/\n@@ -1239,7 +1239,7 @@ dissect_thrift_t_member(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n         offset = dissect_thrift_t_map(tvb, pinfo, tree, offset, thrift_opt, is_field, elt->fid, *elt->p_hf_id, *elt->p_ett_id, elt->u.m.key, elt->u.m.value);\n         break;\n     case DE_THRIFT_T_STRUCT:\n-        offset = dissect_thrift_t_struct(tvb, pinfo, tree, offset, thrift_opt, is_field, elt->fid, *elt->p_hf_id, *elt->p_ett_id, elt->u.members);\n+        offset = dissect_thrift_t_struct_expert(tvb, pinfo, tree, offset, thrift_opt, is_field, elt->fid, *elt->p_hf_id, *elt->p_ett_id, elt->u.s.members, elt->u.s.expert_info);\n         break;\n     case DE_THRIFT_T_UUID:\n         offset = dissect_thrift_t_uuid(tvb, pinfo, tree, offset, thrift_opt, is_field, elt->fid, *elt->p_hf_id);\n@@ -1585,6 +1585,12 @@ dissect_thrift_t_map(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int of\n \n int\n dissect_thrift_t_struct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *seq)\n+{\n+    return dissect_thrift_t_struct_expert(tvb, pinfo, tree, offset, thrift_opt, is_field, field_id, hf_id, ett_id, seq, NULL);\n+}\n+\n+static int\n+dissect_thrift_t_struct_expert(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *seq, expert_field* ei)\n {\n     thrift_field_header_t field_header;\n     proto_tree *sub_tree = NULL;\n@@ -1691,6 +1697,11 @@ dissect_thrift_t_struct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n     /* The loop exits before dissecting the T_STOP. */\n     offset = dissect_thrift_t_stop(tvb, pinfo, sub_tree, offset);\n \n+    /* Set expert info if required. */\n+    if (ei != NULL) {\n+        expert_add_info(pinfo, type_pi, ei);\n+    }\n+\n     if (enable_subtree && offset > 0) {\n         proto_item_set_end(type_pi, tvb, offset);\n     }\n@@ -2772,6 +2783,7 @@ dissect_thrift_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int o\n         len = dissector_try_string(thrift_method_name_dissector_table, method_str, msg_tvb, pinfo, tree, thrift_opt);\n         if (pinfo->can_desegment > 0) pinfo->can_desegment--;\n     } else {\n+        /* Attach the expert_info to the method type as it is a protocol-level exception. */\n         expert_add_info(pinfo, mtype_pi, &ei_thrift_protocol_exception);\n         /* Leverage the sub-dissector capabilities to dissect Thrift exceptions. */\n         len = dissect_thrift_t_struct(msg_tvb, pinfo, thrift_tree, 0, thrift_opt, FALSE, 0, hf_thrift_exception, ett_thrift_exception, thrift_exception);\n@@ -3502,7 +3514,7 @@ proto_register_thrift(void)\n     thrift_module = prefs_register_protocol(proto_thrift, proto_reg_handoff_thrift);\n \n     thrift_method_name_dissector_table = register_dissector_table(\"thrift.method_names\", \"Thrift Method names\",\n-        proto_thrift, FT_STRING, STRING_CASE_SENSITIVE); /* FALSE because Thrift is case-sensitive */\n+        proto_thrift, FT_STRING, STRING_CASE_SENSITIVE); /* Thrift is case-sensitive. */\n \n     prefs_register_enum_preference(thrift_module, \"decode_binary\",\n                                    \"Display binary as bytes or strings\",\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-thrift.c",
+      "old_path": "epan/dissectors/packet-thrift.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -15,6 +15,7 @@\n #ifndef __PACKET_THRIFT_H__\n #define __PACKET_THRIFT_H__\n \n+#include <epan/expert.h>\n #include \"ws_symbol_export.h\"\n \n \n@@ -93,43 +94,46 @@ typedef struct _thrift_option_data_t {\n \n typedef struct _thrift_member_t thrift_member_t;\n struct _thrift_member_t {\n-    const gint *p_hf_id;             /* The hf field for the struct member*/\n-    const gint16 fid;                /* The Thrift field id of the stuct memeber*/\n-    const gboolean optional;         /* TRUE if element is optional, FALSE otherwise */\n-    const thrift_type_enum_t type;   /* The thrift type of the struct member */\n-    const gint *p_ett_id;            /* An ett field used for the subtree created if the member is a compound type. */\n+    const gint *p_hf_id;                    /* The hf field for the struct member. */\n+    const gint16 fid;                       /* The Thrift field id of the struct member. */\n+    const gboolean optional;                /* TRUE if element is optional, FALSE otherwise. */\n+    const thrift_type_enum_t type;          /* The thrift type of the struct member. */\n+    const gint *p_ett_id;                   /* An ett field used for the subtree created if the member is a compound type. */\n     union {\n-        const guint encoding;\n-        const thrift_member_t *element;\n-        const thrift_member_t *members;\n+        const guint encoding;               /* Encoding used for string display. */\n+        const thrift_member_t *element;     /* Description of the elements of a list or a set. */\n         struct {\n-            const thrift_member_t *key;\n-            const thrift_member_t *value;\n+            const thrift_member_t *members; /* Array describing the members of a struct, union, or exception. */\n+            expert_field* expert_info;      /* Expert info associated to an exception for better problem diagnostics. */\n+        } s;\n+        struct {\n+            const thrift_member_t *key;     /* Description of the key elements of a map. */\n+            const thrift_member_t *value;   /* Description of the value elements of a map. */\n         } m;\n     } u;\n };\n \n /* These functions are to be used by dissectors dissecting Thrift based protocols similar to packet-ber.c\n  *\n- * param[in] tvb           Pointer to the tvbuff_t holding the captured data.\n- * param[in] pinfo         Pointer to the packet_info holding information about the currently dissected packet.\n- * param[in] tree          Pointer to the proto_tree used to hold the display tree in Wireshark's interface.\n- * param[in] offset        Offset from the beginning of the tvbuff_t where the Thrift field is. Function will dissect type, id, & data.\n- * param[in] thrift_opt    Options from the Thrift dissector that will be necessary for sub-dissection (binary vs. compact, ...)\n- * param[in] is_field      Indicate if the offset point to a field element and if field type and field id must be dissected.\n+ * param[in] tvb            Pointer to the tvbuff_t holding the captured data.\n+ * param[in] pinfo          Pointer to the packet_info holding information about the currently dissected packet.\n+ * param[in] tree           Pointer to the proto_tree used to hold the display tree in Wireshark's interface.\n+ * param[in] offset         Offset from the beginning of the tvbuff_t where the Thrift field is. Function will dissect type, id, & data.\n+ * param[in] thrift_opt     Options from the Thrift dissector that will be necessary for sub-dissection (binary vs. compact, ...)\n+ * param[in] is_field       Indicate if the offset point to a field element and if field type and field id must be dissected.\n  *                          Only for containers internal use. Sub-dissectors must always use TRUE except for struct (see below).\n- * param[in] field_id      Thrift field identifier, to check that the right field is being dissected (in case of optional fields).\n- * param[in] hf_id         Header field info that describes the field to display (display name, filter name, FT_TYPE, ...).\n+ * param[in] field_id       Thrift field identifier, to check that the right field is being dissected (in case of optional fields).\n+ * param[in] hf_id          Header field info that describes the field to display (display name, filter name, FT_TYPE, ...).\n  *\n- * param[in] encoding      Encoding used for string display. (Only for dissect_thrift_t_string_enc)\n+ * param[in] encoding       Encoding used for string display. (Only for dissect_thrift_t_string_enc)\n  *\n- * return                  Offset of the first non-dissected byte in case of success,\n- *                         THRIFT_REQUEST_REASSEMBLY (-1) in case reassembly is required, or\n- *                         THRIFT_SUBDISSECTOR_ERROR (-2) in case of error.\n- *                         Sub-dissector must follow the same convention on return.\n- *                         Replacing THRIFT_SUBDISSECTOR_ERROR with a 0 return value has the same effect\n- *                         as activating \"Fallback to generic Thrift dissector if sub-dissector fails\"\n- *                         in this dissector (thrift.fallback_on_generic option).\n+ * return                   Offset of the first non-dissected byte in case of success,\n+ *                          THRIFT_REQUEST_REASSEMBLY (-1) in case reassembly is required, or\n+ *                          THRIFT_SUBDISSECTOR_ERROR (-2) in case of error.\n+ *                          Sub-dissector must follow the same convention on return.\n+ *                          Replacing THRIFT_SUBDISSECTOR_ERROR with a 0 return value has the same effect\n+ *                          as activating \"Fallback to generic Thrift dissector if sub-dissector fails\"\n+ *                          in this dissector (thrift.fallback_on_generic option).\n  */\n WS_DLL_PUBLIC int dissect_thrift_t_stop      (tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset);\n WS_DLL_PUBLIC int dissect_thrift_t_bool      (tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id);\n@@ -146,31 +150,31 @@ WS_DLL_PUBLIC int dissect_thrift_t_string_enc(tvbuff_t* tvb, packet_info* pinfo,\n /* Dissect a Thrift struct\n  * Dissect a Thrift struct by calling the struct member dissector in turn from the thrift_member_t array\n  *\n- * param[in] tvb           Pointer to the tvbuff_t holding the captured data.\n- * param[in] pinfo         Pointer to the packet_info holding information about the currently dissected packet.\n- * param[in] tree          Pointer to the proto_tree used to hold the display tree in Wireshark's interface.\n- * param[in] offset        Offset from the beginning of the tvbuff_t where the Thrift field is. Function will dissect type, id, & data.\n- * param[in] thrift_opt    Options from the Thrift dissector that will be necessary for sub-dissection (binary vs. compact, ...)\n- * param[in] is_field      Indicate if the offset point to a field element and if field type and field id must be dissected.\n- *                         Only for internal use in containers. Sub-dissectors must always use TRUE except for struct (see below).\n- *                         Sub-dissectors should always use TRUE except in one case:\n- *                         - Define the parameters of the Thrift command as a struct (including T_STOP at the end)\n- *                         - Single call to dissect_thrift_t_struct with is_field = FALSE.\n- * param[in] field_id      Thrift field identifier, to check that the right field is being dissected (in case of optional fields).\n- * param[in] hf_id         A header field of FT_BYTES which will be the struct header field\n+ * param[in] tvb            Pointer to the tvbuff_t holding the captured data.\n+ * param[in] pinfo          Pointer to the packet_info holding information about the currently dissected packet.\n+ * param[in] tree           Pointer to the proto_tree used to hold the display tree in Wireshark's interface.\n+ * param[in] offset         Offset from the beginning of the tvbuff_t where the Thrift field is. Function will dissect type, id, & data.\n+ * param[in] thrift_opt     Options from the Thrift dissector that will be necessary for sub-dissection (binary vs. compact, ...)\n+ * param[in] is_field       Indicate if the offset point to a field element and if field type and field id must be dissected.\n+ *                          Only for internal use in containers. Sub-dissectors must always use TRUE except for struct (see below).\n+ *                          Sub-dissectors should always use TRUE except in one case:\n+ *                          - Define the parameters of the Thrift command as a struct (including T_STOP at the end)\n+ *                          - Single call to dissect_thrift_t_struct with is_field = FALSE.\n+ * param[in] field_id       Thrift field identifier, to check that the right field is being dissected (in case of optional fields).\n+ * param[in] hf_id          A header field of FT_BYTES which will be the struct header field\n  *\n- * param[in] ett_id        An ett field used for the subtree created to list the container's elements.\n+ * param[in] ett_id         An ett field used for the subtree created to list the container's elements.\n  *\n- * param[in] key           Description of the map's key elements.\n- * param[in] val           Description of the map's value elements.\n+ * param[in] key            Description of the map's key elements.\n+ * param[in] val            Description of the map's value elements.\n  *\n- * param[in] elt           Description of the list's or set's elements.\n+ * param[in] elt            Description of the list's or set's elements.\n  *\n- * param[in] seq           Sequence of descriptions of the structure's members.\n+ * param[in] seq            Sequence of descriptions of the structure's members.\n  *                          An array of thrift_member_t's containing thrift type of the struct members the hf variable to use etc.\n  *\n- * return                  Offset of the first non-dissected byte in case of success,\n- *                         Same error values and remarks as above.\n+ * return                   Offset of the first non-dissected byte in case of success,\n+ *                          Same error values and remarks as above.\n  */\n WS_DLL_PUBLIC int dissect_thrift_t_map   (tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *key, const thrift_member_t *val);\n WS_DLL_PUBLIC int dissect_thrift_t_set   (tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, int offset, thrift_option_data_t *thrift_opt, gboolean is_field, int field_id, gint hf_id, gint ett_id, const thrift_member_t *elt);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-thrift.h",
+      "old_path": "epan/dissectors/packet-thrift.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "3089eb7561fd776053098746228391d606e56cdc",
+      "short_id": "3089eb75",
+      "created_at": "2023-09-03T12:16:05.000+02:00",
+      "parent_ids": [
+        "2b3dd31ad85fc6d1ff1c0206f7876598b3494dec"
+      ],
+      "title": "Add support for expert info on exceptions in sub-dissectors.",
+      "message": "Add support for expert info on exceptions in sub-dissectors.\n",
+      "author_name": "Triton Circonflexe",
+      "author_email": "triton@kumal.info",
+      "authored_date": "2023-08-19T19:12:12.000+02:00",
+      "committer_name": "Triton Circonflexe",
+      "committer_email": "triton@kumal.info",
+      "committed_date": "2023-09-03T12:16:05.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3089eb7561fd776053098746228391d606e56cdc"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 777628775,
+      "head_commit_sha": "3089eb7561fd776053098746228391d606e56cdc",
+      "base_commit_sha": "2b3dd31ad85fc6d1ff1c0206f7876598b3494dec",
+      "start_commit_sha": "2b3dd31ad85fc6d1ff1c0206f7876598b3494dec",
+      "created_at": "2023-09-03T10:17:35.595Z",
+      "merge_request_id": 244210639,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 765537685,
+      "head_commit_sha": "026ad5f1b07789615084b8a9a3be45d13759e314",
+      "base_commit_sha": "17cd9891be299d3dd75524a61378ba39ab8e3199",
+      "start_commit_sha": "17cd9891be299d3dd75524a61378ba39ab8e3199",
+      "created_at": "2023-08-21T05:36:06.195Z",
+      "merge_request_id": 244210639,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 765534244,
+      "head_commit_sha": "5f50a0677fc2f27f44c785e89d5d5c808c77d0f3",
+      "base_commit_sha": "17cd9891be299d3dd75524a61378ba39ab8e3199",
+      "start_commit_sha": "17cd9891be299d3dd75524a61378ba39ab8e3199",
+      "created_at": "2023-08-21T05:29:54.412Z",
+      "merge_request_id": 244210639,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 765233239,
+      "head_commit_sha": "43ccb08d7b4527ff307fff43028926d2f03a67b8",
+      "base_commit_sha": "6c23a93e355dab5f8eef94e0ec55e1cabc1c670b",
+      "start_commit_sha": "07b255d47da390c8dc2249d98d407f89265855a2",
+      "created_at": "2023-08-19T20:25:27.508Z",
+      "merge_request_id": 244210639,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 765226702,
+      "head_commit_sha": "0152e64e1ddf47d374c141e43995c3ad77c65647",
+      "base_commit_sha": "6c23a93e355dab5f8eef94e0ec55e1cabc1c670b",
+      "start_commit_sha": "6c23a93e355dab5f8eef94e0ec55e1cabc1c670b",
+      "created_at": "2023-08-19T19:20:35.969Z",
+      "merge_request_id": 244210639,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,1325 @@
+{
+  "id": 213394768,
+  "iid": 10132,
+  "project_id": 7898047,
+  "title": "E2AP: fix substring search for the shortName in the RANfunctionDefinition",
+  "description": "In the E2AP dissector the RANfunctionDefinition field is searched to see if a substring which corresponds to one of the E2SM models' names is somewhere in the beginning of the tvb:\n\n```c\n#.FN_BODY RANfunctionDefinition  VAL_PTR = &parameter_tvb\n  tvbuff_t *parameter_tvb;\n  %(DEFAULT_BODY)s\n  /* Looking for shortName string near beginning of tvb */\n  gboolean found = FALSE;\n  for (int n=KPM_RANFUNCTIONS; n<MAX_RANFUNCTIONS; n++) {\n    guint32 tvb_len = tvb_captured_length(parameter_tvb);\n    guint name_len = (gint)strlen(g_ran_functioname_table[n].name);\n    for (int m=0; (m<30) && ((m+name_len+1))<tvb_len; m++) {\n      if (strcmp(tvb_get_ptr(parameter_tvb, m, name_len),\n                 g_ran_functioname_table[n].name) == 0) {\n        /* Call the set's dissector */\n        g_ran_functioname_table[n].functions.ran_function_definition_dissector(parameter_tvb, actx->pinfo, tree, NULL);\n        found = TRUE;\n        break;\n      }\n    }\n  }\n  if (!found) {\n    proto_item *ti = proto_tree_add_item(tree, hf_e2ap_ran_function_name_not_recognised, tvb, 0, 0, ENC_NA);\n    expert_add_info_format(actx->pinfo, ti, &ei_e2ap_ran_function_names_no_match,\n                           \"ShortName does not match any known Service Model\");\n  }\n```\n\nThe problem here is that the `strcmp(tvb_get_ptr(parameter_tvb, m, name_len), g_ran_functioname_table[n].name)` call contains 2 buffers guaranteed to have two different lengths: the `tvb_get_ptr(parameter_tvb, m, name_len)` pointer will point to a buffer that is `name_len` bytes long, and `g_ran_functioname_table[n].name` will point to a string of length `name_len + 1` (because of the terminating nullbyte). Ultimately this means that if the first `name_len` bytes are the same, we will read past the end of the`tvb_get_ptr` buffer. In the best case, the byte after the buffer happens to be a null byte and `strcmp` detects that the substring which we wanted, but in the worst case (if the data in this buffer has been copied to a new location, or if theres a maliciously crafted packet) then we will read past the end of the buffer into potentially uninitialized memory. Beyond this there is also the danger that strcmp will ignore the substring we are looking for, e.g. if we have the string \"fooBARsomething\" and the ran function name we are looking for is \"BAR\" then we would compare \"BARs\" with \"BAR\\0\".\n\nHopefully this summarizes the issue and the proposed fix.\n \nTo test the changes run `make generate_dissector-e2ap && make -j dissectors` before building wireshark as normal.\n\nThank you for your time, please let me know if there is anything wrong with the PR, or if the changes could be improved or done in a different way. wireshark is an absolutely awesome piece of software so I'd love to use this opportunity to thank all it's developers!",
+  "state": "merged",
+  "created_at": "2023-03-24T16:35:32.270Z",
+  "updated_at": "2023-03-27T10:07:49.673Z",
+  "merged_by": {
+    "id": 6810036,
+    "username": "martin.r.mathieson",
+    "public_email": "",
+    "name": "Martin Mathieson",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+    "web_url": "https://gitlab.com/martin.r.mathieson"
+  },
+  "merge_user": {
+    "id": 6810036,
+    "username": "martin.r.mathieson",
+    "public_email": "",
+    "name": "Martin Mathieson",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+    "web_url": "https://gitlab.com/martin.r.mathieson"
+  },
+  "merged_at": "2023-03-27T09:09:56.078Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "master",
+  "user_notes_count": 9,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6260205,
+    "username": "noobsauce101",
+    "public_email": "",
+    "name": "Nicolas Zunker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/noobsauce101"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 44606035,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "a37881ad3174903b843ac7b702839008ca3eb621",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": null,
+  "prepared_at": "2023-03-24T16:35:41.283Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10132",
+  "references": {
+    "short": "!10132",
+    "relative": "!10132",
+    "full": "wireshark/wireshark!10132"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10132",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-03-26T20:21:13.404Z",
+  "latest_build_finished_at": "2023-03-26T20:30:31.805Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 818348754,
+    "iid": 18,
+    "project_id": 44606035,
+    "sha": "77adc233d49a04efb163a107320a4fe93045030f",
+    "ref": "master",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-03-26T20:21:12.780Z",
+    "updated_at": "2023-03-26T20:30:31.813Z",
+    "web_url": "https://gitlab.com/noobsauce101/wireshark/-/pipelines/818348754"
+  },
+  "head_pipeline": {
+    "id": 818712828,
+    "iid": 44121,
+    "project_id": 7898047,
+    "sha": "a37881ad3174903b843ac7b702839008ca3eb621",
+    "ref": "refs/merge-requests/10132/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2023-03-27T08:40:40.481Z",
+    "updated_at": "2023-03-27T08:40:40.481Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/818712828",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6810036,
+      "username": "martin.r.mathieson",
+      "public_email": "",
+      "name": "Martin Mathieson",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+      "web_url": "https://gitlab.com/martin.r.mathieson"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/818712828",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "14be89f514966d0b2c781dbb6e92d181d71a28ce",
+    "head_sha": "a37881ad3174903b843ac7b702839008ca3eb621",
+    "start_sha": "14be89f514966d0b2c781dbb6e92d181d71a28ce"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "a02e0e0cd9179e82a3a7a16396a5370aff8933b9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1327606278,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>793eb59b - E2AP: use strNcmp instead of strcmp for in RANfunctionDefinition dissector</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638110482&start_sha=07b08d05f3bfd1a7fdb2bc8836d14045ba583179)",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-24T16:57:47.089Z",
+          "updated_at": "2023-03-24T16:57:47.091Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c39f46008805e2ee4288a1ad015ae9f083ab691b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1327607528,
+          "type": null,
+          "body": "changed title from **use strNcmp instead of strcmp {-for-} RANfunctionDefinition{- shortName-}** to **{+E2AP: +}use strNcmp instead of strcmp {+to search for the shortName in the+} RANfunctionDefinition**",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-24T16:58:46.173Z",
+          "updated_at": "2023-03-24T16:58:46.176Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "75943cd73732d75463f7fbfc18d8ac6c4a931561",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1327799463,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>366d93ac - E2AP: use strNcmp instead of strcmp for in RANfunctionDefinition dissector</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638218817&start_sha=793eb59b1a2c2f5b4494f54d70d0a0826fe669f9)",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-24T19:35:24.434Z",
+          "updated_at": "2023-03-24T19:35:24.436Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e8003bd2e20c2884b09373b03ad602f4ab8f6e51",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1327840094,
+          "type": null,
+          "body": "I will try to take a look in the next day or so.",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-03-24T19:58:05.248Z",
+          "updated_at": "2023-03-25T13:53:02.612Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ad6c5fd5e27cf4fa4db7feb410dca02ee8afed9a",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1328299292,
+          "type": "DiscussionNote",
+          "body": "`tvb_strneql(parameter_tvb, m, g_ran_functioname_table[n].name, name_len)` is somewhat safer than `strncmp(tvb_get_ptr(`\" (or, of course, the `strcmp` version).",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-03-25T17:18:39.611Z",
+          "updated_at": "2023-03-25T18:08:54.361Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "resolved_at": "2023-03-25T18:08:56.934Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        },
+        {
+          "id": 1328308888,
+          "type": "DiscussionNote",
+          "body": "Sure, ill add it",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-25T18:08:54.269Z",
+          "updated_at": "2023-03-25T18:08:54.269Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "resolved_at": "2023-03-25T18:08:56.934Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ccbdcf920439c8ead43ef641ea317b93e852dc46",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328308894,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-25T18:08:56.961Z",
+          "updated_at": "2023-03-25T18:08:56.968Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f8868c4c2844b9e2f1777e8e1bc65ce6c4953ec6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328308910,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>be6e9d3a - E2AP: fix substring search for the shortName in the RANfunctionDefinition</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638487032&start_sha=366d93ac69fc508f06868da6d7b6a7e081a2048a)",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-25T18:09:05.947Z",
+          "updated_at": "2023-03-25T18:09:05.949Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2c4a928360692ec3175a76e15d8fdecf0e36f06e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328308939,
+          "type": null,
+          "body": "changed title from **E2AP: {-use strNcmp instead of strcmp to-} search for the shortName in the RANfunctionDefinition** to **E2AP: {+fix substring+} search for the shortName in the RANfunctionDefinition**",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-25T18:09:22.310Z",
+          "updated_at": "2023-03-25T18:09:22.312Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "93493e65fc67502a918cd3d8b30f200d9fa8b397",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1328328391,
+          "type": "DiffNote",
+          "body": "This looks good to me.  I think the +1 was because there is always at least 1 byte before the string starts (with extension + optional bits).  But search loop is there because length can vary depending upon which ranFunctionDefinition applies..",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-03-25T20:12:44.818Z",
+          "updated_at": "2023-03-25T20:12:44.818Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "start_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "head_sha": "16e8ae25da0554c921aad1ee1c0153c0c8d4b9c7",
+            "old_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "new_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 243,
+            "line_range": {
+              "start": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              },
+              "end": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "resolved_at": "2023-03-26T18:35:03.342Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        },
+        {
+          "id": 1328342277,
+          "type": "DiffNote",
+          "body": "Ah okay so since normally the RANfunctionDefinition would contain more ASN1 encoded data, the shortName would only start in the second byte? I am not sure if that changes anything about the + 1 being unnecessary. But I am happy to go back and add it in if you think we should keep it",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-25T21:35:13.326Z",
+          "updated_at": "2023-03-25T21:35:13.326Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "start_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "head_sha": "16e8ae25da0554c921aad1ee1c0153c0c8d4b9c7",
+            "old_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "new_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 243,
+            "line_range": {
+              "start": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              },
+              "end": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "resolved_at": "2023-03-26T18:35:03.342Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        },
+        {
+          "id": 1328539526,
+          "type": "DiffNote",
+          "body": "I think do please add it in so that we don't do a check that will not pass.",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-03-26T17:57:11.332Z",
+          "updated_at": "2023-03-26T17:57:11.332Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "start_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "head_sha": "16e8ae25da0554c921aad1ee1c0153c0c8d4b9c7",
+            "old_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "new_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 243,
+            "line_range": {
+              "start": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              },
+              "end": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "resolved_at": "2023-03-26T18:35:03.342Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        },
+        {
+          "id": 1328545716,
+          "type": "DiffNote",
+          "body": "changed this line in [version 7 of the diff](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638657727&start_sha=16e8ae25da0554c921aad1ee1c0153c0c8d4b9c7#3f6bc188e66342845733ba5797a5c744b5ecf332_243_243)",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-26T18:34:54.067Z",
+          "updated_at": "2023-03-26T18:34:54.067Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "start_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "head_sha": "16e8ae25da0554c921aad1ee1c0153c0c8d4b9c7",
+            "old_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "new_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 243,
+            "line_range": {
+              "start": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              },
+              "end": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        },
+        {
+          "id": 1328545742,
+          "type": "DiffNote",
+          "body": "Okay sure. Added it back in",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-26T18:35:02.165Z",
+          "updated_at": "2023-03-26T18:35:02.165Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "start_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+            "head_sha": "16e8ae25da0554c921aad1ee1c0153c0c8d4b9c7",
+            "old_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "new_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 243,
+            "line_range": {
+              "start": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              },
+              "end": {
+                "line_code": "3f6bc188e66342845733ba5797a5c744b5ecf332_246_243",
+                "type": "new",
+                "old_line": null,
+                "new_line": 243
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "resolved_at": "2023-03-26T18:35:03.342Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fc8269a1518a2cf0e1a44d877873971f7f3e85e6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328342354,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>be6e9d3a...c861454c - 6 commits from branch <code>wireshark:master</code></li><li>2e04f2aa - E2AP: fix substring search for the shortName in the RANfunctionDefinition</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638509545&start_sha=be6e9d3a39ea8d6485dc6fda94d197facfc2cd29)",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-25T21:35:41.020Z",
+          "updated_at": "2023-03-25T21:35:41.022Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "68195000e6b80acce8fb38e5dca04b8f3569b73d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328524921,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>2e04f2aa...5f79416a - 2 commits from branch <code>wireshark:master</code></li><li>16e8ae25 - E2AP: fix substring search for the shortName in the RANfunctionDefinition</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638643570&start_sha=2e04f2aada296ad7ccbd353ffc4fdba21982c271)",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-26T17:08:15.270Z",
+          "updated_at": "2023-03-26T17:08:15.273Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "82efef8f2d93c756cf0ea826edd6b5dcf8178544",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328545718,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>7748ee91 - E2AP: fix substring search for the shortName in the RANfunctionDefinition</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638657727&start_sha=16e8ae25da0554c921aad1ee1c0153c0c8d4b9c7)",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-26T18:34:54.241Z",
+          "updated_at": "2023-03-26T18:34:54.243Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "670dbea5dc9f2f92087318f2108df7623a1c32f7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328545744,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-26T18:35:03.380Z",
+          "updated_at": "2023-03-26T18:35:03.386Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b9def501d99cddb03c7edcff9d0c33c66b565ecb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328546001,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-26T18:37:03.557Z",
+          "updated_at": "2023-03-26T18:37:03.558Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4faa77f464d0fe26b6afbab354f1e1c4b43fe530",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328562742,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>29534787 - 1 commit from branch <code>wireshark:master</code></li><li>77adc233 - E2AP: fix substring search for the shortName in the RANfunctionDefinition</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638671435&start_sha=7748ee917c35898bd0f0815786990e259b684b16)",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-26T20:21:11.199Z",
+          "updated_at": "2023-03-26T20:21:11.201Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "80b6eafc185bc086e3e8178c0e935fd9fa1fd88a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328967290,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-03-27T08:40:30.247Z",
+          "updated_at": "2023-03-27T08:40:30.252Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e578d32a4b5c0a85c273f281778fcbe5dd7168c7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1328967615,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>77adc233...14be89f5 - 2 commits from branch <code>wireshark:master</code></li><li>a37881ad - E2AP: fix substring search for the shortName in the RANfunctionDefinition</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10132/diffs?diff_id=638962055&start_sha=77adc233d49a04efb163a107320a4fe93045030f)",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-03-27T08:40:39.616Z",
+          "updated_at": "2023-03-27T08:40:39.617Z",
+          "system": true,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cccd572556a9c067a13d9289334485dd4107d825",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 1329018045,
+          "type": "DiscussionNote",
+          "body": "Thanks Nicolas, sorry it took so long.",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-03-27T09:10:51.536Z",
+          "updated_at": "2023-03-27T10:07:49.762Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        },
+        {
+          "id": 1329115653,
+          "type": "DiscussionNote",
+          "body": "No, no problem at all! Thanks as well",
+          "author": {
+            "id": 6260205,
+            "username": "noobsauce101",
+            "public_email": "",
+            "name": "Nicolas Zunker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/be88805c937c9d07005117459b7806893976d2051615fb4aafac7998660d2a3e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/noobsauce101"
+          },
+          "created_at": "2023-03-27T10:07:49.639Z",
+          "updated_at": "2023-03-27T10:07:49.639Z",
+          "system": false,
+          "noteable_id": 213394768,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10132,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -241,8 +241,7 @@ SuccessfulOutcome/value successfulOutcome_value\n     guint32 tvb_len = tvb_captured_length(parameter_tvb);\n     guint name_len = (gint)strlen(g_ran_functioname_table[n].name);\n     for (int m=0; (m<30) && ((m+name_len+1))<tvb_len; m++) {\n-      if (strcmp(tvb_get_ptr(parameter_tvb, m, name_len),\n-                 g_ran_functioname_table[n].name) == 0) {\n+      if (tvb_strneql(parameter_tvb, m, g_ran_functioname_table[n].name, name_len) == 0) {\n         /* Call the set's dissector */\n         g_ran_functioname_table[n].functions.ran_function_definition_dissector(parameter_tvb, actx->pinfo, tree, NULL);\n         found = TRUE;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+      "old_path": "epan/dissectors/asn1/e2ap/e2ap.cnf",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -2701,8 +2701,7 @@ dissect_e2ap_RANfunctionDefinition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t\n     guint32 tvb_len = tvb_captured_length(parameter_tvb);\n     guint name_len = (gint)strlen(g_ran_functioname_table[n].name);\n     for (int m=0; (m<30) && ((m+name_len+1))<tvb_len; m++) {\n-      if (strcmp(tvb_get_ptr(parameter_tvb, m, name_len),\n-                 g_ran_functioname_table[n].name) == 0) {\n+      if (tvb_strneql(parameter_tvb, m, g_ran_functioname_table[n].name, name_len) == 0) {\n         /* Call the set's dissector */\n         g_ran_functioname_table[n].functions.ran_function_definition_dissector(parameter_tvb, actx->pinfo, tree, NULL);\n         found = TRUE;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-e2ap.c",
+      "old_path": "epan/dissectors/packet-e2ap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "a37881ad3174903b843ac7b702839008ca3eb621",
+      "short_id": "a37881ad",
+      "created_at": "2023-03-27T08:40:35.000+00:00",
+      "parent_ids": [
+        "14be89f514966d0b2c781dbb6e92d181d71a28ce"
+      ],
+      "title": "E2AP: fix substring search for the shortName in the RANfunctionDefinition",
+      "message": "E2AP: fix substring search for the shortName in the RANfunctionDefinition\n",
+      "author_name": "Nicolas Josef Zunker",
+      "author_email": "n.zunker@campus.tu-berlin.de",
+      "authored_date": "2023-03-26T20:34:24.000+02:00",
+      "committer_name": "Martin Mathieson",
+      "committer_email": "martin.r.mathieson@googlemail.com",
+      "committed_date": "2023-03-27T08:40:35.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/a37881ad3174903b843ac7b702839008ca3eb621"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 638962055,
+      "head_commit_sha": "a37881ad3174903b843ac7b702839008ca3eb621",
+      "base_commit_sha": "14be89f514966d0b2c781dbb6e92d181d71a28ce",
+      "start_commit_sha": "14be89f514966d0b2c781dbb6e92d181d71a28ce",
+      "created_at": "2023-03-27T08:40:38.721Z",
+      "merge_request_id": 213394768,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 638671435,
+      "head_commit_sha": "77adc233d49a04efb163a107320a4fe93045030f",
+      "base_commit_sha": "295347871f03692362c14280f22bd6d7a47580ba",
+      "start_commit_sha": "295347871f03692362c14280f22bd6d7a47580ba",
+      "created_at": "2023-03-26T20:21:10.351Z",
+      "merge_request_id": 213394768,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 638657727,
+      "head_commit_sha": "7748ee917c35898bd0f0815786990e259b684b16",
+      "base_commit_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+      "start_commit_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+      "created_at": "2023-03-26T18:34:53.067Z",
+      "merge_request_id": 213394768,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 638643570,
+      "head_commit_sha": "16e8ae25da0554c921aad1ee1c0153c0c8d4b9c7",
+      "base_commit_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+      "start_commit_sha": "5f79416a54b429c8aa6f03d2651dc82747288393",
+      "created_at": "2023-03-26T17:08:14.148Z",
+      "merge_request_id": 213394768,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 638509545,
+      "head_commit_sha": "2e04f2aada296ad7ccbd353ffc4fdba21982c271",
+      "base_commit_sha": "c861454cfd8a6ae3fe1a9bb3a561bdfc605c3b37",
+      "start_commit_sha": "c861454cfd8a6ae3fe1a9bb3a561bdfc605c3b37",
+      "created_at": "2023-03-25T21:35:39.915Z",
+      "merge_request_id": 213394768,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 638487032,
+      "head_commit_sha": "be6e9d3a39ea8d6485dc6fda94d197facfc2cd29",
+      "base_commit_sha": "a0bb212b9690fbb75ff7d78f8920b10424d08ec7",
+      "start_commit_sha": "2b45c16f1a9856a2e8cd932078a20d119861455d",
+      "created_at": "2023-03-25T18:09:05.154Z",
+      "merge_request_id": 213394768,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 638218817,
+      "head_commit_sha": "366d93ac69fc508f06868da6d7b6a7e081a2048a",
+      "base_commit_sha": "a0bb212b9690fbb75ff7d78f8920b10424d08ec7",
+      "start_commit_sha": "a0bb212b9690fbb75ff7d78f8920b10424d08ec7",
+      "created_at": "2023-03-24T19:35:23.691Z",
+      "merge_request_id": 213394768,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 638110482,
+      "head_commit_sha": "793eb59b1a2c2f5b4494f54d70d0a0826fe669f9",
+      "base_commit_sha": "a0bb212b9690fbb75ff7d78f8920b10424d08ec7",
+      "start_commit_sha": "a0bb212b9690fbb75ff7d78f8920b10424d08ec7",
+      "created_at": "2023-03-24T16:57:46.280Z",
+      "merge_request_id": 213394768,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 638088117,
+      "head_commit_sha": "07b08d05f3bfd1a7fdb2bc8836d14045ba583179",
+      "base_commit_sha": "a0bb212b9690fbb75ff7d78f8920b10424d08ec7",
+      "start_commit_sha": "a0bb212b9690fbb75ff7d78f8920b10424d08ec7",
+      "created_at": "2023-03-24T16:35:33.799Z",
+      "merge_request_id": 213394768,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

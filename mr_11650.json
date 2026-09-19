@@ -1,0 +1,736 @@
+{
+  "id": 242455891,
+  "iid": 11650,
+  "project_id": 7898047,
+  "title": "sharkd: Add phs tap to sharkd",
+  "description": "Add `phs` tap to `sharkd`, providing the same information as\n`tshark`'s `-z io,phs` option.\n\nAdditionally, modify how `tshark -z io,phs` (and therefore `sharkd`'s\nnew `phs` tap) handles packet comments (aka `pkt_comment` protocol\nframes).  Previously, `pkt_comment` protocol frames were handled no\ndifferently from any other protocol in `io,phs`'s `tap_packet`\ncallback `protohierstat_packet` but were skipped in its `tap_draw`\ncallback `protohierstat_draw`.  This behavior seems to have been first\nintroduced in 80ae3708.  For captures containing packet comments, this\nlead to surprising `tshark -z io,phs` output with multiple root-level\n`eth` trees.  Below is example output of the old behavior for the\n`test/captures/protohier-with-comments.pcapng` capture in this\nrepository with two packet comments, one on an ICMPv6 packet and\nanother on an SSDP packet:\n\n    # tshark -qz io,phs -r ./test/captures/protohier-with-comments.pcapng\n    ===================================================================\n    Protocol Hierarchy Statistics\n    Filter:\n\n    eth                                      frames:113 bytes:21809\n      ipv6                                   frames:38 bytes:7456\n        icmpv6                               frames:35 bytes:3574\n        udp                                  frames:3 bytes:3882\n          data                               frames:3 bytes:3882\n      ip                                     frames:69 bytes:13993\n        udp                                  frames:59 bytes:13391\n          mdns                               frames:1 bytes:138\n          ssdp                               frames:29 bytes:8561\n          nbns                               frames:20 bytes:2200\n          nbdgm                              frames:1 bytes:248\n            smb                              frames:1 bytes:248\n              mailslot                       frames:1 bytes:248\n                browser                      frames:1 bytes:248\n          dhcp                               frames:4 bytes:1864\n          dns                                frames:4 bytes:380\n        igmp                                 frames:10 bytes:602\n      arp                                    frames:6 bytes:360\n    eth                                      frames:2 bytes:377\n      ipv6                                   frames:1 bytes:110\n        icmpv6                               frames:1 bytes:110\n      ip                                     frames:1 bytes:267\n        udp                                  frames:1 bytes:267\n          ssdp                               frames:1 bytes:267\n    ===================================================================\n\nDespite the comment in `phs_draw` in `ui/cli/tap-protohierstat.c`,\nthis does not seem to match the behavior for PHS as shown in the GUI.\nThe GUI seems to ignore the `pkt_comment` protocol frames and merges\ntheir children up a level.  This commit tries to reproduce this\nbehavior in the `tshark -z io,phs` output by ignoring `pkt_comment`\nprotocol frames in `protohierstat_packet` instead of\n`protohierstat_draw`.  The result is output like the following:\n\n    # tshark -qz io,phs -r ./test/captures/protohier-with-comments.pcapng\n    ===================================================================\n    Protocol Hierarchy Statistics\n    Filter:\n\n    eth                                      frames:115 bytes:22186\n      ipv6                                   frames:39 bytes:7566\n        icmpv6                               frames:36 bytes:3684\n        udp                                  frames:3 bytes:3882\n          data                               frames:3 bytes:3882\n      ip                                     frames:70 bytes:14260\n        udp                                  frames:60 bytes:13658\n          mdns                               frames:1 bytes:138\n          ssdp                               frames:30 bytes:8828\n          nbns                               frames:20 bytes:2200\n          nbdgm                              frames:1 bytes:248\n            smb                              frames:1 bytes:248\n              mailslot                       frames:1 bytes:248\n                browser                      frames:1 bytes:248\n          dhcp                               frames:4 bytes:1864\n          dns                                frames:4 bytes:380\n        igmp                                 frames:10 bytes:602\n      arp                                    frames:6 bytes:360\n    ===================================================================\n\nNote that there are no `pkt_comment` protocols and only a single\nroot-level `eth` protocol.  Additionally, the commented ICMPv6 and\nSSDP packets have been merged into the first `eth` tree, and the frame\nand byte counts have been incremented appropriately.",
+  "state": "merged",
+  "created_at": "2023-08-10T18:29:32.440Z",
+  "updated_at": "2023-08-15T15:07:59.750Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2023-08-15T15:07:57.926Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "sharkd-protocol-hierarchy",
+  "user_notes_count": 1,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 4457889,
+    "username": "nielswidger",
+    "public_email": "niels@qacafe.com",
+    "name": "Niels Widger",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/4457889/avatar.png?v=1724234496",
+    "web_url": "https://gitlab.com/nielswidger"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 48313390,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "92c5fb9ad38bd46c1124730d94cb707aa6061d8a",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-08-10T18:29:38.175Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!11650",
+  "references": {
+    "short": "!11650",
+    "relative": "!11650",
+    "full": "wireshark/wireshark!11650"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/11650",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2023-08-15T14:32:28.601Z",
+  "latest_build_finished_at": "2023-08-15T14:55:25.631Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 968372356,
+    "iid": 50323,
+    "project_id": 7898047,
+    "sha": "92c5fb9ad38bd46c1124730d94cb707aa6061d8a",
+    "ref": "refs/merge-requests/11650/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-08-15T14:32:27.259Z",
+    "updated_at": "2023-08-15T14:55:25.649Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/968372356"
+  },
+  "head_pipeline": {
+    "id": 968372356,
+    "iid": 50323,
+    "project_id": 7898047,
+    "sha": "92c5fb9ad38bd46c1124730d94cb707aa6061d8a",
+    "ref": "refs/merge-requests/11650/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-08-15T14:32:27.259Z",
+    "updated_at": "2023-08-15T14:55:25.649Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/968372356",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2023-08-15T14:32:28.601Z",
+    "finished_at": "2023-08-15T14:55:25.631Z",
+    "committed_at": null,
+    "duration": 1376,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/968372356",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "de5dc5dd23b5c2c22fc174c25c9ab48eccd5e960",
+    "head_sha": "92c5fb9ad38bd46c1124730d94cb707aa6061d8a",
+    "start_sha": "de5dc5dd23b5c2c22fc174c25c9ab48eccd5e960"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "944e2c8b5c98bb407dc6179d2d66a6842140e3b5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1509414327,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>efd243f3 - sharkd: Remove unneeded sharkd_phs_req struct</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11650/diffs?diff_id=759019128&start_sha=428562679c12474d81cf74415d19b51c2b1722d3)",
+          "author": {
+            "id": 4457889,
+            "username": "nielswidger",
+            "public_email": "niels@qacafe.com",
+            "name": "Niels Widger",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/4457889/avatar.png?v=1724234496",
+            "web_url": "https://gitlab.com/nielswidger"
+          },
+          "created_at": "2023-08-11T13:20:54.180Z",
+          "updated_at": "2023-08-11T13:20:54.182Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "12b075080119518b83d4337fbfe4e25dce24bcb2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1509425806,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>193eeba4 - sharkd: Remove unneeded sharkd_phs_req struct</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11650/diffs?diff_id=759028789&start_sha=efd243f30b85fe15c1b4021b14c38aa1c34bcb66)",
+          "author": {
+            "id": 4457889,
+            "username": "nielswidger",
+            "public_email": "niels@qacafe.com",
+            "name": "Niels Widger",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/4457889/avatar.png?v=1724234496",
+            "web_url": "https://gitlab.com/nielswidger"
+          },
+          "created_at": "2023-08-11T13:29:03.108Z",
+          "updated_at": "2023-08-11T13:29:03.110Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5cca2fcb33d903bb511c3acbdeb8841609ccc654",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1513305523,
+          "type": null,
+          "body": "added 56 commits\n\n<ul><li>193eeba4...23bc2d48 - 54 commits from branch <code>wireshark:master</code></li><li>e7495225 - sharkd: Add phs tap to sharkd</li><li>73256db4 - sharkd: Remove unneeded sharkd_phs_req struct</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11650/diffs?diff_id=761014338&start_sha=193eeba44b0b77f5d981f8f6e0983e93985e03cc)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-08-15T06:21:40.122Z",
+          "updated_at": "2023-08-15T06:21:40.125Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "920cc06b0dffbedbbca4c7d3bbf2971ca4a626da",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1513305548,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-08-15T06:21:43.152Z",
+          "updated_at": "2023-08-15T06:21:43.158Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d3dd19f74a883b4eb1c694c1bf0c788d26e062e4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1513305573,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 73256db46e89e0b899489f8ff5395802d387dce4 succeeds",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-08-15T06:21:46.477Z",
+          "updated_at": "2023-08-15T06:21:46.479Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "36b78986f28f99f26ec6ba03e90cbb6c8564fc66",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1513389696,
+          "type": null,
+          "body": "aborted the automatic merge because target branch was updated",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2023-08-15T08:01:55.015Z",
+          "updated_at": "2023-08-15T08:01:55.017Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "562cf5a4b1785a988f572f0e2e2153c25c62a482",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1513993112,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>8e668793 - sharkd: Use PRIu32/PRIu64 when outputing guint32/guint64 JSON values</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11650/diffs?diff_id=761371071&start_sha=73256db46e89e0b899489f8ff5395802d387dce4)",
+          "author": {
+            "id": 4457889,
+            "username": "nielswidger",
+            "public_email": "niels@qacafe.com",
+            "name": "Niels Widger",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/4457889/avatar.png?v=1724234496",
+            "web_url": "https://gitlab.com/nielswidger"
+          },
+          "created_at": "2023-08-15T13:42:12.918Z",
+          "updated_at": "2023-08-15T13:42:12.921Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d89873654e8fb92f6ff23f6e9d2e56def0d32daa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1514034889,
+          "type": null,
+          "body": "@AndersBroman Sorry the merge went sideways, I think I've addressed the issue that was causing the macOS build to fail.  Would you mind taking another look when you have a moment?  Thanks!",
+          "author": {
+            "id": 4457889,
+            "username": "nielswidger",
+            "public_email": "niels@qacafe.com",
+            "name": "Niels Widger",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/4457889/avatar.png?v=1724234496",
+            "web_url": "https://gitlab.com/nielswidger"
+          },
+          "created_at": "2023-08-15T14:13:58.149Z",
+          "updated_at": "2023-08-15T14:14:09.354Z",
+          "system": false,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "43489708306126e1dfbf2dea40eba32144990214",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1514059019,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>8e668793...de5dc5dd - 4 commits from branch <code>wireshark:master</code></li><li>c96b79f1 - sharkd: Add phs tap to sharkd</li><li>1bdbea4a - sharkd: Remove unneeded sharkd_phs_req struct</li><li>92c5fb9a - sharkd: Use PRIu32/PRIu64 when outputing guint32/guint64 JSON values</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/11650/diffs?diff_id=761421232&start_sha=8e668793f0d7ac39790d9607379ac1a87293ce79)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-08-15T14:32:24.868Z",
+          "updated_at": "2023-08-15T14:32:24.870Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "48ca69fca2d484e08fc548ca138a8ff806c14c9c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1514101666,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-08-15T15:07:52.020Z",
+          "updated_at": "2023-08-15T15:07:52.025Z",
+          "system": true,
+          "noteable_id": 242455891,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11650,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "Binary files /dev/null and b/test/captures/protohier-with-comments.pcapng differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/protohier-with-comments.pcapng",
+      "old_path": "test/captures/protohier-with-comments.pcapng",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "Binary files /dev/null and b/test/captures/protohier-without-comments.pcapng differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/protohier-without-comments.pcapng",
+      "old_path": "test/captures/protohier-without-comments.pcapng",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -309,6 +309,195 @@ class TestSharkd:\n             }},\n         ))\n \n+    def test_sharkd_req_tap_phs(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\":1, \"method\":\"load\",\n+             \"params\":{\"file\": capture_file('protohier-with-comments.pcapng')}\n+             },\n+            {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"tap\", \"params\":{\"tap0\": \"phs\"}},\n+            {\"jsonrpc\":\"2.0\", \"id\":3, \"method\":\"load\",\n+             \"params\":{\"file\": capture_file('protohier-without-comments.pcapng')}\n+             },\n+            {\"jsonrpc\":\"2.0\", \"id\":4, \"method\":\"tap\", \"params\":{\"tap0\": \"phs\"}},\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+            {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\n+                \"taps\":[{\n+                    \"tap\":\"phs\",\n+                    \"type\":\"phs\",\n+                    \"filter\":\"\",\n+                    \"protos\":[{\n+                        \"proto\":\"eth\",\n+                        \"frames\":115,\n+                        \"bytes\":22186,\n+                        \"protos\":[{\n+                            \"proto\":\"ipv6\",\n+                            \"frames\":39,\n+                            \"bytes\":7566,\n+                            \"protos\":[{\n+                                \"proto\":\"icmpv6\",\n+                                \"frames\":36,\n+                                \"bytes\":3684\n+                            },{\n+                                \"proto\":\"udp\",\n+                                \"frames\":3,\n+                                \"bytes\":3882,\n+                                \"protos\":[{\n+                                    \"proto\":\"data\",\n+                                    \"frames\":3,\n+                                    \"bytes\":3882\n+                                }]\n+                            }]\n+                        },{\n+                            \"proto\":\"ip\",\n+                            \"frames\":70,\n+                            \"bytes\":14260,\n+                            \"protos\":[{\n+                                \"proto\":\"udp\",\n+                                \"frames\":60,\n+                                \"bytes\":13658,\n+                                \"protos\":[{\n+                                    \"proto\":\"mdns\",\n+                                    \"frames\":1,\n+                                    \"bytes\":138\n+                                },{\n+                                    \"proto\":\"ssdp\",\n+                                    \"frames\":30,\n+                                    \"bytes\":8828\n+                                },{\n+                                    \"proto\":\"nbns\",\n+                                    \"frames\":20,\n+                                    \"bytes\":2200\n+                                },{\n+                                    \"proto\":\"nbdgm\",\n+                                    \"frames\":1,\n+                                    \"bytes\":248,\n+                                    \"protos\":[{\n+                                        \"proto\":\"smb\",\n+                                        \"frames\":1,\n+                                        \"bytes\":248,\n+                                        \"protos\":[{\n+                                            \"proto\":\"mailslot\",\n+                                            \"frames\":1,\n+                                            \"bytes\":248,\n+                                            \"protos\":[{\n+                                                \"proto\":\"browser\",\n+                                                \"frames\":1,\n+                                                \"bytes\":248\n+                                            }]\n+                                        }]\n+                                    }]\n+                                },{\"proto\":\"dhcp\",\n+                                   \"frames\":4,\n+                                   \"bytes\":1864\n+                                   },{\n+                                    \"proto\":\"dns\",\n+                                    \"frames\":4,\n+                                    \"bytes\":380\n+                                }]\n+                            },{\n+                                \"proto\":\"igmp\",\n+                                \"frames\":10,\n+                                \"bytes\":602\n+                            }]\n+                        },{\n+                            \"proto\":\"arp\",\n+                            \"frames\":6,\n+                            \"bytes\":360\n+                        }]\n+                    }]\n+                }]\n+            }},\n+            {\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"status\":\"OK\"}},\n+            {\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\n+                \"taps\":[{\n+                    \"tap\":\"phs\",\n+                    \"type\":\"phs\",\n+                    \"filter\":\"\",\n+                    \"protos\":[{\n+                        \"proto\":\"eth\",\n+                        \"frames\":115,\n+                        \"bytes\":22186,\n+                        \"protos\":[{\n+                            \"proto\":\"ipv6\",\n+                            \"frames\":39,\n+                            \"bytes\":7566,\n+                            \"protos\":[{\n+                                \"proto\":\"icmpv6\",\n+                                \"frames\":36,\n+                                \"bytes\":3684\n+                            },{\n+                                \"proto\":\"udp\",\n+                                \"frames\":3,\n+                                \"bytes\":3882,\n+                                \"protos\":[{\n+                                    \"proto\":\"data\",\n+                                    \"frames\":3,\n+                                    \"bytes\":3882\n+                                }]\n+                            }]\n+                        },{\n+                            \"proto\":\"ip\",\n+                            \"frames\":70,\n+                            \"bytes\":14260,\n+                            \"protos\":[{\n+                                \"proto\":\"udp\",\n+                                \"frames\":60,\n+                                \"bytes\":13658,\n+                                \"protos\":[{\n+                                    \"proto\":\"mdns\",\n+                                    \"frames\":1,\n+                                    \"bytes\":138\n+                                },{\n+                                    \"proto\":\"ssdp\",\n+                                    \"frames\":30,\n+                                    \"bytes\":8828\n+                                },{\n+                                    \"proto\":\"nbns\",\n+                                    \"frames\":20,\n+                                    \"bytes\":2200\n+                                },{\n+                                    \"proto\":\"nbdgm\",\n+                                    \"frames\":1,\n+                                    \"bytes\":248,\n+                                    \"protos\":[{\n+                                        \"proto\":\"smb\",\n+                                        \"frames\":1,\n+                                        \"bytes\":248,\n+                                        \"protos\":[{\n+                                            \"proto\":\"mailslot\",\n+                                            \"frames\":1,\n+                                            \"bytes\":248,\n+                                            \"protos\":[{\n+                                                \"proto\":\"browser\",\n+                                                \"frames\":1,\n+                                                \"bytes\":248\n+                                            }]\n+                                        }]\n+                                    }]\n+                                },{\"proto\":\"dhcp\",\n+                                   \"frames\":4,\n+                                   \"bytes\":1864\n+                                   },{\n+                                    \"proto\":\"dns\",\n+                                    \"frames\":4,\n+                                    \"bytes\":380\n+                                }]\n+                            },{\n+                                \"proto\":\"igmp\",\n+                                \"frames\":10,\n+                                \"bytes\":602\n+                            }]\n+                        },{\n+                            \"proto\":\"arp\",\n+                            \"frames\":6,\n+                            \"bytes\":360\n+                        }]\n+                    }]\n+                }]\n+            }},\n+        ))\n+\n     def test_sharkd_req_follow_bad(self, check_sharkd_session, capture_file):\n         # Unrecognized taps currently produce no output (not even err).\n         check_sharkd_session((\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_sharkd.py",
+      "old_path": "test/suite_sharkd.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -21,25 +21,14 @@\n #include <epan/stat_tap_ui.h>\n \n #include <wsutil/cmdarg_err.h>\n+#include \"tap-protohierstat.h\"\n \n-static int pc_proto_id = -1;\n+int pc_proto_id = -1;\n \n void register_tap_listener_protohierstat(void);\n \n-typedef struct _phs_t {\n-\tstruct _phs_t *sibling;\n-\tstruct _phs_t *child;\n-\tstruct _phs_t *parent;\n-\tchar *filter;\n-\tint protocol;\n-\tconst char *proto_name;\n-\tguint32 frames;\n-\tguint64 bytes;\n-} phs_t;\n-\n-\n-static phs_t *\n-new_phs_t(phs_t *parent)\n+phs_t *\n+new_phs_t(phs_t *parent, const char *filter)\n {\n \tphs_t *rs;\n \trs = g_new(phs_t, 1);\n@@ -47,6 +36,9 @@ new_phs_t(phs_t *parent)\n \trs->child      = NULL;\n \trs->parent     = parent;\n \trs->filter     = NULL;\n+\tif (filter != NULL) {\n+\t\trs->filter = g_strdup(filter);\n+\t}\n \trs->protocol   = -1;\n \trs->proto_name = NULL;\n \trs->frames     = 0;\n@@ -54,8 +46,30 @@ new_phs_t(phs_t *parent)\n \treturn rs;\n }\n \n+void\n+free_phs(phs_t *rs)\n+{\n+\tif (!rs) {\n+\t\treturn;\n+\t}\n+\tif (rs->filter) {\n+\t\tg_free(rs->filter);\n+\t\trs->filter = NULL;\n+\t}\n+\tif (rs->sibling)\n+\t{\n+\t\tfree_phs(rs->sibling);\n+\t\trs->sibling = NULL;\n+\t}\n+\tif (rs->child)\n+\t{\n+\t\tfree_phs(rs->child);\n+\t\trs->child = NULL;\n+\t}\n+\tg_free(rs);\n+}\n \n-static tap_packet_status\n+tap_packet_status\n protohierstat_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const void *dummy _U_, tap_flags_t flags _U_)\n {\n \tphs_t *rs = (phs_t *)prs;\n@@ -76,13 +90,23 @@ protohierstat_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const v\n \tfor (node=edt->tree->first_child; node; node=node->next) {\n \t\tfi = PNODE_FINFO(node);\n \n+\t\t/*\n+\t\t * If the first child is a tree of comments, skip over it.\n+\t\t * This keeps us from having a top-level \"pkt_comment\"\n+\t\t * entry that represents a nonexistent protocol,\n+\t\t * and matches how the GUI treats comments.\n+\t\t */\n+\t\tif (G_UNLIKELY(fi->hfinfo->id == pc_proto_id)) {\n+\t\t\tcontinue;\n+\t\t}\n+\n \t\t/* first time we saw a protocol at this leaf */\n \t\tif (rs->protocol == -1) {\n \t\t\trs->protocol = fi->hfinfo->id;\n \t\t\trs->proto_name = fi->hfinfo->abbrev;\n \t\t\trs->frames = 1;\n \t\t\trs->bytes = pinfo->fd->pkt_len;\n-\t\t\trs->child = new_phs_t(rs);\n+\t\t\trs->child = new_phs_t(rs, NULL);\n \t\t\trs = rs->child;\n \t\t\tcontinue;\n \t\t}\n@@ -98,7 +122,7 @@ protohierstat_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const v\n \t\tif (!tmprs) {\n \t\t\tfor (tmprs=rs; tmprs->sibling; tmprs=tmprs->sibling)\n \t\t\t\t;\n-\t\t\ttmprs->sibling = new_phs_t(rs->parent);\n+\t\t\ttmprs->sibling = new_phs_t(rs->parent, NULL);\n \t\t\trs = tmprs->sibling;\n \t\t\trs->protocol = fi->hfinfo->id;\n \t\t\trs->proto_name = fi->hfinfo->abbrev;\n@@ -110,7 +134,7 @@ protohierstat_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const v\n \t\trs->bytes += pinfo->fd->pkt_len;\n \n \t\tif (!rs->child) {\n-\t\t\trs->child = new_phs_t(rs);\n+\t\t\trs->child = new_phs_t(rs, NULL);\n \t\t}\n \t\trs = rs->child;\n \t}\n@@ -127,16 +151,6 @@ phs_draw(phs_t *rs, int indentation)\n \t\tif (rs->protocol == -1) {\n \t\t\treturn;\n \t\t}\n-\t\t/*\n-\t\t * If the first child is a tree of comments, skip over it.\n-\t\t * This keeps us from having a top-level \"pkt_comment\"\n-\t\t * entry that represents a nonexistent protocol,\n-\t\t * and matches how the GUI treats comments.\n-\t\t */\n-\t\tif (G_UNLIKELY(rs->protocol == pc_proto_id)) {\n-\t\t\tphs_draw(rs->child, indentation);\n-\t\t\tcontinue;\n-\t\t}\n \t\tstr[0] = 0;\n \t\tstroff = 0;\n \t\tfor (i=0; i<indentation; i++) {\n@@ -187,14 +201,12 @@ protohierstat_init(const char *opt_arg, void *userdata _U_)\n \n \tpc_proto_id = proto_registrar_get_id_byname(\"pkt_comment\");\n \n-\trs = new_phs_t(NULL);\n-\trs->filter = g_strdup(filter);\n+\trs = new_phs_t(NULL, filter);\n \n \terror_string = register_tap_listener(\"frame\", rs, filter, TL_REQUIRES_PROTO_TREE, NULL, protohierstat_packet, protohierstat_draw, NULL);\n \tif (error_string) {\n \t\t/* error, we failed to attach to the tap. clean up */\n-\t\tg_free(rs->filter);\n-\t\tg_free(rs);\n+\t\tfree_phs(rs);\n \n \t\tcmdarg_err(\"Couldn't register io,phs tap: %s\",\n \t\t\terror_string->str);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/cli/tap-protohierstat.c",
+      "old_path": "ui/cli/tap-protohierstat.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -0,0 +1,51 @@\n+/** @file\n+ *\n+ * Wireshark - Network traffic analyzer\n+ * By Gerald Combs <gerald@wireshark.org>\n+ * Copyright 1998 Gerald Combs\n+ *\n+ * SPDX-License-Identifier: GPL-2.0-or-later\n+ */\n+\n+#ifndef __TAP_PROTO_HIER_STAT_H__\n+#define __TAP_PROTO_HIER_STAT_H__\n+\n+#ifdef __cplusplus\n+extern \"C\" {\n+#endif /* __cplusplus */\n+\n+extern int pc_proto_id;\n+\n+typedef struct _phs_t {\n+\tstruct _phs_t *sibling;\n+\tstruct _phs_t *child;\n+\tstruct _phs_t *parent;\n+\tchar *filter;\n+\tint protocol;\n+\tconst char *proto_name;\n+\tguint32 frames;\n+\tguint64 bytes;\n+} phs_t;\n+\n+extern phs_t * new_phs_t(phs_t *parent, const char *filter);\n+extern void free_phs(phs_t *rs);\n+extern tap_packet_status protohierstat_packet(void *prs, packet_info *pinfo, epan_dissect_t *edt, const void *dummy _U_, tap_flags_t flags _U_);\n+\n+#ifdef __cplusplus\n+}\n+#endif /* __cplusplus */\n+\n+#endif /* __TAP_PROTO_HIER_STAT_H__ */\n+\n+/*\n+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html\n+ *\n+ * Local variables:\n+ * c-basic-offset: 8\n+ * tab-width: 8\n+ * indent-tabs-mode: t\n+ * End:\n+ *\n+ * vi: set shiftwidth=8 tabstop=8 noexpandtab:\n+ * :indentSize=8:tabSize=8:noTabs=false:\n+ */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/cli/tap-protohierstat.h",
+      "old_path": "ui/cli/tap-protohierstat.h",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -3056,6 +3056,7 @@ if(BUILD_sharkd)\n \t\t${APPLE_SYSTEM_CONFIGURATION_LIBRARY}\n \t\t${WIN_WS2_32_LIBRARY}\n \t\t${SPEEXDSP_LIBRARIES}\n+\t\t${M_LIBRARIES}\n \t)\n \tset(sharkd_FILES\n \t\t#\n@@ -3066,6 +3067,7 @@ if(BUILD_sharkd)\n \t\tsharkd.c\n \t\tsharkd_daemon.c\n \t\tsharkd_session.c\n+\t\t${TSHARK_TAP_SRC}\n \t)\n \tset_executable_resources(sharkd \"SharkD\")\n \tadd_executable(sharkd ${sharkd_FILES})\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "CMakeLists.txt",
+      "old_path": "CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -17,6 +17,7 @@\n #include <stdarg.h>\n #include <string.h>\n #include <errno.h>\n+#include <inttypes.h>\n \n #include <glib.h>\n \n@@ -56,6 +57,7 @@\n #include <ui/rtp_stream.h>\n #include <ui/tap-rtp-common.h>\n #include <ui/tap-rtp-analysis.h>\n+#include <ui/cli/tap-protohierstat.h>\n #include <wsutil/version_info.h>\n #include <epan/to_str.h>\n \n@@ -1031,6 +1033,11 @@ sharkd_session_process_info(void)\n         sharkd_json_value_string(\"tap\", \"rtp-streams\");\n         json_dumper_end_object(&dumper);\n \n+        json_dumper_begin_object(&dumper);\n+        sharkd_json_value_string(\"name\", \"Protocol Hierarchy Statistics\");\n+        sharkd_json_value_string(\"tap\", \"phs\");\n+        json_dumper_end_object(&dumper);\n+\n         json_dumper_begin_object(&dumper);\n         sharkd_json_value_string(\"name\", \"Expert Information\");\n         sharkd_json_value_string(\"tap\", \"expert\");\n@@ -2629,6 +2636,62 @@ sharkd_session_free_tap_srt_cb(void *arg)\n     g_free(srt_data);\n }\n \n+static void\n+sharkd_session_process_tap_phs_cb_aux(phs_t *rs)\n+{\n+    for (; rs; rs = rs->sibling) {\n+        if (rs->protocol == -1) {\n+            return;\n+        }\n+        sharkd_json_object_open(NULL);\n+        sharkd_json_value_string(\"proto\", rs->proto_name);\n+        sharkd_json_value_anyf(\"frames\", \"%\"PRIu32, rs->frames);\n+        sharkd_json_value_anyf(\"bytes\", \"%\"PRIu64, rs->bytes);\n+        if (rs->child != NULL && rs->child->protocol != -1) {\n+            sharkd_json_array_open(\"protos\");\n+            sharkd_session_process_tap_phs_cb_aux(rs->child);\n+            sharkd_json_array_close();\n+        }\n+        sharkd_json_object_close();\n+    }\n+}\n+\n+/**\n+ * sharkd_session_process_tap_phs_cb()\n+ *\n+ * Output phs tap:\n+ *   (m) tap        - tap name\n+ *   (m) type       - tap output type\n+ *   (m) filter     - tap filter argument\n+ *   (m) protos     - array of proto objects\n+ *\n+ *   proto object:\n+ *   (m) proto      - protocol name\n+ *   (m) frames     - frame count\n+ *   (m) bytes      - bytes count\n+ *   (o) protos     - array of proto objects\n+ */\n+static void\n+sharkd_session_process_tap_phs_cb(void *arg)\n+{\n+    phs_t *rs = (phs_t *)arg;\n+    sharkd_json_object_open(NULL);\n+    sharkd_json_value_string(\"tap\", \"phs\");\n+    sharkd_json_value_string(\"type\", \"phs\");\n+    sharkd_json_value_string(\"filter\", rs->filter ? rs->filter : \"\");\n+    sharkd_json_array_open(\"protos\");\n+    sharkd_session_process_tap_phs_cb_aux(rs);\n+    sharkd_json_array_close();\n+    sharkd_json_object_close();\n+}\n+\n+static void\n+sharkd_session_free_tap_phs_cb(void *arg)\n+{\n+    phs_t *rs = (phs_t *)arg;\n+    free_phs(rs);\n+}\n+\n struct sharkd_export_object_list\n {\n     struct sharkd_export_object_list *next;\n@@ -3247,6 +3310,21 @@ sharkd_session_process_tap(char *buf, const jsmntok_t *tokens, int count)\n             tap_data = mcaststream_tapinfo;\n             tap_free = sharkd_session_process_free_tap_multicast_cb;\n         }\n+        else if (!strcmp(tok_tap, \"phs\"))\n+        {\n+            phs_t *rs;\n+\n+            pc_proto_id = proto_registrar_get_id_byname(\"pkt_comment\");\n+\n+            rs = new_phs_t(NULL, tap_filter);\n+\n+            tap_error = register_tap_listener(\"frame\", rs, tap_filter, TL_REQUIRES_PROTO_TREE, NULL,\n+                                              protohierstat_packet,\n+                                              sharkd_session_process_tap_phs_cb, NULL);\n+\n+            tap_data = rs;\n+            tap_free = sharkd_session_free_tap_phs_cb;\n+        }\n         else\n         {\n             sharkd_json_error(\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd_session.c",
+      "old_path": "sharkd_session.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "92c5fb9ad38bd46c1124730d94cb707aa6061d8a",
+      "short_id": "92c5fb9a",
+      "created_at": "2023-08-15T14:32:21.000+00:00",
+      "parent_ids": [
+        "1bdbea4ae15d391ee33bfa54df8de39aa8b5e494"
+      ],
+      "title": "sharkd: Use PRIu32/PRIu64 when outputing guint32/guint64 JSON values",
+      "message": "sharkd: Use PRIu32/PRIu64 when outputing guint32/guint64 JSON values\n\nUpdate `sharkd_session_process_tap_phs_cb_aux` to use the\n`PRIu32`/`PRIu64` format specifiers from `<inttypes.h>` when outputing\n`guint32`/`guint64` JSON values since difference targets require\ndifferent specifiers to compile.\n",
+      "author_name": "Niels Widger",
+      "author_email": "niels@qacafe.com",
+      "authored_date": "2023-08-15T09:40:50.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-08-15T14:32:21.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/92c5fb9ad38bd46c1124730d94cb707aa6061d8a"
+    },
+    {
+      "id": "1bdbea4ae15d391ee33bfa54df8de39aa8b5e494",
+      "short_id": "1bdbea4a",
+      "created_at": "2023-08-15T14:32:21.000+00:00",
+      "parent_ids": [
+        "c96b79f1059ff3e346a4a5ec81bd40f11a01801e"
+      ],
+      "title": "sharkd: Remove unneeded sharkd_phs_req struct",
+      "message": "sharkd: Remove unneeded sharkd_phs_req struct\n",
+      "author_name": "Niels Widger",
+      "author_email": "niels@qacafe.com",
+      "authored_date": "2023-08-11T09:19:43.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-08-15T14:32:21.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/1bdbea4ae15d391ee33bfa54df8de39aa8b5e494"
+    },
+    {
+      "id": "c96b79f1059ff3e346a4a5ec81bd40f11a01801e",
+      "short_id": "c96b79f1",
+      "created_at": "2023-08-15T14:32:21.000+00:00",
+      "parent_ids": [
+        "de5dc5dd23b5c2c22fc174c25c9ab48eccd5e960"
+      ],
+      "title": "sharkd: Add phs tap to sharkd",
+      "message": "sharkd: Add phs tap to sharkd\n\nAdd `phs` tap to `sharkd`, providing the same information as\n`tshark`'s `-z io,phs` option.\n\nAdditionally, modify how `tshark -z io,phs` (and therefore `sharkd`'s\nnew `phs` tap) handles packet comments (aka `pkt_comment` protocol\nframes).  Previously, `pkt_comment` protocol frames were handled no\ndifferently from any other protocol in `io,phs`'s `tap_packet`\ncallback `protohierstat_packet` but were skipped in its `tap_draw`\ncallback `protohierstat_draw`.  This behavior seems to have been first\nintroduced in 80ae3708.  For captures containing packet comments, this\nlead to surprising `tshark -z io,phs` output with multiple root-level\n`eth` trees.  Below is example output of the old behavior for the\n`test/captures/protohier-with-comments.pcapng` capture in this\nrepository with two packet comments, one on an ICMPv6 packet and\nanother on an SSDP packet:\n\n    # tshark -qz io,phs -r ./test/captures/protohier-with-comments.pcapng\n    ===================================================================\n    Protocol Hierarchy Statistics\n    Filter:\n\n    eth                                      frames:113 bytes:21809\n      ipv6                                   frames:38 bytes:7456\n        icmpv6                               frames:35 bytes:3574\n        udp                                  frames:3 bytes:3882\n          data                               frames:3 bytes:3882\n      ip                                     frames:69 bytes:13993\n        udp                                  frames:59 bytes:13391\n          mdns                               frames:1 bytes:138\n          ssdp                               frames:29 bytes:8561\n          nbns                               frames:20 bytes:2200\n          nbdgm                              frames:1 bytes:248\n            smb                              frames:1 bytes:248\n              mailslot                       frames:1 bytes:248\n                browser                      frames:1 bytes:248\n          dhcp                               frames:4 bytes:1864\n          dns                                frames:4 bytes:380\n        igmp                                 frames:10 bytes:602\n      arp                                    frames:6 bytes:360\n    eth                                      frames:2 bytes:377\n      ipv6                                   frames:1 bytes:110\n        icmpv6                               frames:1 bytes:110\n      ip                                     frames:1 bytes:267\n        udp                                  frames:1 bytes:267\n          ssdp                               frames:1 bytes:267\n    ===================================================================\n\nDespite the comment in `phs_draw` in `ui/cli/tap-protohierstat.c`,\nthis does not seem to match the behavior for PHS as shown in the GUI.\nThe GUI seems to ignore the `pkt_comment` protocol frames and merges\ntheir children up a level.  This commit tries to reproduce this\nbehavior in the `tshark -z io,phs` output by ignoring `pkt_comment`\nprotocol frames in `protohierstat_packet` instead of\n`protohierstat_draw`.  The result is output like the following:\n\n    # tshark -qz io,phs -r ./test/captures/protohier-with-comments.pcapng\n    ===================================================================\n    Protocol Hierarchy Statistics\n    Filter:\n\n    eth                                      frames:115 bytes:22186\n      ipv6                                   frames:39 bytes:7566\n        icmpv6                               frames:36 bytes:3684\n        udp                                  frames:3 bytes:3882\n          data                               frames:3 bytes:3882\n      ip                                     frames:70 bytes:14260\n        udp                                  frames:60 bytes:13658\n          mdns                               frames:1 bytes:138\n          ssdp                               frames:30 bytes:8828\n          nbns                               frames:20 bytes:2200\n          nbdgm                              frames:1 bytes:248\n            smb                              frames:1 bytes:248\n              mailslot                       frames:1 bytes:248\n                browser                      frames:1 bytes:248\n          dhcp                               frames:4 bytes:1864\n          dns                                frames:4 bytes:380\n        igmp                                 frames:10 bytes:602\n      arp                                    frames:6 bytes:360\n    ===================================================================\n\nNote that there are no `pkt_comment` protocols and only a single\nroot-level `eth` protocol.  Additionally, the commented ICMPv6 and\nSSDP packets have been merged into the first `eth` tree, and the frame\nand byte counts have been incremented appropriately.\n",
+      "author_name": "Niels Widger",
+      "author_email": "niels@qacafe.com",
+      "authored_date": "2023-08-09T11:51:20.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-08-15T14:32:21.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c96b79f1059ff3e346a4a5ec81bd40f11a01801e"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 761421232,
+      "head_commit_sha": "92c5fb9ad38bd46c1124730d94cb707aa6061d8a",
+      "base_commit_sha": "de5dc5dd23b5c2c22fc174c25c9ab48eccd5e960",
+      "start_commit_sha": "de5dc5dd23b5c2c22fc174c25c9ab48eccd5e960",
+      "created_at": "2023-08-15T14:32:24.172Z",
+      "merge_request_id": 242455891,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 761371071,
+      "head_commit_sha": "8e668793f0d7ac39790d9607379ac1a87293ce79",
+      "base_commit_sha": "23bc2d48bb8267eac471091d03b633cbab37c973",
+      "start_commit_sha": "de5dc5dd23b5c2c22fc174c25c9ab48eccd5e960",
+      "created_at": "2023-08-15T13:42:12.060Z",
+      "merge_request_id": 242455891,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 761014338,
+      "head_commit_sha": "73256db46e89e0b899489f8ff5395802d387dce4",
+      "base_commit_sha": "23bc2d48bb8267eac471091d03b633cbab37c973",
+      "start_commit_sha": "23bc2d48bb8267eac471091d03b633cbab37c973",
+      "created_at": "2023-08-15T06:21:39.221Z",
+      "merge_request_id": 242455891,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 759028789,
+      "head_commit_sha": "193eeba44b0b77f5d981f8f6e0983e93985e03cc",
+      "base_commit_sha": "85da4edcd06154cea5bcb509dc7cbc1ba646141f",
+      "start_commit_sha": "6027465d10eba3d75036ad4ba701415aa5b3945f",
+      "created_at": "2023-08-11T13:29:02.478Z",
+      "merge_request_id": 242455891,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 759019128,
+      "head_commit_sha": "efd243f30b85fe15c1b4021b14c38aa1c34bcb66",
+      "base_commit_sha": "85da4edcd06154cea5bcb509dc7cbc1ba646141f",
+      "start_commit_sha": "6027465d10eba3d75036ad4ba701415aa5b3945f",
+      "created_at": "2023-08-11T13:20:53.251Z",
+      "merge_request_id": 242455891,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 758285773,
+      "head_commit_sha": "428562679c12474d81cf74415d19b51c2b1722d3",
+      "base_commit_sha": "85da4edcd06154cea5bcb509dc7cbc1ba646141f",
+      "start_commit_sha": "081fc7a937361883d595385bc4f06f44a2b31b9a",
+      "created_at": "2023-08-10T18:29:34.009Z",
+      "merge_request_id": 242455891,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    }
+  ]
+}

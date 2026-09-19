@@ -1,0 +1,322 @@
+{
+  "id": 276739372,
+  "iid": 14134,
+  "project_id": 7898047,
+  "title": "file: Don't recompile the dfilter during a live capture",
+  "description": "Saving only the dfilter text and recompiling the code when\n[re]dissecting or scanning groups of packets operates on the\nexplicit assumption that previously validated filter text will\nalways compile to valid filter code\n\nThat assumption is not true; while we invalidate the filter and\nreplace the text with NULL if display filter macros change or\nother aspects of the packet matching expressions change so that\nthe previous text is no longer valid, display filters that match\nFT_IPv4 or FT_IPv6 fields to resolved hostnames require a host\nname lookup each time they are compiled, which can timeout, especially\nif there are too many requests in flight at once. This is particularly\nlikely if a recompilation is performed each time additional frames\narrive during a live capture.\n\nIt is important to stress that the stronger, implicit assumption that\nthe display filter will compile to the same code is also false.\n1) Display filters that require host name lookup can change even if\n   it doesn't timeout.\n2) Display filter macros can change.\n3) Display filters with field references will change if the selected\n   frame has changed.\n\nIn the case of a rescan, redissection, reload, retap, or opening a\nnew file, we want the new dfcode. For cf_continue_tail and\ncf_finish_tail, when a new batch of frames have arrived, we might\nbe able to cache the host lookup for 1), and a user might want the\nnew macro definitions in 2) (but in that case, why not a rescan of\nall packets?), but almost surely for 3) wants the field references\nof the frame selected in the GUI when the filter was applied, not\nwhatever frame is currently selected when new packets arrive. So\nwe keep the old dfcode, and also reduce recompilation (which becomes\nmore important as the default update interval can be reduced, cf.\nf0712606a3d014a915e585997f624640b326b9c0 ).\n\nCurrently filters with field references don't work at all with\nnewly arrived frames in live captures, because the references\naren't loaded to the code. This fixes that by using the field\nreferences from the original frame.\n\nCf. 1370d2f738f4ec4b7a00f63e5f04fe916da79533\n\nFix #19612. Fix #12517.",
+  "state": "merged",
+  "created_at": "2024-01-22T16:40:48.933Z",
+  "updated_at": "2024-01-24T15:43:02.793Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2024-01-24T15:43:01.289Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "recompile_dfilter",
+  "user_notes_count": 0,
+  "upvotes": 1,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "08cf0e9553e77a915fdec5952960bcdda6e3ac04",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2024-01-22T16:41:13.252Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!14134",
+  "references": {
+    "short": "!14134",
+    "relative": "!14134",
+    "full": "wireshark/wireshark!14134"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/14134",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2024-01-22T16:41:06.630Z",
+  "latest_build_finished_at": "2024-01-22T16:51:38.805Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1146965527,
+    "iid": 59578,
+    "project_id": 7898047,
+    "sha": "314a35a3a64f632bcfb4205620b8c4b3833e52ca",
+    "ref": "refs/merge-requests/14134/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2024-01-22T16:40:58.905Z",
+    "updated_at": "2024-01-22T16:51:38.905Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1146965527"
+  },
+  "head_pipeline": {
+    "id": 1149967225,
+    "iid": 59673,
+    "project_id": 7898047,
+    "sha": "08cf0e9553e77a915fdec5952960bcdda6e3ac04",
+    "ref": "refs/merge-requests/14134/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2024-01-24T15:42:53.545Z",
+    "updated_at": "2024-01-24T15:42:53.545Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1149967225",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1149967225",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "70e78cd390f0e82c69899fb80d3bee39d4432c1b",
+    "head_sha": "08cf0e9553e77a915fdec5952960bcdda6e3ac04",
+    "start_sha": "70e78cd390f0e82c69899fb80d3bee39d4432c1b"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "c3c41b6a858e9363d89e13feb4c15da82d2ca0ea",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1740471596,
+          "type": null,
+          "body": "added 21 commits\n\n<ul><li>314a35a3...70e78cd3 - 20 commits from branch <code>wireshark:master</code></li><li>08cf0e95 - file: Don&#39;t recompile the dfilter during a live capture</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/14134/diffs?diff_id=903973429&start_sha=314a35a3a64f632bcfb4205620b8c4b3833e52ca)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-01-24T15:42:50.784Z",
+          "updated_at": "2024-01-24T15:42:50.917Z",
+          "system": true,
+          "noteable_id": 276739372,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14134,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b4fd80b4e2d78d61a5b0fd7a2f5a57d5c1682fbe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1740471730,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2024-01-24T15:42:55.427Z",
+          "updated_at": "2024-01-24T15:42:55.436Z",
+          "system": true,
+          "noteable_id": 276739372,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 14134,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -3779,6 +3779,8 @@ c_ares_ghi_cb(void *arg, int status, int timeouts _U_, struct hostent *hp) {\n     /*\n      * XXX - If we wanted to be really fancy we could cache results here and\n      * look them up in get_host_ipaddr* below.\n+     *\n+     * XXX - This only gets the first host address if there's more than one.\n      */\n     async_hostent_t *ahp = (async_hostent_t *)arg;\n     if (status == ARES_SUCCESS && hp && ahp && hp->h_length == ahp->addr_size) {\n@@ -3811,6 +3813,9 @@ get_host_ipaddr(const char *host, guint32 *addrp)\n \n         /* If we're not allowed to do name resolution, don't do name\n          * resolution...\n+         * XXX - What if we're allowed to do name resolution, and the name\n+         * is in a DNS packet we've dissected or in a Name Resolution Block,\n+         * or a user-entered manual name resolution?\n          */\n         if (!gbl_resolv_flags.network_name ||\n                 !gbl_resolv_flags.use_external_net_name_resolver) {\n@@ -3873,6 +3878,9 @@ get_host_ipaddr6(const char *host, ws_in6_addr *addrp)\n \n     /* If we're not allowed to do name resolution, don't do name\n      * resolution...\n+     * XXX - What if we're allowed to do name resolution, and the name\n+     * is in a DNS packet we've dissected or in a Name Resolution Block,\n+     * or a user-entered manual name resolution?\n      */\n     if (!gbl_resolv_flags.network_name ||\n             !gbl_resolv_flags.use_external_net_name_resolver) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/addr_resolv.c",
+      "old_path": "epan/addr_resolv.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -202,6 +202,14 @@ void FilterDialog::on_buttonBox_accepted()\n             break;\n         case DisplayMacro:\n             mainApp->reloadDisplayFilterMacros();\n+            // The function above emits MainApplication::FieldsChanged, which\n+            // takes care of invalidating the current display filter text if\n+            // it no longer compiles.\n+            // XXX - What if the current display filter means something\n+            // different now? Should we force a refilter (not redissection,\n+            // the dissection shouldn't have changed) with the current display\n+            // filter, or wait for the user to refilter?\n+            // The UAT based display macro system did not refilter.\n             break;\n         default:\n             ws_assert_not_reached();\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/filter_dialog.cpp",
+      "old_path": "ui/qt/filter_dialog.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -509,14 +509,32 @@ cf_read(capture_file *cf, gboolean reloading)\n     cf->read_lock = TRUE;\n \n     /* Compile the current display filter.\n+     * The code it compiles to might have changed, e.g. if a display\n+     * filter macro used has changed.\n+     *\n      * We assume this will not fail since cf->dfilter is only set in\n      * cf_filter IFF the filter was valid.\n+     * XXX - This is not necessarily true, if the filter has a FT_IPv4\n+     * or FT_IPv6 field compared to a resolved hostname in it, because\n+     * we do a new host lookup, and that *could* timeout this time\n+     * (though with the read lock above we shouldn't have many lookups at\n+     * once, reducing the chances of that)... (#19612)\n      */\n     if (cf->dfilter) {\n         compiled = dfilter_compile(cf->dfilter, &dfcode, NULL);\n         ws_assert(compiled && dfcode);\n     }\n \n+    dfilter_free(cf->dfcode);\n+    cf->dfcode = dfcode;\n+\n+    /* The compiled dfilter might have a field reference; recompiling it\n+     * means that the field references won't match anything. That's what\n+     * we want since this is a new sequential read and we don't have\n+     * a selected frame with a tree. (Will taps with filters with display\n+     * references also have cleared display references?)\n+     */\n+\n     /* Get the union of the flags for all tap listeners. */\n     tap_flags = union_of_tap_listener_flags();\n \n@@ -534,7 +552,7 @@ cf_read(capture_file *cf, gboolean reloading)\n      *    the first pass.\n      */\n     create_proto_tree =\n-        (dfcode != NULL || have_filtering_tap_listeners() ||\n+        (cf->dfcode != NULL || have_filtering_tap_listeners() ||\n          (tap_flags & TL_REQUIRES_PROTO_TREE) || postdissectors_want_hfids());\n \n     reset_tap_listeners();\n@@ -561,7 +579,7 @@ cf_read(capture_file *cf, gboolean reloading)\n     /* If the display filter or any tap listeners require the columns,\n      * construct them. */\n     cinfo = (tap_listeners_require_columns() ||\n-        dfilter_requires_columns(dfcode)) ? &cf->cinfo : NULL;\n+        dfilter_requires_columns(cf->dfcode)) ? &cf->cinfo : NULL;\n \n     /* Find the size of the file. */\n     size = wtap_file_size(cf->provider.wth, NULL);\n@@ -647,7 +665,7 @@ cf_read(capture_file *cf, gboolean reloading)\n                    hours even on fast machines) just to see that it was the wrong file. */\n                 break;\n             }\n-            read_record(cf, &rec, &buf, dfcode, &edt, cinfo, data_offset, &frame_dup_cache, cksum);\n+            read_record(cf, &rec, &buf, cf->dfcode, &edt, cinfo, data_offset, &frame_dup_cache, cksum);\n             wtap_rec_reset(&rec);\n         }\n     }\n@@ -684,9 +702,6 @@ cf_read(capture_file *cf, gboolean reloading)\n     /* Free the display name */\n     g_free(name_ptr);\n \n-    /* Cleanup and release all dfilter resources */\n-    dfilter_free(dfcode);\n-\n     epan_dissect_cleanup(&edt);\n     wtap_rec_cleanup(&rec);\n     ws_buffer_free(&buf);\n@@ -782,20 +797,36 @@ cf_continue_tail(capture_file *cf, volatile int to_read, wtap_rec *rec,\n {\n     gchar            *err_info;\n     volatile int      newly_displayed_packets = 0;\n-    dfilter_t        *dfcode = NULL;\n     epan_dissect_t    edt;\n     gboolean          create_proto_tree;\n     guint             tap_flags;\n-    gboolean          compiled _U_;\n \n-    /* Compile the current display filter.\n-     * We assume this will not fail since cf->dfilter is only set in\n-     * cf_filter IFF the filter was valid.\n+    /* Don't compile the current display filter. The current display filter\n+     * text might compile to different code than when the capture started:\n+     *\n+     *    If it has a IP address resolved name, calling get_host_ipaddr every\n+     *    time new packets arrive can mean a *lot* of gethostbyname calls\n+     *    in flight at once, eventually leading to a timeout (#19612).\n+     *    addr_resolv.c says that ares_gethostbyname is \"usually interactive\",\n+     *    unlike ares_gethostbyaddr (used in dissection), and violating that\n+     *    expectation is bad.\n+     *\n+     *    If it has a display filter macro, the definition might have changed.\n+     *\n+     *    If it has a field reference, the selected frame / current proto tree\n+     *    might have changed, and we don't have the old one. If we recompile,\n+     *    we can't set the field references to the old values.\n+     *\n+     * For a rescan, redissection, reload, retap, or opening a new file, we\n+     * want to compile. What about here, when new frames have arrived in a live\n+     * capture? We might be able to cache the host lookup, and a user might want\n+     * the new display filter macro definition, but the user almost surely wants\n+     * the field references to refer to values from the proto tree when the\n+     * filter was applied, not whatever it happens to be now if the user has\n+     * clicked on a different packet.\n+     *\n+     * To get the new compiled filter, the user should refilter.\n      */\n-    if (cf->dfilter) {\n-        compiled = dfilter_compile(cf->dfilter, &dfcode, NULL);\n-        ws_assert(compiled && dfcode);\n-    }\n \n     /* Get the union of the flags for all tap listeners. */\n     tap_flags = union_of_tap_listener_flags();\n@@ -814,7 +845,7 @@ cf_continue_tail(capture_file *cf, volatile int to_read, wtap_rec *rec,\n      *    the first pass.\n      */\n     create_proto_tree =\n-        (dfcode != NULL || have_filtering_tap_listeners() ||\n+        (cf->dfcode != NULL || have_filtering_tap_listeners() ||\n          (tap_flags & TL_REQUIRES_PROTO_TREE) || postdissectors_want_hfids());\n \n     *err = 0;\n@@ -831,7 +862,7 @@ cf_continue_tail(capture_file *cf, volatile int to_read, wtap_rec *rec,\n         /* If the display filter or any tap listeners require the columns,\n          * construct them. */\n         cinfo = (tap_listeners_require_columns() ||\n-            dfilter_requires_columns(dfcode)) ? &cf->cinfo : NULL;\n+            dfilter_requires_columns(cf->dfcode)) ? &cf->cinfo : NULL;\n \n         while (to_read != 0) {\n             wtap_cleareof(cf->provider.wth);\n@@ -845,7 +876,7 @@ cf_continue_tail(capture_file *cf, volatile int to_read, wtap_rec *rec,\n                    aren't any packets left to read) exit. */\n                 break;\n             }\n-            if (read_record(cf, rec, buf, dfcode, &edt, cinfo, data_offset, frame_dup_cache, frame_cksum)) {\n+            if (read_record(cf, rec, buf, cf->dfcode, &edt, cinfo, data_offset, frame_dup_cache, frame_cksum)) {\n                 newly_displayed_packets++;\n             }\n             to_read--;\n@@ -871,9 +902,6 @@ cf_continue_tail(capture_file *cf, volatile int to_read, wtap_rec *rec,\n        packets we've read. */\n     cf->lnk_t = wtap_file_encap(cf->provider.wth);\n \n-    /* Cleanup and release all dfilter resources */\n-    dfilter_free(dfcode);\n-\n     epan_dissect_cleanup(&edt);\n \n     /* Don't freeze/thaw the list when doing live capture */\n@@ -921,21 +949,14 @@ cf_finish_tail(capture_file *cf, wtap_rec *rec, Buffer *buf, int *err,\n {\n     gchar     *err_info;\n     gint64     data_offset;\n-    dfilter_t *dfcode = NULL;\n     column_info *cinfo;\n     epan_dissect_t edt;\n     gboolean   create_proto_tree;\n     guint      tap_flags;\n-    gboolean   compiled _U_;\n \n-    /* Compile the current display filter.\n-     * We assume this will not fail since cf->dfilter is only set in\n-     * cf_filter IFF the filter was valid.\n+    /* All the comments above in cf_continue_tail apply regarding the\n+     * current display filter.\n      */\n-    if (cf->dfilter) {\n-        compiled = dfilter_compile(cf->dfilter, &dfcode, NULL);\n-        ws_assert(compiled && dfcode);\n-    }\n \n     /* Get the union of the flags for all tap listeners. */\n     tap_flags = union_of_tap_listener_flags();\n@@ -943,7 +964,7 @@ cf_finish_tail(capture_file *cf, wtap_rec *rec, Buffer *buf, int *err,\n     /* If the display filter or any tap listeners require the columns,\n      * construct them. */\n     cinfo = (tap_listeners_require_columns() ||\n-        dfilter_requires_columns(dfcode)) ? &cf->cinfo : NULL;\n+        dfilter_requires_columns(cf->dfcode)) ? &cf->cinfo : NULL;\n \n     /*\n      * Determine whether we need to create a protocol tree.\n@@ -959,7 +980,7 @@ cf_finish_tail(capture_file *cf, wtap_rec *rec, Buffer *buf, int *err,\n      *    the first pass.\n      */\n     create_proto_tree =\n-        (dfcode != NULL || have_filtering_tap_listeners() ||\n+        (cf->dfcode != NULL || have_filtering_tap_listeners() ||\n          (tap_flags & TL_REQUIRES_PROTO_TREE) || postdissectors_want_hfids());\n \n     if (cf->provider.wth == NULL) {\n@@ -979,13 +1000,10 @@ cf_finish_tail(capture_file *cf, wtap_rec *rec, Buffer *buf, int *err,\n                aren't any packets left to read) exit. */\n             break;\n         }\n-        read_record(cf, rec, buf, dfcode, &edt, cinfo, data_offset, frame_dup_cache, frame_cksum);\n+        read_record(cf, rec, buf, cf->dfcode, &edt, cinfo, data_offset, frame_dup_cache, frame_cksum);\n         wtap_rec_reset(rec);\n     }\n \n-    /* Cleanup and release all dfilter resources */\n-    dfilter_free(dfcode);\n-\n     epan_dissect_cleanup(&edt);\n \n     /* Don't freeze/thaw the list when doing live capture */\n@@ -1543,6 +1561,9 @@ cf_filter_packets(capture_file *cf, gchar *dftext, gboolean force)\n     df_error_t *df_err;\n \n     /* if new filter equals old one, do nothing unless told to do so */\n+    /* XXX - The text can be the same without compiling to the same code.\n+     * (Macros, field references, etc.)\n+     */\n     if (!force && strcmp(filter_new, filter_old) == 0) {\n         return CF_OK;\n     }\n@@ -1582,6 +1603,10 @@ cf_filter_packets(capture_file *cf, gchar *dftext, gboolean force)\n     g_free(cf->dfilter);\n     cf->dfilter = dftext;\n \n+    /* Cleanup and release all dfilter resources */\n+    /* We'll recompile this when the rescan starts, or in cf_read()\n+     * if no file is open currently. */\n+    dfilter_free(dfcode);\n \n     /* Now rescan the packet list, applying the new filter, but not\n      * throwing away information constructed on a previous pass.\n@@ -1599,9 +1624,6 @@ cf_filter_packets(capture_file *cf, gchar *dftext, gboolean force)\n         }\n     }\n \n-    /* Cleanup and release all dfilter resources */\n-    dfilter_free(dfcode);\n-\n     return CF_OK;\n }\n \n@@ -1714,29 +1736,40 @@ rescan_packets(capture_file *cf, const char *action, const char *action_item, gb\n     ws_buffer_init(&buf, 1514);\n \n     /* Compile the current display filter.\n+     * The code it compiles to might have changed, e.g. if a display\n+     * filter macro used has changed.\n+     *\n      * We assume this will not fail since cf->dfilter is only set in\n      * cf_filter IFF the filter was valid.\n+     * XXX - This is not necessarily true, if the filter has a FT_IPv4\n+     * or FT_IPv6 field compared to a resolved hostname in it, because\n+     * we do a new host lookup, and that *could* timeout this time\n+     * (though with the read lock above we shouldn't have many lookups at\n+     * once, reducing the chances of that)... (#19612)\n      */\n     if (cf->dfilter) {\n         compiled = dfilter_compile(cf->dfilter, &dfcode, NULL);\n         ws_assert(compiled && dfcode);\n     }\n \n+    dfilter_free(cf->dfcode);\n+    cf->dfcode = dfcode;\n+\n     /* Do we have any tap listeners with filters? */\n     filtering_tap_listeners = have_filtering_tap_listeners();\n \n     /* Update references in filters (if any) for the protocol\n      * tree corresponding to the currently selected frame in the GUI. */\n     if (cf->edt != NULL && cf->edt->tree != NULL) {\n-        if (dfcode)\n-            dfilter_load_field_references(dfcode, cf->edt->tree);\n+        if (cf->dfcode)\n+            dfilter_load_field_references(cf->dfcode, cf->edt->tree);\n         if (filtering_tap_listeners)\n             tap_listeners_load_field_references(cf->edt);\n     }\n \n-    if (dfcode != NULL) {\n+    if (cf->dfcode != NULL) {\n         dfilter_log_full(LOG_DOMAIN_DFILTER, LOG_LEVEL_NOISY, NULL, -1, NULL,\n-                        dfcode, \"Rescanning packets with display filter\");\n+                        cf->dfcode, \"Rescanning packets with display filter\");\n     }\n \n     /* Get the union of the flags for all tap listeners. */\n@@ -1745,7 +1778,7 @@ rescan_packets(capture_file *cf, const char *action, const char *action_item, gb\n     /* If the display filter or any tap listeners require the columns,\n      * construct them. */\n     cinfo = (tap_listeners_require_columns() ||\n-        dfilter_requires_columns(dfcode)) ? &cf->cinfo : NULL;\n+        dfilter_requires_columns(cf->dfcode)) ? &cf->cinfo : NULL;\n \n     /*\n      * Determine whether we need to create a protocol tree.\n@@ -1761,7 +1794,7 @@ rescan_packets(capture_file *cf, const char *action, const char *action_item, gb\n      *    values or protocols on the first pass.\n      */\n     create_proto_tree =\n-        (dfcode != NULL || filtering_tap_listeners ||\n+        (cf->dfcode != NULL || filtering_tap_listeners ||\n          (tap_flags & TL_REQUIRES_PROTO_TREE) ||\n          (redissect && postdissectors_want_hfids()));\n \n@@ -1954,7 +1987,7 @@ rescan_packets(capture_file *cf, const char *action, const char *action_item, gb\n             preceding_frame = prev_frame;\n         }\n \n-        add_packet_to_packet_list(fdata, cf, &edt, dfcode,\n+        add_packet_to_packet_list(fdata, cf, &edt, cf->dfcode,\n                 cinfo, &rec, &buf,\n                 add_to_packet_list);\n \n@@ -2082,9 +2115,6 @@ rescan_packets(capture_file *cf, const char *action, const char *action_item, gb\n         }\n     }\n \n-    /* Cleanup and release all dfilter resources */\n-    dfilter_free(dfcode);\n-\n     /* If another rescan (due to dfilter change) or redissection (due to profile\n      * change) was requested, the rescan above is aborted and restarted here. */\n     if (queued_rescan_type != RESCAN_NONE) {\n@@ -2367,6 +2397,11 @@ cf_retap_packets(capture_file *cf)\n \n     /* Update references in filters (if any) for the protocol\n      * tree corresponding to the currently selected frame in the GUI. */\n+    /* XXX - What if we *don't* have a currently selected frame in the GUI,\n+     * but we did the last time we loaded field references? Then they'll\n+     * match something instead of nothing (unless they've been recompiled).\n+     * Should we have a way to clear the field references even with a NULL tree?\n+     */\n     if (cf->edt != NULL && cf->edt->tree != NULL) {\n         if (filtering_tap_listeners)\n             tap_listeners_load_field_references(cf->edt);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "file.c",
+      "old_path": "file.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "08cf0e9553e77a915fdec5952960bcdda6e3ac04",
+      "short_id": "08cf0e95",
+      "created_at": "2024-01-24T15:42:46.000+00:00",
+      "parent_ids": [
+        "70e78cd390f0e82c69899fb80d3bee39d4432c1b"
+      ],
+      "title": "file: Don't recompile the dfilter during a live capture",
+      "message": "file: Don't recompile the dfilter during a live capture\n\nSaving only the dfilter text and recompiling the code when\n[re]dissecting or scanning groups of packets operates on the\nexplicit assumption that previously validated filter text will\nalways compile to valid filter code\n\nThat assumption is not true; while we invalidate the filter and\nreplace the text with NULL if display filter macros change or\nother aspects of the packet matching expressions change so that\nthe previous text is no longer valid, display filters that match\nFT_IPv4 or FT_IPv6 fields to resolved hostnames require a host\nname lookup each time they are compiled, which can timeout, especially\nif there are too many requests in flight at once. This is particularly\nlikely if a recompilation is performed each time additional frames\narrive during a live capture.\n\nIt is important to stress that the stronger, implicit assumption that\nthe display filter will compile to the same code is also false.\n1) Display filters that require host name lookup can change even if\n   it doesn't timeout.\n2) Display filter macros can change.\n3) Display filters with field references will change if the selected\n   frame has changed.\n\nIn the case of a rescan, redissection, reload, retap, or opening a\nnew file, we want the new dfcode. For cf_continue_tail and\ncf_finish_tail, when a new batch of frames have arrived, we might\nbe able to cache the host lookup for 1), and a user might want the\nnew macro definitions in 2) (but in that case, why not a rescan of\nall packets?), but almost surely for 3) wants the field references\nof the frame selected in the GUI when the filter was applied, not\nwhatever frame is currently selected when new packets arrive. So\nwe keep the old dfcode, and also reduce recompilation (which becomes\nmore important as the default update interval can be reduced, cf.\nf0712606a3d014a915e585997f624640b326b9c0 ).\n\nCurrently filters with field references don't work at all with\nnewly arrived frames in live captures, because the references\naren't loaded to the code. This fixes that by using the field\nreferences from the original frame.\n\nCf. 1370d2f738f4ec4b7a00f63e5f04fe916da79533\n\nFix #19612. Fix #12517.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2024-01-21T07:51:03.000-05:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2024-01-24T15:42:46.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/08cf0e9553e77a915fdec5952960bcdda6e3ac04"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 903973429,
+      "head_commit_sha": "08cf0e9553e77a915fdec5952960bcdda6e3ac04",
+      "base_commit_sha": "70e78cd390f0e82c69899fb80d3bee39d4432c1b",
+      "start_commit_sha": "70e78cd390f0e82c69899fb80d3bee39d4432c1b",
+      "created_at": "2024-01-24T15:42:48.802Z",
+      "merge_request_id": 276739372,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "55ad72d889c10ee2bbf9b743573d6d6a10428b36"
+    },
+    {
+      "id": 901379458,
+      "head_commit_sha": "314a35a3a64f632bcfb4205620b8c4b3833e52ca",
+      "base_commit_sha": "9d65454c9f03b2398a7f313847fb5aed1887ae8e",
+      "start_commit_sha": "9d65454c9f03b2398a7f313847fb5aed1887ae8e",
+      "created_at": "2024-01-22T16:40:51.171Z",
+      "merge_request_id": 276739372,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": "55ad72d889c10ee2bbf9b743573d6d6a10428b36"
+    }
+  ]
+}

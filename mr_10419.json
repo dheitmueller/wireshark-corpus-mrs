@@ -1,0 +1,377 @@
+{
+  "id": 219382289,
+  "iid": 10419,
+  "project_id": 7898047,
+  "title": "check_dissector_urls: use the cache for all links",
+  "description": "At the moment, the check_dissector_urls.py script uses parallel requests\nto check groups of 120 urls. If one of the urls times out, we have to wait\nfor the timeout to expire before we schedule a new group of requests. The\ncache is used to skip urls that have already been checked in a previous\ngroup. If a url appears twice in the same group (and hasn't been checked\nbefore), it is checked twice since all requests are sent at the same time.\n\nThis patch changes the overall approach again to reduce the time when\nwe're effectively blocked and to make better use of the cache.\n\nWe store the extracted urls in a python set where duplicate entries are\nnot allowed. If we add the same url twice, it'll still be listed only\nonce.\n\nNext, we run through the set and populate the cache. As the urls in the\nset are unique, there's no need for groups, we can kick off all requests\nat the same time. However, our testing showed that timeouts occur if there\nare too many concurrent connections. It should be possible to set a limit\nvia the TCPConnector, this did not work reliably. We use an additional\nsemaphore to set a limit of 50 connections.\n\nThe final verification of each link in each source file is now done using\nthe cache.\n\nFinally, the output was refactored to show the urls while the cache is\npopulated. This takes much longer than reading the urls from the source\nfiles, we should display something while this is ongoing. Also, remove any\nreference to cached/uncached now that all urls are cached.\n\nThese changes reduce the time for a complete run to below two minutes on\nmy system.",
+  "state": "merged",
+  "created_at": "2023-04-22T10:32:17.394Z",
+  "updated_at": "2023-04-23T10:33:03.955Z",
+  "merged_by": {
+    "id": 6810036,
+    "username": "martin.r.mathieson",
+    "public_email": "",
+    "name": "Martin Mathieson",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+    "web_url": "https://gitlab.com/martin.r.mathieson"
+  },
+  "merge_user": {
+    "id": 6810036,
+    "username": "martin.r.mathieson",
+    "public_email": "",
+    "name": "Martin Mathieson",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+    "web_url": "https://gitlab.com/martin.r.mathieson"
+  },
+  "merged_at": "2023-04-23T10:33:02.524Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "work.23-04-22_cdu_all_cache",
+  "user_notes_count": 1,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6880719,
+    "username": "martin.kaiser",
+    "public_email": "",
+    "name": "Martin Kaiser",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/86c6c92ecb575705117c7f498cb0e8784b1ae26ca5099eafed3d9ea17626e3db?s=80&d=identicon",
+    "web_url": "https://gitlab.com/martin.kaiser"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 6810036,
+      "username": "martin.r.mathieson",
+      "public_email": "",
+      "name": "Martin Mathieson",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+      "web_url": "https://gitlab.com/martin.r.mathieson"
+    }
+  ],
+  "source_project_id": 20846519,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "dc57cd1bb5633870bcd19c77b8df8363b0754060",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "57a2313e7143fddff9f38157c46ee4cb0ec8365e",
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-04-22T10:32:21.601Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10419",
+  "references": {
+    "short": "!10419",
+    "relative": "!10419",
+    "full": "wireshark/wireshark!10419"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10419",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-04-22T10:32:21.053Z",
+  "latest_build_finished_at": "2023-04-22T10:52:40.626Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 845305158,
+    "iid": 45220,
+    "project_id": 7898047,
+    "sha": "a3f5e83fede3ebc5d86b827b745a008ecd92fc41",
+    "ref": "refs/merge-requests/10419/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-04-22T10:32:20.388Z",
+    "updated_at": "2023-04-22T10:52:40.636Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/845305158"
+  },
+  "head_pipeline": {
+    "id": 845704844,
+    "iid": 45256,
+    "project_id": 7898047,
+    "sha": "dc57cd1bb5633870bcd19c77b8df8363b0754060",
+    "ref": "refs/merge-requests/10419/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2023-04-23T10:31:57.369Z",
+    "updated_at": "2023-04-23T10:31:57.369Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/845704844",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6810036,
+      "username": "martin.r.mathieson",
+      "public_email": "",
+      "name": "Martin Mathieson",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+      "web_url": "https://gitlab.com/martin.r.mathieson"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/845704844",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "45af76c2418ba9b866b040c90bb6f35a583da7e0",
+    "head_sha": "dc57cd1bb5633870bcd19c77b8df8363b0754060",
+    "start_sha": "45af76c2418ba9b866b040c90bb6f35a583da7e0"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "f502c22825c77b87b901a3c01532c148ba49e3c1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1363103535,
+          "type": null,
+          "body": "requested review from @martin.r.mathieson",
+          "author": {
+            "id": 6880719,
+            "username": "martin.kaiser",
+            "public_email": "",
+            "name": "Martin Kaiser",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/86c6c92ecb575705117c7f498cb0e8784b1ae26ca5099eafed3d9ea17626e3db?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.kaiser"
+          },
+          "created_at": "2023-04-22T10:32:17.488Z",
+          "updated_at": "2023-04-22T10:32:17.490Z",
+          "system": true,
+          "noteable_id": 219382289,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10419,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "122a0da6480406913d8983ca9dd0b0652f33c0ee",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1363439526,
+          "type": null,
+          "body": "This looks good to me, thanks Martin!",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-04-23T10:30:47.902Z",
+          "updated_at": "2023-04-23T10:30:47.902Z",
+          "system": false,
+          "noteable_id": 219382289,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10419,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "60ae7cb4a97fdb49d7e6bb3a0157870e48fe9a2e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1363439626,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-04-23T10:30:49.064Z",
+          "updated_at": "2023-04-23T10:30:49.068Z",
+          "system": true,
+          "noteable_id": 219382289,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10419,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4e90aa2d3977562724684f018c9e2f7438192108",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1363439802,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>a3f5e83f...45af76c2 - 5 commits from branch <code>wireshark:master</code></li><li>dc57cd1b - check_dissector_urls: use the cache for all links</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10419/diffs?diff_id=662955365&start_sha=a3f5e83fede3ebc5d86b827b745a008ecd92fc41)",
+          "author": {
+            "id": 6810036,
+            "username": "martin.r.mathieson",
+            "public_email": "",
+            "name": "Martin Mathieson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/030414c33f619ee28811cd9c073802ef2267d160ab2744eb8427bd49af4c7998?s=80&d=identicon",
+            "web_url": "https://gitlab.com/martin.r.mathieson"
+          },
+          "created_at": "2023-04-23T10:31:55.596Z",
+          "updated_at": "2023-04-23T10:31:55.597Z",
+          "system": true,
+          "noteable_id": 219382289,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10419,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -79,7 +79,6 @@ class Link(object):\n         self.tested = False\n         self.r = None\n         self.success = False\n-        self.result_from_cache = False\n \n     def __str__(self):\n         epan_idx = self.file.find('epan')\n@@ -99,31 +98,16 @@ class Link(object):\n                 s += '    <No response Received>'\n         return s\n \n-    async def validate(self, session):\n-        # Fetch, but first look in cache\n+    def validate(self):\n         global cached_lookups\n         global should_exit\n         if should_exit:\n             return\n         self.tested = True\n         if self.url in cached_lookups:\n-            if args.verbose:\n-                print('[Using cached result for', self.url, ']')\n             self.r = cached_lookups[self.url]\n-            self.result_from_cache = True\n         else:\n-            try:\n-                async with session.get(self.url) as self.r:\n-                    # Cache this result.\n-                    cached_lookups[self.url] = self.r\n-\n-            except (asyncio.CancelledError):\n-                self.r = FailedLookup()\n-\n-            except (ValueError, ConnectionError, Exception):\n-                # Add bad result to cashed_lookups.\n-                cached_lookups[self.url] = FailedLookup()\n-                self.r = cached_lookups[self.url]\n+            self.r = FailedLookup()\n \n         if self.r.status < 200 or self.r.status >= 300:\n             self.success = False\n@@ -135,7 +119,7 @@ class Link(object):\n \n links = []\n files = []\n-\n+all_urls = set()\n \n def find_links_in_file(filename):\n     with open(filename, 'r') as f:\n@@ -152,10 +136,9 @@ def find_links_in_file(filename):\n                 # A url must have a period somewhere\n                 if '.' not in url:\n                     continue\n-                if args.verbose:\n-                    print('Found URL:', url)\n-                global links\n+                global links, all_urls\n                 links.append(Link(filename, line_number, url))\n+                all_urls.add(url)\n \n \n # Scan the given folder for links to test.\n@@ -167,20 +150,39 @@ def find_links_in_folder(folder):\n             global links\n             find_links_in_file(os.path.join(folder, filename))\n \n+\n+async def populate_cache(sem, session, url):\n+    global cached_lookups\n+    if should_exit:\n+        return\n+    async with sem:\n+        try:\n+            async with session.get(url) as r:\n+                cached_lookups[url] = r\n+                if args.verbose:\n+                    print('checking ', url, ': success', sep='')\n+\n+        except (asyncio.CancelledError, ValueError, ConnectionError, Exception):\n+            cached_lookups[url] = FailedLookup()\n+            if args.verbose:\n+                print('checking ', url, ': failed', sep='')\n+\n+\n async def check_all_links(links):\n-    max_conn = 120\n-    conn = aiohttp.TCPConnector(limit=max_conn)\n+    sem = asyncio.Semaphore(50)\n     timeout = aiohttp.ClientTimeout(total=25)\n+    connector = aiohttp.TCPConnector(limit=30)\n     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36',\n                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}\n-    async with aiohttp.ClientSession(connector=conn, headers=headers, timeout=timeout) as session:\n-        tasks = [l.validate(session) for l in links]\n-        task_group = list(tasks[i:i + max_conn] for i in range(0, len(tasks), max_conn))\n-        for t in task_group:\n-            try:\n-                await asyncio.gather(*t)\n-            except(asyncio.CancelledError):\n-                await session.close()\n+    async with aiohttp.ClientSession(connector=connector, headers=headers, timeout=timeout) as session:\n+        tasks = [populate_cache(sem, session, u) for u in all_urls]\n+        try:\n+            await asyncio.gather(*tasks)\n+        except (asyncio.CancelledError):\n+            await session.close()\n+\n+    for l in links:\n+        l.validate()\n \n \n #################################################################\n@@ -277,17 +279,13 @@ with open('successes.txt', 'w') as f_s:\n \n \n # Count and show overall stats.\n-passed, failed, cached = 0, 0, 0\n+passed, failed = 0, 0\n for l in links:\n-    if not l.result_from_cache:\n-        if l.tested:\n-            if l.success:\n-                passed += 1\n-            else:\n-                failed += 1\n-    else:\n-        cached += 1\n+    if l.tested:\n+        if l.success:\n+            passed += 1\n+        else:\n+            failed += 1\n \n print('--------------------------------------------------------------------------------------------------')\n-print(len(links), 'links checked: ', passed, 'passed,',\n-      failed, 'failed (', cached, 'results from cache)')\n+print(len(links), 'links checked: ', passed, 'passed,', failed, 'failed')\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/check_dissector_urls.py",
+      "old_path": "tools/check_dissector_urls.py",
+      "a_mode": "100755",
+      "b_mode": "100755",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "dc57cd1bb5633870bcd19c77b8df8363b0754060",
+      "short_id": "dc57cd1b",
+      "created_at": "2023-04-23T10:31:52.000+00:00",
+      "parent_ids": [
+        "45af76c2418ba9b866b040c90bb6f35a583da7e0"
+      ],
+      "title": "check_dissector_urls: use the cache for all links",
+      "message": "check_dissector_urls: use the cache for all links\n\nAt the moment, the check_dissector_urls.py script uses parallel requests\nto check groups of 120 urls. If one of the urls times out, we have to wait\nfor the timeout to expire before we schedule a new group of requests. The\ncache is used to skip urls that have already been checked in a previous\ngroup. If a url appears twice in the same group (and hasn't been checked\nbefore), it is checked twice since all requests are sent at the same time.\n\nThis patch changes the overall approach again to reduce the time when\nwe're effectively blocked and to make better use of the cache.\n\nWe store the extracted urls in a python set where duplicate entries are\nnot allowed. If we add the same url twice, it'll still be listed only\nonce.\n\nNext, we run through the set and populate the cache. As the urls in the\nset are unique, there's no need for groups, we can kick off all requests\nat the same time. However, our testing showed that timeouts occur if there\nare too many concurrent connections. It should be possible to set a limit\nvia the TCPConnector, this did not work reliably. We use an additional\nsemaphore to set a limit of 50 connections.\n\nThe final verification of each link in each source file is now done using\nthe cache.\n\nFinally, the output was refactored to show the urls while the cache is\npopulated. This takes much longer than reading the urls from the source\nfiles, we should display something while this is ongoing. Also, remove any\nreference to cached/uncached now that all urls are cached.\n\nThese changes reduce the time for a complete run to below two minutes on\nmy system.\n",
+      "author_name": "Martin Kaiser",
+      "author_email": "wireshark@kaiser.cx",
+      "authored_date": "2023-04-14T17:49:13.000+02:00",
+      "committer_name": "Martin Mathieson",
+      "committer_email": "martin.r.mathieson@googlemail.com",
+      "committed_date": "2023-04-23T10:31:52.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/dc57cd1bb5633870bcd19c77b8df8363b0754060"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 662955365,
+      "head_commit_sha": "dc57cd1bb5633870bcd19c77b8df8363b0754060",
+      "base_commit_sha": "45af76c2418ba9b866b040c90bb6f35a583da7e0",
+      "start_commit_sha": "45af76c2418ba9b866b040c90bb6f35a583da7e0",
+      "created_at": "2023-04-23T10:31:54.931Z",
+      "merge_request_id": 219382289,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 662803402,
+      "head_commit_sha": "a3f5e83fede3ebc5d86b827b745a008ecd92fc41",
+      "base_commit_sha": "0d1a60a9114d7dbdc11c627abd57cf1fa84cd6c7",
+      "start_commit_sha": "0d1a60a9114d7dbdc11c627abd57cf1fa84cd6c7",
+      "created_at": "2023-04-22T10:32:18.863Z",
+      "merge_request_id": 219382289,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

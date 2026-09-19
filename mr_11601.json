@@ -1,0 +1,403 @@
+{
+  "id": 241209781,
+  "iid": 11601,
+  "project_id": 7898047,
+  "title": "extcap: Flush after writing the pcap header",
+  "description": "Call flush in udpdump and ciscodump after writing the pcap header\nso that it is actually written out even if no packets have arrived yet.\n\nBy doing so, dumpcap no longer blocks in cap_pipe_open_live waiting\nfor the pcap header from the extcap pipe until the first packet is\ncaptured, but instead goes on to (attempt to) open its output.\n\nThis means that if we capture no packets that a capture file with\na header but no packet records will be created (and, if not a temp\nfile, will have to be cleaned up), but that is consistent with tshark\nand Wireshark behavior otherwise.\n\nThis means you can no longer do a capture to a FIFO or Named Pipe\nin this order:\n\n1) Start dumpcap\n2) Create the FIFO or Named Pipe\n3) Start the flow of packets to the UDP port\n\nwhich only worked when not dissecting packets. It was broken if tshark\nalso needed to dissect packets, but evaded the checks for if we were\nwriting to a FIFO or Named Pipe resulting in behavior mysterious to\nusers, such as only writing to one of the Named Pipe readers on Windows\n(or failing if there aren't enough instances), or having tshark and\nthe other pipe reader compete for the pipe input and eventually failing\non UN*X.\n\nInstead, the FIFO or Named Pipe needs to be created before launching\ndumpcap, or else an ordinary file will be created (on UN*X), or an\nerror about not being able to open the output (on Windows, since\nNamed Pipes have a magic prefix, and you can't create an ordinary\nfile with a named pipe filename.)\n\nFix #17900.",
+  "state": "merged",
+  "created_at": "2023-08-04T02:05:10.361Z",
+  "updated_at": "2023-10-15T11:59:27.793Z",
+  "merged_by": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "merge_user": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "merged_at": "2023-08-04T07:45:16.065Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "udpdump",
+  "user_notes_count": 3,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "9ad1ec1651689a39e86562d083a0794d6fcbc2c2",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-08-04T02:05:15.723Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!11601",
+  "references": {
+    "short": "!11601",
+    "relative": "!11601",
+    "full": "wireshark/wireshark!11601"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/11601",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-08-04T02:05:15.380Z",
+  "latest_build_finished_at": "2023-08-04T02:21:33.195Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 955446679,
+    "iid": 49887,
+    "project_id": 7898047,
+    "sha": "9ad1ec1651689a39e86562d083a0794d6fcbc2c2",
+    "ref": "refs/merge-requests/11601/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-08-04T02:05:13.586Z",
+    "updated_at": "2023-08-04T02:21:33.203Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/955446679"
+  },
+  "head_pipeline": {
+    "id": 955446679,
+    "iid": 49887,
+    "project_id": 7898047,
+    "sha": "9ad1ec1651689a39e86562d083a0794d6fcbc2c2",
+    "ref": "refs/merge-requests/11601/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-08-04T02:05:13.586Z",
+    "updated_at": "2023-08-04T02:21:33.203Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/955446679",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2023-08-04T02:05:15.380Z",
+    "finished_at": "2023-08-04T02:21:33.195Z",
+    "committed_at": null,
+    "duration": 977,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/955446679",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "380c142d7a7b69e0b483d91372227106b853d2b3",
+    "head_sha": "9ad1ec1651689a39e86562d083a0794d6fcbc2c2",
+    "start_sha": "380c142d7a7b69e0b483d91372227106b853d2b3"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "83fc735ddacab0f49c570664762b30e616cc13c0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1500138070,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-08-04T07:28:11.265Z",
+          "updated_at": "2023-08-04T07:28:11.267Z",
+          "system": true,
+          "noteable_id": 241209781,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11601,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dbe7a42a56b56df28c458de79f1f2856ae822198",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1500164782,
+          "type": null,
+          "body": "If tcpdump is run with the `-U` flag, not only does it flush after every packet is written, it also flushes after the output file is initially created.\n\nI.e., it does the same thing that this change makes the extcaps in question do.\n\nI see precisely zero reason why those extcaps should not do this.\n\n> This means you can no longer do a capture to a FIFO or Named Pipe in this order:\n\n\"Doctor, it hurts when I do this!\"\n\n\"So don't do that.\"",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-08-04T07:45:08.983Z",
+          "updated_at": "2023-08-04T07:45:08.983Z",
+          "system": false,
+          "noteable_id": 241209781,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11601,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ccdd0bba14135cb0a877822930ea1c3877e4f96b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1500164877,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-08-04T07:45:12.672Z",
+          "updated_at": "2023-08-04T07:45:12.679Z",
+          "system": true,
+          "noteable_id": 241209781,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11601,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2ca9837b6609dc5a2b191c020a9ba48d232b6d71",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1604291967,
+          "type": null,
+          "body": "Is there any reason not to have `libpcap_write_file_header()` do the `fflush()` if it's writing to a pipe?",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-10-15T07:07:47.514Z",
+          "updated_at": "2023-10-15T07:07:47.514Z",
+          "system": false,
+          "noteable_id": 241209781,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11601,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a9da4d086d2dad6df177b8ad36fd40e8acb77afc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1604336739,
+          "type": null,
+          "body": "Not that I can think of, and it might help other tools.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-10-15T11:59:27.775Z",
+          "updated_at": "2023-10-15T11:59:27.775Z",
+          "system": false,
+          "noteable_id": 241209781,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11601,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2150,6 +2150,8 @@ static int ssh_open_remote_connection(const ssh_params_t* ssh_params, const char\n \t\tgoto cleanup;\n \t}\n \n+\tfflush(fp);\n+\n \tws_debug(\"Create first ssh session\");\n \tsshs = create_ssh_connection(ssh_params, &err_info);\n \tif (!sshs) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "extcap/ciscodump.c",
+      "old_path": "extcap/ciscodump.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -169,6 +169,8 @@ static int setup_dumpfile(const char* fifo, FILE** fp)\n \t\treturn EXIT_FAILURE;\n \t}\n \n+\tfflush(*fp);\n+\n \treturn EXIT_SUCCESS;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "extcap/udpdump.c",
+      "old_path": "extcap/udpdump.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "9ad1ec1651689a39e86562d083a0794d6fcbc2c2",
+      "short_id": "9ad1ec16",
+      "created_at": "2023-08-03T22:03:07.000-04:00",
+      "parent_ids": [
+        "380c142d7a7b69e0b483d91372227106b853d2b3"
+      ],
+      "title": "extcap: Flush after writing the pcap header",
+      "message": "extcap: Flush after writing the pcap header\n\nCall fflush in udpdump and ciscodump after writing the pcap header\nso that it is actually written out even if no packets have arrived yet.\n\nBy doing so, dumpcap no longer blocks in cap_pipe_open_live waiting\nfor the pcap header from the extcap pipe until the first packet is\ncaptured, but instead goes on to (attempt to) open its output.\n\nThis means that if we capture no packets that a capture file with\na header but no packet records will be created (and, if not a temp\nfile, will have to be cleaned up), but that is consistent with tshark\nand Wireshark behavior otherwise.\n\nThis means you can no longer do a capture to a FIFO or Named Pipe\nin this order:\n\n1) Start dumpcap\n2) Create the FIFO or Named Pipe\n3) Start the flow of packets to the UDP port\n\nwhich only worked when not dissecting packets. It was broken if tshark\nalso needed to dissect packets, but evaded the checks for if we were\nwriting to a FIFO or Named Pipe resulting in behavior mysterious to\nusers, such as only writing to one of the Named Pipe readers on Windows\n(or failing if there aren't enough instances), or having tshark and\nthe other pipe reader compete for the pipe input and eventually failing\non UN*X.\n\nInstead, the FIFO or Named Pipe needs to be created before launching\ndumpcap, or else an ordinary file will be created (on UN*X), or an\nerror about not being able to open the output (on Windows, since\nNamed Pipes have a magic prefix, and you can't create an ordinary\nfile with a named pipe filename.)\n\nFix #17900.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2023-08-03T21:21:56.000-04:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-08-03T22:03:07.000-04:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9ad1ec1651689a39e86562d083a0794d6fcbc2c2"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 752608364,
+      "head_commit_sha": "9ad1ec1651689a39e86562d083a0794d6fcbc2c2",
+      "base_commit_sha": "380c142d7a7b69e0b483d91372227106b853d2b3",
+      "start_commit_sha": "380c142d7a7b69e0b483d91372227106b853d2b3",
+      "created_at": "2023-08-04T02:05:11.843Z",
+      "merge_request_id": 241209781,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    }
+  ]
+}

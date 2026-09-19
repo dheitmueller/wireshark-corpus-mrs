@@ -1,0 +1,441 @@
+{
+  "id": 259845927,
+  "iid": 12843,
+  "project_id": 7898047,
+  "title": "HTTP3: fix memleak, dissect control stream, various display improvements",
+  "description": "* HTTP3: fix nghttp3_qpack_stream_context_new memleak on error path\n\n    The following assertion was tripped right after allocating memory:\n    \n        Dissector bug, protocol HTTP3, in packet 272: epan/dissectors/packet-http3.c:806: failed assertion \"header_data->encoded.bytes == ((void*)0)\"\n    \n    This patch does not fix that assertion, but fixes the memleak by moving\n    the allocation after the dissector assert. It also moves up the\n    deallocation call since there is another early return that could prevent\n    deallocation. There is still the edge case where one of the callees\n    throw an exception, but that is for another day to fix.\n\n* HTTP3: dissect control stream, various display improvements\n\n    * Dissect HTTP/3 frames on control streams (RFC 9114, Section 6.2.1).\n      These start with a SETTINGS frame.\n    * Consistently report reserved types as \"GREASE\". Although not used in\n      the HTTP/3 spec text, it is certainly related to it (RFC 8701).\n    * Correct the visual lengths for the \"Frame\" item.\n    * Move the \"Frame Payload\" field inside the Frame tree. This is\n      consistent with Section 7.1 and should reduce confusion when\n      encountering a \"Reserved (GREASE)\" frame with some random payload.\n    * Simplify code to assume payloads smaller than 2^31.\n    \n    Relates to #16761\n___\nTested with a local capture with HTTP/3 traffic from Chromium vs Cloudflare. There is still a known problem with non-deterministic output of `%p`, maybe I'll fix that in a follow up patch.\n\n<details><summary>difference in: tshark -Y http3 -O http3</summary>\n\n```diff\n--- old\n+++ new\n@@ -7,6 +7,33 @@ QUIC IETF\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: Control Stream off=0\n         Uni Stream Type: Control Stream (0x0000000000000000)\n+        SETTINGS len=27\n+            Type: SETTINGS (0x0000000000000004)\n+            Length: 27\n+            Frame Payload: 018001000006800100000740640801c0000008bd8a3fa5854e9586\n+            Settings - Max Table Capacity: 65536\n+                Settings Identifier: Max Table Capacity (0x0000000000000001)\n+                Settings Value: 65536\n+                Max Table Capacity: 65536\n+            Settings - Max Field Section Size: 65536\n+                Settings Identifier: Max Field Section Size (0x0000000000000006)\n+                Settings Value: 65536\n+                Max header list size: 65536\n+            Settings - Blocked Streams: 100\n+                Settings Identifier: Blocked Streams (0x0000000000000007)\n+                Settings Value: 100\n+                Blocked Streams: 100\n+            Settings - Extended CONNECT: 1\n+                Settings Identifier: Extended CONNECT (0x0000000000000008)\n+                Settings Value: 1\n+                Extended CONNECT: 1\n+            Settings - Reserved (GREASE)\n+                Settings Identifier: Reserved (0x8bd8a3fa5)\n+                Settings Value: 89036166\n+        Reserved (GREASE) len=1\n+            Type: Reserved (0x1ce582b61c)\n+            Length: 1\n+            Frame Payload: ee\n \n Frame 35: 107 bytes on wire (856 bits), 107 bytes captured (856 bits) on interface veth0, id 0\n Ethernet II, Src: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82), Dst: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0)\n@@ -16,6 +43,28 @@ QUIC IETF\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: Control Stream off=0\n         Uni Stream Type: Control Stream (0x0000000000000000)\n+        SETTINGS len=25\n+            Type: SETTINGS (0x0000000000000004)\n+            Length: 25\n+            Frame Payload: 01800100000680040000074064c00000029b64a2cb8820e3ef\n+            Settings - Max Table Capacity: 65536\n+                Settings Identifier: Max Table Capacity (0x0000000000000001)\n+                Settings Value: 65536\n+                Max Table Capacity: 65536\n+            Settings - Max Field Section Size: 262144\n+                Settings Identifier: Max Field Section Size (0x0000000000000006)\n+                Settings Value: 262144\n+                Max header list size: 262144\n+            Settings - Blocked Streams: 100\n+                Settings Identifier: Blocked Streams (0x0000000000000007)\n+                Settings Value: 100\n+                Blocked Streams: 100\n+            Settings - Reserved (GREASE)\n+                Settings Identifier: Reserved (0x29b64a2cb)\n+                Settings Value: 136373231\n+        Reserved (GREASE) len=0\n+            Type: Reserved (0x123f265061)\n+            Length: 0\n \n Frame 37: 339 bytes on wire (2712 bits), 339 bytes captured (2712 bits) on interface veth0, id 0\n Ethernet II, Src: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82), Dst: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0)\n@@ -24,6 +73,12 @@ User Datagram Protocol, Src Port: 41933, Dst Port: 443\n QUIC IETF\n Hypertext Transfer Protocol Version 3\n     Uni Stream\n+        PRIORITY_UPDATE len=7\n+            Type: PRIORITY_UPDATE (0x00000000000f0700)\n+            Length: 7\n+            Frame Payload: 00753d342c2069\n+            Priority Update Element ID: 0\n+            Priority Update Field Value: u=4, i\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: QPACK Encoder Stream off=0\n         Uni Stream Type: QPACK Encoder Stream (0x0000000000000002)\n@@ -61,12 +116,13 @@ Hypertext Transfer Protocol Version 3\n             [QPACK encoder instruction count increment: 9]\n Hypertext Transfer Protocol Version 3\n     Request Stream\n-        HEADERS len=1, POST /ListAccounts?gpsia=1&source=ChromiumBrowser&json=standard\n+        HEADERS len=15, POST /ListAccounts?gpsia=1&source=ChromiumBrowser&json=standard\n             Type: HEADERS (0x0000000000000001)\n             Length: 15\n-            HTTP3 encoded headers - bytes 0x6020001f78f0 pos 0 len 15\n-                [Expert Info (Note/Debug): HTTP3 encoded headers - bytes 0x6020001f78f0 pos 0 len 15]\n-                    [HTTP3 encoded headers - bytes 0x6020001f78f0 pos 0 len 15]\n+            Frame Payload: 0a00d488d7878685ef84838281df80\n+            HTTP3 encoded headers - bytes 0x6020001f7b10 pos 0 len 15\n+                [Expert Info (Note/Debug): HTTP3 encoded headers - bytes 0x6020001f7b10 pos 0 len 15]\n+                    [HTTP3 encoded headers - bytes 0x6020001f7b10 pos 0 len 15]\n                     [Severity level: Note]\n                     [Group: Debug]\n             [Header Length: 537]\n@@ -151,12 +207,11 @@ Hypertext Transfer Protocol Version 3\n                 Value: en-US,en;q=0.9\n                 accept-language: en-US,en;q=0.9\n             [Full request URI: https://accounts.google.com/ListAccounts?gpsia=1&source=ChromiumBrowser&json=standard]\n-        Frame Payload: 0a00d488d7878685ef84838281df80\n         DATA len=1\n             Type: DATA (0x0000000000000000)\n             Length: 1\n+            Frame Payload: 20\n             Data: 20\n-        Frame Payload: 20\n \n Frame 45: 69 bytes on wire (552 bits), 69 bytes captured (552 bits) on interface veth0, id 0\n Ethernet II, Src: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0), Dst: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82)\n@@ -233,12 +288,13 @@ Hypertext Transfer Protocol Version 3\n             [QPACK encoder instruction count increment: 17]\n Hypertext Transfer Protocol Version 3\n     Request Stream\n-        HEADERS len=1, 200 OK\n+        HEADERS len=22, 200 OK\n             Type: HEADERS (0x0000000000000001)\n             Length: 22\n-            HTTP3 encoded headers - bytes 0x60300022f390 pos 0 len 22\n-                [Expert Info (Note/Debug): HTTP3 encoded headers - bytes 0x60300022f390 pos 0 len 22]\n-                    [HTTP3 encoded headers - bytes 0x60300022f390 pos 0 len 22]\n+            Frame Payload: 1200d9908f8efd8d8c8b8a89888786858483eb828180\n+            HTTP3 encoded headers - bytes 0x603000230740 pos 0 len 22\n+                [Expert Info (Note/Debug): HTTP3 encoded headers - bytes 0x603000230740 pos 0 len 22]\n+                    [HTTP3 encoded headers - bytes 0x603000230740 pos 0 len 22]\n                     [Severity level: Note]\n                     [Group: Debug]\n             [Header Length: 1635]\n@@ -352,12 +408,11 @@ Hypertext Transfer Protocol Version 3\n                 Name: alt-svc\n                 Value Length: 46\n                 Value: h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000\n-        Frame Payload: 1200d9908f8efd8d8c8b8a89888786858483eb828180\n-        DATA len=1\n+        DATA len=33\n             Type: DATA (0x0000000000000000)\n             Length: 33\n+            Frame Payload: 1f8b08000000000002ff8a564a4fcc4cd4cbd14bd42b52d2898e8d05000000ffff\n             Data: 1f8b08000000000002ff8a564a4fcc4cd4cbd14bd42b52d2898e8d05000000ffff\n-        Frame Payload: 1f8b08000000000002ff8a564a4fcc4cd4cbd14bd42b52d2898e8d05000000ffff\n \n Frame 50: 75 bytes on wire (600 bits), 75 bytes captured (600 bits) on interface veth0, id 0\n Ethernet II, Src: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0), Dst: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82)\n@@ -366,11 +421,11 @@ User Datagram Protocol, Src Port: 443, Dst Port: 41933\n QUIC IETF\n Hypertext Transfer Protocol Version 3\n     Request Stream\n-        DATA len=1\n+        DATA len=10\n             Type: DATA (0x0000000000000000)\n             Length: 10\n+            Frame Payload: 0300946779ef11000000\n             Data: 0300946779ef11000000\n-        Frame Payload: 0300946779ef11000000\n \n Frame 52: 79 bytes on wire (632 bits), 79 bytes captured (632 bits) on interface veth0, id 0\n Ethernet II, Src: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82), Dst: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0)\n@@ -390,6 +445,33 @@ QUIC IETF\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: Control Stream off=0\n         Uni Stream Type: Control Stream (0x0000000000000000)\n+        SETTINGS len=31\n+            Type: SETTINGS (0x0000000000000004)\n+            Length: 31\n+            Frame Payload: 018001000006800100000740640801c00000017ad23d91c000000065199bdc\n+            Settings - Max Table Capacity: 65536\n+                Settings Identifier: Max Table Capacity (0x0000000000000001)\n+                Settings Value: 65536\n+                Max Table Capacity: 65536\n+            Settings - Max Field Section Size: 65536\n+                Settings Identifier: Max Field Section Size (0x0000000000000006)\n+                Settings Value: 65536\n+                Max header list size: 65536\n+            Settings - Blocked Streams: 100\n+                Settings Identifier: Blocked Streams (0x0000000000000007)\n+                Settings Value: 100\n+                Blocked Streams: 100\n+            Settings - Extended CONNECT: 1\n+                Settings Identifier: Extended CONNECT (0x0000000000000008)\n+                Settings Value: 1\n+                Extended CONNECT: 1\n+            Settings - Reserved (GREASE)\n+                Settings Identifier: Reserved (0x17ad23d91)\n+                Settings Value: 1696177116\n+        Reserved (GREASE) len=2\n+            Type: Reserved (0xbfb187b57)\n+            Length: 2\n+            Frame Payload: 31a1\n \n Frame 219: 112 bytes on wire (896 bits), 112 bytes captured (896 bits) on interface veth0, id 0\n Ethernet II, Src: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82), Dst: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0)\n@@ -399,6 +481,29 @@ QUIC IETF\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: Control Stream off=0\n         Uni Stream Type: Control Stream (0x0000000000000000)\n+        SETTINGS len=29\n+            Type: SETTINGS (0x0000000000000004)\n+            Length: 29\n+            Frame Payload: 01800100000680040000074064c000001d5ea5a439c0000000ad172142\n+            Settings - Max Table Capacity: 65536\n+                Settings Identifier: Max Table Capacity (0x0000000000000001)\n+                Settings Value: 65536\n+                Max Table Capacity: 65536\n+            Settings - Max Field Section Size: 262144\n+                Settings Identifier: Max Field Section Size (0x0000000000000006)\n+                Settings Value: 262144\n+                Max header list size: 262144\n+            Settings - Blocked Streams: 100\n+                Settings Identifier: Blocked Streams (0x0000000000000007)\n+                Settings Value: 100\n+                Blocked Streams: 100\n+            Settings - Reserved (GREASE)\n+                Settings Identifier: Reserved (0x1d5ea5a439)\n+                Settings Value: 2903974210\n+        Reserved (GREASE) len=1\n+            Type: Reserved (0x7298e90b0)\n+            Length: 1\n+            Frame Payload: 39\n \n Frame 220: 842 bytes on wire (6736 bits), 842 bytes captured (6736 bits) on interface veth0, id 0\n Ethernet II, Src: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82), Dst: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0)\n@@ -407,6 +512,12 @@ User Datagram Protocol, Src Port: 35699, Dst Port: 443\n QUIC IETF\n Hypertext Transfer Protocol Version 3\n     Uni Stream\n+        PRIORITY_UPDATE len=7\n+            Type: PRIORITY_UPDATE (0x00000000000f0700)\n+            Length: 7\n+            Frame Payload: 00753d342c2069\n+            Priority Update Element ID: 0\n+            Priority Update Field Value: u=4, i\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: QPACK Encoder Stream off=0\n         Uni Stream Type: QPACK Encoder Stream (0x0000000000000002)\n@@ -447,12 +558,13 @@ Hypertext Transfer Protocol Version 3\n             [QPACK encoder instruction count increment: 10]\n Hypertext Transfer Protocol Version 3\n     Request Stream\n-        HEADERS len=1, POST /v1:GetModels?key=AIzaSyDwr302FpOSkGRpLlUpPThNTDPbXcIn_FM\n+        HEADERS len=15, POST /v1:GetModels?key=AIzaSyDwr302FpOSkGRpLlUpPThNTDPbXcIn_FM\n             Type: HEADERS (0x0000000000000001)\n             Length: 15\n-            HTTP3 encoded headers - bytes 0x602000293070 pos 0 len 15\n-                [Expert Info (Note/Debug): HTTP3 encoded headers - bytes 0x602000293070 pos 0 len 15]\n-                    [HTTP3 encoded headers - bytes 0x602000293070 pos 0 len 15]\n+            Frame Payload: 0b00d489d78887868584838281df80\n+            HTTP3 encoded headers - bytes 0x6020002934b0 pos 0 len 15\n+                [Expert Info (Note/Debug): HTTP3 encoded headers - bytes 0x6020002934b0 pos 0 len 15]\n+                    [HTTP3 encoded headers - bytes 0x6020002934b0 pos 0 len 15]\n                     [Severity level: Note]\n                     [Group: Debug]\n             [Header Length: 536]\n@@ -535,12 +647,11 @@ Hypertext Transfer Protocol Version 3\n                 Value: en-US,en;q=0.9\n                 accept-language: en-US,en;q=0.9\n             [Full request URI: https://optimizationguide-pa.googleapis.com/v1:GetModels?key=AIzaSyDwr302FpOSkGRpLlUpPThNTDPbXcIn_FM]\n-        Frame Payload: 0b00d489d78887868584838281df80\n-        DATA len=2\n+        DATA len=463\n             Type: DATA (0x0000000000000000)\n             Length: 463\n+            Frame Payload: 0a040802200e0a040809200e0a04080d200e0a670810200e32610a59747970652e676f6f…\n             Data: 0a040802200e0a040809200e0a04080d200e0a670810200e32610a59747970652e676f6f…\n-        Frame Payload: 0a040802200e0a040809200e0a04080d200e0a670810200e32610a59747970652e676f6f…\n \n Frame 232: 69 bytes on wire (552 bits), 69 bytes captured (552 bits) on interface veth0, id 0\n Ethernet II, Src: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0), Dst: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82)\n@@ -599,12 +710,13 @@ Hypertext Transfer Protocol Version 3\n             [QPACK encoder instruction count increment: 11]\n Hypertext Transfer Protocol Version 3\n     Request Stream\n-        HEADERS len=1, 403 Forbidden\n+        HEADERS len=17, 403 Forbidden\n             Type: HEADERS (0x0000000000000001)\n             Length: 17\n-            HTTP3 encoded headers - bytes 0x603000369340 pos 0 len 17\n-                [Expert Info (Note/Debug): HTTP3 encoded headers - bytes 0x603000369340 pos 0 len 17]\n-                    [HTTP3 encoded headers - bytes 0x603000369340 pos 0 len 17]\n+            Frame Payload: 0c00ff058a898887eb868584838281fd80\n+            HTTP3 encoded headers - bytes 0x603000369a90 pos 0 len 17\n+                [Expert Info (Note/Debug): HTTP3 encoded headers - bytes 0x603000369a90 pos 0 len 17]\n+                    [HTTP3 encoded headers - bytes 0x603000369a90 pos 0 len 17]\n                     [Severity level: Note]\n                     [Group: Debug]\n             [Header Length: 412]\n@@ -689,12 +801,11 @@ Hypertext Transfer Protocol Version 3\n                 Name: alt-svc\n                 Value Length: 46\n                 Value: h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000\n-        Frame Payload: 0c00ff058a898887eb868584838281fd80\n-        DATA len=2\n+        DATA len=391\n             Type: DATA (0x0000000000000000)\n             Length: 391\n+            Frame Payload: 1f8b08000000000002ffbd90414bc33018869997490f22052f3d7db28b076dd1e9044164…\n             Data: 1f8b08000000000002ffbd90414bc33018869997490f22052f3d7db28b076dd1e9044164…\n-        Frame Payload: 1f8b08000000000002ffbd90414bc33018869997490f22052f3d7db28b076dd1e9044164…\n \n Frame 238: 77 bytes on wire (616 bits), 77 bytes captured (616 bits) on interface veth0, id 0\n Ethernet II, Src: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82), Dst: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0)\n@@ -713,6 +824,13 @@ QUIC IETF\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: Control Stream off=0\n         Uni Stream Type: Control Stream (0x0000000000000000)\n+        SETTINGS len=3\n+            Type: SETTINGS (0x0000000000000004)\n+            Length: 3\n+            Frame Payload: 427601\n+            Settings - Unknown (0x276)\n+                Settings Identifier: Unknown (0x0000000000000276)\n+                Settings Value: 1\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: QPACK Encoder Stream off=0\n         Uni Stream Type: QPACK Encoder Stream (0x0000000000000002)\n@@ -729,6 +847,28 @@ QUIC IETF\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: Control Stream off=0\n         Uni Stream Type: Control Stream (0x0000000000000000)\n+        SETTINGS len=29\n+            Type: SETTINGS (0x0000000000000004)\n+            Length: 29\n+            Frame Payload: 01800100000680040000074064c000001a657cfd28c000000095b1c26e\n+            Settings - Max Table Capacity: 65536\n+                Settings Identifier: Max Table Capacity (0x0000000000000001)\n+                Settings Value: 65536\n+                Max Table Capacity: 65536\n+            Settings - Max Field Section Size: 262144\n+                Settings Identifier: Max Field Section Size (0x0000000000000006)\n+                Settings Value: 262144\n+                Max header list size: 262144\n+            Settings - Blocked Streams: 100\n+                Settings Identifier: Blocked Streams (0x0000000000000007)\n+                Settings Value: 100\n+                Blocked Streams: 100\n+            Settings - Reserved (GREASE)\n+                Settings Identifier: Reserved (0x1a657cfd28)\n+                Settings Value: 2511454830\n+        Reserved (GREASE) len=0\n+            Type: Reserved (0x66e669aa1)\n+            Length: 0\n \n Frame 1891: 267 bytes on wire (2136 bits), 267 bytes captured (2136 bits) on interface veth0, id 0\n Ethernet II, Src: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0), Dst: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82)\n@@ -739,6 +879,32 @@ QUIC IETF\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: Control Stream off=0\n         Uni Stream Type: Control Stream (0x0000000000000000)\n+        SETTINGS len=31\n+            Type: SETTINGS (0x0000000000000004)\n+            Length: 31\n+            Frame Payload: 018001000006800100000740640801c00000181f1a5242c00000008edc9811\n+            Settings - Max Table Capacity: 65536\n+                Settings Identifier: Max Table Capacity (0x0000000000000001)\n+                Settings Value: 65536\n+                Max Table Capacity: 65536\n+            Settings - Max Field Section Size: 65536\n+                Settings Identifier: Max Field Section Size (0x0000000000000006)\n+                Settings Value: 65536\n+                Max header list size: 65536\n+            Settings - Blocked Streams: 100\n+                Settings Identifier: Blocked Streams (0x0000000000000007)\n+                Settings Value: 100\n+                Blocked Streams: 100\n+            Settings - Extended CONNECT: 1\n+                Settings Identifier: Extended CONNECT (0x0000000000000008)\n+                Settings Value: 1\n+                Extended CONNECT: 1\n+            Settings - Reserved (GREASE)\n+                Settings Identifier: Reserved (0x181f1a5242)\n+                Settings Value: 2396821521\n+        Reserved (GREASE) len=0\n+            Type: Reserved (0x1044cd93d)\n+            Length: 0\n \n Frame 1892: 204 bytes on wire (1632 bits), 204 bytes captured (1632 bits) on interface veth0, id 0\n Ethernet II, Src: 6a:80:9c:c8:76:82 (6a:80:9c:c8:76:82), Dst: d6:98:fd:ae:4a:d0 (d6:98:fd:ae:4a:d0)\n@@ -749,4 +915,27 @@ QUIC IETF\n Hypertext Transfer Protocol Version 3\n     UNI STREAM: Control Stream off=0\n         Uni Stream Type: Control Stream (0x0000000000000000)\n+        SETTINGS len=25\n+            Type: SETTINGS (0x0000000000000004)\n+            Length: 25\n+            Frame Payload: 01800100000680040000074064c0000009cac2377a9b075e0d\n+            Settings - Max Table Capacity: 65536\n+                Settings Identifier: Max Table Capacity (0x0000000000000001)\n+                Settings Value: 65536\n+                Max Table Capacity: 65536\n+            Settings - Max Field Section Size: 262144\n+                Settings Identifier: Max Field Section Size (0x0000000000000006)\n+                Settings Value: 262144\n+                Max header list size: 262144\n+            Settings - Blocked Streams: 100\n+                Settings Identifier: Blocked Streams (0x0000000000000007)\n+                Settings Value: 100\n+                Blocked Streams: 100\n+            Settings - Reserved (GREASE)\n+                Settings Identifier: Reserved (0x9cac2377a)\n+                Settings Value: 453467661\n+        Reserved (GREASE) len=3\n+            Type: Reserved (0xc3f007be)\n+            Length: 3\n+            Frame Payload: 2246e4\n```\n</details>",
+  "state": "merged",
+  "created_at": "2023-10-27T16:49:54.181Z",
+  "updated_at": "2023-10-28T10:22:45.128Z",
+  "merged_by": {
+    "id": 2415432,
+    "username": "Lekensteyn",
+    "public_email": "",
+    "name": "Peter Wu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Lekensteyn"
+  },
+  "merge_user": {
+    "id": 2415432,
+    "username": "Lekensteyn",
+    "public_email": "",
+    "name": "Peter Wu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Lekensteyn"
+  },
+  "merged_at": "2023-10-28T10:07:22.368Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "pwu/http3-fixes",
+  "user_notes_count": 1,
+  "upvotes": 1,
+  "downvotes": 0,
+  "author": {
+    "id": 2415432,
+    "username": "Lekensteyn",
+    "public_email": "",
+    "name": "Peter Wu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Lekensteyn"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 279822,
+      "username": "alagoutte",
+      "public_email": "",
+      "name": "Alexis La Goutte",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+      "web_url": "https://gitlab.com/alagoutte"
+    },
+    {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    }
+  ],
+  "source_project_id": 20728671,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0da43f2d42ac73206cb92c7087c33dec516e1b6a",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-10-27T16:50:01.493Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!12843",
+  "references": {
+    "short": "!12843",
+    "relative": "!12843",
+    "full": "wireshark/wireshark!12843"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/12843",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-10-27T16:49:59.916Z",
+  "latest_build_finished_at": "2023-10-27T17:10:50.502Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1052393784,
+    "iid": 54570,
+    "project_id": 7898047,
+    "sha": "67bcfffa15ad69933a35a68331c1ad7457fbba36",
+    "ref": "refs/merge-requests/12843/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-10-27T16:49:58.914Z",
+    "updated_at": "2023-10-27T17:10:50.513Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1052393784"
+  },
+  "head_pipeline": {
+    "id": 1053048667,
+    "iid": 54612,
+    "project_id": 7898047,
+    "sha": "0da43f2d42ac73206cb92c7087c33dec516e1b6a",
+    "ref": "refs/merge-requests/12843/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2023-10-28T10:07:11.882Z",
+    "updated_at": "2023-10-28T10:07:11.882Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1053048667",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 2415432,
+      "username": "Lekensteyn",
+      "public_email": "",
+      "name": "Peter Wu",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+      "web_url": "https://gitlab.com/Lekensteyn"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1053048667",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "eabe5e268aa987966eef95923e98c073f1c57791",
+    "head_sha": "0da43f2d42ac73206cb92c7087c33dec516e1b6a",
+    "start_sha": "eabe5e268aa987966eef95923e98c073f1c57791"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "856906a966ac41f041a5ac44d9efd21e307495ba",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1623224799,
+          "type": null,
+          "body": "requested review from @johnthacker and @alagoutte",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2023-10-27T16:49:54.448Z",
+          "updated_at": "2023-10-27T16:49:54.454Z",
+          "system": true,
+          "noteable_id": 259845927,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12843,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9680774803bbd2a230110f25235afa963745d498",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1623944397,
+          "type": null,
+          "body": "LGTM",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-10-28T07:26:58.097Z",
+          "updated_at": "2023-10-28T07:26:58.097Z",
+          "system": false,
+          "noteable_id": 259845927,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12843,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bd2fc26be45df2d6db0e9d9980085725bb195675",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1624147029,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2023-10-28T10:04:45.846Z",
+          "updated_at": "2023-10-28T10:04:45.856Z",
+          "system": true,
+          "noteable_id": 259845927,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12843,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c4bcdf05d7b9526e63615e8ed1201ebd7df285b9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1624149012,
+          "type": null,
+          "body": "added 16 commits\n\n<ul><li>67bcfffa...eabe5e26 - 14 commits from branch <code>wireshark:master</code></li><li>3beeba31 - HTTP3: fix nghttp3_qpack_stream_context_new memleak on error path</li><li>0da43f2d - HTTP3: dissect control stream, various display improvements</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/12843/diffs?diff_id=828972320&start_sha=67bcfffa15ad69933a35a68331c1ad7457fbba36)",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2023-10-28T10:07:11.054Z",
+          "updated_at": "2023-10-28T10:07:11.058Z",
+          "system": true,
+          "noteable_id": 259845927,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12843,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "03ef1c7ce9729f7eeb2ecf9593499426c9bdb0ec",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1624166438,
+          "type": null,
+          "body": "mentioned in merge request !12852",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2023-10-28T10:22:45.093Z",
+          "updated_at": "2023-10-28T10:22:45.097Z",
+          "system": true,
+          "noteable_id": 259845927,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12843,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -775,7 +775,6 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint\n     http3_stream_dir              packet_direction;\n     int                           header_len = 0, hoffset = 0;\n     nghttp3_qpack_decoder         *decoder;\n-    nghttp3_qpack_stream_context  *sctx = NULL;\n     proto_item                    *header, *ti, *ti_named_field;\n     proto_tree                    *header_tree, *blocked_rcint_tree;\n     tvbuff_t                      *header_tvb;\n@@ -795,8 +794,6 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint\n          *  This makes context out-of-sync.\n          */\n \n-        nghttp3_qpack_stream_context_new(&sctx, http3_stream->id, nghttp3_mem_default());\n-\n         length           = tvb_reported_length_remaining(tvb, tvb_offset);\n         packet_direction = http3_packet_get_direction(stream_info);\n         decoder          = http3_session->qpack_decoder[packet_direction];\n@@ -811,6 +808,9 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint\n         header_data->encoded.pos   = 0;\n         header_data->encoded.len   = length;\n \n+        nghttp3_qpack_stream_context *sctx = NULL;\n+        nghttp3_qpack_stream_context_new(&sctx, http3_stream->id, nghttp3_mem_default());\n+\n         HTTP3_DISSECTOR_DPRINTF(\"Header data: %p %d %d\\n\", header_data->encoded.bytes, header_data->encoded.pos,\n                                 header_data->encoded.len);\n \n@@ -971,6 +971,7 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint\n \n             HEADER_BLOCK_ENC_ITER_INC(header_data, nread);\n         }\n+        nghttp3_qpack_stream_context_del(sctx);\n     }\n \n     if ((header_data->header_fields == NULL) || (wmem_array_get_count(header_data->header_fields) == 0)) {\n@@ -1092,10 +1093,6 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint\n         proto_item_set_generated(e_ti);\n     }\n \n-    if (sctx) {\n-        nghttp3_qpack_stream_context_del(sctx);\n-    }\n-\n     return tvb_offset;\n }\n #endif /* HAVE_NGHTTP3 */\n@@ -1232,11 +1229,11 @@ dissect_http3_settings(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *http3_\n                                             ENC_VARINT_QUIC, &settingsid, &lenvar);\n         /* Check if it is a GREASE Settings ID */\n         if (http3_is_reserved_code(settingsid)) {\n-            proto_item_set_text(pi, \"Type: GREASE (%#\" PRIx64 \")\", settingsid);\n-            proto_item_append_text(ti_settings, \" - GREASE\");\n+            proto_item_set_text(pi, \"Settings Identifier: Reserved (%#\" PRIx64 \")\", settingsid);\n+            proto_item_append_text(ti_settings, \" - Reserved (GREASE)\");\n         } else {\n             proto_item_append_text(ti_settings, \" - %s\",\n-                                   val64_to_str_const(settingsid, http3_settings_vals, \"Unknown\"));\n+                                   val64_to_str(settingsid, http3_settings_vals, \"Unknown (%#\" PRIx64 \")\"));\n         }\n \n         offset += lenvar;\n@@ -1314,68 +1311,78 @@ dissect_http3_priority_update(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree\n static int\n dissect_http3_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, quic_stream_info *stream_info, http3_stream_info_t *http3_stream)\n {\n-    guint64     frame_type, frame_length;\n-    int         lenvar;\n+    uint64_t    frame_type, frame_length;\n+    int         type_length_size, lenvar, payload_length;\n     proto_item  *ti_ft, *ti_ft_type;\n     proto_tree  *ft_tree;\n     const gchar *ft_display_name;\n \n-    ti_ft = proto_tree_add_item(tree, hf_http3_frame, tvb, offset, 1, ENC_NA);\n+    ti_ft = proto_tree_add_item(tree, hf_http3_frame, tvb, offset, -1, ENC_NA);\n     ft_tree = proto_item_add_subtree(ti_ft, ett_http3_frame);\n \n     ti_ft_type = proto_tree_add_item_ret_varint(ft_tree, hf_http3_frame_type, tvb, offset, -1, ENC_VARINT_QUIC, &frame_type,\n                                         &lenvar);\n     offset += lenvar;\n+    type_length_size = lenvar;\n     if (http3_is_reserved_code(frame_type)) {\n         proto_item_set_text(ti_ft_type, \"Type: Reserved (%#\" PRIx64 \")\", frame_type);\n-        ft_display_name = \"Reserved\";\n+        ft_display_name = \"Reserved (GREASE)\";\n     } else {\n-        ft_display_name = val64_to_str_const(frame_type, http3_frame_types, \"Unknown\");\n+        ft_display_name = val64_to_str(frame_type, http3_frame_types, \"Unknown (%#\" PRIx64 \")\");\n         col_append_sep_str(pinfo->cinfo, COL_INFO, \", \", ft_display_name);\n     }\n     proto_tree_add_item_ret_varint(ft_tree, hf_http3_frame_length, tvb, offset, -1, ENC_VARINT_QUIC, &frame_length,\n                                    &lenvar);\n-    proto_item_set_text(ti_ft, \"%s len=%d\", ft_display_name, lenvar);\n+    proto_item_set_text(ti_ft, \"%s len=%\" PRId64, ft_display_name, frame_length);\n     offset += lenvar;\n+    type_length_size += lenvar;\n \n-    if (frame_length) {\n-        proto_tree_add_item(tree, hf_http3_frame_payload, tvb, offset, (int)frame_length, ENC_NA);\n+    if (frame_length >= (uint64_t)(INT32_MAX - type_length_size)) {\n+        // There is no way for us to correctly handle these sizes. Most likely\n+        // it is garbage.\n+        return INT32_MAX;\n+    }\n \n-        switch (frame_type) {\n-        case HTTP3_DATA: { /* TODO: dissect Data Frame */\n-            tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, (int)frame_length);\n-            dissect_http3_data(next_tvb, pinfo, ft_tree, 0, stream_info, http3_stream);\n-        } break;\n-        case HTTP3_HEADERS: { /* TODO: dissect Headers Frame */\n+    payload_length = (int)frame_length;\n+    proto_item_set_len(ti_ft, type_length_size + payload_length);\n+    if (payload_length == 0) {\n+        return offset;\n+    }\n+\n+    proto_tree_add_item(ft_tree, hf_http3_frame_payload, tvb, offset, payload_length, ENC_NA);\n+\n+    switch (frame_type) {\n+    case HTTP3_DATA: { /* TODO: dissect Data Frame */\n+        tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, payload_length);\n+        dissect_http3_data(next_tvb, pinfo, ft_tree, 0, stream_info, http3_stream);\n+    } break;\n+    case HTTP3_HEADERS: {\n #ifdef HAVE_NGHTTP3\n-            tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, (int)frame_length);\n-            dissect_http3_headers(next_tvb, pinfo, ft_tree, 0, offset, stream_info, http3_stream);\n+        tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, payload_length);\n+        dissect_http3_headers(next_tvb, pinfo, ft_tree, 0, offset, stream_info, http3_stream);\n #endif /* HAVE_NGHTTP3 */\n-        } break;\n-        case HTTP3_CANCEL_PUSH: /* TODO: dissect Cancel_Push Frame */\n-            break;\n-        case HTTP3_SETTINGS: { /* Settings Frame */\n-            tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, (int)frame_length);\n-            dissect_http3_settings(next_tvb, pinfo, ft_tree, 0);\n-        } break;\n-        case HTTP3_PUSH_PROMISE: /* TODO: dissect Push_Promise_Frame */\n-            break;\n-        case HTTP3_GOAWAY: /* TODO: dissect Goaway Frame */\n-            break;\n-        case HTTP3_MAX_PUSH_ID: /* TODO: dissect Max_Push_ID Frame */\n-            break;\n-        case HTTP3_PRIORITY_UPDATE_REQUEST_STREAM:\n-        case HTTP3_PRIORITY_UPDATE_PUSH_STREAM: { /* Priority_Update Frame */\n-            tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, (int)frame_length);\n-            dissect_http3_priority_update(next_tvb, pinfo, ft_tree, 0, frame_length);\n-        } break;\n-        default: /* TODO: add expert_advise */\n-            break;\n-        }\n-\n-        offset += (int)frame_length;\n+    } break;\n+    case HTTP3_CANCEL_PUSH: /* TODO: dissect Cancel_Push Frame */\n+        break;\n+    case HTTP3_SETTINGS: { /* Settings Frame */\n+        tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, payload_length);\n+        dissect_http3_settings(next_tvb, pinfo, ft_tree, 0);\n+    } break;\n+    case HTTP3_PUSH_PROMISE: /* TODO: dissect Push_Promise_Frame */\n+        break;\n+    case HTTP3_GOAWAY: /* TODO: dissect Goaway Frame */\n+        break;\n+    case HTTP3_MAX_PUSH_ID: /* TODO: dissect Max_Push_ID Frame */\n+        break;\n+    case HTTP3_PRIORITY_UPDATE_REQUEST_STREAM:\n+    case HTTP3_PRIORITY_UPDATE_PUSH_STREAM: { /* Priority_Update Frame */\n+        tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, payload_length);\n+        dissect_http3_priority_update(next_tvb, pinfo, ft_tree, 0, frame_length);\n+    } break;\n+    default: /* TODO: add expert_advise */\n+        break;\n     }\n-\n+    offset += payload_length;\n     return offset;\n }\n \n@@ -1791,10 +1798,10 @@ dissect_http3_uni_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, in\n         if (http3_is_reserved_code(stream_type)) {\n             // Reserved to exercise requirement that unknown types are ignored.\n             proto_item_set_text(ti_stream_type, \"Stream Type: Reserved (%#\" PRIx64 \")\", stream_type);\n-            stream_display_name = \"Reserved\";\n+            stream_display_name = \"Reserved (GREASE)\";\n         }\n         else {\n-            stream_display_name = val64_to_str_const(stream_type, http3_stream_types, \"Unknown\");\n+            stream_display_name = val64_to_str(stream_type, http3_stream_types, \"Unknown (%#\" PRIx64 \")\");\n         }\n         proto_item_set_text(ti_stream, \"UNI STREAM: %s off=%\" PRIu64 \"\", stream_display_name, stream_info->stream_offset);\n     } else {\n@@ -1804,6 +1811,12 @@ dissect_http3_uni_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, in\n \n     switch (stream_type) {\n     case HTTP3_STREAM_TYPE_CONTROL:\n+        while (tvb_reported_length_remaining(tvb, offset)) {\n+            if (!http3_check_frame_size(tvb, pinfo, offset)) {\n+                return tvb_captured_length(tvb);\n+            }\n+            offset = dissect_http3_frame(tvb, pinfo, stream_tree, offset, stream_info, http3_stream);\n+        }\n         break;\n     case HTTP3_STREAM_TYPE_PUSH:\n         // The remaining data of this stream consists of HTTP/3 frames.\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-http3.c",
+      "old_path": "epan/dissectors/packet-http3.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "0da43f2d42ac73206cb92c7087c33dec516e1b6a",
+      "short_id": "0da43f2d",
+      "created_at": "2023-10-28T10:07:06.000+00:00",
+      "parent_ids": [
+        "3beeba316106de9dae6a7afcd416497d0aaa49e6"
+      ],
+      "title": "HTTP3: dissect control stream, various display improvements",
+      "message": "HTTP3: dissect control stream, various display improvements\n\n* Dissect HTTP/3 frames on control streams (RFC 9114, Section 6.2.1).\n  These start with a SETTINGS frame.\n* Consistently report reserved types as \"GREASE\". Although not used in\n  the HTTP/3 spec text, it is certainly related to it (RFC 8701).\n* Correct the visual lengths for the \"Frame\" item.\n* Move the \"Frame Payload\" field inside the Frame tree. This is\n  consistent with Section 7.1 and should reduce confusion when\n  encountering a \"Reserved (GREASE)\" frame with some random payload.\n* Simplify code to assume payloads smaller than 2^31.\n\nRelates to #16761\n",
+      "author_name": "Peter Wu",
+      "author_email": "peter@lekensteyn.nl",
+      "authored_date": "2023-10-27T18:34:12.000+02:00",
+      "committer_name": "Peter Wu",
+      "committer_email": "peter@lekensteyn.nl",
+      "committed_date": "2023-10-28T10:07:06.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0da43f2d42ac73206cb92c7087c33dec516e1b6a"
+    },
+    {
+      "id": "3beeba316106de9dae6a7afcd416497d0aaa49e6",
+      "short_id": "3beeba31",
+      "created_at": "2023-10-28T10:07:06.000+00:00",
+      "parent_ids": [
+        "eabe5e268aa987966eef95923e98c073f1c57791"
+      ],
+      "title": "HTTP3: fix nghttp3_qpack_stream_context_new memleak on error path",
+      "message": "HTTP3: fix nghttp3_qpack_stream_context_new memleak on error path\n\nThe following assertion was tripped right after allocating memory:\n\n    Dissector bug, protocol HTTP3, in packet 272: epan/dissectors/packet-http3.c:806: failed assertion \"header_data->encoded.bytes == ((void*)0)\"\n\nThis patch does not fix that assertion, but fixes the memleak by moving\nthe allocation after the dissector assert. It also moves up the\ndeallocation call since there is another early return that could prevent\ndeallocation. There is still the edge case where one of the callees\nthrow an exception, but that is for another day to fix.\n",
+      "author_name": "Peter Wu",
+      "author_email": "peter@lekensteyn.nl",
+      "authored_date": "2023-10-27T17:07:15.000+02:00",
+      "committer_name": "Peter Wu",
+      "committer_email": "peter@lekensteyn.nl",
+      "committed_date": "2023-10-28T10:07:06.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3beeba316106de9dae6a7afcd416497d0aaa49e6"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 828972320,
+      "head_commit_sha": "0da43f2d42ac73206cb92c7087c33dec516e1b6a",
+      "base_commit_sha": "eabe5e268aa987966eef95923e98c073f1c57791",
+      "start_commit_sha": "eabe5e268aa987966eef95923e98c073f1c57791",
+      "created_at": "2023-10-28T10:07:10.270Z",
+      "merge_request_id": 259845927,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "945ea758eea9e20f98abc9920d60e933e07bd8c4"
+    },
+    {
+      "id": 828600044,
+      "head_commit_sha": "67bcfffa15ad69933a35a68331c1ad7457fbba36",
+      "base_commit_sha": "0d46d9a60a89b8d2fd37c91515f3c8153b5e6b99",
+      "start_commit_sha": "1a8e1b14669a9df6b12795fdf5e488a3e06db5f8",
+      "created_at": "2023-10-27T16:49:57.029Z",
+      "merge_request_id": 259845927,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": "945ea758eea9e20f98abc9920d60e933e07bd8c4"
+    }
+  ]
+}

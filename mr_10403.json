@@ -1,0 +1,1003 @@
+{
+  "id": 218911597,
+  "iid": 10403,
+  "project_id": 7898047,
+  "title": "SSHv2: Add support for reading shared secret from keylog file",
+  "description": "As of now, the ssh dissector supports reading the ephemeral private key of either the client or server and use it to compute the shared secret of a connection. The shared secret in turn is then used by the dissector to decrypt encrypted packets (similar to TLS keylog file). However, there is currently no option to provide the dissector with the shared secret directly. This causes multiple issues:\n\n- Connections which use new and not yet implemented key exchange types (like the hybrid post-quantum key exchange `sntrup761x25519-sha512@openssh.com`, the new default of OpenSSH) can not be decrypted even if the shared secret is known. Allowing one to supply the dissector with the shared secret directly allows it to bypass the key exchange calculations (and therefore the issue of unimplemented methods).\n- OpenSSH does not log the ephemeral private key to console, even when compiling with certain debug flags (`-DDEBUG_KEX=1 -DDEBUG_KEXDH=1 -DDEBUG_KEXECDH=1`). Therefore, obtaining the private key for testing purposes from an OpenSSH server / client requires one to patch the source code before compiling. In contrast, the shared secret of the connection is being logged to console when compiled with the debug flags set.\n\nThe current keylog format for the ssh dissector is as follows:\n\n`<hex-encoded cookie> <hex-encoded private key>`\n\nwhere the cookie is the random byte value included as part of the SSH_MSG_KEXINIT message.\n\nThis PR changes this format to:\n\n`<hex-encoded cookie> <PRIVATE_KEY|SHARED_SECRET> <hex-encoded key material>`\n\nwhere the middle part is a static label indicating the type of key material that follows. Setting the label to `PRIVATE_KEY` will make the ssh dissector behave as before, calculating the shared secret on its own. When the label is set to `SHARED_SECRET` the computation is being skipped and the provided key material is directly being used as the shared secret for key derivation. For backwards compatibility I kept support for the old format as well.",
+  "state": "merged",
+  "created_at": "2023-04-20T15:39:07.136Z",
+  "updated_at": "2025-05-09T08:00:17.271Z",
+  "merged_by": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merge_user": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "merged_at": "2023-05-05T10:39:57.242Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "feat/ssh2-keylog-shared-secret-support",
+  "user_notes_count": 4,
+  "upvotes": 1,
+  "downvotes": 0,
+  "author": {
+    "id": 14343997,
+    "username": "Skrillor",
+    "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+    "name": "Fabian Bäumer",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+    "web_url": "https://gitlab.com/Skrillor"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 45349681,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "c224f16ac6f713d3b331a3214525497e0da9923d",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-04-20T15:39:12.023Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10403",
+  "references": {
+    "short": "!10403",
+    "relative": "!10403",
+    "full": "wireshark/wireshark!10403"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10403",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-05-05T09:23:31.087Z",
+  "latest_build_finished_at": "2023-05-05T09:45:09.973Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 858186289,
+    "iid": 45598,
+    "project_id": 7898047,
+    "sha": "c224f16ac6f713d3b331a3214525497e0da9923d",
+    "ref": "refs/merge-requests/10403/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-05-05T09:23:29.967Z",
+    "updated_at": "2023-05-05T09:45:09.983Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/858186289"
+  },
+  "head_pipeline": {
+    "id": 858186289,
+    "iid": 45598,
+    "project_id": 7898047,
+    "sha": "c224f16ac6f713d3b331a3214525497e0da9923d",
+    "ref": "refs/merge-requests/10403/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-05-05T09:23:29.967Z",
+    "updated_at": "2023-05-05T09:45:09.983Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/858186289",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 279822,
+      "username": "alagoutte",
+      "public_email": "",
+      "name": "Alexis La Goutte",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+      "web_url": "https://gitlab.com/alagoutte"
+    },
+    "started_at": "2023-05-05T09:23:31.087Z",
+    "finished_at": "2023-05-05T09:45:09.973Z",
+    "committed_at": null,
+    "duration": 1298,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/858186289",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "749a39cf074e9c586fa1b6e64516fc9c80ed5ed6",
+    "head_sha": "c224f16ac6f713d3b331a3214525497e0da9923d",
+    "start_sha": "749a39cf074e9c586fa1b6e64516fc9c80ed5ed6"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "7829923647129f6dcfae8599f96ee768bb161935",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1360914543,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>fe6eb143 - feat(ssh2): Add support for reading shared secret from keylog file</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=661291281&start_sha=c088f7082d12c6423d2a107e82a8e108981f2d16)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-20T15:45:29.125Z",
+          "updated_at": "2023-04-20T15:45:29.128Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4bb9320ed612038c691061b26bf3be205ed330ad",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1364451447,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>c8c731f0 - fix(ssh2): Avoid memory violation by scoping key material type</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=663631406&start_sha=fe6eb143989fbb6a7c30dd904bfb521769e0e6c3)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-24T13:22:00.513Z",
+          "updated_at": "2023-04-24T13:22:00.516Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7a4531b2516e0db17cec38fd5f67bb296063a6be",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1364544620,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>0f0a1187 - fix(ssh2): Avoid memory violation by scoping key material type</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=663689989&start_sha=c8c731f00c67435b168a6e6847ab25d8954a8d0a)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-24T14:01:31.811Z",
+          "updated_at": "2023-04-24T14:01:31.813Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4433700f8512b4024c0c1a1a917f44852722068c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1364556890,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>fbc100fa - fix(ssh2): Avoid memory violation by scoping key material type</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=663700104&start_sha=0f0a1187fd8c1e11acedd0af7c863dcc10f0628f)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-24T14:08:20.548Z",
+          "updated_at": "2023-04-24T14:08:20.550Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "096bd3aa1f6ce3ecbdd2702fbc66cc3477d21a6f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1364579329,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>6be23926 - fix(ssh2): Avoid memory violation by scoping key material type</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=663716305&start_sha=fbc100fafbec58e7af6d19d9bc0ad952e519db82)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-24T14:19:52.481Z",
+          "updated_at": "2023-04-24T14:19:52.483Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7142f170386926474383e3c404bed55115c443cc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1367058870,
+          "type": null,
+          "body": "This MR has merge conflicts with !10441. I'll resolve this once the fix has been merged.",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-25T15:18:44.723Z",
+          "updated_at": "2023-04-25T15:18:44.723Z",
+          "system": false,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bfb429df9f09d61d597849ac71ffcf815e5af1e2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1370327335,
+          "type": null,
+          "body": "added 70 commits\n\n<ul><li>6be23926...e65bfb97 - 69 commits from branch <code>wireshark:master</code></li><li>ac4be281 - feat(ssh2): Add support for reading shared secret from keylog file</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=667249254&start_sha=6be239262597f68c067ce4c5c4ba6ce197706e59)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-27T11:33:41.518Z",
+          "updated_at": "2023-04-27T11:33:41.520Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "03b1f95a6ef547d0033cd8342872a449299f27fb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1370328836,
+          "type": null,
+          "body": "I've rebased this MR onto master and resolved the merge conflicts. It is ready for review once again.",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-27T11:34:56.281Z",
+          "updated_at": "2023-04-27T11:34:56.281Z",
+          "system": false,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5b67491052c5fe4ce8354c723f95a6ef436eac74",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1370330095,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>1798ee26 - feat(ssh2): Add support for reading shared secret from keylog file</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=667251679&start_sha=ac4be281c1f3111281fdc2d8db390594f02bb3a6)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-27T11:35:54.985Z",
+          "updated_at": "2023-04-27T11:35:54.988Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a382b109f1e2275c2bcd7124bc59292cec0b0ff4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1370337596,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>700188b3 - feat(ssh2): Add support for reading shared secret from keylog file</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=667258511&start_sha=1798ee26ff88474ba2405895fe3b36553679dde8)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-27T11:42:17.219Z",
+          "updated_at": "2023-04-27T11:42:17.221Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7d616887b22f22022389b394b4e149a463553912",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1370386304,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>bf0b0f97 - feat(ssh2): Add support for reading shared secret from keylog file</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=667296996&start_sha=700188b36524914f181d61a3467a834f2df52fe9)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-27T12:15:55.886Z",
+          "updated_at": "2023-04-27T12:15:55.888Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ce43bc6654eba7a917b74ed44dd38e96128d7a03",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1379288662,
+          "type": "DiscussionNote",
+          "body": "can you look this warning ? (not sure if coming from this commit)\n\npacket-ssh.c:2075:13: warning: Potential leak of memory pointed to by 'bn_priv_ht' [unix.Malloc]",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-05T05:31:34.616Z",
+          "updated_at": "2023-05-05T08:30:22.226Z",
+          "system": false,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "resolved_at": "2023-05-05T08:30:41.348Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        },
+        {
+          "id": 1379469899,
+          "type": "DiscussionNote",
+          "body": "I was able to determine the root cause of this warning. The `ssh_bignum * bn_priv_ht` is being allocated before the cookie hex string is being checked for validity. If the hex string is invalid, the function returns without adding `bn_priv_ht` to the hash table which is responsible for free'ing the memory whenever the entry is being removed from the hash table.\nI rearranged the lines such that `bn_priv_ht` will always be added to the hash table thus avoiding the memory leak here.\nThe issue is also present in the current master as it has been introduced in !10441 and !10465. If required I can cherry-pick the commit into a separate branch and create another MR.",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-05-05T08:30:22.110Z",
+          "updated_at": "2023-05-05T08:30:22.110Z",
+          "system": false,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "resolved_at": "2023-05-05T08:30:41.348Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8ae6666eb93ae8590fa43cb8b5d0ede237c31b88",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1379461892,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>4f90b00a - fix: Memory leak when cookie is invalid hex</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=673402942&start_sha=bf0b0f97a0e7fabf53a15c03936d7a1dfc4b2799)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-05-05T08:24:27.530Z",
+          "updated_at": "2023-05-05T08:24:27.533Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1588fbf1a6646ab1f43c1bac288f329722edbf0e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1379470344,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-05-05T08:30:41.380Z",
+          "updated_at": "2023-05-05T08:30:41.385Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a7e6a5757000adb05f3f25ede3d28c3e7dbb7815",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1379551178,
+          "type": null,
+          "body": "added 38 commits\n\n<ul><li>4f90b00a...749a39cf - 36 commits from branch <code>wireshark:master</code></li><li>0d38b359 - feat(ssh2): Add support for reading shared secret from keylog file</li><li>c224f16a - fix: Memory leak when cookie is invalid hex</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10403/diffs?diff_id=673472980&start_sha=4f90b00aa1083413290fb3cf35f8bd4fea8e1c2c)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-05T09:23:27.803Z",
+          "updated_at": "2023-05-05T09:23:27.805Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2d5b7ff38341ec2c42a8f8f258c19ba0cf8d4f83",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1379664846,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-05-05T10:39:53.042Z",
+          "updated_at": "2023-05-05T10:39:53.046Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ff370e38f74fc3605566a261cf207ea852cd6c87",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2494255822,
+          "type": null,
+          "body": "mentioned in issue #20514",
+          "author": {
+            "id": 15285070,
+            "username": "nbanb",
+            "public_email": null,
+            "name": "nbanb",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/040f2467a53c1e3fe61f9f7bcdded415fd8f94d90cc4f6ebefeb2da29831de0d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/nbanb"
+          },
+          "created_at": "2025-05-09T08:00:17.126Z",
+          "updated_at": "2025-05-09T08:00:17.131Z",
+          "system": true,
+          "noteable_id": 218911597,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10403,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -215,6 +215,11 @@ struct ssh_flow_data {\n     ssh_channel_info_t *channel_info;\n };\n \n+typedef struct {\n+    gchar      *type;\n+    ssh_bignum *key_material;\n+} ssh_key_map_entry_t;\n+\n static GHashTable * ssh_master_key_map = NULL;\n \n static int proto_ssh = -1;\n@@ -1930,10 +1935,13 @@ ssh_keylog_read_file(void)\n         }\n     }\n \n-    /* File format: each line follows the format \"<cookie> <key>\".\n+    /* File format: each line follows the format \"<cookie> <type> <key>\".\n      * <cookie> is the hex-encoded (client or server) 16 bytes cookie\n      * (32 characters) found in the SSH_MSG_KEXINIT of the endpoint whose\n      * private random is disclosed.\n+     * <type> is either SHARED_SECRET or PRIVATE_KEY depending on the\n+     * type of key provided. PRIVAT_KEY is only supported for DH,\n+     * DH group exchange, and ECDH (including Curve25519) key exchanges.\n      * <key> is the private random number that is used to generate the DH\n      * negotiation (length depends on algorithm). In RFC4253 it is called\n      * x for the client and y for the server.\n@@ -1942,10 +1950,11 @@ ssh_keylog_read_file(void)\n      * for groupN in file kexdh.c function kex_dh_compute_key\n      * for custom group in file kexgexs.c function input_kex_dh_gex_init\n      * For openssh and curve25519, it can be found in function kex_c25519_enc\n-     * in variable server_key.\n+     * in variable server_key. One may also provide the shared secret\n+     * directly if <type> is set to SHARED_SECRET.\n      *\n      * Example:\n-     *  90d886612f9c35903db5bb30d11f23c2 DEF830C22F6C927E31972FFB20B46C96D0A5F2D5E7BE5A3A8804D6BFC431619ED10AF589EEDFF4750DEA00EFD7AFDB814B6F3528729692B1F2482041521AE9DC\n+     *  90d886612f9c35903db5bb30d11f23c2 PRIVATE_KEY DEF830C22F6C927E31972FFB20B46C96D0A5F2D5E7BE5A3A8804D6BFC431619ED10AF589EEDFF4750DEA00EFD7AFDB814B6F3528729692B1F2482041521AE9DC\n      */\n     for (;;) {\n         char buf[512];\n@@ -2000,20 +2009,27 @@ ssh_keylog_process_line(const char *line)\n {\n     ws_noisy(\"ssh: process line: %s\", line);\n \n-    gchar **split = g_strsplit(line, \" \", 2);\n-    gchar *cookie, *key;\n+    gchar **split = g_strsplit(line, \" \", 3);\n+    gchar *cookie, *type, *key;\n     size_t cookie_len, key_len;\n \n-    if (g_strv_length(split) != 2) {\n+    if (g_strv_length(split) == 3) {\n+        // New format: [hex-encoded cookie] [key type] [hex-encoded key material]\n+        cookie = split[0];\n+        type = split[1];\n+        key = split[2];\n+    } else if (g_strv_length(split) == 2) {\n+        // Old format: [hex-encoded cookie] [hex-encoded private key]\n+        ws_debug(\"ssh keylog: detected old keylog format without explicit key type\");\n+        type = \"PRIVATE_KEY\";\n+        cookie = split[0];\n+        key = split[1];\n+    } else {\n         ws_debug(\"ssh keylog: invalid format\");\n         g_strfreev(split);\n         return;\n     }\n \n-// [cookie of corresponding key] [key]\n-    cookie = split[0];\n-    key = split[1];\n-\n     key_len = strlen(key);\n     cookie_len = strlen(cookie);\n     if(key_len & 1){\n@@ -2045,10 +2061,6 @@ ssh_keylog_process_line(const char *line)\n \n         bn_priv->data[i] = c;\n     }\n-    ssh_bignum * bn_priv_ht = g_new(ssh_bignum, 1);\n-    bn_priv_ht->length = bn_priv->length;\n-    bn_priv_ht->data = (guint8 *) g_memdup2(bn_priv->data, bn_priv->length);\n-\n     for (size_t i = 0; i < cookie_len/2; i ++) {\n         gchar v0 = cookie[i * 2];\n         gint8 h0 = (v0>='0' && v0<='9')?v0-'0':(v0>='a' && v0<='f')?v0-'a'+10:(v0>='A' && v0<='F')?v0-'A'+10:-1;\n@@ -2065,11 +2077,18 @@ ssh_keylog_process_line(const char *line)\n \n         bn_cookie->data[i] = c;\n     }\n+    ssh_bignum * bn_priv_ht = g_new(ssh_bignum, 1);\n+    bn_priv_ht->length = bn_priv->length;\n+    bn_priv_ht->data = (guint8 *) g_memdup2(bn_priv->data, bn_priv->length);\n     ssh_bignum * bn_cookie_ht = g_new(ssh_bignum, 1);\n     bn_cookie_ht->length = bn_cookie->length;\n     bn_cookie_ht->data = (guint8 *) g_memdup2(bn_cookie->data, bn_cookie->length);\n \n-    g_hash_table_insert(ssh_master_key_map, bn_cookie_ht, bn_priv_ht);\n+    gchar * type_ht = (gchar *) g_memdup2(type, strlen(type) + 1);\n+    ssh_key_map_entry_t * entry_ht = g_new(ssh_key_map_entry_t, 1);\n+    entry_ht->type = type_ht;\n+    entry_ht->key_material = bn_priv_ht;\n+    g_hash_table_insert(ssh_master_key_map, bn_cookie_ht, entry_ht);\n     g_strfreev(split);\n }\n \n@@ -2195,26 +2214,43 @@ ssh_keylog_hash_write_secret(struct ssh_flow_data *global_data)\n      */\n \n     gcry_md_hd_t hd;\n-    ssh_bignum *secret = NULL, *priv;\n+    ssh_key_map_entry_t *entry;\n+    ssh_bignum *secret = NULL;\n     int length;\n+    gboolean client_cookie = FALSE;\n \n     ssh_keylog_read_file();\n \n     guint kex_type = ssh_kex_type(global_data->kex);\n     guint kex_hash_type = ssh_kex_hash_type(global_data->kex);\n \n-    priv = (ssh_bignum *)g_hash_table_lookup(ssh_master_key_map, global_data->peer_data[SERVER_PEER_DATA].bn_cookie);\n-    if(priv){\n-        secret = ssh_kex_shared_secret(kex_type, global_data->kex_e, priv, global_data->kex_gex_p);\n-    }else{\n-        priv = (ssh_bignum *)g_hash_table_lookup(ssh_master_key_map, global_data->peer_data[CLIENT_PEER_DATA].bn_cookie);\n-        if(priv){\n-            secret = ssh_kex_shared_secret(kex_type, global_data->kex_f, priv, global_data->kex_gex_p);\n+    entry = (ssh_key_map_entry_t *)g_hash_table_lookup(ssh_master_key_map, global_data->peer_data[SERVER_PEER_DATA].bn_cookie);\n+    if (!entry) {\n+        entry = (ssh_key_map_entry_t *)g_hash_table_lookup(ssh_master_key_map, global_data->peer_data[CLIENT_PEER_DATA].bn_cookie);\n+        client_cookie = TRUE;\n+    }\n+    if (!entry) {\n+        ws_debug(\"ssh decryption: no entry in keylog file for this session\");\n+        global_data->do_decrypt = FALSE;\n+        return;\n+    }\n+\n+    if (!strcmp(entry->type, \"PRIVATE_KEY\")) {\n+        if (client_cookie) {\n+            secret = ssh_kex_shared_secret(kex_type, global_data->kex_f, entry->key_material, global_data->kex_gex_p);\n+        } else {\n+            secret = ssh_kex_shared_secret(kex_type, global_data->kex_e, entry->key_material, global_data->kex_gex_p);\n         }\n+    } else if (!strcmp(entry->type, \"SHARED_SECRET\")) {\n+        secret = ssh_kex_make_bignum(entry->key_material->data, entry->key_material->length);\n+    } else {\n+        ws_debug(\"ssh decryption: unknown key type in keylog file\");\n+        global_data->do_decrypt = FALSE;\n+        return;\n     }\n \n     if (!secret) {\n-        ws_debug(\"ssh decryption: no private key for this session\");\n+        ws_debug(\"ssh decryption: no key material for this session\");\n         global_data->do_decrypt = FALSE;\n         return;\n     }\n@@ -4087,6 +4123,20 @@ ssh_free_glib_allocated_bignum(gpointer data)\n     g_free(bignum->data);\n     g_free(bignum);\n }\n+\n+static void\n+ssh_free_glib_allocated_entry(gpointer data)\n+{\n+    ssh_key_map_entry_t * entry;\n+    if (data == NULL) {\n+        return;\n+    }\n+\n+    entry = (ssh_key_map_entry_t *) data;\n+    g_free(entry->type);\n+    ssh_free_glib_allocated_bignum(entry->key_material);\n+    g_free(entry);\n+}\n /* Functions for SSH random hashtables. }}} */\n \n static void\n@@ -4808,10 +4858,10 @@ proto_register_ssh(void)\n                        \"To use this option, you must also enable \\\"Allow subdissectors to reassemble TCP streams\\\" in the TCP protocol settings.\",\n                        &ssh_desegment);\n \n-    ssh_master_key_map = g_hash_table_new_full(ssh_hash, ssh_equal, ssh_free_glib_allocated_bignum, ssh_free_glib_allocated_bignum);\n+    ssh_master_key_map = g_hash_table_new_full(ssh_hash, ssh_equal, ssh_free_glib_allocated_bignum, ssh_free_glib_allocated_entry);\n     prefs_register_filename_preference(ssh_module, \"keylog_file\", \"Key log filename\",\n             \"The path to the file which contains a list of key exchange secrets in the following format:\\n\"\n-            \"\\\"<hex-encoded-cookie> <hex-encoded-key>\\\" (without quotes or leading spaces).\\n\",\n+            \"\\\"<hex-encoded-cookie> <PRIVATE_KEY|SHARED_SECRET> <hex-encoded-key>\\\" (without quotes or leading spaces).\\n\",\n             &pref_keylog_file, FALSE);\n \n     prefs_register_filename_preference(ssh_module, \"debug_file\", \"SSH debug file\",\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ssh.c",
+      "old_path": "epan/dissectors/packet-ssh.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "c224f16ac6f713d3b331a3214525497e0da9923d",
+      "short_id": "c224f16a",
+      "created_at": "2023-05-05T09:23:24.000+00:00",
+      "parent_ids": [
+        "0d38b359c1c12ba1f9d94b67b932297a84b6f582"
+      ],
+      "title": "fix: Memory leak when cookie is invalid hex",
+      "message": "fix: Memory leak when cookie is invalid hex\n",
+      "author_name": "Fabian Bäumer",
+      "author_email": "fabian.baeumer@rub.de",
+      "authored_date": "2023-05-05T10:24:14.000+02:00",
+      "committer_name": "Alexis La Goutte",
+      "committer_email": "alexis.lagoutte@gmail.com",
+      "committed_date": "2023-05-05T09:23:24.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c224f16ac6f713d3b331a3214525497e0da9923d"
+    },
+    {
+      "id": "0d38b359c1c12ba1f9d94b67b932297a84b6f582",
+      "short_id": "0d38b359",
+      "created_at": "2023-05-05T09:23:24.000+00:00",
+      "parent_ids": [
+        "749a39cf074e9c586fa1b6e64516fc9c80ed5ed6"
+      ],
+      "title": "feat(ssh2): Add support for reading shared secret from keylog file",
+      "message": "feat(ssh2): Add support for reading shared secret from keylog file\n",
+      "author_name": "Fabian Bäumer",
+      "author_email": "fabian.baeumer@rub.de",
+      "authored_date": "2023-04-27T11:55:13.000+02:00",
+      "committer_name": "Alexis La Goutte",
+      "committer_email": "alexis.lagoutte@gmail.com",
+      "committed_date": "2023-05-05T09:23:24.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0d38b359c1c12ba1f9d94b67b932297a84b6f582"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 673472980,
+      "head_commit_sha": "c224f16ac6f713d3b331a3214525497e0da9923d",
+      "base_commit_sha": "749a39cf074e9c586fa1b6e64516fc9c80ed5ed6",
+      "start_commit_sha": "749a39cf074e9c586fa1b6e64516fc9c80ed5ed6",
+      "created_at": "2023-05-05T09:23:27.021Z",
+      "merge_request_id": 218911597,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 673402942,
+      "head_commit_sha": "4f90b00aa1083413290fb3cf35f8bd4fea8e1c2c",
+      "base_commit_sha": "e65bfb974fbad4876506f2c5b2f0bbe87fae6efc",
+      "start_commit_sha": "749a39cf074e9c586fa1b6e64516fc9c80ed5ed6",
+      "created_at": "2023-05-05T08:24:26.653Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 667296996,
+      "head_commit_sha": "bf0b0f97a0e7fabf53a15c03936d7a1dfc4b2799",
+      "base_commit_sha": "e65bfb974fbad4876506f2c5b2f0bbe87fae6efc",
+      "start_commit_sha": "8788ba774eb7f92e3fe033755d54e0088adbd50b",
+      "created_at": "2023-04-27T12:15:54.787Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 667258511,
+      "head_commit_sha": "700188b36524914f181d61a3467a834f2df52fe9",
+      "base_commit_sha": "e65bfb974fbad4876506f2c5b2f0bbe87fae6efc",
+      "start_commit_sha": "8788ba774eb7f92e3fe033755d54e0088adbd50b",
+      "created_at": "2023-04-27T11:42:16.399Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 667251679,
+      "head_commit_sha": "1798ee26ff88474ba2405895fe3b36553679dde8",
+      "base_commit_sha": "e65bfb974fbad4876506f2c5b2f0bbe87fae6efc",
+      "start_commit_sha": "8788ba774eb7f92e3fe033755d54e0088adbd50b",
+      "created_at": "2023-04-27T11:35:54.214Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 667249254,
+      "head_commit_sha": "ac4be281c1f3111281fdc2d8db390594f02bb3a6",
+      "base_commit_sha": "e65bfb974fbad4876506f2c5b2f0bbe87fae6efc",
+      "start_commit_sha": "8788ba774eb7f92e3fe033755d54e0088adbd50b",
+      "created_at": "2023-04-27T11:33:40.684Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 663716305,
+      "head_commit_sha": "6be239262597f68c067ce4c5c4ba6ce197706e59",
+      "base_commit_sha": "297375df19aa6f9fb2e9001b6c53286cab150064",
+      "start_commit_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+      "created_at": "2023-04-24T14:19:51.758Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 663700104,
+      "head_commit_sha": "fbc100fafbec58e7af6d19d9bc0ad952e519db82",
+      "base_commit_sha": "297375df19aa6f9fb2e9001b6c53286cab150064",
+      "start_commit_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+      "created_at": "2023-04-24T14:08:19.858Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 663689989,
+      "head_commit_sha": "0f0a1187fd8c1e11acedd0af7c863dcc10f0628f",
+      "base_commit_sha": "297375df19aa6f9fb2e9001b6c53286cab150064",
+      "start_commit_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+      "created_at": "2023-04-24T14:01:30.947Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 663631406,
+      "head_commit_sha": "c8c731f00c67435b168a6e6847ab25d8954a8d0a",
+      "base_commit_sha": "297375df19aa6f9fb2e9001b6c53286cab150064",
+      "start_commit_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+      "created_at": "2023-04-24T13:21:59.242Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 661291281,
+      "head_commit_sha": "fe6eb143989fbb6a7c30dd904bfb521769e0e6c3",
+      "base_commit_sha": "297375df19aa6f9fb2e9001b6c53286cab150064",
+      "start_commit_sha": "297375df19aa6f9fb2e9001b6c53286cab150064",
+      "created_at": "2023-04-20T15:45:27.736Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 661284005,
+      "head_commit_sha": "c088f7082d12c6423d2a107e82a8e108981f2d16",
+      "base_commit_sha": "297375df19aa6f9fb2e9001b6c53286cab150064",
+      "start_commit_sha": "297375df19aa6f9fb2e9001b6c53286cab150064",
+      "created_at": "2023-04-20T15:39:08.508Z",
+      "merge_request_id": 218911597,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

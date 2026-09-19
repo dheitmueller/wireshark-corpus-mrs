@@ -1,0 +1,605 @@
+{
+  "id": 257485564,
+  "iid": 12640,
+  "project_id": 7898047,
+  "title": "USB CDC: Add follow USB CDC Data stream",
+  "description": "Handle unknown traffic in USB CDC dissector to support follow stream. Follow CDC Data stream is especially useful for analyzing plain serial data that is commonly transmitted on \"virtual COM\" CDC ACM interface. Solve the IN and OUT endpoint bounding problem by generating stream index for each CDC interface that gets actual data traffic.\n\nUSBLL: Call USB dissector after USBLL address is set\n\nUpdating packet info with USBLL address after USB dissector set its own address breaks follow USB CDC stream functionality. Make reassembly the very last step to prevent address mismatches inside layers.\n\nUSB: Differentiate IN and OUT endpoints\n\nAll USB endpoints have assigned a number from 0 to 15. Default control endpoint is always endpoint 0 and it is virtually only control type endpoint (specification allows other control endpoints but there is really no point in doing so). Only control endpoints are bidirectional. Bulk, interrupt and isochronous endpoints are unidirectional.\n\nCommonly used approach is to refer to IN endpoints the same way as these appear in endpoint descriptor bEndpointAddress field, i.e. with 0x80 direction bit set. Under this convention OUT endpoints are 0x01 - 0x0F and IN endpoints are 0x81 - 0x8F. It is important to note that IN endpoint 1 (0x81) is different endpoint from OUT endpoint 1 (0x01) despite both having endpoint address 1. It is possible for IN and OUT endpoint with the same endpoint number to be of different transfer type and even to belong to different interface.\n\nModify USB dissector to differentiate between the IN and OUT endpoints sharing the same endpoint numbers to correctly match the endpoints against interfaces if such endpoints happen to belong to different interfaces. Limit the change only to under the hood processing by clearing away the direction bit in USB address conversion function.\n\n[cdc-acm-echo-three-interfaces.pcap](/uploads/697c16935e9435aa7e3961b06f4e6a5d/cdc-acm-echo-three-interfaces.pcap)\n[cdc-acm-sample-ov-filtered.pcap](/uploads/14ac0a5275866e98cd2ca3f2987faefd/cdc-acm-sample-ov-filtered.pcap)\n[cdc-acm-sample-usbmon.pcap](/uploads/033d3480efc2ff7c82dc78301e8c7363/cdc-acm-sample-usbmon.pcap)",
+  "state": "merged",
+  "created_at": "2023-10-17T19:57:50.981Z",
+  "updated_at": "2024-08-02T04:07:36.538Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2023-10-18T05:56:06.367Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "follow-usb-cdc-data",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6496125,
+    "username": "desowin",
+    "public_email": "",
+    "name": "Tomasz Moń",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+    "web_url": "https://gitlab.com/desowin"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20728085,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "9605f3d3f44f3433122ceb96416b392d93e51ec4",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-10-17T19:58:20.813Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!12640",
+  "references": {
+    "short": "!12640",
+    "relative": "!12640",
+    "full": "wireshark/wireshark!12640"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/12640",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2023-10-17T19:58:06.119Z",
+  "latest_build_finished_at": "2023-10-17T20:11:11.765Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1040143551,
+    "iid": 53832,
+    "project_id": 7898047,
+    "sha": "177df413217661166ff04b56a8691be3b9e355ee",
+    "ref": "refs/merge-requests/12640/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-10-17T19:58:03.565Z",
+    "updated_at": "2023-10-17T20:11:11.775Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1040143551"
+  },
+  "head_pipeline": {
+    "id": 1040607081,
+    "iid": 53892,
+    "project_id": 7898047,
+    "sha": "9605f3d3f44f3433122ceb96416b392d93e51ec4",
+    "ref": "refs/merge-requests/12640/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2023-10-18T05:55:51.460Z",
+    "updated_at": "2023-10-18T05:55:51.460Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1040607081",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1040607081",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "861a3eef63b65bd8d9ba49b1e776ef1f955b2849",
+    "head_sha": "9605f3d3f44f3433122ceb96416b392d93e51ec4",
+    "start_sha": "861a3eef63b65bd8d9ba49b1e776ef1f955b2849"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "78c2206fda14457cf01baa99398385220932fc25",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1608095933,
+          "type": null,
+          "body": "added 15 commits\n\n<ul><li>177df413...861a3eef - 12 commits from branch <code>wireshark:master</code></li><li>c21e2372 - USB CDC: Add follow USB CDC Data stream</li><li>da7b7c81 - USBLL: Call USB dissector after USBLL address is set</li><li>9605f3d3 - USB: Differentiate IN and OUT endpoints</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/12640/diffs?diff_id=818695568&start_sha=177df413217661166ff04b56a8691be3b9e355ee)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-10-18T05:55:49.819Z",
+          "updated_at": "2023-10-18T05:55:49.825Z",
+          "system": true,
+          "noteable_id": 257485564,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12640,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3ebfcd02205f92fc03c5cf615b1749957dd803c0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1608096098,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-10-18T05:56:02.002Z",
+          "updated_at": "2023-10-18T05:56:02.073Z",
+          "system": true,
+          "noteable_id": 257485564,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12640,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "30f53e881a035fe8e2a772857890018270b102fc",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1615783256,
+          "type": "DiscussionNote",
+          "body": "This fixed #18963, right?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-10-23T22:54:37.973Z",
+          "updated_at": "2023-10-24T05:27:36.141Z",
+          "system": false,
+          "noteable_id": 257485564,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "resolved_at": "2023-10-24T05:27:36.141Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12640,
+          "commands_changes": {}
+        },
+        {
+          "id": 1615948754,
+          "type": "DiscussionNote",
+          "body": "Yes, I forgot that I opened the ticket on my last failed implementation attempt.",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2023-10-24T05:27:33.950Z",
+          "updated_at": "2023-10-24T05:27:36.141Z",
+          "system": false,
+          "noteable_id": 257485564,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "resolved_at": "2023-10-24T05:27:36.141Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12640,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "420989e573e3bc909a5af8fd2515a7ab6f632638",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1615948786,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2023-10-24T05:27:36.179Z",
+          "updated_at": "2023-10-24T05:27:36.193Z",
+          "system": true,
+          "noteable_id": 257485564,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12640,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "49bb8b1ee09919355647cbca7746b480f6d52bfa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1615949422,
+          "type": null,
+          "body": "mentioned in issue #18963",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2023-10-24T05:28:25.237Z",
+          "updated_at": "2023-10-24T05:28:25.245Z",
+          "system": true,
+          "noteable_id": 257485564,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12640,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d9ff0c449710028544e7b0c3c9a56a6bcd49853a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 2027103767,
+          "type": null,
+          "body": "mentioned in issue #19968",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2024-08-02T04:07:36.403Z",
+          "updated_at": "2024-08-02T04:07:36.407Z",
+          "system": true,
+          "noteable_id": 257485564,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12640,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -644,6 +644,10 @@ static gboolean mausb_is_setup_response(struct mausb_header *header)\n \n /*** EP Handle parsing helper functions */\n \n+guint8 mausb_ep_handle_ep_d(guint16 handle) {\n+    return (handle & MAUSB_EP_HANDLE_D) >> MAUSB_EP_HANDLE_D_OFFSET;\n+}\n+\n guint8 mausb_ep_handle_ep_num(guint16 handle) {\n     return (handle & MAUSB_EP_HANDLE_EP_NUM) >> MAUSB_EP_HANDLE_EP_NUM_OFFSET;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mausb.c",
+      "old_path": "epan/dissectors/packet-mausb.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -51,6 +51,7 @@ struct mausb_header {\n };\n \n gboolean mausb_is_from_host(struct mausb_header *header);\n+guint8 mausb_ep_handle_ep_d(guint16 handle);\n guint8 mausb_ep_handle_ep_num(guint16 handle);\n guint8 mausb_ep_handle_dev_addr(guint16 handle);\n guint8 mausb_ep_handle_bus_num(guint16 handle);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mausb.h",
+      "old_path": "epan/dissectors/packet-mausb.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -13,8 +13,12 @@\n \n #include <epan/packet.h>\n #include <epan/expert.h>\n+#include <epan/follow.h>\n #include \"packet-usb.h\"\n \n+static int cdc_data_follow_tap = -1;\n+static int proto_usb = -1;\n+\n /* protocols and header fields */\n static int proto_usb_com = -1;\n static int hf_usb_com_descriptor_subtype = -1;\n@@ -113,6 +117,9 @@ static int hf_usb_com_interrupt_length = -1;\n static int hf_usb_com_interrupt_dl_bitrate = -1;\n static int hf_usb_com_interrupt_ul_bitrate = -1;\n static int hf_usb_com_interrupt_payload = -1;\n+static int hf_usb_com_data_stream = -1;\n+static int hf_usb_com_data_in_payload = -1;\n+static int hf_usb_com_data_out_payload = -1;\n \n static gint ett_usb_com = -1;\n static gint ett_usb_com_capabilities = -1;\n@@ -140,6 +147,12 @@ typedef struct _controlling_iface {\n     guint16 interfaceProtocol;\n } controlling_iface_t;\n \n+static guint32 cdc_data_stream_count;\n+\n+typedef struct _cdc_data_conv {\n+    guint32 stream;\n+} cdc_data_conv_t;\n+\n #define CS_INTERFACE 0x24\n #define CS_ENDPOINT  0x25\n \n@@ -730,6 +743,7 @@ static int\n dissect_usb_com_bulk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n     usb_conv_info_t *usb_conv_info = (usb_conv_info_t *)data;\n+    cdc_data_conv_t *cdc_data_info;\n     guint32 k_bus_id;\n     guint32 k_device_address;\n     guint32 k_subordinate_id;\n@@ -741,6 +755,8 @@ dissect_usb_com_bulk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *\n     };\n     wmem_tree_t *wmem_tree;\n     controlling_iface_t *master_iface = NULL;\n+    proto_tree *subtree;\n+    proto_item *item;\n \n     if (!usb_conv_info) {\n         return 0;\n@@ -753,6 +769,38 @@ dissect_usb_com_bulk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *\n         return 0;\n     }\n \n+    /* Generic handling to allow follow stream functionality regardless if data\n+     * is passed to higher layer dissector or not.\n+     */\n+    cdc_data_info = (cdc_data_conv_t *)usb_conv_info->class_data;\n+    if (!cdc_data_info) {\n+        cdc_data_info = wmem_new(wmem_file_scope(), cdc_data_conv_t);\n+        cdc_data_info->stream = cdc_data_stream_count++;\n+        usb_conv_info->class_data = cdc_data_info;\n+        usb_conv_info->class_data_type = USB_CONV_CDC_DATA;\n+    } else if (usb_conv_info->class_data_type != USB_CONV_CDC_DATA) {\n+        /* Don't dissect if another USB type is in the conversation */\n+        return 0;\n+    }\n+\n+    col_set_str(pinfo->cinfo, COL_PROTOCOL, \"USBCOM\");\n+\n+    item = proto_tree_add_item(tree, proto_usb_com, tvb, 0, -1, ENC_NA);\n+    subtree = proto_item_add_subtree(item, ett_usb_com);\n+\n+    item = proto_tree_add_uint(subtree, hf_usb_com_data_stream, tvb, 0, 0, cdc_data_info->stream);\n+    proto_item_set_generated(item);\n+\n+    if (pinfo->p2p_dir == P2P_DIR_RECV) {\n+        proto_tree_add_item(subtree, hf_usb_com_data_in_payload, tvb, 0, -1, ENC_NA);\n+    } else {\n+        proto_tree_add_item(subtree, hf_usb_com_data_out_payload, tvb, 0, -1, ENC_NA);\n+    }\n+\n+    if (have_tap_listener(cdc_data_follow_tap)) {\n+        tap_queue_packet(cdc_data_follow_tap, pinfo, tvb);\n+    }\n+\n     k_bus_id = usb_conv_info->bus_id;\n     k_device_address = usb_conv_info->device_address;\n     k_subordinate_id = usb_conv_info->interfaceNum;\n@@ -782,8 +830,8 @@ dissect_usb_com_bulk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *\n             break;\n     }\n \n-    /* Unknown (class, subclass, protocol) tuple. Do not attempt dissection. */\n-    return 0;\n+    /* Unknown (class, subclass, protocol) tuple. No further dissection. */\n+    return tvb_captured_length(tvb);\n }\n \n static int\n@@ -843,6 +891,115 @@ dissect_usb_com_interrupt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v\n     return tvb_captured_length(tvb);\n }\n \n+static cdc_data_conv_t *get_cdc_data_conv(packet_info *pinfo)\n+{\n+    conversation_t *conversation;\n+    usb_conv_info_t *usb_conv_info;\n+\n+    if (pinfo->ptype != PT_USB) {\n+        return NULL;\n+    }\n+\n+    conversation = find_conversation(pinfo->num, &pinfo->src, &pinfo->dst, CONVERSATION_USB,\n+                                     pinfo->srcport, pinfo->destport, 0);\n+    if (!conversation) {\n+        return NULL;\n+    }\n+\n+    usb_conv_info = (usb_conv_info_t *)conversation_get_proto_data(conversation, proto_usb);\n+    if (!usb_conv_info || (usb_conv_info->class_data_type != USB_CONV_CDC_DATA)) {\n+        return NULL;\n+    }\n+\n+    return (cdc_data_conv_t *)usb_conv_info->class_data;\n+}\n+\n+gchar *cdc_data_follow_conv_filter(epan_dissect_t *edt _U_, packet_info *pinfo, guint *stream, guint *sub_stream _U_)\n+{\n+    cdc_data_conv_t *cdc_data_info;\n+\n+    cdc_data_info = get_cdc_data_conv(pinfo);\n+    if (cdc_data_info) {\n+        *stream = cdc_data_info->stream;\n+        return ws_strdup_printf(\"usbcom.data.stream eq %u\", cdc_data_info->stream);\n+    }\n+\n+    return NULL;\n+}\n+\n+gchar *cdc_data_follow_index_filter(guint stream, guint sub_stream _U_)\n+{\n+    return ws_strdup_printf(\"usbcom.data.stream eq %u\", stream);\n+}\n+\n+gchar *cdc_data_follow_address_filter(address *src_addr _U_, address *dst_addr _U_, int src_port _U_, int dst_port _U_)\n+{\n+    /* We always just filter stream based on an arbitrarily generated index. */\n+    return NULL;\n+}\n+\n+gchar *cdc_data_port_to_display(wmem_allocator_t *allocator, guint port)\n+{\n+    return wmem_strdup(allocator, port == NO_ENDPOINT ? \"host\" : \"device\");\n+}\n+\n+static tap_packet_status\n+follow_cdc_data_tap_listener(void *tapdata, packet_info *pinfo, epan_dissect_t *edt _U_,\n+                             const void *data, tap_flags_t flags _U_)\n+{\n+    follow_record_t *follow_record;\n+    follow_info_t *follow_info = (follow_info_t *)tapdata;\n+    tvbuff_t *tvb = (tvbuff_t *)data;\n+    guint32 data_length = tvb_captured_length(tvb);\n+    gboolean is_server;\n+\n+    if (follow_info->client_port == 0) {\n+        /* XXX: Client/Server does not quite match how USB works. Simply assume\n+         * that host is \"server\" but it is important to note that client port\n+         * will be set to either IN or OUT endpoint (whichever transmits data\n+         * first). Client \"receive\" is OUT endpoint while client \"transmit\" is\n+         * IN endpoint. The \"other end\" is always host.\n+         */\n+        if (pinfo->srcport == NO_ENDPOINT) {\n+            follow_info->client_port = pinfo->destport;\n+            copy_address(&follow_info->client_ip, &pinfo->dst);\n+            follow_info->server_port = pinfo->srcport;\n+            copy_address(&follow_info->server_ip, &pinfo->src);\n+        } else {\n+            follow_info->client_port = pinfo->srcport;\n+            copy_address(&follow_info->client_ip, &pinfo->src);\n+            follow_info->server_port = pinfo->destport;\n+            copy_address(&follow_info->server_ip, &pinfo->dst);\n+        }\n+    }\n+\n+    is_server = pinfo->srcport == NO_ENDPOINT;\n+\n+    follow_record = g_new0(follow_record_t, 1);\n+    follow_record->is_server = is_server;\n+    follow_record->packet_num = pinfo->fd->num;\n+    follow_record->abs_ts = pinfo->fd->abs_ts;\n+    follow_record->data = g_byte_array_append(g_byte_array_new(),\n+                                              tvb_get_ptr(tvb, 0, data_length),\n+                                              data_length);\n+\n+    follow_info->bytes_written[is_server] += follow_record->data->len;\n+    follow_info->payload = g_list_prepend(follow_info->payload, follow_record);\n+\n+    return TAP_PACKET_DONT_REDRAW;\n+}\n+\n+static guint32 get_cdc_data_stream_count(void)\n+{\n+    return cdc_data_stream_count;\n+}\n+\n+static void\n+usb_com_cleanup_data(void)\n+{\n+    cdc_data_stream_count = 0;\n+}\n+\n void\n proto_register_usb_com(void)\n {\n@@ -1134,7 +1291,16 @@ proto_register_usb_com(void)\n               &units_bit_sec, 0, NULL, HFILL }},\n         { &hf_usb_com_interrupt_payload,\n             { \"Payload\", \"usbcom.interrupt.payload\", FT_BYTES, BASE_NONE,\n-              NULL, 0, NULL, HFILL }}\n+              NULL, 0, NULL, HFILL }},\n+        { &hf_usb_com_data_stream,\n+            { \"Stream index\", \"usbcom.data.stream\", FT_UINT32, BASE_DEC,\n+              NULL, 0, NULL, HFILL }},\n+        { &hf_usb_com_data_in_payload,\n+            { \"IN payload\", \"usbcom.data.in_payload\", FT_BYTES, BASE_NONE,\n+              NULL, 0, NULL, HFILL }},\n+        { &hf_usb_com_data_out_payload,\n+            { \"OUT payload\", \"usbcom.data.out_payload\", FT_BYTES, BASE_NONE,\n+              NULL, 0, NULL, HFILL }},\n     };\n \n     static gint *usb_com_subtrees[] = {\n@@ -1164,6 +1330,13 @@ proto_register_usb_com(void)\n \n     expert_usb_com = expert_register_protocol(proto_usb_com);\n     expert_register_field_array(expert_usb_com, ei, array_length(ei));\n+\n+    register_cleanup_routine(usb_com_cleanup_data);\n+\n+    cdc_data_follow_tap = register_tap(\"cdc_data_follow\");\n+    register_follow_stream(proto_usb_com, \"cdc_data_follow\", cdc_data_follow_conv_filter, cdc_data_follow_index_filter,\n+                           cdc_data_follow_address_filter, cdc_data_port_to_display, follow_cdc_data_tap_listener,\n+                           get_cdc_data_stream_count, NULL);\n }\n \n void\n@@ -1177,6 +1350,8 @@ proto_reg_handoff_usb_com(void)\n     mbim_descriptor_handle = find_dissector_add_dependency(\"mbim.descriptor\", proto_usb_com);\n     mbim_bulk_handle = find_dissector_add_dependency(\"mbim.bulk\", proto_usb_com);\n     eth_withoutfcs_handle = find_dissector_add_dependency(\"eth_withoutfcs\", proto_usb_com);\n+\n+    proto_usb = proto_get_id_by_filter_name(\"usb\");\n }\n \n /*\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-usb-com.c",
+      "old_path": "epan/dissectors/packet-usb-com.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1733,7 +1733,7 @@ static int usb_addr_to_str(const address* addr, gchar *buf, int buf_len _U_)\n         (void) g_strlcpy(buf, \"host\", buf_len);\n     } else {\n         snprintf(buf, buf_len, \"%d.%d.%d\", pletoh16(&addrp[8]),\n-                        pletoh32(&addrp[0]), pletoh32(&addrp[4]));\n+                        pletoh32(&addrp[0]), pletoh32(&addrp[4]) & 0x0f);\n     }\n \n     return (int)(strlen(buf)+1);\n@@ -2617,11 +2617,11 @@ void dissect_usb_endpoint_address(proto_tree *tree, tvbuff_t *tvb, int offset)\n     endpoint_item = proto_tree_add_item(tree, hf_usb_bEndpointAddress, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n     endpoint_tree = proto_item_add_subtree(endpoint_item, ett_configuration_bEndpointAddress);\n \n-    endpoint = tvb_get_guint8(tvb, offset)&0x0f;\n+    endpoint = tvb_get_guint8(tvb, offset);\n     proto_tree_add_item(endpoint_tree, hf_usb_bEndpointAddress_direction, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n-    proto_item_append_text(endpoint_item, \"  %s\", (tvb_get_guint8(tvb, offset)&0x80)?\"IN\":\"OUT\");\n+    proto_item_append_text(endpoint_item, \"  %s\", (endpoint&0x80)?\"IN\":\"OUT\");\n     proto_tree_add_item(endpoint_tree, hf_usb_bEndpointAddress_number, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n-    proto_item_append_text(endpoint_item, \"  Endpoint:%d\", endpoint);\n+    proto_item_append_text(endpoint_item, \"  Endpoint:%d\", endpoint&0x0f);\n }\n \n unsigned int\n@@ -2729,7 +2729,7 @@ dissect_usb_endpoint_descriptor(packet_info *pinfo, proto_tree *parent_tree,\n     dissect_usb_descriptor_header(tree, tvb, offset, NULL);\n     offset += 2;\n \n-    endpoint = tvb_get_guint8(tvb, offset)&0x0f;\n+    endpoint = tvb_get_guint8(tvb, offset);\n     dissect_usb_endpoint_address(tree, tvb, offset);\n     offset += 1;\n \n@@ -4075,7 +4075,7 @@ try_dissect_next_protocol(proto_tree *tree, tvbuff_t *next_tvb, packet_info *pin\n                 heur_subdissector_list = heur_control_subdissector_list;\n                 usb_dissector_table = usb_control_dissector_table;\n \n-                endpoint = usb_trans_info->setup.wIndex & 0x0f;\n+                endpoint = usb_trans_info->setup.wIndex & 0xff;\n \n                 if (usb_conv_info->is_request) {\n                     usb_address_t *dst_addr = wmem_new0(pinfo->pool, usb_address_t);\n@@ -5471,7 +5471,7 @@ dissect_usb_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent,\n     case USB_HEADER_LINUX_48_BYTES:\n     case USB_HEADER_LINUX_64_BYTES:\n         urb_type = tvb_get_guint8(tvb, 8);\n-        endpoint = tvb_get_guint8(tvb, 10) & 0x7F;\n+        endpoint = tvb_get_guint8(tvb, 10);\n         device_address = (guint16)tvb_get_guint8(tvb, 11);\n         bus_id = tvb_get_letohs(tvb, 12);\n         break;\n@@ -5485,7 +5485,6 @@ dissect_usb_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent,\n             /* USBPcap before 1.3.0.0 DATA OUT packet (the info at offset 16 is wrong) */\n             urb_type = URB_SUBMIT;\n         }\n-        endpoint &= 0x7F; /* Clear the direction flag */\n         bus_id = tvb_get_letohs(tvb, 17);\n         break;\n \n@@ -5495,6 +5494,10 @@ dissect_usb_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent,\n         device_address = mausb_ep_handle_dev_addr(ma_header->handle);\n         endpoint = mausb_ep_handle_ep_num(ma_header->handle);\n         bus_id = mausb_ep_handle_bus_num(ma_header->handle);\n+        if (mausb_ep_handle_ep_d(ma_header->handle)) {\n+            /* IN endpoint */\n+            endpoint |= 0x80;\n+        }\n         break;\n \n     case USB_HEADER_USBIP:\n@@ -5503,11 +5506,15 @@ dissect_usb_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent,\n         device_address = ip_header->devid;\n         bus_id = ip_header->busid;\n         endpoint = ip_header->ep;\n+        if (ip_header->dir == 1) {\n+            /* IN endpoint */\n+            endpoint |= 0x80;\n+        }\n         break;\n \n     case USB_HEADER_DARWIN:\n         urb_type = tvb_get_guint8(tvb, 3) ? URB_COMPLETE : URB_SUBMIT;\n-        endpoint = tvb_get_guint8(tvb, 30) & 0x7F;\n+        endpoint = tvb_get_guint8(tvb, 30);\n         device_address = (guint16)tvb_get_guint8(tvb, 29);\n         location = tvb_get_letohl(tvb, 24);\n         bus_id = location >> 24;\n@@ -5529,6 +5536,13 @@ dissect_usb_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent,\n     urb_tree_ti = proto_tree_add_protocol_format(parent, proto_usb, tvb, 0, -1, \"USB URB\");\n     tree = proto_item_add_subtree(urb_tree_ti, ett_usb_hdr);\n \n+    if (endpoint == 0x80) {\n+        /* Control endpoint is only bidirectional endpoint, use 0 to look up\n+         * correct conversation.\n+         */\n+        endpoint = 0;\n+    }\n+\n     usb_set_addr(tree, tvb, pinfo, bus_id, device_address, endpoint,\n                  (urb_type == URB_SUBMIT));\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-usb.c",
+      "old_path": "epan/dissectors/packet-usb.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -106,6 +106,7 @@ enum usb_conv_class_data_type {\n     USB_CONV_VIDEO,\n     USB_CONV_MASS_STORAGE_BOT,\n     USB_CONV_MASS_STORAGE_UASP,\n+    USB_CONV_CDC_DATA,\n };\n \n /* Conversation Structure\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-usb.h",
+      "old_path": "epan/dissectors/packet-usb.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1526,7 +1526,8 @@ usbll_get_endpoint_info(packet_info *pinfo, guint8 addr, guint8 ep, gboolean fro\n         usb_conv_info_t *usb_conv_info;\n         usbll_ep_type_t  type = USBLL_EP_UNKNOWN;\n         guint16          max_packet_size = 0;\n-        usb_conv_info = get_existing_usb_ep_conv_info(pinfo, 0, addr, ep);\n+        guint8           endpoint = ep | (from_host ? 0 : 0x80);\n+        usb_conv_info = get_existing_usb_ep_conv_info(pinfo, 0, addr, endpoint);\n         if (usb_conv_info && usb_conv_info->max_packet_size)\n         {\n             type = usbll_ep_type_from_urb_type(usb_conv_info->descriptor_transfer_type);\n@@ -1769,7 +1770,7 @@ usbll_construct_urb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n                     DISSECTOR_ASSERT_NOT_REACHED();\n             }\n             pseudo_urb.device_address = data->transaction->address;\n-            pseudo_urb.endpoint = data->transaction->endpoint;\n+            pseudo_urb.endpoint = data->transaction->endpoint | (transfer->from_host ? 0 : 0x80);\n             pseudo_urb.bus_id = 0;\n             pseudo_urb.speed = usbll_get_data_transaction_speed(data);\n             dissect_usb_common(transfer_tvb, pinfo, proto_tree_get_parent_tree(tree),\n@@ -1780,7 +1781,7 @@ usbll_construct_urb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n \n static gint\n dissect_usbll_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset,\n-                   guint8 pid, usbll_data_t *data)\n+                   guint8 pid, usbll_data_t *data, gint *payload_size)\n {\n     /* TODO: How to determine the expected DATA size? */\n     guint16                computed_crc, actual_crc;\n@@ -2060,7 +2061,7 @@ dissect_usbll_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offs\n         }\n     }\n \n-    usbll_construct_urb(tvb, pinfo, tree, data_offset, data_size, data);\n+    *payload_size = data_size;\n \n     return offset;\n }\n@@ -2293,8 +2294,6 @@ dissect_usbll_handshake(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *t\n         }\n     }\n \n-    usbll_construct_urb(tvb, pinfo, tree, offset, 0, data);\n-\n     return offset;\n }\n \n@@ -2381,6 +2380,8 @@ dissect_usbll_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,\n     proto_item       *item;\n     proto_tree       *tree;\n     gint              offset = 0;\n+    gint              data_offset;\n+    gint              data_size;\n     guint8            pid;\n     gboolean          is_subpid;\n     const gchar      *str;\n@@ -2419,6 +2420,12 @@ dissect_usbll_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,\n         expert_add_info(pinfo, item, &ei_invalid_pid);\n     }\n \n+    /* If handler updates data size, then it means we should process with data\n+     * reassembly at data offset with the provided data size.\n+     */\n+    data_offset = offset;\n+    data_size = -1;\n+\n     if (is_subpid) {\n         switch (pid)\n         {\n@@ -2444,7 +2451,7 @@ dissect_usbll_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,\n             case USB_PID_DATA_DATA1:\n             case USB_PID_DATA_DATA2:\n             case USB_PID_DATA_MDATA:\n-                offset = dissect_usbll_data(tvb, pinfo, tree, offset, pid, data);\n+                offset = dissect_usbll_data(tvb, pinfo, tree, offset, pid, data, &data_size);\n                 break;\n \n             case USB_PID_HANDSHAKE_ACK:\n@@ -2452,6 +2459,7 @@ dissect_usbll_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,\n             case USB_PID_HANDSHAKE_NYET:\n             case USB_PID_HANDSHAKE_STALL:\n                 offset = dissect_usbll_handshake(tvb, pinfo, tree, offset, pid, data);\n+                data_size = 0;\n                 break;\n \n             case USB_PID_TOKEN_SOF:\n@@ -2480,6 +2488,10 @@ dissect_usbll_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,\n         offset += tvb_captured_length_remaining(tvb, offset);\n     }\n \n+    if (data_size >= 0) {\n+        usbll_construct_urb(tvb, pinfo, tree, data_offset, data_size, data);\n+    }\n+\n     return offset;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-usbll.c",
+      "old_path": "epan/dissectors/packet-usbll.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -2397,6 +2397,8 @@ bool WiresharkMainWindow::addFollowStreamMenuItem(const void *key, void *value,\n         follow_action->setText(tr(\"HTTP/2 Stream\"));\n     } else if (g_strcmp0(short_name, \"SIP\") == 0) {\n         follow_action->setText(tr(\"SIP Call\"));\n+    } else if (g_strcmp0(short_name, \"USBCOM\") == 0) {\n+        follow_action->setText(tr(\"USB CDC Data\"));\n     }\n \n     connect(follow_action, &QAction::triggered, window,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/wireshark_main_window.cpp",
+      "old_path": "ui/qt/wireshark_main_window.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "9605f3d3f44f3433122ceb96416b392d93e51ec4",
+      "short_id": "9605f3d3",
+      "created_at": "2023-10-18T05:55:44.000+00:00",
+      "parent_ids": [
+        "da7b7c81ded943cc283740ccd4531aa96a4394d9"
+      ],
+      "title": "USB: Differentiate IN and OUT endpoints",
+      "message": "USB: Differentiate IN and OUT endpoints\n\nAll USB endpoints have assigned a number from 0 to 15. Default control\nendpoint is always endpoint 0 and it is virtually only control type\nendpoint (specification allows other control endpoints but there is\nreally no point in doing so). Only control endpoints are bidirectional.\nBulk, interrupt and isochronous endpoints are unidirectional.\n\nCommonly used approach is to refer to IN endpoints the same way as these\nappear in endpoint descriptor bEndpointAddress field, i.e. with 0x80\ndirection bit set. Under this convention OUT endpoints are 0x01 - 0x0F\nand IN endpoints are 0x81 - 0x8F. It is important to note that IN\nendpoint 1 (0x81) is different endpoint from OUT endpoint 1 (0x01)\ndespite both having endpoint address 1. It is possible for IN and OUT\nendpoint with the same endpoint number to be of different transfer type\nand even to belong to different interface.\n\nModify USB dissector to differentiate between the IN and OUT endpoints\nsharing the same endpoint numbers to correctly match the endpoints\nagainst interfaces if such endpoints happen to belong to different\ninterfaces. Limit the change only to under the hood processing by\nclearing away the direction bit in USB address conversion function.\n",
+      "author_name": "Tomasz Moń",
+      "author_email": "desowin@gmail.com",
+      "authored_date": "2023-10-16T20:49:50.000+02:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-10-18T05:55:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9605f3d3f44f3433122ceb96416b392d93e51ec4"
+    },
+    {
+      "id": "da7b7c81ded943cc283740ccd4531aa96a4394d9",
+      "short_id": "da7b7c81",
+      "created_at": "2023-10-18T05:55:44.000+00:00",
+      "parent_ids": [
+        "c21e23722ca14b21fd7c8efbd1f028acba890de7"
+      ],
+      "title": "USBLL: Call USB dissector after USBLL address is set",
+      "message": "USBLL: Call USB dissector after USBLL address is set\n\nUpdating packet info with USBLL address after USB dissector set its own\naddress breaks follow USB CDC stream functionality. Make reassembly the\nvery last step to prevent address mismatches inside layers.\n",
+      "author_name": "Tomasz Moń",
+      "author_email": "desowin@gmail.com",
+      "authored_date": "2023-10-15T19:25:14.000+02:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-10-18T05:55:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/da7b7c81ded943cc283740ccd4531aa96a4394d9"
+    },
+    {
+      "id": "c21e23722ca14b21fd7c8efbd1f028acba890de7",
+      "short_id": "c21e2372",
+      "created_at": "2023-10-18T05:55:44.000+00:00",
+      "parent_ids": [
+        "861a3eef63b65bd8d9ba49b1e776ef1f955b2849"
+      ],
+      "title": "USB CDC: Add follow USB CDC Data stream",
+      "message": "USB CDC: Add follow USB CDC Data stream\n\nHandle unknown traffic in USB CDC dissector to support follow stream.\nFollow CDC Data stream is especially useful for analyzing plain serial\ndata that is commonly transmitted on \"virtual COM\" CDC ACM interface.\nSolve the IN and OUT endpoint bounding problem by generating stream\nindex for each CDC interface that gets actual data traffic.\n",
+      "author_name": "Tomasz Moń",
+      "author_email": "desowin@gmail.com",
+      "authored_date": "2023-03-24T14:27:12.000+01:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-10-18T05:55:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c21e23722ca14b21fd7c8efbd1f028acba890de7"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 818695568,
+      "head_commit_sha": "9605f3d3f44f3433122ceb96416b392d93e51ec4",
+      "base_commit_sha": "861a3eef63b65bd8d9ba49b1e776ef1f955b2849",
+      "start_commit_sha": "861a3eef63b65bd8d9ba49b1e776ef1f955b2849",
+      "created_at": "2023-10-18T05:55:48.544Z",
+      "merge_request_id": 257485564,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": "eb61d890a4475ee90b2ee932049924e7d1ed6acf"
+    },
+    {
+      "id": 818433113,
+      "head_commit_sha": "177df413217661166ff04b56a8691be3b9e355ee",
+      "base_commit_sha": "b227c21dce31195e2d077957cf8ae107c26330b0",
+      "start_commit_sha": "b227c21dce31195e2d077957cf8ae107c26330b0",
+      "created_at": "2023-10-17T19:57:53.710Z",
+      "merge_request_id": 257485564,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": "eb61d890a4475ee90b2ee932049924e7d1ed6acf"
+    }
+  ]
+}

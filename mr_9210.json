@@ -1,0 +1,309 @@
+{
+  "id": 196319296,
+  "iid": 9210,
+  "project_id": 7898047,
+  "title": "dfilter: Allow comparison relation to commute",
+  "description": "Comparison relations should be allowed to commute but they can not\nbecause we need type information to resolve literals to fvalues. For\nthat reason an expression like \"1 == some.field\"  is invalid. Solve\nthat by commuting the relation if the first try did not succeed in\nassigning a type to the LHS.\n\nAfter the second try give up, that means we have a relation with\ncontants on both sides and that is not semantically valid.\n\nOther relations like \"matches\" and \"contains\" are not symmetric and\nshould not commute anyway.\n\nBefore:\n\n    Filter: _ws.ftypes.int32 == 10\n\n    Syntax tree:\n     0 TEST_ANY_EQ:\n       1 FIELD(_ws.ftypes.int32 <FT_INT32>)\n       1 FVALUE(10 <FT_INT32>)\n\n    Instructions:\n    00000 READ_TREE\t\t_ws.ftypes.int32 <FT_INT32> -> reg#0\n    00001 IF_FALSE_GOTO\t3\n    00002 ANY_EQ\t\treg#0 == 10 <FT_INT32>\n    00003 RETURN\n\n    Filter: 10 == _ws.ftypes.int32\n    dftest: Left side of \"==\" expression must be a field or function, not 10.\n    \t10 == _ws.ftypes.int32\n    \t^~\n\nAfter:\n\n    Filter: _ws.ftypes.int32 == 10\n\n    Syntax tree:\n     0 TEST_ANY_EQ:\n       1 FIELD(_ws.ftypes.int32 <FT_INT32>)\n       1 FVALUE(10 <FT_INT32>)\n\n    Instructions:\n    00000 READ_TREE\t\t_ws.ftypes.int32 <FT_INT32> -> reg#0\n    00001 IF_FALSE_GOTO\t3\n    00002 ANY_EQ\t\treg#0 == 10 <FT_INT32>\n    00003 RETURN\n\n    Filter: 10 == _ws.ftypes.int32\n\n    Syntax tree:\n     0 TEST_ANY_EQ:\n       1 FVALUE(10 <FT_INT32>)\n       1 FIELD(_ws.ftypes.int32 <FT_INT32>)\n\n    Instructions:\n    00000 READ_TREE\t\t_ws.ftypes.int32 <FT_INT32> -> reg#0\n    00001 IF_FALSE_GOTO\t3\n    00002 ANY_EQ\t\t10 <FT_INT32> == reg#0\n    00003 RETURN",
+  "state": "merged",
+  "created_at": "2022-12-26T15:15:58.214Z",
+  "updated_at": "2022-12-26T15:59:09.369Z",
+  "merged_by": {
+    "id": 2639362,
+    "username": "jvalverde",
+    "public_email": "",
+    "name": "João Valverde",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/bea5f745397cf5a2fe0526df96ec143db47f9334340ab56515038832be57e976?s=80&d=identicon",
+    "web_url": "https://gitlab.com/jvalverde"
+  },
+  "merge_user": {
+    "id": 2639362,
+    "username": "jvalverde",
+    "public_email": "",
+    "name": "João Valverde",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/bea5f745397cf5a2fe0526df96ec143db47f9334340ab56515038832be57e976?s=80&d=identicon",
+    "web_url": "https://gitlab.com/jvalverde"
+  },
+  "merged_at": "2022-12-26T15:59:08.210Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "dfilter-commute-comparison",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 2639362,
+    "username": "jvalverde",
+    "public_email": "",
+    "name": "João Valverde",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/bea5f745397cf5a2fe0526df96ec143db47f9334340ab56515038832be57e976?s=80&d=identicon",
+    "web_url": "https://gitlab.com/jvalverde"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20911133,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "079ef9a165aef36f6cd46e400e548bfdb3bec8a2",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2022-12-26T15:15:58.214Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!9210",
+  "references": {
+    "short": "!9210",
+    "relative": "!9210",
+    "full": "wireshark/wireshark!9210"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/9210",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2022-12-26T15:30:29.846Z",
+  "latest_build_finished_at": "2022-12-26T15:48:08.788Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 732234814,
+    "iid": 40323,
+    "project_id": 7898047,
+    "sha": "079ef9a165aef36f6cd46e400e548bfdb3bec8a2",
+    "ref": "refs/merge-requests/9210/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-12-26T15:30:28.910Z",
+    "updated_at": "2022-12-26T15:48:08.795Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/732234814"
+  },
+  "head_pipeline": {
+    "id": 732234814,
+    "iid": 40323,
+    "project_id": 7898047,
+    "sha": "079ef9a165aef36f6cd46e400e548bfdb3bec8a2",
+    "ref": "refs/merge-requests/9210/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-12-26T15:30:28.910Z",
+    "updated_at": "2022-12-26T15:48:08.795Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/732234814",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 2639362,
+      "username": "jvalverde",
+      "public_email": "",
+      "name": "João Valverde",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/bea5f745397cf5a2fe0526df96ec143db47f9334340ab56515038832be57e976?s=80&d=identicon",
+      "web_url": "https://gitlab.com/jvalverde"
+    },
+    "started_at": "2022-12-26T15:30:29.846Z",
+    "finished_at": "2022-12-26T15:48:08.788Z",
+    "committed_at": null,
+    "duration": 1058,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/732234814",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "49ec151a7a220f52052caf755365d99211f83425",
+    "head_sha": "079ef9a165aef36f6cd46e400e548bfdb3bec8a2",
+    "start_sha": "49ec151a7a220f52052caf755365d99211f83425"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "9dd4ffe308e914f4a600b6ccb744c4994defcba3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1221132988,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>079ef9a1 - dfilter: Allow comparison relation to commute</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9210/diffs?diff_id=565272117&start_sha=c197e83a6dd2204db09668ad750c6c30d4f20f42)",
+          "author": {
+            "id": 2639362,
+            "username": "jvalverde",
+            "public_email": "",
+            "name": "João Valverde",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/bea5f745397cf5a2fe0526df96ec143db47f9334340ab56515038832be57e976?s=80&d=identicon",
+            "web_url": "https://gitlab.com/jvalverde"
+          },
+          "created_at": "2022-12-26T15:30:27.394Z",
+          "updated_at": "2022-12-26T15:30:27.397Z",
+          "system": true,
+          "noteable_id": 196319296,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9210,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f340127e6118764114d4e762dc628a103d485616",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1221148128,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 2639362,
+            "username": "jvalverde",
+            "public_email": "",
+            "name": "João Valverde",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/bea5f745397cf5a2fe0526df96ec143db47f9334340ab56515038832be57e976?s=80&d=identicon",
+            "web_url": "https://gitlab.com/jvalverde"
+          },
+          "created_at": "2022-12-26T15:59:04.839Z",
+          "updated_at": "2022-12-26T15:59:04.843Z",
+          "system": true,
+          "noteable_id": 196319296,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9210,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -920,10 +920,17 @@ check_relation_LHS_ARITHMETIC(dfwork_t *dfw, stnode_op_t st_op _U_,\n static void\n check_relation(dfwork_t *dfw, stnode_op_t st_op,\n \t\tFtypeCanFunc can_func, gboolean allow_partial_value,\n-\t\tstnode_t *st_node, stnode_t *st_arg1, stnode_t *st_arg2)\n+\t\tstnode_t *st_node, stnode_t *st_arg1, stnode_t *st_arg2,\n+\t\tint commute)\n {\n \tLOG_NODE(st_node);\n \n+\tif (commute < 0) {\n+\t\t/* We have already commuted the LHS with the RHS and still\n+\t\t   cannot assign a field type to any side of the relation. */\n+\t\tFAIL(dfw, st_node, \"Constant expression is invalid.\");\n+\t}\n+\n \tswitch (stnode_type_id(st_arg1)) {\n \t\tcase STTYPE_FIELD:\n \t\tcase STTYPE_REFERENCE:\n@@ -942,9 +949,19 @@ check_relation(dfwork_t *dfw, stnode_op_t st_op,\n \t\t\tcheck_relation_LHS_ARITHMETIC(dfw, st_op, can_func,\n \t\t\t\t\tallow_partial_value, st_node, st_arg1, st_arg2);\n \t\t\tbreak;\n+\t\tcase STTYPE_LITERAL:\n+\t\tcase STTYPE_STRING:\n+\t\tcase STTYPE_CHARCONST:\n+\t\t\t/* We cannot semantically check a relation with literals on the LHS because we\n+\t\t\t   don't have a type to assign them. Commute the LHS with the RHS and retry\n+\t\t\t   the relation semantic check. */\n+\t\t\tcheck_relation(dfw, st_op, can_func,\n+\t\t\t\t\tallow_partial_value,st_node, st_arg2, st_arg1, --commute);\n+\t\t\tbreak;\n \t\tdefault:\n-\t\t\tFAIL(dfw, st_arg1, \"Left side of \\\"%s\\\" expression must be a field or function, not %s.\",\n-\t\t\t\t\tstnode_todisplay(st_node), stnode_todisplay(st_arg1));\n+\t\t\t/* Should not happen. */\n+\t\t\tFAIL(dfw, st_arg1, \"(FIXME) Syntax node type \\\"%s\\\" is invalid for relation \\\"%s\\\".\",\n+\t\t\t\t\tstnode_type_name(st_arg1), stnode_todisplay(st_node));\n \t}\n }\n \n@@ -1096,13 +1113,13 @@ check_test(dfwork_t *dfw, stnode_t *st_node)\n \t\tcase STNODE_OP_ANY_EQ:\n \t\tcase STNODE_OP_ALL_NE:\n \t\tcase STNODE_OP_ANY_NE:\n-\t\t\tcheck_relation(dfw, st_op, ftype_can_eq, FALSE, st_node, st_arg1, st_arg2);\n+\t\t\tcheck_relation(dfw, st_op, ftype_can_eq, FALSE, st_node, st_arg1, st_arg2, 1);\n \t\t\tbreak;\n \t\tcase STNODE_OP_GT:\n \t\tcase STNODE_OP_GE:\n \t\tcase STNODE_OP_LT:\n \t\tcase STNODE_OP_LE:\n-\t\t\tcheck_relation(dfw, st_op, ftype_can_cmp, FALSE, st_node, st_arg1, st_arg2);\n+\t\t\tcheck_relation(dfw, st_op, ftype_can_cmp, FALSE, st_node, st_arg1, st_arg2, 1);\n \t\t\tbreak;\n \t\tcase STNODE_OP_CONTAINS:\n \t\t\tcheck_relation_contains(dfw, st_node, st_arg1, st_arg2);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dfilter/semcheck.c",
+      "old_path": "epan/dfilter/semcheck.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -24,9 +24,13 @@ class case_syntax(unittest.TestCase):\n         dfilter = \"ip.proto == 6\"\n         checkDFilterCount(dfilter, 1)\n \n-    def test_commute_2(self, checkDFilterFail):\n+    def test_commute_2(self, checkDFilterCount):\n         dfilter = \"6 == ip.proto\"\n-        error = \"Left side of \\\"==\\\" expression must be a field or function\"\n+        checkDFilterCount(dfilter, 1)\n+\n+    def test_commute_3(self, checkDFilterFail):\n+        dfilter = \"6 == 7\"\n+        error = \"Constant expression is invalid\"\n         checkDFilterFail(dfilter, error)\n \n     def test_func_1(self, checkDFilterCount):\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dfilter/group_syntax.py",
+      "old_path": "test/suite_dfilter/group_syntax.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "079ef9a165aef36f6cd46e400e548bfdb3bec8a2",
+      "short_id": "079ef9a1",
+      "created_at": "2022-12-26T15:29:50.000+00:00",
+      "parent_ids": [
+        "49ec151a7a220f52052caf755365d99211f83425"
+      ],
+      "title": "dfilter: Allow comparison relation to commute",
+      "message": "dfilter: Allow comparison relation to commute\n\nComparison relations should be allowed to commute but they can not\nbecause we need type information to resolve literals to fvalues. For\nthat reason an expression like \"1 == some.field\"  is invalid. Solve\nthat by commuting the relation if the first try did not succeed in\nassigning a type to the LHS.\n\nAfter the second try give up, that means we have a relation with\nconstants on both sides and that is not semantically valid.\n\nOther relations like \"matches\" and \"contains\" are not symmetric and\nshould not commute anyway.\n\nBefore:\n\n    Filter: _ws.ftypes.int32 == 10\n\n    Syntax tree:\n     0 TEST_ANY_EQ:\n       1 FIELD(_ws.ftypes.int32 <FT_INT32>)\n       1 FVALUE(10 <FT_INT32>)\n\n    Instructions:\n    00000 READ_TREE\t\t_ws.ftypes.int32 <FT_INT32> -> reg#0\n    00001 IF_FALSE_GOTO\t3\n    00002 ANY_EQ\t\treg#0 == 10 <FT_INT32>\n    00003 RETURN\n\n    Filter: 10 == _ws.ftypes.int32\n    dftest: Left side of \"==\" expression must be a field or function, not 10.\n    \t10 == _ws.ftypes.int32\n    \t^~\n\nAfter:\n\n    Filter: _ws.ftypes.int32 == 10\n\n    Syntax tree:\n     0 TEST_ANY_EQ:\n       1 FIELD(_ws.ftypes.int32 <FT_INT32>)\n       1 FVALUE(10 <FT_INT32>)\n\n    Instructions:\n    00000 READ_TREE\t\t_ws.ftypes.int32 <FT_INT32> -> reg#0\n    00001 IF_FALSE_GOTO\t3\n    00002 ANY_EQ\t\treg#0 == 10 <FT_INT32>\n    00003 RETURN\n\n    Filter: 10 == _ws.ftypes.int32\n\n    Syntax tree:\n     0 TEST_ANY_EQ:\n       1 FVALUE(10 <FT_INT32>)\n       1 FIELD(_ws.ftypes.int32 <FT_INT32>)\n\n    Instructions:\n    00000 READ_TREE\t\t_ws.ftypes.int32 <FT_INT32> -> reg#0\n    00001 IF_FALSE_GOTO\t3\n    00002 ANY_EQ\t\t10 <FT_INT32> == reg#0\n    00003 RETURN\n",
+      "author_name": "João Valverde",
+      "author_email": "j@v6e.pt",
+      "authored_date": "2022-12-26T00:40:00.000+00:00",
+      "committer_name": "João Valverde",
+      "committer_email": "j@v6e.pt",
+      "committed_date": "2022-12-26T15:29:50.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/079ef9a165aef36f6cd46e400e548bfdb3bec8a2"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 565272117,
+      "head_commit_sha": "079ef9a165aef36f6cd46e400e548bfdb3bec8a2",
+      "base_commit_sha": "49ec151a7a220f52052caf755365d99211f83425",
+      "start_commit_sha": "49ec151a7a220f52052caf755365d99211f83425",
+      "created_at": "2022-12-26T15:30:26.691Z",
+      "merge_request_id": 196319296,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 565266408,
+      "head_commit_sha": "c197e83a6dd2204db09668ad750c6c30d4f20f42",
+      "base_commit_sha": "49ec151a7a220f52052caf755365d99211f83425",
+      "start_commit_sha": "49ec151a7a220f52052caf755365d99211f83425",
+      "created_at": "2022-12-26T15:15:59.375Z",
+      "merge_request_id": 196319296,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,319 @@
+{
+  "id": 211267126,
+  "iid": 10049,
+  "project_id": 7898047,
+  "title": "Wiretap: fix compile-time error using a macro",
+  "description": "As per [1], !9596 caused compile-time errors on MSVC. Rather than add\ntypecasts and resulting friction to the function calls, I created a\nmacro for the common use case of adding a null-terminated string to the\nExported PDU data being generated, which handles the typecasting.\n\n[1]: https://gitlab.com/wireshark/wireshark/-/merge_requests/9596#note_1313094159",
+  "state": "closed",
+  "created_at": "2023-03-14T23:27:31.446Z",
+  "updated_at": "2023-03-15T00:40:07.045Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789780429",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "closed_at": "2023-03-15T00:40:07.075Z",
+  "target_branch": "master",
+  "source_branch": "wiretap-epdu-type-fixes",
+  "user_notes_count": 3,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789780429",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20710065,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "89d1c47012de30c2787a783d4f308a455fd68d0f",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-03-14T23:27:35.084Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10049",
+  "references": {
+    "short": "!10049",
+    "relative": "!10049",
+    "full": "wireshark/wireshark!10049"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10049",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "e13ef2e19f7e669af2997d932412d2390f8e7006",
+    "head_sha": "89d1c47012de30c2787a783d4f308a455fd68d0f",
+    "start_sha": "e13ef2e19f7e669af2997d932412d2390f8e7006"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "9fbc8debac4e431c0de238f5251340b50b283b8c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1314308898,
+          "type": null,
+          "body": "mentioned in merge request !9596",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789780429",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2023-03-14T23:27:50.217Z",
+          "updated_at": "2023-03-14T23:27:50.219Z",
+          "system": true,
+          "noteable_id": 211267126,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10049,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9c640d42f817f66687385a56bfaf93cef3a9cf25",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1314311617,
+          "type": null,
+          "body": "Or you could do something such as\n\n```\ndiff --git a/wiretap/busmaster.c b/wiretap/busmaster.c\nindex e16dffded0..8d8d29bfef 100644\n--- a/wiretap/busmaster.c\n+++ b/wiretap/busmaster.c\n@@ -62,10 +62,8 @@ busmaster_gen_packet(wtap_rec               *rec, Buffer *buf,\n         || (msg->type == MSG_TYPE_EXT_RTR);\n     gboolean is_err = (msg->type == MSG_TYPE_ERR);\n \n-    static const char *const can_proto_name   = \"can-hostendian\";\n-    static const char *const canfd_proto_name = \"canfd\";\n-\n-    const char        *proto_name  = is_fd ? canfd_proto_name : can_proto_name;\n+    static const char const can_proto_name[]   = \"can-hostendian\";\n+    static const char const canfd_proto_name[] = \"canfd\";\n \n     if (!priv_entry)\n     {\n@@ -76,7 +74,14 @@ busmaster_gen_packet(wtap_rec               *rec, Buffer *buf,\n \n     /* Generate Exported PDU tags for the packet info */\n     ws_buffer_clean(buf);\n-    wtap_buffer_append_epdu_tag(buf, EXP_PDU_TAG_DISSECTOR_NAME, (guint8 *)proto_name, strlen(proto_name));\n+    if (is_fd)\n+    {\n+        wtap_buffer_append_epdu_tag(buf, EXP_PDU_TAG_DISSECTOR_NAME, (const guint8 *)canfd_proto_name, sizeof canfd_proto_name - 1);\n+    }\n+    else\n+    {\n+        wtap_buffer_append_epdu_tag(buf, EXP_PDU_TAG_DISSECTOR_NAME, (const guint8 *)can_proto_name, sizeof can_proto_name - 1);\n+    }\n     wtap_buffer_append_epdu_end(buf);\n \n     if (is_fd)\ndiff --git a/wiretap/candump.c b/wiretap/candump.c\nindex f9e5242dbf..62f89e7b56 100644\n--- a/wiretap/candump.c\n+++ b/wiretap/candump.c\n@@ -37,13 +37,19 @@ void register_candump(void);\n static void\n candump_write_packet(wtap_rec *rec, Buffer *buf, const msg_t *msg)\n {\n-    static const char *can_proto_name    = \"can-hostendian\";\n-    static const char *canfd_proto_name  = \"canfd\";\n-    const char        *proto_name        = msg->is_fd ? canfd_proto_name : can_proto_name;\n+    static const char can_proto_name[]   = \"can-hostendian\";\n+    static const char canfd_proto_name[] = \"canfd\";\n \n     /* Generate Exported PDU tags for the packet info */\n     ws_buffer_clean(buf);\n-    wtap_buffer_append_epdu_tag(buf, EXP_PDU_TAG_DISSECTOR_NAME, (guint8 *)proto_name, strlen(proto_name));\n+    if (msg->is_fd)\n+    {\n+        wtap_buffer_append_epdu_tag(buf, EXP_PDU_TAG_DISSECTOR_NAME, (const guint8 *)canfd_proto_name, sizeof canfd_proto_name - 1);\n+    }\n+    else\n+    {\n+        wtap_buffer_append_epdu_tag(buf, EXP_PDU_TAG_DISSECTOR_NAME, (const guint8 *)can_proto_name, sizeof can_proto_name - 1);\n+    }\n     wtap_buffer_append_epdu_end(buf);\n \n     if (msg->is_fd)\n```\n\nfor which the compile might be able to determine at compile time that you're not writing a tag whose length won't fit in 16 bits.\n\n(This requires !10048 to be merged, so that the fact that `wtap_buffer_append_epdu_tag()` does *not* modify the tag data passed to it is indicated in its declaration.)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-03-14T23:35:41.276Z",
+          "updated_at": "2023-03-14T23:35:41.276Z",
+          "system": false,
+          "noteable_id": 211267126,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10049,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5cbdb3075c61d2dc58a021616f5c00784082089b",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 1314321508,
+          "type": "DiscussionNote",
+          "body": "I've added a fixed version of those changes to !10048.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-03-15T00:01:20.363Z",
+          "updated_at": "2023-03-15T00:40:04.761Z",
+          "system": false,
+          "noteable_id": 211267126,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10049,
+          "commands_changes": {}
+        },
+        {
+          "id": 1314344444,
+          "type": "DiscussionNote",
+          "body": "Cool then, I guess we won't need this MR in that case.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789780429",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2023-03-15T00:40:04.678Z",
+          "updated_at": "2023-03-15T00:40:04.678Z",
+          "system": false,
+          "noteable_id": 211267126,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10049,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -76,7 +76,7 @@ busmaster_gen_packet(wtap_rec               *rec, Buffer *buf,\n \n     /* Generate Exported PDU tags for the packet info */\n     ws_buffer_clean(buf);\n-    wtap_buffer_append_epdu_tag(buf, EXP_PDU_TAG_DISSECTOR_NAME, (guint8 *)proto_name, strlen(proto_name));\n+    wtap_buffer_append_epdu_str(buf, EXP_PDU_TAG_DISSECTOR_NAME, proto_name);\n     wtap_buffer_append_epdu_end(buf);\n \n     if (is_fd)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/busmaster.c",
+      "old_path": "wiretap/busmaster.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -43,7 +43,7 @@ candump_write_packet(wtap_rec *rec, Buffer *buf, const msg_t *msg)\n \n     /* Generate Exported PDU tags for the packet info */\n     ws_buffer_clean(buf);\n-    wtap_buffer_append_epdu_tag(buf, EXP_PDU_TAG_DISSECTOR_NAME, (guint8 *)proto_name, strlen(proto_name));\n+    wtap_buffer_append_epdu_str(buf, EXP_PDU_TAG_DISSECTOR_NAME, proto_name);\n     wtap_buffer_append_epdu_end(buf);\n \n     if (msg->is_fd)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/candump.c",
+      "old_path": "wiretap/candump.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -2224,6 +2224,19 @@ gboolean wtap_dump_can_write(const GArray *file_encaps, guint32 required_comment\n WS_DLL_PUBLIC\n void wtap_buffer_append_epdu_tag(Buffer *buf, guint16 epdu_tag, guint8 *data, guint16 data_len);\n \n+/**\n+ * Generates null-terminated string data in \"exported PDU\" format\n+ * and appends it to buf.\n+ * (Really just a readability wrapper around\n+ * wtap_buffer_append_epdu_tag().)\n+ *\n+ * @param[in,out] buf   Buffer into which to write field\n+ * @param epdu_tag      tag ID of field to create\n+ * @param str           null-terminated string to be written\n+ */\n+#define wtap_buffer_append_epdu_str(buf, epdu_tag, str) \\\n+    wtap_buffer_append_epdu_tag(buf, epdu_tag, (guint8 *)str, (guint16)strlen(str))\n+\n /**\n  * Generates packet data for an unsigned integer in \"exported PDU\" format.\n  * For filetype readers to transform non-packetized data.\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap.h",
+      "old_path": "wiretap/wtap.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "89d1c47012de30c2787a783d4f308a455fd68d0f",
+      "short_id": "89d1c470",
+      "created_at": "2023-03-14T19:16:49.000-04:00",
+      "parent_ids": [
+        "e13ef2e19f7e669af2997d932412d2390f8e7006"
+      ],
+      "title": "Wiretap: fix compile-time error using a macro",
+      "message": "Wiretap: fix compile-time error using a macro\n\nAs per [1], !9596 caused compile-time errors on MSVC. Rather than add\ntypecasts and resulting friction to the function calls, I created a\nmacro for the common use case of adding a null-terminated string to the\nExported PDU data being generated, which handles the typecasting.\n\n[1]: https://gitlab.com/wireshark/wireshark/-/merge_requests/9596#note_1313094159\n",
+      "author_name": "David Perry",
+      "author_email": "boolean263@protonmail.com",
+      "authored_date": "2023-03-14T19:16:49.000-04:00",
+      "committer_name": "David Perry",
+      "committer_email": "boolean263@protonmail.com",
+      "committed_date": "2023-03-14T19:16:49.000-04:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/89d1c47012de30c2787a783d4f308a455fd68d0f"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 628494465,
+      "head_commit_sha": "89d1c47012de30c2787a783d4f308a455fd68d0f",
+      "base_commit_sha": "e13ef2e19f7e669af2997d932412d2390f8e7006",
+      "start_commit_sha": "e13ef2e19f7e669af2997d932412d2390f8e7006",
+      "created_at": "2023-03-14T23:27:32.663Z",
+      "merge_request_id": 211267126,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": null
+    }
+  ]
+}

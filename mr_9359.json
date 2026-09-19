@@ -1,0 +1,457 @@
+{
+  "id": 198058284,
+  "iid": 9359,
+  "project_id": 7898047,
+  "title": "http2 + wscbor: fix usage of composite tvb",
+  "description": "Prevents an exception in finalize if no tvbs are appended.http2 + wscbor: fix usage of composite tvb\n\n# Summary\n- Fix leak of `tvb_new_composite` in packet-http2.c\n- Fix exception from `tvb_composite_finalize` in wscbor.c\n\n# Background & Motivation\n\n`tvb_new_composite` [documents](https://gitlab.com/wireshark/wireshark/-/blob/03cb1cb0773c304e616540050e3468ff239052aa/epan/tvbuff_composite.c#L186-189):\n\n> The caller of tvb_new_composite MUST immediately call tvb_composite_append or tvb_composite_prepend to ensure that the composite TVB is properly freed as needed.\n\n\n[doctored-http2.pcapng.error](/uploads/14a22ed891ca5090d45d5a85c5e44713/doctored-http2.pcapng.error) reproduces the leak in `packet-http2.c`. It was created by manually modifying a valid HTTP2 request to make an invalid header.\n\n```\nvalgrind --leak-check=full \\\n        ./build/run/tshark -r doctored-http2.pcapng.error -V -d tcp.port==80,http2\n```\n\n```\n==40961==\n==40961== HEAP SUMMARY:\n==40961==     in use at exit: 61,069 bytes in 308 blocks\n==40961==   total heap usage: 228,823 allocs, 228,515 frees, 67,078,567 bytes allocated\n==40961==\n==40961== 80 bytes in 1 blocks are definitely lost in loss record 156 of 229\n==40961==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)\n==40961==    by 0xD238718: g_malloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==40961==    by 0xD24FB64: g_slice_alloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==40961==    by 0x869D1A8: tvb_new (tvbuff.c:69)\n==40961==    by 0x86A579B: tvb_new_composite (tvbuff_composite.c:197)\n==40961==    by 0x72611EE: inflate_http2_header_block (packet-http2.c:1950)\n==40961==    by 0x72649B6: dissect_http2_headers (packet-http2.c:3379)\n==40961==    by 0x7265B92: dissect_http2_pdu (packet-http2.c:3845)\n==40961==    by 0x7A0ECE3: tcp_dissect_pdus (packet-tcp.c:4981)\n==40961==    by 0x7265F17: dissect_http2 (packet-http2.c:3946)\n==40961==    by 0x863DB5E: call_dissector_through_handle (packet.c:822)\n==40961==    by 0x863DDC9: call_dissector_work (packet.c:920)\n==40961==\n==40961== LEAK SUMMARY:\n==40961==    definitely lost: 80 bytes in 1 blocks\n==40961==    indirectly lost: 0 bytes in 0 blocks\n==40961==      possibly lost: 0 bytes in 0 blocks\n==40961==    still reachable: 60,989 bytes in 307 blocks\n==40961==         suppressed: 0 bytes in 0 blocks\n==40961== Reachable blocks (those to which a pointer was found) are not shown.\n==40961== To see them, rerun with: --leak-check=full --show-leak-kinds=all\n==40961==\n==40961== For lists of detected and suppressed errors, rerun with: -s\n==40961== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)\n```\n\n`tvb_composite_finalize` [asserts there is at least one member](https://gitlab.com/wireshark/wireshark/-/blob/03cb1cb0773c304e616540050e3468ff239052aa/epan/tvbuff_composite.c#L273-277).\n\n1446d3a9ef7fef43a1449095c1f0eb41fd263f6b adds a regression test to `wcsbor_test.c` with the test case `ex_bstr_indef_empty`. Before the fix, this test cases results in an exception when finalizing an empty composite tvb:\n\n```\nUnhandled exception (\"epan/tvbuff_composite.c:277: failed assertion \"num_members\"\", group=1, code=6)\n.h/test.sh: line 5:  8027 Aborted                 (core dumped) ./build/run/wscbor_test\n```",
+  "state": "merged",
+  "created_at": "2023-01-09T01:30:51.596Z",
+  "updated_at": "2023-01-09T08:05:06.478Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2023-01-09T08:05:05.037Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix-tvb-composite",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 2471213,
+    "username": "kevinAlbs",
+    "public_email": "",
+    "name": "Kevin Albertson",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+    "web_url": "https://gitlab.com/kevinAlbs"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 40456604,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "e8cd0d1457878e76d960929965d72dcd1ed293c4",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-01-09T01:30:51.596Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!9359",
+  "references": {
+    "short": "!9359",
+    "relative": "!9359",
+    "full": "wireshark/wireshark!9359"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/9359",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2023-01-09T07:08:46.405Z",
+  "latest_build_finished_at": "2023-01-09T07:27:35.307Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 741433319,
+    "iid": 40965,
+    "project_id": 7898047,
+    "sha": "4692184a7cffcce659fdebb1a3369d46720ba582",
+    "ref": "refs/merge-requests/9359/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-01-09T07:08:44.751Z",
+    "updated_at": "2023-01-09T07:27:35.325Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/741433319"
+  },
+  "head_pipeline": {
+    "id": 741470262,
+    "iid": 40968,
+    "project_id": 7898047,
+    "sha": "e8cd0d1457878e76d960929965d72dcd1ed293c4",
+    "ref": "refs/merge-requests/9359/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2023-01-09T08:04:14.133Z",
+    "updated_at": "2023-01-09T08:04:14.133Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/741470262",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/741470262",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "1a1a6ce12bd3e0dd6b51d43891d9ce0424f8d331",
+    "head_sha": "e8cd0d1457878e76d960929965d72dcd1ed293c4",
+    "start_sha": "1a1a6ce12bd3e0dd6b51d43891d9ce0424f8d331"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "8c15976ffb81c508ea7bb2830b476059fedc6fa5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1231249958,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-09T01:31:24.219Z",
+          "updated_at": "2023-01-09T01:31:24.222Z",
+          "system": true,
+          "noteable_id": 198058284,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9359,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e24dd18ecbaa602e85a3c7f1ea5bc6ca0b4a3873",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1231262617,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-09T02:03:56.872Z",
+          "updated_at": "2023-01-09T02:03:56.874Z",
+          "system": true,
+          "noteable_id": 198058284,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9359,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "eebdee516ebdc6bf90fb1979090c8e8c209ca5bd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1231420855,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-09T07:08:41.174Z",
+          "updated_at": "2023-01-09T07:08:41.179Z",
+          "system": true,
+          "noteable_id": 198058284,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9359,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b73db7a792a3f175026071f97c15b9e5b8b57cf6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1231420897,
+          "type": null,
+          "body": "added 88 commits\n\n<ul><li>72c4b9d7...613331f0 - 86 commits from branch <code>wireshark:master</code></li><li>c576685b - wscbor: defer creation of composite tvb</li><li>4692184a - http2: fix leak of composite</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9359/diffs?diff_id=572318382&start_sha=72c4b9d7f384c300e2b00979e99a360f4914dc50)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-09T07:08:43.382Z",
+          "updated_at": "2023-01-09T07:08:43.384Z",
+          "system": true,
+          "noteable_id": 198058284,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9359,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "241e34e4f323b824b4d2b3ab7d8a54bc3fbdc96e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1231477205,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>1a1a6ce1 - 1 commit from branch <code>wireshark:master</code></li><li>a0c96275 - wscbor: defer creation of composite tvb</li><li>e8cd0d14 - http2: fix leak of composite</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9359/diffs?diff_id=572359902&start_sha=4692184a7cffcce659fdebb1a3369d46720ba582)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-01-09T08:04:12.413Z",
+          "updated_at": "2023-01-09T08:04:12.416Z",
+          "system": true,
+          "noteable_id": 198058284,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9359,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1947,7 +1947,7 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, guint offset, prot\n     const guint8 *header_value;\n     int hoffset = 0;\n     nghttp2_hd_inflater *hd_inflater;\n-    tvbuff_t *header_tvb = tvb_new_composite();\n+    tvbuff_t *header_tvb = NULL;\n     int rv;\n     int header_len = 0;\n     int final;\n@@ -2121,9 +2121,17 @@ inflate_http2_header_block(tvbuff_t *tvb, packet_info *pinfo, guint offset, prot\n \n         /* Now setup the tvb buffer to have the new data */\n         next_tvb = tvb_new_child_real_data(tvb, in->table.data.data, in->table.data.datalen, in->table.data.datalen);\n+        if (!header_tvb) {\n+            header_tvb = tvb_new_composite();\n+        }\n         tvb_composite_append(header_tvb, next_tvb);\n     }\n \n+\n+    if (!header_tvb) {\n+        return;\n+    }\n+\n     tvb_composite_finalize(header_tvb);\n     add_new_data_source(pinfo, header_tvb, \"Decompressed Header\");\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-http2.c",
+      "old_path": "epan/dissectors/packet-http2.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -239,7 +239,7 @@ wscbor_chunk_t * wscbor_chunk_read(wmem_allocator_t *alloc, tvbuff_t *tvb, gint\n             }\n             else {\n                 // indefinite length, sequence of definite items\n-                chunk->_priv->str_value = tvb_new_composite();\n+                chunk->_priv->str_value = NULL;\n \n                 while (TRUE) {\n                     wscbor_head_t *head = wscbor_head_read(alloc, tvb, offset);\n@@ -264,6 +264,9 @@ wscbor_chunk_t * wscbor_chunk_read(wmem_allocator_t *alloc, tvbuff_t *tvb, gint\n                             *offset += datalen;\n                             chunk->data_length += datalen;\n                             if(datalen) {\n+                                if (!chunk->_priv->str_value) {\n+                                    chunk->_priv->str_value = tvb_new_composite ();\n+                                }\n                                 tvb_composite_append(\n                                     chunk->_priv->str_value,\n                                     tvb_new_subset_length(tvb, head->start + head->length, datalen)\n@@ -282,7 +285,14 @@ wscbor_chunk_t * wscbor_chunk_read(wmem_allocator_t *alloc, tvbuff_t *tvb, gint\n                         chunk->_priv->alloc, &ei_cbor_indef_string,\n                         NULL\n                 ));\n-                tvb_composite_finalize(chunk->_priv->str_value);\n+\n+                if (chunk->_priv->str_value) {\n+                    tvb_composite_finalize(chunk->_priv->str_value);\n+                }\n+                else {\n+                    // Create an empty subset tvb. str_value is expected to be non-NULL for string types.\n+                    chunk->_priv->str_value = tvb_new_subset_length (tvb, 0, 0);\n+                }\n             }\n             break;\n         default:\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wscbor.c",
+      "old_path": "epan/wscbor.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -43,6 +43,7 @@ example_s ex_uint = {1, (const guint8 *)\"\\x01\", 1, 1, CBOR_TYPE_UINT, 1};\n example_s ex_nint = {1, (const guint8 *)\"\\x20\", 1, 1, CBOR_TYPE_NEGINT, 0};\n example_s ex_bstr = {3, (const guint8 *)\"\\x42\\x68\\x69\", 1, 3, CBOR_TYPE_BYTESTRING, 2};\n example_s ex_bstr_indef = {6, (const guint8 *)\"\\x5F\\x41\\x68\\x41\\x69\\xFF\", 1, 6, CBOR_TYPE_BYTESTRING, 0};\n+example_s ex_bstr_indef_empty = {2, (const guint8 *)\"\\x5F\\xFF\", 1, 2, CBOR_TYPE_BYTESTRING, 0};\n example_s ex_tstr = {3, (const guint8 *)\"\\x62\\x68\\x69\", 1, 3, CBOR_TYPE_STRING, 2};\n example_s ex_tstr_indef = {6, (const guint8 *)\"\\x7F\\x61\\x68\\x61\\x69\\xFF\", 1, 6, CBOR_TYPE_STRING, 0};\n example_s ex_false = {1, (const guint8 *)\"\\xF4\", 1, 1, CBOR_TYPE_FLOAT_CTRL, CBOR_CTRL_FALSE};\n@@ -62,7 +63,7 @@ static const example_s * all_examples[] = {\n     &ex_uint, &ex_nint,\n     &ex_bstr, &ex_bstr_indef,\n     &ex_tstr, &ex_tstr_indef,\n-    &ex_false, &ex_true, &ex_null, &ex_undef, &ex_break\n+    &ex_false, &ex_true, &ex_null, &ex_undef, &ex_break, &ex_bstr_indef_empty\n };\n \n /*\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wscbor_test.c",
+      "old_path": "epan/wscbor_test.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "e8cd0d1457878e76d960929965d72dcd1ed293c4",
+      "short_id": "e8cd0d14",
+      "created_at": "2023-01-09T08:04:08.000+00:00",
+      "parent_ids": [
+        "a0c96275021fa7fa763e93ccfbc54911d1055114"
+      ],
+      "title": "http2: fix leak of composite",
+      "message": "http2: fix leak of composite\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2023-01-04T21:10:58.000-05:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-01-09T08:04:08.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e8cd0d1457878e76d960929965d72dcd1ed293c4"
+    },
+    {
+      "id": "a0c96275021fa7fa763e93ccfbc54911d1055114",
+      "short_id": "a0c96275",
+      "created_at": "2023-01-09T08:04:08.000+00:00",
+      "parent_ids": [
+        "1a1a6ce12bd3e0dd6b51d43891d9ce0424f8d331"
+      ],
+      "title": "wscbor: defer creation of composite tvb",
+      "message": "wscbor: defer creation of composite tvb\n\nPrevents an exception in finalize if no tvbs are appended.\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-30T20:57:53.000-05:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-01-09T08:04:08.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/a0c96275021fa7fa763e93ccfbc54911d1055114"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 572359902,
+      "head_commit_sha": "e8cd0d1457878e76d960929965d72dcd1ed293c4",
+      "base_commit_sha": "1a1a6ce12bd3e0dd6b51d43891d9ce0424f8d331",
+      "start_commit_sha": "1a1a6ce12bd3e0dd6b51d43891d9ce0424f8d331",
+      "created_at": "2023-01-09T08:04:10.948Z",
+      "merge_request_id": 198058284,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 572318382,
+      "head_commit_sha": "4692184a7cffcce659fdebb1a3369d46720ba582",
+      "base_commit_sha": "613331f07bb38017cafc99722462d60c09ecd701",
+      "start_commit_sha": "613331f07bb38017cafc99722462d60c09ecd701",
+      "created_at": "2023-01-09T07:08:42.657Z",
+      "merge_request_id": 198058284,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 572208788,
+      "head_commit_sha": "72c4b9d7f384c300e2b00979e99a360f4914dc50",
+      "base_commit_sha": "704eaa183953b216638918447292cb4133c505b7",
+      "start_commit_sha": "03cb1cb0773c304e616540050e3468ff239052aa",
+      "created_at": "2023-01-09T01:30:52.852Z",
+      "merge_request_id": 198058284,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    }
+  ]
+}

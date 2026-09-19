@@ -1,0 +1,1070 @@
+{
+  "id": 196683740,
+  "iid": 9236,
+  "project_id": 7898047,
+  "title": "Fix uncompress leaks",
+  "description": "# Summary\n\n- Fix memory leaks of return of calls to `tvb_uncompress*`\n  - Applies to `mysql`, `gelf`, `mcpe`, `multipart`, `rtps`, and `sip`.\n- Note requirement to free return in `tvb_uncompress*` functions.\n\n# Background & Motivation\n\nCallers of `tvb_uncompress*` may leak the returned `tvbuff_t`.\n\n## Tests\n\nThe following are test files and leak reports. I was unable to find test files for `mcpe`, `rtps`, or `sip`.\n\n### mysql\n\n[mysql_compress.pcap](/uploads/ef1092470187ab7c7da505abbafdc412/mysql_compress.pcap) comes from: https://gitlab.com/wireshark/wireshark/-/issues/10342\n```\n$ valgrind --leak-check=full \\\n        ./build/run/tshark -r .h/mysql_compress.pcap -V -d tcp.port==5619,mysql\n```\nResults in reported leaks:\n```\n==33588== HEAP SUMMARY:\n==33588==     in use at exit: 84,491 bytes in 375 blocks\n==33588==   total heap usage: 239,239 allocs, 238,864 frees, 71,030,499 bytes allocated\n==33588==\n==33588== 23,502 (2,176 direct, 21,326 indirect) bytes in 34 blocks are definitely lost in loss record 230 of 230\n==33588==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)\n==33588==    by 0xD202718: g_malloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==33588==    by 0xD219B64: g_slice_alloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==33588==    by 0x8682075: tvb_new (tvbuff.c:69)\n==33588==    by 0x868AAC7: tvb_new_real_data (tvbuff_real.c:65)\n==33588==    by 0x868BADD: tvb_uncompress (tvbuff_zlib.c:298)\n==33588==    by 0x754BB6D: mysql_dissect_compressed_header (packet-mysql.c:2444)\n==33588==    by 0x754F140: dissect_mysql_pdu (packet-mysql.c:3703)\n==33588==    by 0x79F5B1A: tcp_dissect_pdus (packet-tcp.c:4981)\n==33588==    by 0x754F49D: dissect_mysql (packet-mysql.c:3792)\n==33588==    by 0x8622336: call_dissector_through_handle (packet.c:822)\n==33588==    by 0x86225A1: call_dissector_work (packet.c:920)\n==33588==\n==33588== LEAK SUMMARY:\n==33588==    definitely lost: 2,176 bytes in 34 blocks\n==33588==    indirectly lost: 21,326 bytes in 34 blocks\n==33588==      possibly lost: 0 bytes in 0 blocks\n==33588==    still reachable: 60,989 bytes in 307 blocks\n==33588==         suppressed: 0 bytes in 0 blocks\n==33588== Reachable blocks (those to which a pointer was found) are not shown.\n==33588== To see them, rerun with: --leak-check=full --show-leak-kinds=all\n==33588==\n==33588== For lists of detected and suppressed errors, rerun with: -s\n==33588== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)\n```\n\n### gelf\n\n\n[gelf-test.pcap](/uploads/65afa446083c8f075042aa907538aa30/gelf-test.pcap) comes from https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=15776\n\n```\n==36884==\n==36884== HEAP SUMMARY:\n==36884==     in use at exit: 583,753 bytes in 331 blocks\n==36884==   total heap usage: 236,133 allocs, 235,802 frees, 72,220,764 bytes allocated\n==36884==\n==36884== 10,330 (640 direct, 9,690 indirect) bytes in 10 blocks are definitely lost in loss record 228 of 232\n==36884==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)\n==36884==    by 0xD202718: g_malloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==36884==    by 0xD219B64: g_slice_alloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==36884==    by 0x8682077: tvb_new (tvbuff.c:69)\n==36884==    by 0x868AAC9: tvb_new_real_data (tvbuff_real.c:65)\n==36884==    by 0x868BADF: tvb_uncompress (tvbuff_zlib.c:298)\n==36884==    by 0x710B0D8: dissect_gelf_simple_udp (packet-gelf.c:112)\n==36884==    by 0x710B81E: dissect_gelf (packet-gelf.c:258)\n==36884==    by 0x710B869: dissect_gelf_udp (packet-gelf.c:264)\n==36884==    by 0x8622338: call_dissector_through_handle (packet.c:822)\n==36884==    by 0x86225A3: call_dissector_work (packet.c:920)\n==36884==    by 0x8623875: dissector_try_uint_new (packet.c:1526)\n==36884==\n==36884== 512,434 (128 direct, 512,306 indirect) bytes in 2 blocks are definitely lost in loss record 232 of 232\n==36884==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)\n==36884==    by 0xD202718: g_malloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==36884==    by 0xD219B64: g_slice_alloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==36884==    by 0x8682077: tvb_new (tvbuff.c:69)\n==36884==    by 0x868AAC9: tvb_new_real_data (tvbuff_real.c:65)\n==36884==    by 0x868BADF: tvb_uncompress (tvbuff_zlib.c:298)\n==36884==    by 0x710B0D8: dissect_gelf_simple_udp (packet-gelf.c:112)\n==36884==    by 0x710B6CB: dissect_gelf (packet-gelf.c:229)\n==36884==    by 0x710B869: dissect_gelf_udp (packet-gelf.c:264)\n==36884==    by 0x8622338: call_dissector_through_handle (packet.c:822)\n==36884==    by 0x86225A3: call_dissector_work (packet.c:920)\n==36884==    by 0x8623875: dissector_try_uint_new (packet.c:1526)\n==36884==\n==36884== LEAK SUMMARY:\n==36884==    definitely lost: 768 bytes in 12 blocks\n==36884==    indirectly lost: 521,996 bytes in 12 blocks\n==36884==      possibly lost: 0 bytes in 0 blocks\n==36884==    still reachable: 60,989 bytes in 307 blocks\n==36884==         suppressed: 0 bytes in 0 blocks\n==36884== Reachable blocks (those to which a pointer was found) are not shown.\n==36884== To see them, rerun with: --leak-check=full --show-leak-kinds=all\n==36884==\n==36884== For lists of detected and suppressed errors, rerun with: -s\n==36884== ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)\n```\n\n### mcpe\n\nThe call to `tvb_uncompress` in `packet-mcpe.c` was added in https://gitlab.com/wireshark/wireshark/-/commit/c06189f7c6e6e428d914bfabdd96e5de42a2400d. I was unable to find a packet capture with compressed MCPE.\n\n### multipart\n\n[MESSAGE_GzipContentInMime_not_working.pcap](/uploads/83fb924feb92233466c9d026ab88946d/MESSAGE_GzipContentInMime_not_working.pcap) comes from https://gitlab.com/wireshark/wireshark/-/issues/17471#note_620270731\n```\n==55315==\n==55315== HEAP SUMMARY:\n==55315==     in use at exit: 61,064 bytes in 309 blocks\n==55315==   total heap usage: 228,547 allocs, 228,238 frees, 69,241,029 bytes allocated\n==55315==\n==55315== 75 (64 direct, 11 indirect) bytes in 1 blocks are definitely lost in loss record 157 of 230\n==55315==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)\n==55315==    by 0xD231718: g_malloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==55315==    by 0xD248B64: g_slice_alloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==55315==    by 0x8699412: tvb_new (tvbuff.c:69)\n==55315==    by 0x86A1FB1: tvb_new_real_data (tvbuff_real.c:65)\n==55315==    by 0x86A2FC7: tvb_uncompress (tvbuff_zlib.c:298)\n==55315==    by 0x755A29E: process_body_part (packet-multipart.c:801)\n==55315==    by 0x755A68E: dissect_multipart (packet-multipart.c:897)\n==55315==    by 0x8639DA6: call_dissector_through_handle (packet.c:822)\n==55315==    by 0x863A011: call_dissector_work (packet.c:920)\n==55315==    by 0x863BA0D: dissector_try_string_new (packet.c:1843)\n==55315==    by 0x863BA7B: dissector_try_string (packet.c:1868)\n==55315==\n==55315== LEAK SUMMARY:\n==55315==    definitely lost: 64 bytes in 1 blocks\n==55315==    indirectly lost: 11 bytes in 1 blocks\n==55315==      possibly lost: 0 bytes in 0 blocks\n==55315==    still reachable: 60,989 bytes in 307 blocks\n==55315==         suppressed: 0 bytes in 0 blocks\n==55315== Reachable blocks (those to which a pointer was found) are not shown.\n==55315== To see them, rerun with: --leak-check=full --show-leak-kinds=all\n==55315==\n==55315== Use --track-origins=yes to see where uninitialised values come from\n==55315== For lists of detected and suppressed errors, rerun with: -s\n```\n\n### rtps\n\nThe call to `tvb_uncompress` in `packet-rtps.c` was added in https://gitlab.com/wireshark/wireshark/-/commit/d4c9dbd2b765f620baac762b71cf04254e9e717c. I was unable to find a packet capture with compressed RTPS.\n\n### sip\n\nThe call to `tvb_uncompress` in `packet-sip.c` was added in https://gitlab.com/wireshark/wireshark/-/commit/bba21ab84f47cbe93331dcc7abb7d46799765bdc. I was unable to find a packet capture with compressed SIP.",
+  "state": "merged",
+  "created_at": "2022-12-29T01:42:53.149Z",
+  "updated_at": "2023-01-10T02:28:41.441Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2023-01-10T02:28:41.476Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix-uncompress-leaks",
+  "user_notes_count": 4,
+  "upvotes": 3,
+  "downvotes": 0,
+  "author": {
+    "id": 2471213,
+    "username": "kevinAlbs",
+    "public_email": "",
+    "name": "Kevin Albertson",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+    "web_url": "https://gitlab.com/kevinAlbs"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 40456604,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "3c9662b1d27889574c4177c468b9d85dbcef54dc",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2022-12-29T01:42:53.149Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!9236",
+  "references": {
+    "short": "!9236",
+    "relative": "!9236",
+    "full": "wireshark/wireshark!9236"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/9236",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "8",
+  "latest_build_started_at": "2023-01-10T01:34:50.301Z",
+  "latest_build_finished_at": "2023-01-10T02:28:40.506Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 742527722,
+    "iid": 40990,
+    "project_id": 7898047,
+    "sha": "3c9662b1d27889574c4177c468b9d85dbcef54dc",
+    "ref": "refs/merge-requests/9236/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-01-10T01:34:49.638Z",
+    "updated_at": "2023-01-10T02:28:40.519Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/742527722"
+  },
+  "head_pipeline": {
+    "id": 742527722,
+    "iid": 40990,
+    "project_id": 7898047,
+    "sha": "3c9662b1d27889574c4177c468b9d85dbcef54dc",
+    "ref": "refs/merge-requests/9236/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-01-10T01:34:49.638Z",
+    "updated_at": "2023-01-10T02:28:40.519Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/742527722",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2023-01-10T01:34:50.301Z",
+    "finished_at": "2023-01-10T02:28:40.506Z",
+    "committed_at": null,
+    "duration": 3229,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/742527722",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "e80b2ab560fc7a688f2b047f7221fd0b2ebfd3f7",
+    "head_sha": "3c9662b1d27889574c4177c468b9d85dbcef54dc",
+    "start_sha": "e80b2ab560fc7a688f2b047f7221fd0b2ebfd3f7"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "5c101ff7f195bd117af692fec0e0e5e1cea9ebdb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1223232570,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2022-12-29T01:43:30.186Z",
+          "updated_at": "2022-12-29T01:43:30.187Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "635e5177a56953176232f9a401326e8e4b40a9b8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1223255183,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2022-12-29T02:37:18.984Z",
+          "updated_at": "2022-12-29T02:37:18.987Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3051daa65556fd9f2fe1e38d962a714e0c6e0641",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1232877760,
+          "type": "DiffNote",
+          "body": "Maybe add a line like \"You probably want tvb_child_uncompress instead\" to these and the others.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-01-09T21:30:11.786Z",
+          "updated_at": "2023-01-09T23:15:12.713Z",
+          "system": false,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+            "start_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+            "head_sha": "49bcaa8dcae1d049e1db5051be7473b8827fd9c4",
+            "old_path": "epan/tvbuff.h",
+            "new_path": "epan/tvbuff.h",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1024,
+            "line_range": {
+              "start": {
+                "line_code": "beff67078bc08961174b41dbd8c44fbe567577c6_1022_1024",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1024
+              },
+              "end": {
+                "line_code": "beff67078bc08961174b41dbd8c44fbe567577c6_1022_1024",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1024
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2023-01-10T01:34:14.712Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        },
+        {
+          "id": 1233083779,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/9236/diffs?diff_id=573213112&start_sha=49bcaa8dcae1d049e1db5051be7473b8827fd9c4#beff67078bc08961174b41dbd8c44fbe567577c6_1024_1024)",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-09T23:17:52.222Z",
+          "updated_at": "2023-01-09T23:17:52.222Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+            "start_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+            "head_sha": "49bcaa8dcae1d049e1db5051be7473b8827fd9c4",
+            "old_path": "epan/tvbuff.h",
+            "new_path": "epan/tvbuff.h",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1024,
+            "line_range": {
+              "start": {
+                "line_code": "beff67078bc08961174b41dbd8c44fbe567577c6_1022_1024",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1024
+              },
+              "end": {
+                "line_code": "beff67078bc08961174b41dbd8c44fbe567577c6_1022_1024",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1024
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9c530e6ef4f7dc88211a7e8ab970e6371e46cfa0",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1232880636,
+          "type": "DiffNote",
+          "body": "Huh, this pre-existing comment should be \"attached to parent\" not \"attached to _tvb_\", for this and all the others.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-01-09T21:31:57.692Z",
+          "updated_at": "2023-01-09T23:17:57.199Z",
+          "system": false,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+            "start_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+            "head_sha": "49bcaa8dcae1d049e1db5051be7473b8827fd9c4",
+            "old_path": "epan/tvbuff.h",
+            "new_path": "epan/tvbuff.h",
+            "position_type": "text",
+            "old_line": 1028,
+            "new_line": 1031,
+            "line_range": {
+              "start": {
+                "line_code": "beff67078bc08961174b41dbd8c44fbe567577c6_1028_1031",
+                "type": "expanded",
+                "old_line": 1028,
+                "new_line": 1031
+              },
+              "end": {
+                "line_code": "beff67078bc08961174b41dbd8c44fbe567577c6_1028_1031",
+                "type": "expanded",
+                "old_line": 1028,
+                "new_line": 1031
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "resolved_at": "2023-01-10T01:34:20.154Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        },
+        {
+          "id": 1233083799,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/9236/diffs?diff_id=573213112&start_sha=49bcaa8dcae1d049e1db5051be7473b8827fd9c4#beff67078bc08961174b41dbd8c44fbe567577c6_1031_1032)",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-09T23:17:52.660Z",
+          "updated_at": "2023-01-09T23:17:52.660Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+            "start_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+            "head_sha": "49bcaa8dcae1d049e1db5051be7473b8827fd9c4",
+            "old_path": "epan/tvbuff.h",
+            "new_path": "epan/tvbuff.h",
+            "position_type": "text",
+            "old_line": 1028,
+            "new_line": 1031,
+            "line_range": {
+              "start": {
+                "line_code": "beff67078bc08961174b41dbd8c44fbe567577c6_1028_1031",
+                "type": "expanded",
+                "old_line": 1028,
+                "new_line": 1031
+              },
+              "end": {
+                "line_code": "beff67078bc08961174b41dbd8c44fbe567577c6_1028_1031",
+                "type": "expanded",
+                "old_line": 1028,
+                "new_line": 1031
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3c15642f803abf01152a9b2c3a3a7da1f4b32111",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1232883992,
+          "type": null,
+          "body": "Looks correct. The set of use cases where people actually want the version that doesn't free the new tvb is small, good catch here.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-01-09T21:33:58.214Z",
+          "updated_at": "2023-01-09T21:33:58.214Z",
+          "system": false,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0fa0e44fe842a542c4c9e79388cdcbcefd0a6bcf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1233083813,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>c92807dd - note to use the tvb_child_uncompress* alternative</li><li>d0da292d - note that tvb_child_uncompress attaches to parent</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9236/diffs?diff_id=573213112&start_sha=49bcaa8dcae1d049e1db5051be7473b8827fd9c4)",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-09T23:17:52.863Z",
+          "updated_at": "2023-01-09T23:17:52.866Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0dc78be92e659df9a29bad9d8ee931e262944f4a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1233085310,
+          "type": null,
+          "body": "Thank you for the review. Comments have been updated.",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-09T23:18:23.183Z",
+          "updated_at": "2023-01-09T23:18:23.183Z",
+          "system": false,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5b9d05fda304cfff492568ff1b502fcf15c121e1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1233214764,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-01-10T01:34:20.216Z",
+          "updated_at": "2023-01-10T01:34:20.225Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c715a23220ffadcdd42d437c0f96b2e5da8f62e5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1233214878,
+          "type": null,
+          "body": "added 165 commits\n\n<ul><li>d0da292d...e80b2ab5 - 155 commits from branch <code>wireshark:master</code></li><li>f7290f2c - mysql: fix leak in uncompress</li><li>8461440f - gelf: fix leak in uncompress</li><li>39ee45a0 - multipart: fix leak in uncompress</li><li>01fda90a - mcpe: fix leak in uncompress</li><li>0150297d - rtps: fix leak in uncompress</li><li>005ea28d - sip: fix leak in uncompress</li><li>988d4585 - ipsec: fix comment</li><li>95a16270 - note need to free return in uncompress functions</li><li>8bf01503 - note to use the tvb_child_uncompress* alternative</li><li>3c9662b1 - note that tvb_child_uncompress attaches to parent</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9236/diffs?diff_id=573258662&start_sha=d0da292d5230cbe486bd3ea671aec2215d954b26)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-01-10T01:34:48.093Z",
+          "updated_at": "2023-01-10T01:34:48.095Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a5eac3b0f2b4f979a1a904f6b83228565ba5e1a1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1233220067,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-01-10T01:50:36.433Z",
+          "updated_at": "2023-01-10T01:50:36.436Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3227ec5bd40980cd4104b4c8ae5fc7cb9fadb511",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1233220106,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 3c9662b1d27889574c4177c468b9d85dbcef54dc succeeds",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-01-10T01:50:45.053Z",
+          "updated_at": "2023-01-10T01:50:45.055Z",
+          "system": true,
+          "noteable_id": 196683740,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9236,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -109,7 +109,7 @@ dissect_gelf_simple_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gui\n \n     len = tvb_captured_length(tvb);\n     if (header == HEADER_GZIP || is_simple_zlib(header)) {\n-        next_tvb = tvb_uncompress(tvb, 0, len);\n+        next_tvb = tvb_child_uncompress(tvb, tvb, 0, len);\n         if (next_tvb) {\n             add_new_data_source(pinfo, next_tvb, \"compressed data\");\n             call_dissector(json_handle, next_tvb, pinfo, tree);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-gelf.c",
+      "old_path": "epan/dissectors/packet-gelf.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -2372,7 +2372,7 @@ dissect_ipcomp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dissec\n     /*\n      * try to uncompress as if it were DEFLATEd.  With negotiated\n      * CPIs, we don't know the algorithm beforehand; if we get it\n-     * wrong, tvb_uncompress() returns NULL and nothing is displayed.\n+     * wrong, tvb_child_uncompress() returns NULL and nothing is displayed.\n      */\n     decomp = tvb_child_uncompress(data, data, 0, tvb_captured_length(data));\n     if (decomp) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ipsec.c",
+      "old_path": "epan/dissectors/packet-ipsec.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -227,7 +227,7 @@ mcpe_dissect_login(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da\n         ti = proto_tree_add_item(tree, hf_mcpe_login_data, tvb,\n                                  offset, item_size, ENC_NA);\n \n-        login_tvb = tvb_uncompress(tvb, offset, comp_length);\n+        login_tvb = tvb_child_uncompress(tvb, tvb, offset, comp_length);\n         if (login_tvb) {\n             guint32 decomp_length;\n             proto_tree *login_tree;\n@@ -292,7 +292,7 @@ mcpe_dissect_batch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da\n         ti = proto_tree_add_item(tree, hf_mcpe_batch_body, tvb,\n                                  offset, item_size, ENC_NA);\n \n-        batch_tvb = tvb_uncompress(tvb, offset, comp_length);\n+        batch_tvb = tvb_child_uncompress(tvb, tvb, offset, comp_length);\n         if (batch_tvb) {\n             guint32 decomp_length;\n             proto_tree *batch_tree;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mcpe.c",
+      "old_path": "epan/dissectors/packet-mcpe.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -798,7 +798,7 @@ process_body_part(proto_tree *tree, tvbuff_t *tvb,\n                    g_ascii_strncasecmp(content_encoding_str,\"x-gzip\",6) == 0 ||\n                    g_ascii_strncasecmp(content_encoding_str,\"x-deflate\",9) == 0){\n                    /* The body is gzip:ed */\n-                    tvbuff_t *uncompress_tvb = tvb_uncompress(tmp_tvb, 0, body_len);\n+                    tvbuff_t *uncompress_tvb = tvb_child_uncompress(tmp_tvb, tmp_tvb, 0, body_len);\n                     if (uncompress_tvb) {\n                         tmp_tvb = uncompress_tvb;\n                         add_new_data_source(pinfo, tmp_tvb, \"gunzipped data\");\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-multipart.c",
+      "old_path": "epan/dissectors/packet-multipart.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -2441,7 +2441,7 @@ mysql_dissect_compressed_header(tvbuff_t *tvb, int offset, proto_tree *mysql_tre\n \toffset += 3;\n \n \tif (ulen>0) {\n-\t\tnext_tvb = tvb_uncompress(tvb, offset, clen);\n+\t\tnext_tvb = tvb_child_uncompress(tvb, tvb, offset, clen);\n \t\tif (next_tvb) {\n \t\t\tadd_new_data_source(pinfo, next_tvb, \"compressed data\");\n \t\t\t// call_dissector(mysql_handle, next_tvb, pinfo, mysql_tree);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mysql.c",
+      "old_path": "epan/dissectors/packet-mysql.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -6371,7 +6371,7 @@ tvbuff_t *rtps_util_get_uncompressed_tvb_zlib(\n     /* If ZLIB is available always try to decompress. */\n     *tried_to_decompress = TRUE;\n     uncompressed_tvb = tvb_new_subset_length_caplen(tvb, offset, compressed_size, -1);\n-    uncompressed_tvb = tvb_uncompress(uncompressed_tvb, 0, compressed_size);\n+    uncompressed_tvb = tvb_child_uncompress(uncompressed_tvb, uncompressed_tvb, 0, compressed_size);\n #else\n     *tried_to_decompress = FALSE;\n #endif\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-rtps.c",
+      "old_path": "epan/dissectors/packet-rtps.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -4796,7 +4796,7 @@ dissect_sip_common(tvbuff_t *tvb, int offset, int remaining_length, packet_info\n             (!strncmp(content_encoding_parameter_str, \"gzip\", 4) ||\n              !strncmp(content_encoding_parameter_str,\"deflate\",7))){\n             /* The body is gzip:ed */\n-            next_tvb = tvb_uncompress(tvb, offset,  datalen);\n+            next_tvb = tvb_child_uncompress(tvb, tvb, offset,  datalen);\n             if (next_tvb) {\n                 add_new_data_source(pinfo, next_tvb, \"gunzipped data\");\n                 if(sip_tree) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-sip.c",
+      "old_path": "epan/dissectors/packet-sip.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1019,13 +1019,17 @@ WS_DLL_PUBLIC gint tvb_find_tvb(tvbuff_t *haystack_tvb, tvbuff_t *needle_tvb,\n  * Uncompresses a zlib compressed packet inside a tvbuff at offset with\n  * length comprlen.  Returns an uncompressed tvbuffer if uncompression\n  * succeeded or NULL if uncompression failed.\n+ *\n+ * The returned tvbuffer must be freed with `tvb_free` or added to the\n+ * chain of another tvbuffer to avoid a memory leak. Consider using\n+ * tvb_child_uncompress to simplify memory management.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_uncompress(tvbuff_t *tvb, const int offset,\n     int comprlen);\n \n /**\n  * Uncompresses a zlib compressed packet inside a tvbuff at offset with\n- * length comprlen.  Returns an uncompressed tvbuffer attached to tvb if\n+ * length comprlen.  Returns an uncompressed tvbuffer attached to parent if\n  * uncompression succeeded or NULL if uncompression failed.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress(tvbuff_t *parent, tvbuff_t *tvb,\n@@ -1037,13 +1041,17 @@ WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress(tvbuff_t *parent, tvbuff_t *tvb,\n  * Uncompresses a brotli compressed packet inside a tvbuff at offset with\n  * length comprlen.  Returns an uncompressed tvbuffer if uncompression\n  * succeeded or NULL if uncompression failed.\n+ *\n+ * The returned tvbuffer must be freed with `tvb_free` or added to the\n+ * chain of another tvbuffer to avoid a memory leak. Consider using\n+ * tvb_child_uncompress_brotli to simplify memory management.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_brotli(tvbuff_t *tvb, const int offset,\n     int comprlen);\n \n /**\n  * Uncompresses a brotli compressed packet inside a tvbuff at offset with\n- * length comprlen.  Returns an uncompressed tvbuffer attached to tvb if\n+ * length comprlen.  Returns an uncompressed tvbuffer attached to parent if\n  * uncompression succeeded or NULL if uncompression failed.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_brotli(tvbuff_t *parent, tvbuff_t *tvb,\n@@ -1056,6 +1064,10 @@ WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_brotli(tvbuff_t *parent, tvbuff_t *\n  * tvbuff at offset with length comprlen.  Returns an uncompressed\n  * tvbuffer if uncompression succeeded or NULL if uncompression\n  * failed.\n+ *\n+ * The returned tvbuffer must be freed with `tvb_free` or added to the\n+ * chain of another tvbuffer to avoid a memory leak. Consider using\n+ * tvb_child_uncompress_lz77 to simplify memory management.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lz77(tvbuff_t *tvb,\n     const int offset, int comprlen);\n@@ -1063,7 +1075,7 @@ WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lz77(tvbuff_t *tvb,\n /**\n  * Uncompresses a Microsoft Plain LZ77 compressed payload inside a\n  * tvbuff at offset with length comprlen.  Returns an uncompressed\n- * tvbuffer attached to tvb if uncompression succeeded or NULL if\n+ * tvbuffer attached to parent if uncompression succeeded or NULL if\n  * uncompression failed.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lz77(tvbuff_t *parent,\n@@ -1076,6 +1088,10 @@ WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lz77(tvbuff_t *parent,\n  * tvbuff at offset with length comprlen.  Returns an uncompressed\n  * tvbuffer if uncompression succeeded or NULL if uncompression\n  * failed.\n+ *\n+ * The returned tvbuffer must be freed with `tvb_free` or added to the\n+ * chain of another tvbuffer to avoid a memory leak. Consider using\n+ * tvb_child_uncompress_lz77huff to simplify memory management.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lz77huff(tvbuff_t *tvb,\n     const int offset, int comprlen);\n@@ -1083,7 +1099,7 @@ WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lz77huff(tvbuff_t *tvb,\n /**\n  * Uncompresses a Microsoft LZ77+Huffman compressed payload inside a\n  * tvbuff at offset with length comprlen.  Returns an uncompressed\n- * tvbuffer attached to tvb if uncompression succeeded or NULL if\n+ * tvbuffer attached to parent if uncompression succeeded or NULL if\n  * uncompression failed.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lz77huff(tvbuff_t *parent,\n@@ -1096,6 +1112,10 @@ WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lz77huff(tvbuff_t *parent,\n  * a tvbuff at offset with length comprlen.  Returns an uncompressed\n  * tvbuffer if uncompression succeeded or NULL if uncompression\n  * failed.\n+ *\n+ * The returned tvbuffer must be freed with `tvb_free` or added to the\n+ * chain of another tvbuffer to avoid a memory leak. Consider using\n+ * tvb_child_uncompress_lznt1 to simplify memory management.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lznt1(tvbuff_t *tvb,\n     const int offset, int comprlen);\n@@ -1103,8 +1123,8 @@ WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_lznt1(tvbuff_t *tvb,\n /**\n  * Uncompresses a Microsoft LZNT1 compressed payload inside\n  * a tvbuff at offset with length comprlen.  Returns an uncompressed\n- * tvbuffer if uncompression succeeded or NULL if uncompression\n- * failed.\n+ * tvbuffer attached to parent if uncompression succeeded or NULL if\n+ * uncompression failed.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lznt1(tvbuff_t *parent,\n     tvbuff_t *tvb, const int offset, int comprlen);\n@@ -1114,6 +1134,10 @@ WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_lznt1(tvbuff_t *parent,\n  * tvbuff at offset with length comprlen.  Returns an uncompressed\n  * tvbuffer if uncompression succeeded or NULL if uncompression\n  * failed.\n+ *\n+ * The returned tvbuffer must be freed with `tvb_free` or added to the\n+ * chain of another tvbuffer to avoid a memory leak. Consider using\n+ * tvb_child_uncompress_zstd to simplify memory management.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_zstd(tvbuff_t *tvb,\n     const int offset, int comprlen);\n@@ -1121,8 +1145,8 @@ WS_DLL_PUBLIC tvbuff_t *tvb_uncompress_zstd(tvbuff_t *tvb,\n /**\n  * Uncompresses a ZSTD compressed payload inside a\n  * tvbuff at offset with length comprlen.  Returns an uncompressed\n- * tvbuffer if uncompression succeeded or NULL if uncompression\n- * failed.\n+ * tvbuffer attached to parent if uncompression succeeded or NULL\n+ * if uncompression failed.\n  */\n WS_DLL_PUBLIC tvbuff_t *tvb_child_uncompress_zstd(tvbuff_t *parent,\n     tvbuff_t *tvb, const int offset, int comprlen);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/tvbuff.h",
+      "old_path": "epan/tvbuff.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "3c9662b1d27889574c4177c468b9d85dbcef54dc",
+      "short_id": "3c9662b1",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "8bf015034e838cfeeaa4d6f2a1d9aab13086e2d3"
+      ],
+      "title": "note that tvb_child_uncompress attaches to parent",
+      "message": "note that tvb_child_uncompress attaches to parent\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2023-01-09T18:17:38.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3c9662b1d27889574c4177c468b9d85dbcef54dc"
+    },
+    {
+      "id": "8bf015034e838cfeeaa4d6f2a1d9aab13086e2d3",
+      "short_id": "8bf01503",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "95a1627064fcafa2934fb5457a55524b3961d439"
+      ],
+      "title": "note to use the tvb_child_uncompress* alternative",
+      "message": "note to use the tvb_child_uncompress* alternative\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2023-01-09T18:15:06.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8bf015034e838cfeeaa4d6f2a1d9aab13086e2d3"
+    },
+    {
+      "id": "95a1627064fcafa2934fb5457a55524b3961d439",
+      "short_id": "95a16270",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "988d4585bcadc4e33d0e7277938607cb469a07df"
+      ],
+      "title": "note need to free return in uncompress functions",
+      "message": "note need to free return in uncompress functions\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-28T20:19:01.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/95a1627064fcafa2934fb5457a55524b3961d439"
+    },
+    {
+      "id": "988d4585bcadc4e33d0e7277938607cb469a07df",
+      "short_id": "988d4585",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "005ea28d27dab17769a2cd85d8b231d32462a77c"
+      ],
+      "title": "ipsec: fix comment",
+      "message": "ipsec: fix comment\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-28T20:07:59.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/988d4585bcadc4e33d0e7277938607cb469a07df"
+    },
+    {
+      "id": "005ea28d27dab17769a2cd85d8b231d32462a77c",
+      "short_id": "005ea28d",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "0150297d55c4cea803ec4811a2cf846e57535fe5"
+      ],
+      "title": "sip: fix leak in uncompress",
+      "message": "sip: fix leak in uncompress\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-27T19:13:23.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/005ea28d27dab17769a2cd85d8b231d32462a77c"
+    },
+    {
+      "id": "0150297d55c4cea803ec4811a2cf846e57535fe5",
+      "short_id": "0150297d",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "01fda90a45abdf9719feafa6178db20abb399bec"
+      ],
+      "title": "rtps: fix leak in uncompress",
+      "message": "rtps: fix leak in uncompress\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-27T18:52:41.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0150297d55c4cea803ec4811a2cf846e57535fe5"
+    },
+    {
+      "id": "01fda90a45abdf9719feafa6178db20abb399bec",
+      "short_id": "01fda90a",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "39ee45a069801d1766cfc522af1b7314683f56fe"
+      ],
+      "title": "mcpe: fix leak in uncompress",
+      "message": "mcpe: fix leak in uncompress\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-27T18:50:13.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/01fda90a45abdf9719feafa6178db20abb399bec"
+    },
+    {
+      "id": "39ee45a069801d1766cfc522af1b7314683f56fe",
+      "short_id": "39ee45a0",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "8461440f4ae9b5e4baa66749ee302808f93b48b6"
+      ],
+      "title": "multipart: fix leak in uncompress",
+      "message": "multipart: fix leak in uncompress\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-27T18:19:03.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/39ee45a069801d1766cfc522af1b7314683f56fe"
+    },
+    {
+      "id": "8461440f4ae9b5e4baa66749ee302808f93b48b6",
+      "short_id": "8461440f",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "f7290f2cb69955ee5ac0d8c3936c38a69a0e7006"
+      ],
+      "title": "gelf: fix leak in uncompress",
+      "message": "gelf: fix leak in uncompress\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-27T18:18:31.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8461440f4ae9b5e4baa66749ee302808f93b48b6"
+    },
+    {
+      "id": "f7290f2cb69955ee5ac0d8c3936c38a69a0e7006",
+      "short_id": "f7290f2c",
+      "created_at": "2023-01-10T01:34:44.000+00:00",
+      "parent_ids": [
+        "e80b2ab560fc7a688f2b047f7221fd0b2ebfd3f7"
+      ],
+      "title": "mysql: fix leak in uncompress",
+      "message": "mysql: fix leak in uncompress\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2022-12-26T20:32:23.000-05:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-01-10T01:34:44.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/f7290f2cb69955ee5ac0d8c3936c38a69a0e7006"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 573258662,
+      "head_commit_sha": "3c9662b1d27889574c4177c468b9d85dbcef54dc",
+      "base_commit_sha": "e80b2ab560fc7a688f2b047f7221fd0b2ebfd3f7",
+      "start_commit_sha": "e80b2ab560fc7a688f2b047f7221fd0b2ebfd3f7",
+      "created_at": "2023-01-10T01:34:47.329Z",
+      "merge_request_id": 196683740,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 573213112,
+      "head_commit_sha": "d0da292d5230cbe486bd3ea671aec2215d954b26",
+      "base_commit_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+      "start_commit_sha": "e80b2ab560fc7a688f2b047f7221fd0b2ebfd3f7",
+      "created_at": "2023-01-09T23:17:51.400Z",
+      "merge_request_id": 196683740,
+      "state": "without_files",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 566644274,
+      "head_commit_sha": "49bcaa8dcae1d049e1db5051be7473b8827fd9c4",
+      "base_commit_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+      "start_commit_sha": "95f705dd8bbdd2a27b1af7fde456c20914365b37",
+      "created_at": "2022-12-29T01:42:54.634Z",
+      "merge_request_id": 196683740,
+      "state": "without_files",
+      "real_size": "8",
+      "patch_id_sha": null
+    }
+  ]
+}

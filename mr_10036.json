@@ -1,0 +1,631 @@
+{
+  "id": 210677117,
+  "iid": 10036,
+  "project_id": 7898047,
+  "title": "String search may fail when partial matches occur",
+  "description": "Currently, searching for strings in \"Packet list\" and \"Packet detail\" may fail\nto find matches if a partial match is encountered. Examples of both are present\nin nfsv4.1_pnfs.cap in the Wireshark sample trace collection.\n\nSearching for \"Win=29200 Len=0\" in Packet list finds frame 1, based on:\n\n    880 → 2049 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM TSval=360391592 TSecr=0 WS=128\n\nHowever, searching for jsut \"0 Len=0\" skips this frame when searching.\n\nSimilarly, searching for \"netapp-26\" in Packet detail will find many frames\n(if TCP port 2049 is decoded as RPC) based on the RPC credentials:\n\n    Machine Name: netapp-26\n\nSimilarly, if searching for \"p-26\", no frames are found.\n\nThe problem is how match_summary_line() and match_subtree_text() will start a\ncomparison against the search string based on the first character and scan\nahead to check if each subsequent character also matches. However, if there is\nno match, the search continues only after the partial match.\n\nIn practice, if \"p-26\" is against \"Machine Name: netapp-26\" will:\n\n- Test against against characters, but find no match until the first 'p'.\n- Find that the first 'p' matches the leading 'p' in the search string.\n- Compare the second 'p' against '-' in the search string, which fails.\n- Continue checking the second 'p' where neither '-', '2' nor '6' match the\n  leading 'p' in the search string.\n\nThe proposed fix will, when a partial match is in progress, store the first\nlocation where a new match might occur. If the partial match is not\nsuccessful, the search is restarted at that stored position.\n\nAs far as I can tell, other match_xxx functions in file.c do not have\nshare this problem.",
+  "state": "merged",
+  "created_at": "2023-03-12T20:33:19.493Z",
+  "updated_at": "2023-03-22T01:16:18.795Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2023-03-22T01:16:18.823Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "restart-string-search-on-candidate-match-point",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 13889755,
+    "username": "prebeng",
+    "public_email": null,
+    "name": "Preben Guldberg",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/3ea14473e4af4540823839d0288d8c97808145c93f7909dd0acb19e50e1055cd?s=80&d=identicon",
+    "web_url": "https://gitlab.com/prebeng"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 44030394,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "4af661a0356d7d3de08e2b0dd515d9c19facf0ae",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-03-12T20:33:24.287Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10036",
+  "references": {
+    "short": "!10036",
+    "relative": "!10036",
+    "full": "wireshark/wireshark!10036"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10036",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-03-22T00:55:46.261Z",
+  "latest_build_finished_at": "2023-03-22T01:16:17.766Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 813868636,
+    "iid": 43959,
+    "project_id": 7898047,
+    "sha": "4af661a0356d7d3de08e2b0dd515d9c19facf0ae",
+    "ref": "refs/merge-requests/10036/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-03-22T00:55:45.523Z",
+    "updated_at": "2023-03-22T01:16:17.775Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/813868636"
+  },
+  "head_pipeline": {
+    "id": 813868636,
+    "iid": 43959,
+    "project_id": 7898047,
+    "sha": "4af661a0356d7d3de08e2b0dd515d9c19facf0ae",
+    "ref": "refs/merge-requests/10036/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-03-22T00:55:45.523Z",
+    "updated_at": "2023-03-22T01:16:17.775Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/813868636",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2023-03-22T00:55:46.261Z",
+    "finished_at": "2023-03-22T01:16:17.766Z",
+    "committed_at": null,
+    "duration": 1231,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/813868636",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "97060471ea28adf7921526b9d80fcc86556b93d9",
+    "head_sha": "4af661a0356d7d3de08e2b0dd515d9c19facf0ae",
+    "start_sha": "97060471ea28adf7921526b9d80fcc86556b93d9"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "d97deca877771893d214c91ab57e7ef853cbbee2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1319487037,
+          "type": null,
+          "body": "added 25 commits\n\n<ul><li>e29e2992...95b19137 - 24 commits from branch <code>wireshark:master</code></li><li>8f76172d - String search may fail when partial matches occur</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10036/diffs?diff_id=632111250&start_sha=e29e29920fd3ae930d7edbc6e20f27497a08fac1)",
+          "author": {
+            "id": 13889755,
+            "username": "prebeng",
+            "public_email": null,
+            "name": "Preben Guldberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3ea14473e4af4540823839d0288d8c97808145c93f7909dd0acb19e50e1055cd?s=80&d=identicon",
+            "web_url": "https://gitlab.com/prebeng"
+          },
+          "created_at": "2023-03-18T10:40:19.448Z",
+          "updated_at": "2023-03-18T10:40:19.450Z",
+          "system": true,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "eb945adafb439b91e18efeda32469ddee491f419",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1319829212,
+          "type": null,
+          "body": "added 11 commits\n\n<ul><li>8f76172d...75502e5d - 10 commits from branch <code>wireshark:master</code></li><li>0495bb95 - String search may fail when partial matches occur</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10036/diffs?diff_id=632297677&start_sha=8f76172d613b27be1defcc69d35f19ec7d50f09f)",
+          "author": {
+            "id": 13889755,
+            "username": "prebeng",
+            "public_email": null,
+            "name": "Preben Guldberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3ea14473e4af4540823839d0288d8c97808145c93f7909dd0acb19e50e1055cd?s=80&d=identicon",
+            "web_url": "https://gitlab.com/prebeng"
+          },
+          "created_at": "2023-03-19T12:42:55.116Z",
+          "updated_at": "2023-03-19T12:42:55.117Z",
+          "system": true,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "42efff04934f462cd2354f52ef3010a31030928c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1321299164,
+          "type": null,
+          "body": "added 10 commits\n\n<ul><li>0495bb95...07e56c42 - 9 commits from branch <code>wireshark:master</code></li><li>feb16dcf - String search may fail when partial matches occur</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10036/diffs?diff_id=633400941&start_sha=0495bb955f7e2923db790a3a31664446befa0d45)",
+          "author": {
+            "id": 13889755,
+            "username": "prebeng",
+            "public_email": null,
+            "name": "Preben Guldberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3ea14473e4af4540823839d0288d8c97808145c93f7909dd0acb19e50e1055cd?s=80&d=identicon",
+            "web_url": "https://gitlab.com/prebeng"
+          },
+          "created_at": "2023-03-20T18:44:28.069Z",
+          "updated_at": "2023-03-20T18:44:28.072Z",
+          "system": true,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "761579d9a781bded7e876195f3c58f729b1e4821",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1322914419,
+          "type": null,
+          "body": "This looks correct, though it would be simpler and faster to use `strstr` in the case sensitive case.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-03-21T17:59:16.443Z",
+          "updated_at": "2023-03-21T17:59:16.443Z",
+          "system": false,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "aa8bdf37574fe478347bdb692defc00f63a28715",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1323102626,
+          "type": null,
+          "body": "added 5 commits\n\n<ul><li>feb16dcf...81868e7a - 4 commits from branch <code>wireshark:master</code></li><li>95e347eb - String search may fail when partial matches occur</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10036/diffs?diff_id=634739388&start_sha=feb16dcf36b7b6905838fdd5177da23b79b28bf4)",
+          "author": {
+            "id": 13889755,
+            "username": "prebeng",
+            "public_email": null,
+            "name": "Preben Guldberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3ea14473e4af4540823839d0288d8c97808145c93f7909dd0acb19e50e1055cd?s=80&d=identicon",
+            "web_url": "https://gitlab.com/prebeng"
+          },
+          "created_at": "2023-03-21T20:16:16.884Z",
+          "updated_at": "2023-03-21T20:16:16.885Z",
+          "system": true,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "73d39179bd5d2602c522cb35184a0c9150e168f3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1323113460,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>087721ec - String search may fail when partial matches occur</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10036/diffs?diff_id=634748185&start_sha=95e347ebce0c27490fead5d189ba91b14045f762)",
+          "author": {
+            "id": 13889755,
+            "username": "prebeng",
+            "public_email": null,
+            "name": "Preben Guldberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3ea14473e4af4540823839d0288d8c97808145c93f7909dd0acb19e50e1055cd?s=80&d=identicon",
+            "web_url": "https://gitlab.com/prebeng"
+          },
+          "created_at": "2023-03-21T20:28:52.464Z",
+          "updated_at": "2023-03-21T20:28:52.466Z",
+          "system": true,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "eeeff07d43439030563a63265cf84f6136039ca8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1323115847,
+          "type": null,
+          "body": "I have updated to use strstr() as suggested for case sensitive searches.\n\nWhile at it, I also added a check to terminate the for loops when the remainder of the string we are matching against is shorter than the search string.",
+          "author": {
+            "id": 13889755,
+            "username": "prebeng",
+            "public_email": null,
+            "name": "Preben Guldberg",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3ea14473e4af4540823839d0288d8c97808145c93f7909dd0acb19e50e1055cd?s=80&d=identicon",
+            "web_url": "https://gitlab.com/prebeng"
+          },
+          "created_at": "2023-03-21T20:31:37.956Z",
+          "updated_at": "2023-03-21T20:31:37.956Z",
+          "system": false,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b5169e112dfc9307d3df3503f36affab9b28fe94",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1323270319,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-03-22T00:55:41.887Z",
+          "updated_at": "2023-03-22T00:55:41.891Z",
+          "system": true,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5b9aa5e704e97866ee972ad33f48d45998640bec",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1323270330,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>087721ec...97060471 - 2 commits from branch <code>wireshark:master</code></li><li>4af661a0 - String search may fail when partial matches occur</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10036/diffs?diff_id=634874803&start_sha=087721ece653b9aeff999e0f2b8b10a04fc960bd)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-03-22T00:55:43.791Z",
+          "updated_at": "2023-03-22T00:55:43.793Z",
+          "system": true,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "055b3bf59ffb97b9fb478f01785d2d1aef55b33d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1323270436,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 4af661a0356d7d3de08e2b0dd515d9c19facf0ae succeeds",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-03-22T00:55:59.474Z",
+          "updated_at": "2023-03-22T00:55:59.477Z",
+          "system": true,
+          "noteable_id": 210677117,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10036,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -3121,7 +3121,7 @@ match_subtree_text(proto_node *node, gpointer data)\n     gchar         label_str[ITEM_LABEL_LENGTH];\n     gchar        *label_ptr;\n     size_t        label_len;\n-    guint32       i;\n+    guint32       i, i_restart;\n     guint8        c_char;\n     size_t        c_match    = 0;\n \n@@ -3152,13 +3152,18 @@ match_subtree_text(proto_node *node, gpointer data)\n             mdata->finfo = fi;\n             return;\n         }\n-    } else {\n-        /* Does that label match? */\n+    } else if (cf->case_type) {\n+        /* Case insensitive match */\n         label_len = strlen(label_ptr);\n+        i_restart = 0;\n         for (i = 0; i < label_len; i++) {\n+            if (i_restart == 0 && c_match == 0 && (label_len - i < string_len))\n+                break;\n             c_char = label_ptr[i];\n-            if (cf->case_type)\n-                c_char = g_ascii_toupper(c_char);\n+            c_char = g_ascii_toupper(c_char);\n+            /* If c_match is non-zero, save candidate for retrying full match. */\n+            if (c_match > 0 && i_restart == 0 && c_char == string[0])\n+                i_restart = i;\n             if (c_char == string[c_match]) {\n                 c_match++;\n                 if (c_match == string_len) {\n@@ -3167,9 +3172,18 @@ match_subtree_text(proto_node *node, gpointer data)\n                     mdata->finfo = fi;\n                     return;\n                 }\n+            } else if (i_restart) {\n+                i = i_restart;\n+                c_match = 1;\n+                i_restart = 0;\n             } else\n                 c_match = 0;\n         }\n+    } else if (strstr(label_ptr, string) != NULL) {\n+        /* Case sensitive match */\n+        mdata->frame_matched = TRUE;\n+        mdata->finfo = fi;\n+        return;\n     }\n \n     /* Recurse into the subtree, if it exists */\n@@ -3200,7 +3214,7 @@ match_summary_line(capture_file *cf, frame_data *fdata,\n     size_t          info_column_len;\n     match_result    result     = MR_NOTMATCHED;\n     gint            colx;\n-    guint32         i;\n+    guint32         i, i_restart;\n     guint8          c_char;\n     size_t          c_match    = 0;\n \n@@ -3228,20 +3242,33 @@ match_summary_line(capture_file *cf, frame_data *fdata,\n                     result = MR_MATCHED;\n                     break;\n                 }\n-            } else {\n+            } else if (cf->case_type) {\n+                /* Case insensitive match */\n+                i_restart = 0;\n                 for (i = 0; i < info_column_len; i++) {\n+                    if (i_restart == 0 && c_match == 0 && (info_column_len - i < string_len))\n+                        break;\n                     c_char = info_column[i];\n-                    if (cf->case_type)\n-                        c_char = g_ascii_toupper(c_char);\n+                    c_char = g_ascii_toupper(c_char);\n+                    /* If c_match is non-zero, save candidate for retrying full match. */\n+                    if (c_match > 0 && i_restart == 0 && c_char == string[0])\n+                        i_restart = i;\n                     if (c_char == string[c_match]) {\n                         c_match++;\n                         if (c_match == string_len) {\n                             result = MR_MATCHED;\n                             break;\n                         }\n+                    } else if (i_restart) {\n+                        i = i_restart;\n+                        c_match = 1;\n+                        i_restart = 0;\n                     } else\n                         c_match = 0;\n                 }\n+            } else if (strstr(info_column, string) != NULL) {\n+                /* Case sensitive match */\n+                result = MR_MATCHED;\n             }\n             break;\n         }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "file.c",
+      "old_path": "file.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "4af661a0356d7d3de08e2b0dd515d9c19facf0ae",
+      "short_id": "4af661a0",
+      "created_at": "2023-03-22T00:55:40.000+00:00",
+      "parent_ids": [
+        "97060471ea28adf7921526b9d80fcc86556b93d9"
+      ],
+      "title": "String search may fail when partial matches occur",
+      "message": "String search may fail when partial matches occur\n\nWhen searching for string matches in packet list and details, save index of\nnext possible start location inside a partial match and rewind to that\nposition if the ongoing match is not successful.\n\nWhile here, also terminate search when the search string is longer than\nthe remainder of the text string being matched against.\n\nAs suggested by John Thacker, use strstr() for case sensitive search.\n\nFull bug description:\n\nCurrently, searching for strings in \"Packet list\" and \"Packet detail\" may fail\nto find matches if a partial match is encountered. Examples of both are present\nin nfsv4.1_pnfs.cap in the Wireshark sample trace collection.\n\nSearching for \"Win=29200 Len=0\" in Packet list finds frame 1, based on:\n\n    880 → 2049 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM TSval=360391592 TSecr=0 WS=128\n\nHowever, searching for jsut \"0 Len=0\" skips this frame when searching.\n\nSimilarly, searching for \"netapp-26\" in Packet detail will find many frames\n(if TCP port 2049 is decoded as RPC) based on the RPC credentials:\n\n    Machine Name: netapp-26\n\nSimilarly, if searching for \"p-26\", no frames are found.\n\nThe problem is how match_summary_line() and match_subtree_text() will start a\ncomparison against the search string based on the first character and scan\nahead to check if each subsequent character also matches. However, if there is\nno match, the search continues only after the partial match.\n\nIn practice, if \"p-26\" is against \"Machine Name: netapp-26\" will:\n\n- Test against against characters, but find no match until the first 'p'.\n- Find that the first 'p' matches the leading 'p' in the search string.\n- Compare the second 'p' against '-' in the search string, which fails.\n- Continue checking the second 'p' where neither '-', '2' nor '6' match the\n  leading 'p' in the search string.\n\nThe proposed fix will, when a partial match is in progress, store the first\nlocation where a new match might occur. If the partial match is not\nsuccessful, the search is restarted at that stored position.\n\nAs far as I can tell, other match_xxx functions in file.c do not have\nshare this problem.\n",
+      "author_name": "Preben Guldberg",
+      "author_email": "preben@guldberg.org",
+      "authored_date": "2023-03-12T20:40:24.000+01:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-03-22T00:55:40.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/4af661a0356d7d3de08e2b0dd515d9c19facf0ae"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 634874803,
+      "head_commit_sha": "4af661a0356d7d3de08e2b0dd515d9c19facf0ae",
+      "base_commit_sha": "97060471ea28adf7921526b9d80fcc86556b93d9",
+      "start_commit_sha": "97060471ea28adf7921526b9d80fcc86556b93d9",
+      "created_at": "2023-03-22T00:55:43.125Z",
+      "merge_request_id": 210677117,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 634748185,
+      "head_commit_sha": "087721ece653b9aeff999e0f2b8b10a04fc960bd",
+      "base_commit_sha": "81868e7a667ffec6c326fcd0f4509a41c78c4ee7",
+      "start_commit_sha": "81868e7a667ffec6c326fcd0f4509a41c78c4ee7",
+      "created_at": "2023-03-21T20:28:51.601Z",
+      "merge_request_id": 210677117,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 634739388,
+      "head_commit_sha": "95e347ebce0c27490fead5d189ba91b14045f762",
+      "base_commit_sha": "81868e7a667ffec6c326fcd0f4509a41c78c4ee7",
+      "start_commit_sha": "81868e7a667ffec6c326fcd0f4509a41c78c4ee7",
+      "created_at": "2023-03-21T20:16:16.121Z",
+      "merge_request_id": 210677117,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 633400941,
+      "head_commit_sha": "feb16dcf36b7b6905838fdd5177da23b79b28bf4",
+      "base_commit_sha": "07e56c42f34ac32b320bea51a0fb1df25b8ce5de",
+      "start_commit_sha": "07e56c42f34ac32b320bea51a0fb1df25b8ce5de",
+      "created_at": "2023-03-20T18:44:27.335Z",
+      "merge_request_id": 210677117,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 632297677,
+      "head_commit_sha": "0495bb955f7e2923db790a3a31664446befa0d45",
+      "base_commit_sha": "75502e5d76d058ecff2c21863967adddfb209f5a",
+      "start_commit_sha": "75502e5d76d058ecff2c21863967adddfb209f5a",
+      "created_at": "2023-03-19T12:42:54.457Z",
+      "merge_request_id": 210677117,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 632111250,
+      "head_commit_sha": "8f76172d613b27be1defcc69d35f19ec7d50f09f",
+      "base_commit_sha": "95b191377a133787ec07e986f9c6da13b35882e0",
+      "start_commit_sha": "95b191377a133787ec07e986f9c6da13b35882e0",
+      "created_at": "2023-03-18T10:40:18.684Z",
+      "merge_request_id": 210677117,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 625964217,
+      "head_commit_sha": "e29e29920fd3ae930d7edbc6e20f27497a08fac1",
+      "base_commit_sha": "d1f8e39782d86c28706049f39ab92bb495c41d85",
+      "start_commit_sha": "d1f8e39782d86c28706049f39ab92bb495c41d85",
+      "created_at": "2023-03-12T20:33:20.861Z",
+      "merge_request_id": 210677117,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

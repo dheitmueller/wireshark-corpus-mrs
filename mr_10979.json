@@ -1,0 +1,440 @@
+{
+  "id": 229716259,
+  "iid": 10979,
+  "project_id": 7898047,
+  "title": "Qt: Fix PacketDialog secondary data sources crash after closing file",
+  "description": "The first data source tvb associated with a packet is always freed,\nalong with its data, at the same time as the associated pinfo->pool\nscoped data and the tree, if any, in epan_dissect_cleanup() or\nepan_dissect_reset().\n\nNot so for secondary data sources; while the vast majority of data\nsource tvbs are chained to the first data source and so also freed\nat the same time, and almost all of the others are never freed and\njust leak (sometimes because of an exception before being set as a\nchild), it's not uncommon to have a tvb whose real data is at file\nscope, with the assumption that this will outlive any packet scope.\n(Note that the real data is not copied, for speed and memory usage.)\n\nThis is, for example, how epan/reassemble.c works, with the data\nfreed when a file is closed (although it is not managed by wmem.)\n\nWhen a PacketDialog persists after the capture file closes, this\nassumption is falsified. As we do not have a perfect way to detect\nthe scope of the real data (we could introduce a function to check\nif the free_cb is NULL, which would be suggestive but not absolute),\ndeep copy the data for secondary data sources when a ByteViewTab\nis associated with a PacketDialog instead of the main window before\npassing to to the ByteViewText. Also, avoid calling API functions\nthat examine the real data (looking at the offsets is OK, as\nproto_find_field_from_offset() does.)\n\nWhile it could be possible to clone the data source tvbs located in\nedt->pi.data_src, the pointers would need to be updated in each of\nthe field_infos in the edt's tree as well.\n\nIt could be possible to continue doing a shallow copy of the data\ninitially, and only make a deep copy when the PacketDialog calls\ncaptureFileClosing(). The cleanest way to do that would be to call\nthe public-but-undocumented QByteArray::detach() function.\n\nCurrently no dissectors (or other code) attach data source tvbs where\nthe tvb itself, not just the real data, is freed with a file is closed.\nIf they did, that could still cause a crash.\n\nFix #14363",
+  "state": "merged",
+  "created_at": "2023-06-10T04:07:14.656Z",
+  "updated_at": "2023-06-12T02:37:21.886Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2023-06-12T02:37:20.530Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "byteview_sources_crash",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "bb9e66aea760b538200bd44d08b2ae2e22d63010",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-06-10T04:07:18.962Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10979",
+  "references": {
+    "short": "!10979",
+    "relative": "!10979",
+    "full": "wireshark/wireshark!10979"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10979",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "5",
+  "latest_build_started_at": "2023-06-11T23:54:29.153Z",
+  "latest_build_finished_at": "2023-06-12T00:15:13.661Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 896473567,
+    "iid": 47555,
+    "project_id": 7898047,
+    "sha": "bb9e66aea760b538200bd44d08b2ae2e22d63010",
+    "ref": "refs/merge-requests/10979/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-06-11T23:54:28.318Z",
+    "updated_at": "2023-06-12T00:15:13.669Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/896473567"
+  },
+  "head_pipeline": {
+    "id": 896473567,
+    "iid": 47555,
+    "project_id": 7898047,
+    "sha": "bb9e66aea760b538200bd44d08b2ae2e22d63010",
+    "ref": "refs/merge-requests/10979/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-06-11T23:54:28.318Z",
+    "updated_at": "2023-06-12T00:15:13.669Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/896473567",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2023-06-11T23:54:29.153Z",
+    "finished_at": "2023-06-12T00:15:13.661Z",
+    "committed_at": null,
+    "duration": 1243,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/896473567",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "fedcf129fc576532e7d1817b2fae607cc9d540ee",
+    "head_sha": "bb9e66aea760b538200bd44d08b2ae2e22d63010",
+    "start_sha": "fedcf129fc576532e7d1817b2fae607cc9d540ee"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "1ab143131a75c8bb3f5fd86bea51d61ad0a8f290",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1426326736,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>bb21f37e - Qt: Fix PacketDialog secondary data sources crash after closing file</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10979/diffs?diff_id=705120210&start_sha=870866f42cd59eb522934b1b0ad0e7404067d6d3)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-06-11T21:53:32.940Z",
+          "updated_at": "2023-06-11T21:53:32.942Z",
+          "system": true,
+          "noteable_id": 229716259,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10979,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6feb039d1fc72948a9ebb2d8076857d404c7db98",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1426329359,
+          "type": null,
+          "body": "added 27 commits\n\n<ul><li>bb21f37e...04c99663 - 26 commits from branch <code>wireshark:master</code></li><li>5c7123ae - Qt: Fix PacketDialog secondary data sources crash after closing file</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10979/diffs?diff_id=705122447&start_sha=bb21f37e912c05f2019ef3226306fee8fedb0478)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-06-11T22:13:22.674Z",
+          "updated_at": "2023-06-11T22:13:22.676Z",
+          "system": true,
+          "noteable_id": 229716259,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10979,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "31c3474a549c2fc06690a6ce1f88aef522fd4a88",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1426348928,
+          "type": null,
+          "body": "added 10 commits\n\n<ul><li>5c7123ae...fedcf129 - 9 commits from branch <code>wireshark:master</code></li><li>bb9e66ae - Qt: Fix PacketDialog secondary data sources crash after closing file</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10979/diffs?diff_id=705131380&start_sha=5c7123aeebc2a8fe9611a3059285bb06b24d7283)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-06-11T23:54:26.869Z",
+          "updated_at": "2023-06-11T23:54:26.871Z",
+          "system": true,
+          "noteable_id": 229716259,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10979,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2449375a4cb3375f2ea5bfb7dae9bb251a968b9b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1426393769,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-06-12T02:37:16.528Z",
+          "updated_at": "2023-06-12T02:37:16.533Z",
+          "system": true,
+          "noteable_id": 229716259,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10979,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -238,6 +238,11 @@ void ByteViewText::updateByteViewSettings()\n     viewport()->update();\n }\n \n+void ByteViewText::detachData()\n+{\n+    data_.detach();\n+}\n+\n void ByteViewText::paintEvent(QPaintEvent *)\n {\n     updateLayoutMetrics();\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/widgets/byte_view_text.cpp",
+      "old_path": "ui/qt/widgets/byte_view_text.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -50,6 +50,7 @@ signals:\n public slots:\n     void setMonospaceFont(const QFont &mono_font);\n     void updateByteViewSettings();\n+    void detachData();\n \n     void markProtocol(int start, int length);\n     void markField(int start, int length, bool scroll_to = true);\n@@ -75,7 +76,7 @@ private:\n     } HighlightMode;\n \n     QTextLayout *layout_;\n-    const QByteArray data_;\n+    QByteArray data_;\n \n     void updateLayoutMetrics();\n     int stringWidth(const QString &line);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/widgets/byte_view_text.h",
+      "old_path": "ui/qt/widgets/byte_view_text.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -97,8 +97,9 @@ void ByteViewTab::addTab(const char *name, tvbuff_t *tvb) {\n     if (tvb) {\n         int data_len = (int) tvb_captured_length(tvb);\n         if (data_len > 0) {\n-            // Note: this does not copy the data and will be invalidated when\n-            // the tvb becomes invalid (e.g. when the current packet changes).\n+            // Note: this does not copy the data and will be invalidated\n+            // when the tvbuff's real data becomes invalid (which is not\n+            // necessarily when the tvb itself becomes invalid.)\n             data = QByteArray::fromRawData((const char *) tvb_get_ptr(tvb, 0, data_len), data_len);\n         }\n     }\n@@ -109,6 +110,30 @@ void ByteViewTab::addTab(const char *name, tvbuff_t *tvb) {\n \n     if (tvb)\n     {\n+        // There are some secondary data source tvbuffs whose datais not freed\n+        // when the epan_dissect_t is freed, but at some other point expected\n+        // to outlive the packet, generally when the capture file is closed.\n+        // If this is a PacketDialog, it can break that assumption.\n+        // To get around this, we deep copy their data when the file is closed.\n+        //\n+        // XXX: We could add a function to the tvbuff API and only do this if\n+        // there is no free_cb (a free_cb implies the data is freed at the\n+        // same time as the tvb, i.e. when leaving the packet.)\n+        if (is_fixed_packet_ && count() > 0) {\n+            connect(this, &ByteViewTab::detachData, byte_view_text, &ByteViewText::detachData);\n+        }\n+        // See above - this tvb is (expected to be) scoped to the packet, but\n+        // the real data is not necessarily so. If this is a PacketDialog\n+        // and such a secondary data source, then we MUST NOT use any tvb\n+        // function that accesses the real data after the capture file closes.\n+        // That includes via the ds_tvb item of a field_info in the tree.\n+        // proto_find_field_from_offset() is OK. See #14363.\n+        //\n+        // XXX: It sounds appealing to clone the secondary data source tvbs\n+        // and set them to be freed when the byte_view_text is freed, perhaps\n+        // even doing so only when the capture file is closing. However, while\n+        // relatively simple for the few number of secondary data sources, it\n+        // would be a pain to change the pointers for every field_info.\n         byte_view_text->setProperty(tvb_data_property, VariantPointer<tvbuff_t>::asQVariant(tvb));\n \n         connect(mainApp, SIGNAL(zoomMonospaceFont(QFont)), byte_view_text, SLOT(setMonospaceFont(QFont)));\n@@ -338,3 +363,8 @@ void ByteViewTab::setCaptureFile(capture_file *cf)\n \n     cap_file_ = cf;\n }\n+\n+void ByteViewTab::captureFileClosing()\n+{\n+    emit detachData();\n+}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/byte_view_tab.cpp",
+      "old_path": "ui/qt/byte_view_tab.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -41,11 +41,13 @@ public slots:\n     void selectedFieldChanged(FieldInformation *);\n     /* Highlights field */\n     void highlightedFieldChanged(FieldInformation *);\n+    void captureFileClosing(void);\n \n signals:\n     void fieldSelected(FieldInformation *);\n     void fieldHighlight(FieldInformation *);\n     void byteViewSettingsChanged(void);\n+    void detachData(void);\n \n private:\n     capture_file *cap_file_;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/byte_view_tab.h",
+      "old_path": "ui/qt/byte_view_tab.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -130,6 +130,7 @@ void PacketDialog::captureFileClosing()\n             .arg(cap_file_.fileName())\n             .arg(col_info_);\n     ui->hintLabel->setText(closed_title);\n+    byte_view_tab_->captureFileClosing();\n     WiresharkDialog::captureFileClosing();\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/packet_dialog.cpp",
+      "old_path": "ui/qt/packet_dialog.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "bb9e66aea760b538200bd44d08b2ae2e22d63010",
+      "short_id": "bb9e66ae",
+      "created_at": "2023-06-11T23:54:23.000+00:00",
+      "parent_ids": [
+        "fedcf129fc576532e7d1817b2fae607cc9d540ee"
+      ],
+      "title": "Qt: Fix PacketDialog secondary data sources crash after closing file",
+      "message": "Qt: Fix PacketDialog secondary data sources crash after closing file\n\nThe first data source tvb associated with a packet is always freed,\nalong with its data, at the same time as the associated pinfo->pool\nscoped data and the tree, if any, in epan_dissect_cleanup() or\nepan_dissect_reset().\n\nNot so for secondary data sources; while the vast majority of data\nsource tvbs are chained to the first data source and so also freed\nat the same time, and almost all of the others are never freed and\njust leak (sometimes because of an exception before being set as a\nchild), it's not uncommon to have a tvb whose real data is at file\nscope, with the assumption that this will outlive any packet scope.\n(Note that the real data is not copied, for speed and memory usage.)\n\nThis is, for example, how epan/reassemble.c works, with the data\nfreed when a file is closed (although it is not managed by wmem.)\n\nWhen a PacketDialog persists after the capture file closes, this\nassumption is falsified. As we do not have a perfect way to detect\nthe scope of the real data (we could introduce a function to check\nif the free_cb is NULL, which would be suggestive but not absolute),\ndeep copy the data for secondary data sources when the parent\nPacketDialog indicates that the capture file is about to close.\nAlso, avoid calling API functions thacker examine the real data.\nLooking at the offsets is OK, as proto_find_field_from_offset() does.\n\nWhile it could be possible to clone the data source tvbs located in\nedt->pi.data_src, the pointers would need to be updated in each of\nthe field_infos in the edt's tree as well.\n\nCurrently no dissectors (or other code) attach data source tvbs where\nthe tvb itself, not just the real data, is freed with a file is closed.\nIf they did, that could still cause a crash.\n\nFix #14363\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2023-06-09T21:05:35.000-04:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-06-11T23:54:23.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/bb9e66aea760b538200bd44d08b2ae2e22d63010"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 705131380,
+      "head_commit_sha": "bb9e66aea760b538200bd44d08b2ae2e22d63010",
+      "base_commit_sha": "fedcf129fc576532e7d1817b2fae607cc9d540ee",
+      "start_commit_sha": "fedcf129fc576532e7d1817b2fae607cc9d540ee",
+      "created_at": "2023-06-11T23:54:26.153Z",
+      "merge_request_id": 229716259,
+      "state": "collected",
+      "real_size": "5",
+      "patch_id_sha": null
+    },
+    {
+      "id": 705122447,
+      "head_commit_sha": "5c7123aeebc2a8fe9611a3059285bb06b24d7283",
+      "base_commit_sha": "04c99663ffe47f1d36e53603fd9a0cecb223b1ae",
+      "start_commit_sha": "df4add2ecb0cb027b7e3c81bc91f0f305de1f6fc",
+      "created_at": "2023-06-11T22:13:22.064Z",
+      "merge_request_id": 229716259,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": null
+    },
+    {
+      "id": 705120210,
+      "head_commit_sha": "bb21f37e912c05f2019ef3226306fee8fedb0478",
+      "base_commit_sha": "c251ec9989c284069d2673e408cdd9ce923e1e24",
+      "start_commit_sha": "f8d2444bc3cc4dfa42eb7471d278b6331dffb112",
+      "created_at": "2023-06-11T21:53:32.386Z",
+      "merge_request_id": 229716259,
+      "state": "without_files",
+      "real_size": "5",
+      "patch_id_sha": null
+    },
+    {
+      "id": 704842057,
+      "head_commit_sha": "870866f42cd59eb522934b1b0ad0e7404067d6d3",
+      "base_commit_sha": "c251ec9989c284069d2673e408cdd9ce923e1e24",
+      "start_commit_sha": "c251ec9989c284069d2673e408cdd9ce923e1e24",
+      "created_at": "2023-06-10T04:07:16.184Z",
+      "merge_request_id": 229716259,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

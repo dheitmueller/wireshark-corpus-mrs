@@ -1,0 +1,383 @@
+{
+  "id": 248534484,
+  "iid": 11998,
+  "project_id": 7898047,
+  "title": "Clean up handling of string encodings for byte arrays and absolute times.",
+  "description": "There is no reason to have separate \"RFC 822\" and \"RFC 1123\" parsing of\nInternet Message Format date/time values.  RFC 1123 adds support for\n4-digit years to RFC 822's 2-digit years; RFC 2822, which supplanted RFC\n822, supports both, and RFC 5322, which supplanted RFC 2822, continues\nto do so.  I know of no cases where *only* 2-digit years should be\nsupported, especially given that it has beenover 23 years since January\n1, 2000.\n\nInstead, have ENC_IMF_DATE_TIME for Internet Message Format date/time\nvalues; keep ENC_RFC_1123 for backwards compatibility, but treat it\nexactly the same as ENC_IMF_DATE_TIME.  Keep ENC_RFC_822 around as an\nalias for ENC_IMF_DATE_TIME.\n\nHave separate expert infos for errors parsing string-encoded byte arrays\nand string-encoded dates and times, with the messages speaking of byte\narrays and dates/times rather than \"numbers\".  For now, have the only\nerror being \"couldn't convert\"; we can add more for specific cases of\nwhat's wrong.\n\nIn tvb_get_string_bytes() and tvb_get_string_time(), don't use errno as\na way of indicating failure, use a return of NULL. Using errno 1) runs\nthe risk of getting errno overwritten by intermediate calls and 2)\nwould force assinging particular errno values, the set of which we don't\ncontrol, to particular errors if we were to distinguish different errors\nin the future.\n\nIn tvb_get_string_time(), for Internet Message Format date/time values,\ncheck for 2-digit and 3-digit years based on the length of the year\nfield in the string.  Handle them the way the RFCs say, not the way\nstrptime() does (strptime(), which was originally written to allow\nprograms to ask the user to specify a date and time and let them enter\nit in the locale's date and time format, and to use 2-digit years in\ncase they were in the habit of doing so, which they might have been\ngiven that this was the mid 1980's; the choice of 1969 as the first \"not\n21st century\" year was based on the fact that it was the earliest year\nfor a date correspnding to a non-negative time_t value, which is\nUNIX-specific, unlike the Internet Message Format).\n\nChange tvb_get_string_time() to use guard clauses to handle errors; yes\nit involves gotos, but it's easier to read than nested ifs, for example.\n\nUpdate the Lua unit tests to reflect this.",
+  "state": "merged",
+  "created_at": "2023-09-08T02:03:31.562Z",
+  "updated_at": "2023-09-08T02:39:05.456Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2023-09-08T02:39:02.800Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "clean-up-string-fields",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 25236512,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "5dbe4ee8a85f09e21cea99254e1931a86b3ce08e",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-09-08T02:03:41.597Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!11998",
+  "references": {
+    "short": "!11998",
+    "relative": "!11998",
+    "full": "wireshark/wireshark!11998"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/11998",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2023-09-08T02:03:36.482Z",
+  "latest_build_finished_at": "2023-09-08T02:38:53.991Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 996835278,
+    "iid": 51501,
+    "project_id": 7898047,
+    "sha": "5dbe4ee8a85f09e21cea99254e1931a86b3ce08e",
+    "ref": "refs/merge-requests/11998/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-09-08T02:03:35.320Z",
+    "updated_at": "2023-09-08T02:38:54.001Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/996835278"
+  },
+  "head_pipeline": {
+    "id": 996835278,
+    "iid": 51501,
+    "project_id": 7898047,
+    "sha": "5dbe4ee8a85f09e21cea99254e1931a86b3ce08e",
+    "ref": "refs/merge-requests/11998/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-09-08T02:03:35.320Z",
+    "updated_at": "2023-09-08T02:38:54.001Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/996835278",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 5636682,
+      "username": "guyharris",
+      "public_email": "",
+      "name": "Guy Harris",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+      "web_url": "https://gitlab.com/guyharris"
+    },
+    "started_at": "2023-09-08T02:03:36.482Z",
+    "finished_at": "2023-09-08T02:38:53.991Z",
+    "committed_at": null,
+    "duration": 2117,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/996835278",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "79ff5944394dd67d235f093aaee2c0cb5f4245fa",
+    "head_sha": "5dbe4ee8a85f09e21cea99254e1931a86b3ce08e",
+    "start_sha": "79ff5944394dd67d235f093aaee2c0cb5f4245fa"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "2bdbca92002e760d9c4bbc91c9a2d24307b6dc58",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1548890299,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-09-08T02:16:31.023Z",
+          "updated_at": "2023-09-08T02:16:31.030Z",
+          "system": true,
+          "noteable_id": 248534484,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11998,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9a89593ebbb23357a5eed89c32a6b658462e7a79",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1548890579,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-09-08T02:16:46.284Z",
+          "updated_at": "2023-09-08T02:16:46.285Z",
+          "system": true,
+          "noteable_id": 248534484,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 11998,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1727,7 +1727,7 @@ For string-decoding, the passed-in encoding argument needs to specify the\n string encoding (e.g., ENC_ASCII, ENC_UTF_8) as well as the format. For\n some XXX types, the format is constrained - for example for the encoding format\n for proto_tree_add_time_item() can only be one of the ENC_ISO_8601_* ones\n-or ENC_RFC_822 or ENC_RFC_1123. For proto_tree_add_bytes_item() it can only\n+or ENC_IMF_DATE_TIME. For proto_tree_add_bytes_item() it can only\n be ENC_STR_HEX bit-or'ed with one or more of the ENC_SEP_* separator types.\n \n proto_tree_add_protocol_format()\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "doc/README.dissector",
+      "old_path": "doc/README.dissector",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -97,6 +97,7 @@ static ws_enum_t all_enums[] = {\n     ENUM(ENC_EUC_KR),\n     ENUM(ENC_GB18030),\n     ENUM(ENC_HOST_ENDIAN),\n+    ENUM(ENC_IMF_DATE_TIME),\n     ENUM(ENC_ISO_646_BASIC),\n     ENUM(ENC_ISO_646_IRV),\n     ENUM(ENC_ISO_8601_DATE),\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/introspection-enums.c",
+      "old_path": "epan/introspection-enums.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -348,11 +348,15 @@ static expert_field ei_type_length_mismatch_error = EI_INIT;\n static expert_field ei_type_length_mismatch_warn = EI_INIT;\n static void register_type_length_mismatch(void);\n \n-/* Handle number string decoding errors with expert info */\n-static int proto_number_string_decoding_error = -1;\n-static expert_field ei_number_string_decoding_failed_error = EI_INIT;\n-static expert_field ei_number_string_decoding_erange_error = EI_INIT;\n-static void register_number_string_decodinws_error(void);\n+/* Handle byte array string decoding errors with expert info */\n+static int proto_byte_array_string_decoding_error = -1;\n+static expert_field ei_byte_array_string_decoding_failed_error = EI_INIT;\n+static void register_byte_array_string_decodinws_error(void);\n+\n+/* Handle date and time string decoding errors with expert info */\n+static int proto_date_time_string_decoding_error = -1;\n+static expert_field ei_date_time_string_decoding_failed_error = EI_INIT;\n+static void register_date_time_string_decodinws_error(void);\n \n /* Handle string errors expert info */\n static int proto_string_errors = -1;\n@@ -586,7 +590,8 @@ proto_init(GSList *register_all_plugin_protocols_list,\n \t/* Register the pseudo-protocols used for exceptions. */\n \tregister_show_exception();\n \tregister_type_length_mismatch();\n-\tregister_number_string_decodinws_error();\n+\tregister_byte_array_string_decodinws_error();\n+\tregister_date_time_string_decodinws_error();\n \tregister_string_errors();\n \tftypes_register_pseudofields();\n \tcol_register_protocol();\n@@ -4292,7 +4297,7 @@ proto_tree_add_bytes_item(proto_tree *tree, int hfindex, tvbuff_t *tvb,\n \tfield_info\t  *new_fi;\n \tGByteArray\t  *bytes = retval;\n \tGByteArray\t  *created_bytes = NULL;\n-\tgint\t\t   saved_err = 0;\n+\tgboolean\t   failed = FALSE;\n \tguint32\t\t   n = 0;\n \theader_field_info *hfinfo;\n \tgboolean\t   generate = (bytes || tree) ? TRUE : FALSE;\n@@ -4323,11 +4328,14 @@ proto_tree_add_bytes_item(proto_tree *tree, int hfindex, tvbuff_t *tvb,\n \t\t\tbytes = created_bytes = g_byte_array_new();\n \t\t}\n \n-\t\t/* bytes might be NULL after this, but can't add expert error until later */\n+\t\t/*\n+\t\t * bytes might be NULL after this, but can't add expert\n+\t\t * error until later; if it's NULL, just note that\n+\t\t * it failed.\n+\t\t */\n \t\tbytes = tvb_get_string_bytes(tvb, start, length, encoding, bytes, endoff);\n-\n-\t\t/* grab the errno now before it gets overwritten */\n-\t\tsaved_err = errno;\n+\t\tif (bytes == NULL)\n+\t\t\tfailed = TRUE;\n \t}\n \telse if (generate) {\n \t\ttvb_ensure_bytes_exist(tvb, start, length);\n@@ -4353,7 +4361,8 @@ proto_tree_add_bytes_item(proto_tree *tree, int hfindex, tvbuff_t *tvb,\n \t\t    *endoff = start + n + length;\n \t}\n \n-\tif (err) *err = saved_err;\n+\tif (err)\n+\t\t*err = failed ? EINVAL : 0;\n \n \tCHECK_FOR_NULL_TREE_AND_FREE(tree,\n \t\t{\n@@ -4375,10 +4384,8 @@ proto_tree_add_bytes_item(proto_tree *tree, int hfindex, tvbuff_t *tvb,\n \tnew_fi = new_field_info(tree, hfinfo, tvb, start, n + length);\n \n \tif (encoding & ENC_STRING) {\n-\t\tif (saved_err == ERANGE)\n-\t\t    expert_add_info(NULL, tree, &ei_number_string_decoding_erange_error);\n-\t\telse if (!bytes || saved_err != 0)\n-\t\t    expert_add_info(NULL, tree, &ei_number_string_decoding_failed_error);\n+\t\tif (failed)\n+\t\t    expert_add_info(NULL, tree, &ei_byte_array_string_decoding_failed_error);\n \n \t\tif (bytes)\n \t\t    proto_tree_set_bytes_gbytearray(new_fi, bytes);\n@@ -4430,9 +4437,8 @@ proto_tree_add_time_item(proto_tree *tree, int hfindex, tvbuff_t *tvb,\n \t\t * ENC_ISO_8601_TIME, and that is treated as an absolute time\n \t\t * relative to \"now\" currently.\n \t\t */\n-\t\ttvb_get_string_time(tvb, start, length, encoding, &time_stamp, endoff);\n-\t\t/* grab the errno now before it gets overwritten */\n-\t\tsaved_err = errno;\n+\t\tif (!tvb_get_string_time(tvb, start, length, encoding, &time_stamp, endoff))\n+\t\t\tsaved_err = EINVAL;\n \t}\n \telse {\n \t\tDISSECTOR_ASSERT_FIELD_TYPE_IS_TIME(hfinfo);\n@@ -4459,10 +4465,8 @@ proto_tree_add_time_item(proto_tree *tree, int hfindex, tvbuff_t *tvb,\n \tproto_tree_set_time(new_fi, &time_stamp);\n \n \tif (encoding & ENC_STRING) {\n-\t\tif (saved_err == ERANGE)\n-\t\t    expert_add_info(NULL, tree, &ei_number_string_decoding_erange_error);\n-\t\telse if (saved_err == EDOM)\n-\t\t    expert_add_info(NULL, tree, &ei_number_string_decoding_failed_error);\n+\t\tif (saved_err)\n+\t\t    expert_add_info(NULL, tree, &ei_date_time_string_decoding_failed_error);\n \t}\n \telse {\n \t\tFI_SET_FLAG(new_fi,\n@@ -9111,35 +9115,57 @@ register_type_length_mismatch(void)\n }\n \n static void\n-register_number_string_decodinws_error(void)\n+register_byte_array_string_decodinws_error(void)\n {\n \tstatic ei_register_info ei[] = {\n-\t\t{ &ei_number_string_decoding_failed_error,\n-\t\t\t{ \"_ws.number_string.decoding_error.failed\", PI_MALFORMED, PI_ERROR,\n-\t\t\t  \"Failed to decode number from string\", EXPFILL\n+\t\t{ &ei_byte_array_string_decoding_failed_error,\n+\t\t\t{ \"_ws.byte_array_string.decoding_error.failed\", PI_MALFORMED, PI_ERROR,\n+\t\t\t  \"Failed to decode byte array from string\", EXPFILL\n \t\t\t}\n \t\t},\n-\t\t{ &ei_number_string_decoding_erange_error,\n-\t\t\t{ \"_ws.number_string.decoding_error.erange\", PI_MALFORMED, PI_ERROR,\n-\t\t\t  \"Decoded number from string is out of valid range\", EXPFILL\n+\t};\n+\n+\texpert_module_t* expert_byte_array_string_decoding_error;\n+\n+\tproto_byte_array_string_decoding_error =\n+\t\tproto_register_protocol(\"Byte Array-String Decoding Error\",\n+\t\t\t\t\t\"Byte Array-string decoding error\",\n+\t\t\t\t\t\"_ws.byte_array_string.decoding_error\");\n+\n+\texpert_byte_array_string_decoding_error =\n+\t\texpert_register_protocol(proto_byte_array_string_decoding_error);\n+\texpert_register_field_array(expert_byte_array_string_decoding_error, ei, array_length(ei));\n+\n+\t/* \"Byte Array-String Decoding Error\" isn't really a protocol, it's an error indication;\n+\t   disabling them makes no sense. */\n+\tproto_set_cant_toggle(proto_byte_array_string_decoding_error);\n+}\n+\n+static void\n+register_date_time_string_decodinws_error(void)\n+{\n+\tstatic ei_register_info ei[] = {\n+\t\t{ &ei_date_time_string_decoding_failed_error,\n+\t\t\t{ \"_ws.date_time_string.decoding_error.failed\", PI_MALFORMED, PI_ERROR,\n+\t\t\t  \"Failed to decode date and time from string\", EXPFILL\n \t\t\t}\n \t\t},\n \t};\n \n-\texpert_module_t* expert_number_string_decoding_error;\n+\texpert_module_t* expert_date_time_string_decoding_error;\n \n-\tproto_number_string_decoding_error =\n-\t\tproto_register_protocol(\"Number-String Decoding Error\",\n-\t\t\t\t\t\"Number-string decoding error\",\n-\t\t\t\t\t\"_ws.number_string.decoding_error\");\n+\tproto_date_time_string_decoding_error =\n+\t\tproto_register_protocol(\"Date and Time-String Decoding Error\",\n+\t\t\t\t\t\"Date and Time-string decoding error\",\n+\t\t\t\t\t\"_ws.date_time_string.decoding_error\");\n \n-\texpert_number_string_decoding_error =\n-\t\texpert_register_protocol(proto_number_string_decoding_error);\n-\texpert_register_field_array(expert_number_string_decoding_error, ei, array_length(ei));\n+\texpert_date_time_string_decoding_error =\n+\t\texpert_register_protocol(proto_date_time_string_decoding_error);\n+\texpert_register_field_array(expert_date_time_string_decoding_error, ei, array_length(ei));\n \n-\t/* \"Number-String Decoding Error\" isn't really a protocol, it's an error indication;\n+\t/* \"Date and Time-String Decoding Error\" isn't really a protocol, it's an error indication;\n \t   disabling them makes no sense. */\n-\tproto_set_cant_toggle(proto_number_string_decoding_error);\n+\tproto_set_cant_toggle(proto_date_time_string_decoding_error);\n }\n \n static void\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/proto.c",
+      "old_path": "epan/proto.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -624,8 +624,9 @@ void proto_report_dissector_bug(const char *format, ...)\n #define ENC_ISO_8601_DATE             0x00010000\n #define ENC_ISO_8601_TIME             0x00020000\n #define ENC_ISO_8601_DATE_TIME        0x00030000\n-#define ENC_RFC_822                   0x00040000\n-#define ENC_RFC_1123                  0x00080000\n+#define ENC_IMF_DATE_TIME             0x00040000 /* Internet Message Format - RFCs 822, 1123, 2822, 5322 */\n+#define ENC_RFC_822                   0x00040000 /* backwards compatibility */\n+#define ENC_RFC_1123                  0x00080000 /* DEPRECATED - all of them support 2-digit dates, so don't use this */\n #define ENC_ISO_8601_DATE_TIME_BASIC  0x00100000\n /* a convenience macro for the above - for internal use only */\n #define ENC_STR_TIME_MASK             0x001F0000\n@@ -1679,7 +1680,7 @@ proto_tree_add_bytes_with_length(proto_tree *tree, int hfindex, tvbuff_t *tvb, g\n  @param encoding data encoding (e.g, ENC_LITTLE_ENDIAN, or ENC_UTF_8|ENC_STR_HEX)\n  @param[in,out] retval points to a GByteArray which will be set to the bytes from the Tvb.\n  @param[in,out] endoff if not NULL, gets set to the character after those consumed.\n- @param[in,out] err if not NULL, gets set to 0 if no failure, else the errno code (e.g., EDOM, ERANGE).\n+ @param[in,out] err if not NULL, gets set to 0 if no failure, else the errno code (e.g., EINVAL).\n  @return the newly created item, and retval is set to the decoded value\n  */\n WS_DLL_PUBLIC proto_item *\n@@ -1758,7 +1759,7 @@ proto_tree_add_time(proto_tree *tree, int hfindex, tvbuff_t *tvb, gint start,\n  @param encoding data encoding (e.g, ENC_LITTLE_ENDIAN, ENC_UTF_8|ENC_ISO_8601_DATE_TIME, etc.)\n  @param[in,out] retval points to a nstime_t which will be set to the value\n  @param[in,out] endoff if not NULL, gets set to the character after those consumed.\n- @param[in,out] err if not NULL, gets set to 0 if no failure, else the errno code (e.g., EDOM, ERANGE).\n+ @param[in,out] err if not NULL, gets set to 0 if no failure, else EINVAL.\n  @return the newly created item, and retval is set to the decoded value\n  */\n WS_DLL_PUBLIC proto_item *\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/proto.h",
+      "old_path": "epan/proto.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -29,6 +29,7 @@\n \n #include \"wsutil/pint.h\"\n #include \"wsutil/sign_ext.h\"\n+#include \"wsutil/strtoi.h\"\n #include \"wsutil/unicode-utils.h\"\n #include \"wsutil/nstime.h\"\n #include \"wsutil/time_util.h\"\n@@ -1743,8 +1744,6 @@ tvb_get_string_bytes(tvbuff_t *tvb, const gint offset, const gint length,\n \tconst gchar *end    = NULL;\n \tGByteArray  *retval = NULL;\n \n-\terrno = EDOM;\n-\n \tvalidate_single_byte_ascii_encoding(encoding);\n \n \tptr = (gchar*) tvb_get_raw_string(NULL, tvb, offset, length);\n@@ -1758,7 +1757,6 @@ tvb_get_string_bytes(tvbuff_t *tvb, const gint offset, const gint length,\n \t\tif (hex_str_to_bytes_encoding(begin, bytes, &end, encoding, FALSE)) {\n \t\t\tif (bytes->len > 0) {\n \t\t\t\tif (endoff) *endoff = offset + (gint)(end - ptr);\n-\t\t\t\terrno = 0;\n \t\t\t\tretval = bytes;\n \t\t\t}\n \t\t}\n@@ -1791,15 +1789,8 @@ tvb_get_string_time(tvbuff_t *tvb, const gint offset, const gint length,\n \tgchar *begin;\n \tconst gchar *ptr;\n \tconst gchar *end       = NULL;\n-\tstruct tm    tm;\n-\tnstime_t*    retval    = NULL;\n-\tchar\t     sign      = '+';\n-\tint\t     off_hr    = 0;\n-\tint\t     off_min   = 0;\n \tint\t     num_chars = 0;\n-\tgboolean     matched   = FALSE;\n-\n-\terrno = EDOM;\n+\tint\t     utc_offset = 0;\n \n \tvalidate_single_byte_ascii_encoding(encoding);\n \n@@ -1813,15 +1804,19 @@ tvb_get_string_time(tvbuff_t *tvb, const gint offset, const gint length,\n \tif (*ptr) {\n \t\tif ((encoding & ENC_ISO_8601_DATE_TIME) == ENC_ISO_8601_DATE_TIME) {\n \t\t\tif ((num_chars = iso8601_to_nstime(ns, ptr, ISO8601_DATETIME))) {\n-\t\t\t\terrno = 0;\n \t\t\t\tend = ptr + num_chars;\n+\t\t\t} else {\n+\t\t\t\tgoto fail;\n \t\t\t}\n \t\t} else if ((encoding & ENC_ISO_8601_DATE_TIME_BASIC) == ENC_ISO_8601_DATE_TIME_BASIC) {\n \t\t\tif ((num_chars = iso8601_to_nstime(ns, ptr, ISO8601_DATETIME_BASIC))) {\n-\t\t\t\terrno = 0;\n \t\t\t\tend = ptr + num_chars;\n+\t\t\t} else {\n+\t\t\t\tgoto fail;\n \t\t\t}\n \t\t} else {\n+\t\t\tstruct tm    tm;\n+\n \t\t\tmemset(&tm, 0, sizeof(tm));\n \t\t\ttm.tm_isdst = -1;\n \t\t\tns->secs    = 0;\n@@ -1838,10 +1833,11 @@ tvb_get_string_time(tvbuff_t *tvb, const gint offset, const gint length,\n \t\t\t\t    &tm.tm_mday,\n \t\t\t\t    &num_chars) >= 3)\n \t\t\t\t{\n-\t\t\t\t\terrno = 0;\n \t\t\t\t\tend = ptr + num_chars;\n \t\t\t\t\ttm.tm_mon--;\n \t\t\t\t\tif (tm.tm_year > 1900) tm.tm_year -= 1900;\n+\t\t\t\t} else {\n+\t\t\t\t\tgoto fail;\n \t\t\t\t}\n \t\t\t}\n \t\t\telse if (encoding & ENC_ISO_8601_TIME) {\n@@ -1867,89 +1863,172 @@ tvb_get_string_time(tvbuff_t *tvb, const gint offset, const gint length,\n \t\t\t\t\t\ttm.tm_mday = 31;\n \t\t\t\t\t}\n \t\t\t\t\tend = ptr + num_chars;\n-\t\t\t\t\terrno = 0;\n-\n+\t\t\t\t} else {\n+\t\t\t\t\tgoto fail;\n \t\t\t\t}\n \t\t\t}\n-\t\t\telse if (encoding & ENC_RFC_822 || encoding & ENC_RFC_1123) {\n+\t\t\telse if (encoding & ENC_IMF_DATE_TIME || encoding & ENC_RFC_1123) {\n \t\t\t\t/*\n-\t\t\t\t * Match [dow,] day month year hh:mm[:ss] with two-digit\n-\t\t\t\t * years (RFC 822) or four-digit years (RFC 1123). Skip\n-\t\t\t\t * the day of week since it is locale dependent and does\n-\t\t\t\t * not affect the resulting date anyway.\n+\t\t\t\t * Match [dow,] day month year hh:mm[:ss] with\n+\t\t\t\t * two-digit years (RFC 822) or four-digit\n+\t\t\t\t * years (RFCs 1123, 2822, 5822). Skip\n+\t\t\t\t * the day of week since it is locale\n+\t\t\t\t * dependent and does not affect the resulting\n+\t\t\t\t * date anyway.\n \t\t\t\t */\n \t\t\t\tif (g_ascii_isalpha(ptr[0]) && g_ascii_isalpha(ptr[1]) && g_ascii_isalpha(ptr[2]) && ptr[3] == ',')\n \t\t\t\t\tptr += 4;   /* Skip day of week. */\n+\n+\t\t\t\t/*\n+\t\t\t\t * Parse the day-of-month and month\n+\t\t\t\t * name.\n+\t\t\t\t */\n \t\t\t\tchar month_name[4] = { 0 };\n-\t\t\t\tif (sscanf(ptr, \"%d %3s %d %d:%d%n:%d%n\",\n+\n+\t\t\t\tif (sscanf(ptr, \"%d %3s%n\",\n \t\t\t\t    &tm.tm_mday,\n \t\t\t\t    month_name,\n-\t\t\t\t    &tm.tm_year,\n+\t\t\t\t    &num_chars) < 2) {\n+\t\t\t\t\t/* Not matched. */\n+\t\t\t\t\tgoto fail;\n+\t\t\t\t}\n+\t\t\t\tif (!parse_month_name(month_name, &tm.tm_mon)) {\n+\t\t\t\t\tgoto fail;\n+\t\t\t\t}\n+\t\t\t\tptr += num_chars;\n+\t\t\t\twhile (*ptr == ' ')\n+\t\t\t\t\tptr++;\n+\n+\t\t\t\t/*\n+\t\t\t\t * Scan the year.  Treat 2-digit years\n+\t\t\t\t * differently from 4-digit years.\n+\t\t\t\t */\n+\t\t\t\tguint32 year;\n+\t\t\t\tconst gchar *yearendp;\n+\n+\t\t\t\tif (!ws_strtou32(ptr, &yearendp, &year)) {\n+\t\t\t\t\tgoto fail;\n+\t\t\t\t}\n+\t\t\t\tif (*yearendp != ' ') {\n+\t\t\t\t\t/* Not followed by a space. */\n+\t\t\t\t\tgoto fail;\n+\t\t\t\t}\n+\t\t\t\tif (yearendp - ptr < 2) {\n+\t\t\t\t\t/* 1-digit year.  Error. */\n+\t\t\t\t\tgoto fail;\n+\t\t\t\t}\n+\t\t\t\tif (yearendp - ptr == 2) {\n+\t\t\t\t\t/*\n+\t\t\t\t\t * 2-digit year.\n+\t\t\t\t\t *\n+\t\t\t\t\t * Match RFC 2822/RFC 5322 behavior;\n+\t\t\t\t\t * add 2000 to years from 0 to\n+\t\t\t\t\t * 49 and 1900 to uears from 50\n+\t\t\t\t\t * to 99.\n+\t\t\t\t\t */\n+\t\t\t\t\tif (year <= 49) {\n+\t\t\t\t\t\tyear += 2000;\n+\t\t\t\t\t} else {\n+\t\t\t\t\t\tyear += 1900;\n+\t\t\t\t\t}\n+\t\t\t\t} else if (yearendp - ptr == 3) {\n+\t\t\t\t\t/*\n+\t\t\t\t\t * 3-digit year.\n+\t\t\t\t\t *\n+\t\t\t\t\t * Match RFC 2822/RFC 5322 behavior;\n+\t\t\t\t\t * add 1900 to the year.\n+\t\t\t\t\t */\n+\t\t\t\t\tyear += 1900;\n+\t\t\t\t}\n+\t\t\t\ttm.tm_year = year - 1900;\n+\t\t\t\tptr = yearendp;\n+\t\t\t\twhile (*ptr == ' ')\n+\t\t\t\t\tptr++;\n+\n+\t\t\t\t/* Parse the time. */\n+\t\t\t\tif (sscanf(ptr, \"%d:%d%n:%d%n\",\n \t\t\t\t    &tm.tm_hour,\n \t\t\t\t    &tm.tm_min,\n \t\t\t\t    &num_chars,\n \t\t\t\t    &tm.tm_sec,\n-\t\t\t\t    &num_chars) >= 5)\n+\t\t\t\t    &num_chars) < 2)\n \t\t\t\t{\n-\t\t\t\t\tif (encoding & ENC_RFC_822) {\n-\t\t\t\t\t\t/* Match strptime behavior: years 00-68\n-\t\t\t\t\t\t * are in the 21th century. */\n-\t\t\t\t\t\tif (tm.tm_year <= 68) {\n-\t\t\t\t\t\t\ttm.tm_year += 100;\n-\t\t\t\t\t\t\tmatched = TRUE;\n-\t\t\t\t\t\t} else if (tm.tm_year <= 99) {\n-\t\t\t\t\t\t\tmatched = TRUE;\n-\t\t\t\t\t\t}\n-\t\t\t\t\t} else if (encoding & ENC_RFC_1123) {\n-\t\t\t\t\t\ttm.tm_year -= 1900;\n-\t\t\t\t\t\tmatched = TRUE;\n-\t\t\t\t\t}\n-\t\t\t\t\tif (!parse_month_name(month_name, &tm.tm_mon))\n-\t\t\t\t\t\tmatched = FALSE;\n-\t\t\t\t\tif (matched)\n-\t\t\t\t\t\tend = ptr + num_chars;\n+\t\t\t\t\tgoto fail;\n \t\t\t\t}\n-\t\t\t\tif (end) {\n-\t\t\t\t\terrno = 0;\n-\t\t\t\t\tif (*end == ' ') end++;\n-\t\t\t\t\tif (g_ascii_strncasecmp(end, \"UT\", 2) == 0)\n-\t\t\t\t\t{\n-\t\t\t\t\t\tend += 2;\n-\t\t\t\t\t}\n-\t\t\t\t\telse if (g_ascii_strncasecmp(end, \"GMT\", 3) == 0)\n-\t\t\t\t\t{\n-\t\t\t\t\t\tend += 3;\n-\t\t\t\t\t}\n-\t\t\t\t\telse if (sscanf(end, \"%c%2d%2d%n\",\n+\t\t\t\tptr += num_chars;\n+\t\t\t\twhile (*ptr == ' ')\n+\t\t\t\t\tptr++;\n+\n+\t\t\t\t/*\n+\t\t\t\t * Parse the time zone.\n+\t\t\t\t * Check for obs-zone values first.\n+\t\t\t\t */\n+\t\t\t\tif (g_ascii_strncasecmp(ptr, \"UT\", 2) == 0)\n+\t\t\t\t{\n+\t\t\t\t\tptr += 2;\n+\t\t\t\t}\n+\t\t\t\telse if (g_ascii_strncasecmp(ptr, \"GMT\", 3) == 0)\n+\t\t\t\t{\n+\t\t\t\t\tptr += 3;\n+\t\t\t\t}\n+\t\t\t\telse\n+\t\t\t\t{\n+\t\t\t\t\tchar sign;\n+\t\t\t\t\tint off_hr;\n+\t\t\t\t\tint off_min;\n+\n+\t\t\t\t\tif (sscanf(ptr, \"%c%2d%2d%n\",\n \t\t\t\t\t    &sign,\n \t\t\t\t\t    &off_hr,\n \t\t\t\t\t    &off_min,\n \t\t\t\t\t    &num_chars) < 3)\n \t\t\t\t\t{\n-\t\t\t\t\t\terrno = ERANGE;\n+\t\t\t\t\t\tgoto fail;\n+\t\t\t\t\t}\n+\n+\t\t\t\t\t/*\n+\t\t\t\t\t * If sign is '+', there's a positive\n+\t\t\t\t\t * UTC offset.\n+\t\t\t\t\t *\n+\t\t\t\t\t * If sign is '-', there's a negative\n+\t\t\t\t\t * UTC offset.\n+\t\t\t\t\t *\n+\t\t\t\t\t * Otherwise, that's an invalid UTC\n+\t\t\t\t\t * offset string.\n+\t\t\t\t\t */\n+\t\t\t\t\tif (sign == '+')\n+\t\t\t\t\t\tutc_offset += (off_hr * 3600) + (off_min * 60);\n+\t\t\t\t\telse if (sign == '-')\n+\t\t\t\t\t\tutc_offset -= (off_hr * 3600) + (off_min * 60);\n+\t\t\t\t\telse {\n+\t\t\t\t\t\t/* Sign must be + or - */\n+\t\t\t\t\t\tgoto fail;\n \t\t\t\t\t}\n-\t\t\t\t\tif (sign == '-') off_hr = -off_hr;\n+\t\t\t\t\tptr += num_chars;\n \t\t\t\t}\n+\t\t\t\tend = ptr;\n \t\t\t}\n \t\t\tif (errno == 0) {\n-\t\t\t\tns->secs = mktime_utc (&tm);\n-\t\t\t\tif (off_hr > 0)\n-\t\t\t\t\tns->secs += (off_hr * 3600) + (off_min * 60);\n-\t\t\t\telse if (off_hr < 0)\n-\t\t\t\t\tns->secs -= ((-off_hr) * 3600) + (off_min * 60);\n+\t\t\t\tns->secs = mktime_utc(&tm);\n+\t\t\t\tif (ns->secs == (time_t)-1 && errno != 0) {\n+\t\t\t\t\tgoto fail;\n+\t\t\t\t}\n+\t\t\t\tns->secs += utc_offset;\n \t\t\t}\n \t\t}\n+\t} else {\n+\t\t/* Empty string */\n+\t\tgoto fail;\n \t}\n \n-\tif (errno == 0) {\n-\t\tretval = ns;\n-\t\tif (endoff)\n-\t\t    *endoff = (gint)(offset + (end - begin));\n-\t}\n-\n+\tif (endoff)\n+\t    *endoff = (gint)(offset + (end - begin));\n \twmem_free(NULL, begin);\n+\treturn ns;\n \n-\treturn retval;\n+fail:\n+\twmem_free(NULL, begin);\n+\treturn NULL;\n }\n \n /* Fetch an IPv4 address, in network byte order.\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/tvbuff.c",
+      "old_path": "epan/tvbuff.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -397,8 +397,8 @@ WS_DLL_PUBLIC gdouble tvb_get_ieee_double(tvbuff_t *tvb, const gint offset, cons\n  *     they may not consume the whole section.\n  *\n  * @return a pointer to the nstime_t passed-in, or NULL on failure; if no\n- *    valid conversion could be performed, *endoff is set to 0, and errno will be\n- *    EDOM or ERANGE, and the nstime_t* passed-in will be cleared.\n+ *    valid conversion could be performed, *endoff is set to 0,  and the\n+ *    nstime_t* passed-in will be cleared.\n  *\n  * @note The conversion ignores leading spaces, and will succeed even if it does\n  *    not consume the entire string. If you care about such things, always compare\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/tvbuff.h",
+      "old_path": "epan/tvbuff.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -20,8 +20,10 @@ local OTHER = \"other\"\n --     number of verifyFields() * (1 + number of fields) +\n --     number of verifyResults() * (1 + 2 * number of values)\n --\n+-- if one happens to know the number of fields and the number of values.\n+--\n local n_frames = 1\n-local taptests = { [FRAME]=n_frames, [OTHER]=413*n_frames }\n+local taptests = { [FRAME]=n_frames, [OTHER]=391*n_frames }\n \n testlib.init(taptests)\n \n@@ -741,46 +743,35 @@ function test_proto.dissector(tvbuf,pktinfo,root)\n     verifyResults(\"add_pfield-time-local\", autc_match_values)\n \n ----------------------------------------\n-    testlib.testing(OTHER, \"tree:add_packet_field Time string ENC_RFC_822\")\n+    testlib.testing(OTHER, \"tree:add_packet_field Time string ENC_IMF_DATE_TIME\")\n \n     resetResults()\n     autc_match_values = {}\n \n-    local rfc822string1 =   \"Fri, 01 Mar 13 22:14:48 GMT\"  -- this is 1362176088 seconds epoch time\n-    local rfc822_tvb1 = ByteArray.new(rfc822string1, true):tvb(\"RFC 822 Time string 1\")\n-    local rfc822string2 = \"  Fri, 01 Mar 13 22:14:48 GMT\"  -- this is 1362176088 seconds epoch time\n-    local rfc822_tvb2 = ByteArray.new(rfc822string2 .. \"  foobar\", true):tvb(\"RFC 822 Time string 2\")\n-\n-    testlib.test(OTHER, \"add_pfield-time-local\", treeAddPField ( tree, AUTC, rfc822_tvb1:range(), ENC_RFC_822) )\n-    addMatch( NSTime( 1362176088, 0), string.len(rfc822string1))\n-\n-    testlib.test(OTHER, \"add_pfield-time-local\", treeAddPField ( tree, AUTC, rfc822_tvb2:range(), ENC_RFC_822) )\n-    addMatch( NSTime( 1362176088, 0), string.len(rfc822string2))\n-\n-    verifyFields(\"time.ABSOLUTE_UTC\", autc_match_fields)\n-\n-    verifyResults(\"add_pfield-rfc822-local\", autc_match_values)\n-\n-----------------------------------------\n-    testlib.testing(OTHER, \"tree:add_packet_field Time string ENC_RFC_1123\")\n+    local imfstring1 =   \"Fri, 01 Mar 13 22:14:48 GMT\"  -- this is 1362176088 seconds epoch time\n+    local imf_tvb1 = ByteArray.new(imfstring1, true):tvb(\"Internet Message Format Time string 1\")\n+    local imfstring2 = \"  Fri, 01 Mar 13 22:14:48 GMT\"  -- this is 1362176088 seconds epoch time\n+    local imf_tvb2 = ByteArray.new(imfstring2 .. \"  foobar\", true):tvb(\"Internet Message Format Time string 2\")\n+    local imfstring3 =   \"Fri, 01 Mar 2013 22:14:48 GMT\"  -- this is 1362176088 seconds epoch time\n+    local imf_tvb3 = ByteArray.new(imfstring3, true):tvb(\"Internet Message Format Time string 3\")\n+    local imfstring4 = \"  Fri, 01 Mar 2013 22:14:48 GMT\"  -- this is 1362176088 seconds epoch time\n+    local imf_tvb4 = ByteArray.new(imfstring4 .. \"  foobar\", true):tvb(\"Internet Message Format Time string 4\")\n \n-    resetResults()\n-    autc_match_values = {}\n+    testlib.test(OTHER, \"add_pfield-time-local\", treeAddPField ( tree, AUTC, imf_tvb1:range(), ENC_IMF_DATE_TIME) )\n+    addMatch( NSTime( 1362176088, 0), string.len(imfstring1))\n \n-    local rfc1123string1 =   \"Fri, 01 Mar 2013 22:14:48 GMT\"  -- this is 1362176088 seconds epoch time\n-    local rfc1123_tvb1 = ByteArray.new(rfc1123string1, true):tvb(\"RFC 1123 Time string 1\")\n-    local rfc1123string2 = \"  Fri, 01 Mar 2013 22:14:48 GMT\"  -- this is 1362176088 seconds epoch time\n-    local rfc1123_tvb2 = ByteArray.new(rfc1123string2 .. \"  foobar\", true):tvb(\"RFC 1123 Time string 2\")\n+    testlib.test(OTHER, \"add_pfield-time-local\", treeAddPField ( tree, AUTC, imf_tvb2:range(), ENC_IMF_DATE_TIME) )\n+    addMatch( NSTime( 1362176088, 0), string.len(imfstring2))\n \n-    testlib.test(OTHER, \"add_pfield-time-local\", treeAddPField ( tree, AUTC, rfc1123_tvb1:range(), ENC_RFC_1123) )\n-    addMatch( NSTime( 1362176088, 0), string.len(rfc1123string1))\n+    testlib.test(OTHER, \"add_pfield-time-local\", treeAddPField ( tree, AUTC, imf_tvb3:range(), ENC_IMF_DATE_TIME) )\n+    addMatch( NSTime( 1362176088, 0), string.len(imfstring3))\n \n-    testlib.test(OTHER, \"add_pfield-time-local\", treeAddPField ( tree, AUTC, rfc1123_tvb2:range(), ENC_RFC_1123) )\n-    addMatch( NSTime( 1362176088, 0), string.len(rfc1123string2))\n+    testlib.test(OTHER, \"add_pfield-time-local\", treeAddPField ( tree, AUTC, imf_tvb4:range(), ENC_IMF_DATE_TIME) )\n+    addMatch( NSTime( 1362176088, 0), string.len(imfstring4))\n \n     verifyFields(\"time.ABSOLUTE_UTC\", autc_match_fields)\n \n-    verifyResults(\"add_pfield-rfc1123-local\", autc_match_values)\n+    verifyResults(\"add_pfield-imf-date-time-local\", autc_match_values)\n \n ----------------------------------------\n     testlib.testing(OTHER, \"tree:add_packet_field Time string ENC_ISO_8601_DATE_TIME_BASIC\")\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/lua/tvb.lua",
+      "old_path": "test/lua/tvb.lua",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "5dbe4ee8a85f09e21cea99254e1931a86b3ce08e",
+      "short_id": "5dbe4ee8",
+      "created_at": "2023-09-07T19:03:02.000-07:00",
+      "parent_ids": [
+        "79ff5944394dd67d235f093aaee2c0cb5f4245fa"
+      ],
+      "title": "Clean up handling of string encodings for byte arrays and absolute times.",
+      "message": "Clean up handling of string encodings for byte arrays and absolute times.\n\nThere is no reason to have separate \"RFC 822\" and \"RFC 1123\" parsing of\nInternet Message Format date/time values.  RFC 1123 adds support for\n4-digit years to RFC 822's 2-digit years; RFC 2822, which supplanted RFC\n822, supports both, and RFC 5322, which supplanted RFC 2822, continues\nto do so.  I know of no cases where *only* 2-digit years should be\nsupported, especially given that it has beenover 23 years since January\n1, 2000.\n\nInstead, have ENC_IMF_DATE_TIME for Internet Message Format date/time\nvalues; keep ENC_RFC_1123 for backwards compatibility, but treat it\nexactly the same as ENC_IMF_DATE_TIME.  Keep ENC_RFC_822 around as an\nalias for ENC_IMF_DATE_TIME.\n\nHave separate expert infos for errors parsing string-encoded byte arrays\nand string-encoded dates and times, with the messages speaking of byte\narrays and dates/times rather than \"numbers\".  For now, have the only\nerror being \"couldn't convert\"; we can add more for specific cases of\nwhat's wrong.\n\nIn tvb_get_string_bytes() and tvb_get_string_time(), don't use errno as\na way of indicating failure, use a return of NULL. Using errno 1) runs\nthe risk of getting errno overwritten by intermediate calls and 2)\nwould force assinging particular errno values, the set of which we don't\ncontrol, to particular errors if we were to distinguish different errors\nin the future.\n\nIn tvb_get_string_time(), for Internet Message Format date/time values,\ncheck for 2-digit and 3-digit years based on the length of the year\nfield in the string.  Handle them the way the RFCs say, not the way\nstrptime() does (strptime(), which was originally written to allow\nprograms to ask the user to specify a date and time and let them enter\nit in the locale's date and time format, and to use 2-digit years in\ncase they were in the habit of doing so, which they might have been\ngiven that this was the mid 1980's; the choice of 1969 as the first \"not\n21st century\" year was based on the fact that it was the earliest year\nfor a date correspnding to a non-negative time_t value, which is\nUNIX-specific, unlike the Internet Message Format).\n\nChange tvb_get_string_time() to use guard clauses to handle errors; yes\nit involves gotos, but it's easier to read than nested ifs, for example.\n\nUpdate the Lua unit tests to reflect this.\n",
+      "author_name": "Guy Harris",
+      "author_email": "gharris@sonic.net",
+      "authored_date": "2023-09-07T18:59:31.000-07:00",
+      "committer_name": "Guy Harris",
+      "committer_email": "gharris@sonic.net",
+      "committed_date": "2023-09-07T19:03:02.000-07:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/5dbe4ee8a85f09e21cea99254e1931a86b3ce08e"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 782606859,
+      "head_commit_sha": "5dbe4ee8a85f09e21cea99254e1931a86b3ce08e",
+      "base_commit_sha": "79ff5944394dd67d235f093aaee2c0cb5f4245fa",
+      "start_commit_sha": "79ff5944394dd67d235f093aaee2c0cb5f4245fa",
+      "created_at": "2023-09-08T02:03:33.344Z",
+      "merge_request_id": 248534484,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": null
+    }
+  ]
+}

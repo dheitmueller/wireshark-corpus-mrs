@@ -1,0 +1,329 @@
+{
+  "id": 262290749,
+  "iid": 13120,
+  "project_id": 7898047,
+  "title": "sharkd: Fix displayed delta times in \"frames\" method",
+  "description": "As noted in #17923, commit c4731738 broke timereferences and displayed\ndelta time (`frame.time_delta_displayed`) in the `frames` method of\n`sharkd`.  This commit adds back to `sharkd_session_process_frames`\nthe local variables `prev_dis_num`, `current_ref_frame` and\n`ref_frame` which are used to determine the `frame_ref_num` and\n`prev_dis_num` arguments to each call to `sharkd_dissect_request` in\nthe main loop of `sharkd_session_process_frames`.\n\nBelow is an example on `master` (`b7cc44eb34`, specifically) of a\n`frames` request for packets 1 and 800 of the capture\n`./test/captures/logistics_multicast.pcapng` where we ask for columns\n`frame.time_relative`, `frame.time_delta` and\n`frame.time_delta_displayed`:\n\n    # ./cmake-build-debug/run/sharkd -\n    Running as user \"root\" and group \"root\". This could be dangerous.\n    Hello in child.\n    {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"load\",\"params\":{\"file\":\"./test/captures/logistics_multicast.pcapng\"}}\n    load: filename=./test/captures/logistics_multicast.pcapng\n    {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}}\n    {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"frames\",\"params\":{\"filter\":\"frame.number==1||frame.number==800\",\"column0\":\"frame.time_relative:1\",\"column1\":\"frame.time_delta:1\",\"column2\":\"frame.time_delta_displayed:1\"}}\n    {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":[{\"c\":[\"0.000000000\",\"0.000000000\",\"0.000000000\"],\"num\":1},{\"c\":[\"191.872111000\",\"0.193716000\",\"0.193716000\"],\"num\":800}]}\n\nNote that the `frame.time_delta_displayed` column value for packet 800\nis `0.193716000`, which is time difference between it and packet 799,\nnot packet 1.\n\nCompare this to the same `frames` request using the changes from this\ncommit:\n\n    # ./cmake-build-debug/run/sharkd -\n    Running as user \"root\" and group \"root\". This could be dangerous.\n    Hello in child.\n    {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"load\",\"params\":{\"file\":\"./test/captures/logistics_multicast.pcapng\"}}\n    load: filename=./test/captures/logistics_multicast.pcapng\n    {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}}\n    {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"frames\",\"params\":{\"filter\":\"frame.number==1||frame.number==800\",\"column0\":\"frame.time_relative:1\",\"column1\":\"frame.time_delta:1\",\"column2\":\"frame.time_delta_displayed:1\"}}\n    {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":[{\"c\":[\"0.000000000\",\"0.000000000\",\"0.000000000\"],\"num\":1},{\"c\":[\"191.872111000\",\"0.193716000\",\"191.872111000\"],\"num\":800}]}\n\nNote that the `frame.time_delta_displayed` column value for packet 800\nis now `191.872111000`, the time difference between it and packet 1.\nThis is the expected value since only packets 1 and 800 are visible\ndue to the request's `filter` parameter.\n\nA new `test_sharkd_req_frames_delta_times` unit test has been added to\nverify this fix and prevent it the bug from being accidentally\nsneaking in again.  If this fix is accepted, this change should\nprobably be cherry-picked to the `release-4.2` branch.\n\nFixes #17923.\n\n\n(cherry picked from commit 99a7079bc0ea8a377968f3dc893e8060ff520128)",
+  "state": "merged",
+  "created_at": "2023-11-07T21:50:53.705Z",
+  "updated_at": "2023-11-07T22:02:32.571Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2023-11-07T22:02:30.850Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-4.0",
+  "source_branch": "cherry-pick-99a7079b",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789776024",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 7898047,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "6695d3189d4300411aef0e72cb95f96d75b049c4",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-11-07T21:50:59.857Z",
+  "reference": "!13120",
+  "references": {
+    "short": "!13120",
+    "relative": "!13120",
+    "full": "wireshark/wireshark!13120"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/13120",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2023-11-07T21:50:56.349Z",
+  "latest_build_finished_at": "2023-11-07T22:02:14.979Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1064411118,
+    "iid": 55611,
+    "project_id": 7898047,
+    "sha": "6695d3189d4300411aef0e72cb95f96d75b049c4",
+    "ref": "refs/merge-requests/13120/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-11-07T21:50:55.246Z",
+    "updated_at": "2023-11-07T22:02:15.044Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1064411118"
+  },
+  "head_pipeline": {
+    "id": 1064411118,
+    "iid": 55611,
+    "project_id": 7898047,
+    "sha": "6695d3189d4300411aef0e72cb95f96d75b049c4",
+    "ref": "refs/merge-requests/13120/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-11-07T21:50:55.246Z",
+    "updated_at": "2023-11-07T22:02:15.044Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1064411118",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 5636682,
+      "username": "guyharris",
+      "public_email": "",
+      "name": "Guy Harris",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+      "web_url": "https://gitlab.com/guyharris"
+    },
+    "started_at": "2023-11-07T21:50:56.349Z",
+    "finished_at": "2023-11-07T22:02:14.979Z",
+    "committed_at": null,
+    "duration": 678,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1064411118",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "75bc9a22872e2ac8c17973fe084048cfcc276da1",
+    "head_sha": "6695d3189d4300411aef0e72cb95f96d75b049c4",
+    "start_sha": "75bc9a22872e2ac8c17973fe084048cfcc276da1"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "6520c4e2cd2e4058ae8f3e0fcabd8c2ed37900bd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1638119686,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-11-07T21:51:00.021Z",
+          "updated_at": "2023-11-07T21:51:00.035Z",
+          "system": true,
+          "noteable_id": 262290749,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13120,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1d977b2f90087d30a9f445b5a8fd7517522fe5a6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1638119883,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2023-11-07T21:51:15.832Z",
+          "updated_at": "2023-11-07T21:51:15.848Z",
+          "system": true,
+          "noteable_id": 262290749,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13120,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "Binary files /dev/null and b/test/captures/logistics_multicast.pcapng differ\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/captures/logistics_multicast.pcapng",
+      "old_path": "test/captures/logistics_multicast.pcapng",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -183,6 +183,22 @@ class case_sharkd(subprocesstest.SubprocessTestCase):\n             },\n         ))\n \n+    def test_sharkd_req_frames_delta_times(self, check_sharkd_session, capture_file):\n+        check_sharkd_session((\n+            {\"jsonrpc\":\"2.0\", \"id\":1, \"method\":\"load\",\n+             \"params\":{\"file\": capture_file('logistics_multicast.pcapng')}\n+             },\n+            {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"frames\",\"params\":{\"filter\":\"frame.number==1||frame.number==800\",\"column0\":\"frame.time_relative:1\",\"column1\":\"frame.time_delta:1\",\"column2\":\"frame.time_delta_displayed:1\"}},\n+        ), (\n+            {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}},\n+            {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":\n+                [\n+                    {\"c\":[\"0.000000000\",\"0.000000000\",\"0.000000000\"],\"num\":1,\"bg\":\"feffd0\",\"fg\":\"12272e\"},\n+                    {\"c\":[\"191.872111000\",\"0.193716000\",\"191.872111000\"],\"num\":800,\"bg\":\"feffd0\",\"fg\":\"12272e\"},\n+                ],\n+            },\n+        ))\n+\n     def test_sharkd_req_tap_invalid(self, check_sharkd_session, capture_file):\n         # XXX Unrecognized taps result in an empty line, modify\n         #     run_sharkd_session such that checking for it is possible.\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_sharkd.py",
+      "old_path": "test/suite_sharkd.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1403,7 +1403,8 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun\n \n     const guint8 *filter_data = NULL;\n \n-    guint32 next_ref_frame = G_MAXUINT32;\n+    guint32 prev_dis_num = 0;\n+    guint32 current_ref_frame = 0, next_ref_frame = G_MAXUINT32;\n     guint32 skip;\n     guint32 limit;\n \n@@ -1471,6 +1472,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun\n     for (guint32 framenum = 1; framenum <= cfile.count; framenum++)\n     {\n         frame_data *fdata;\n+        guint32 ref_frame = (framenum != 1) ? 1 : 0;\n         enum dissect_request_status status;\n         int err;\n         gchar *err_info;\n@@ -1481,6 +1483,7 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun\n         if (skip)\n         {\n             skip--;\n+            prev_dis_num = framenum;\n             continue;\n         }\n \n@@ -1488,11 +1491,15 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun\n         {\n             if (framenum >= next_ref_frame)\n             {\n+                current_ref_frame = next_ref_frame;\n+\n                 if (*tok_refs != ',')\n                     next_ref_frame = G_MAXUINT32;\n \n                 while (*tok_refs == ',' && framenum >= next_ref_frame)\n                 {\n+                    current_ref_frame = next_ref_frame;\n+\n                     if (!ws_strtou32(tok_refs + 1, &tok_refs, &next_ref_frame))\n                     {\n                         fprintf(stderr, \"sharkd_session_process_frames() wrong format for refs: %s\\n\", tok_refs);\n@@ -1502,14 +1509,18 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun\n \n                 if (*tok_refs == '\\0' && framenum >= next_ref_frame)\n                 {\n+                    current_ref_frame = next_ref_frame;\n                     next_ref_frame = G_MAXUINT32;\n                 }\n             }\n+\n+            if (current_ref_frame)\n+                ref_frame = current_ref_frame;\n         }\n \n         fdata = sharkd_get_frame(framenum);\n         status = sharkd_dissect_request(framenum,\n-                (framenum != 1) ? 1 : 0, framenum - 1,\n+                ref_frame, prev_dis_num,\n                 &rec, &rec_buf, cinfo,\n                 (fdata->color_filter == NULL) ? SHARKD_DISSECT_FLAG_COLOR : SHARKD_DISSECT_FLAG_NULL,\n                 &sharkd_session_process_frames_cb, NULL,\n@@ -1532,6 +1543,8 @@ sharkd_session_process_frames(const char *buf, const jsmntok_t *tokens, int coun\n                 break;\n         }\n \n+        prev_dis_num = framenum;\n+\n         if (limit && --limit == 0)\n             break;\n     }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd_session.c",
+      "old_path": "sharkd_session.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "6695d3189d4300411aef0e72cb95f96d75b049c4",
+      "short_id": "6695d318",
+      "created_at": "2023-11-07T21:50:43.000+00:00",
+      "parent_ids": [
+        "75bc9a22872e2ac8c17973fe084048cfcc276da1"
+      ],
+      "title": "sharkd: Fix displayed delta times in \"frames\" method",
+      "message": "sharkd: Fix displayed delta times in \"frames\" method\n\nAs noted in #17923, commit c4731738 broke timereferences and displayed\ndelta time (`frame.time_delta_displayed`) in the `frames` method of\n`sharkd`.  This commit adds back to `sharkd_session_process_frames`\nthe local variables `prev_dis_num`, `current_ref_frame` and\n`ref_frame` which are used to determine the `frame_ref_num` and\n`prev_dis_num` arguments to each call to `sharkd_dissect_request` in\nthe main loop of `sharkd_session_process_frames`.\n\nBelow is an example on `master` (`b7cc44eb34`, specifically) of a\n`frames` request for packets 1 and 800 of the capture\n`./test/captures/logistics_multicast.pcapng` where we ask for columns\n`frame.time_relative`, `frame.time_delta` and\n`frame.time_delta_displayed`:\n\n    # ./cmake-build-debug/run/sharkd -\n    Running as user \"root\" and group \"root\". This could be dangerous.\n    Hello in child.\n    {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"load\",\"params\":{\"file\":\"./test/captures/logistics_multicast.pcapng\"}}\n    load: filename=./test/captures/logistics_multicast.pcapng\n    {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}}\n    {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"frames\",\"params\":{\"filter\":\"frame.number==1||frame.number==800\",\"column0\":\"frame.time_relative:1\",\"column1\":\"frame.time_delta:1\",\"column2\":\"frame.time_delta_displayed:1\"}}\n    {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":[{\"c\":[\"0.000000000\",\"0.000000000\",\"0.000000000\"],\"num\":1},{\"c\":[\"191.872111000\",\"0.193716000\",\"0.193716000\"],\"num\":800}]}\n\nNote that the `frame.time_delta_displayed` column value for packet 800\nis `0.193716000`, which is time difference between it and packet 799,\nnot packet 1.\n\nCompare this to the same `frames` request using the changes from this\ncommit:\n\n    # ./cmake-build-debug/run/sharkd -\n    Running as user \"root\" and group \"root\". This could be dangerous.\n    Hello in child.\n    {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"load\",\"params\":{\"file\":\"./test/captures/logistics_multicast.pcapng\"}}\n    load: filename=./test/captures/logistics_multicast.pcapng\n    {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"status\":\"OK\"}}\n    {\"jsonrpc\":\"2.0\", \"id\":2, \"method\":\"frames\",\"params\":{\"filter\":\"frame.number==1||frame.number==800\",\"column0\":\"frame.time_relative:1\",\"column1\":\"frame.time_delta:1\",\"column2\":\"frame.time_delta_displayed:1\"}}\n    {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":[{\"c\":[\"0.000000000\",\"0.000000000\",\"0.000000000\"],\"num\":1},{\"c\":[\"191.872111000\",\"0.193716000\",\"191.872111000\"],\"num\":800}]}\n\nNote that the `frame.time_delta_displayed` column value for packet 800\nis now `191.872111000`, the time difference between it and packet 1.\nThis is the expected value since only packets 1 and 800 are visible\ndue to the request's `filter` parameter.\n\nA new `test_sharkd_req_frames_delta_times` unit test has been added to\nverify this fix and prevent it the bug from being accidentally\nsneaking in again.  If this fix is accepted, this change should\nprobably be cherry-picked to the `release-4.2` branch.\n\nFixes #17923.\n\n\n(cherry picked from commit 99a7079bc0ea8a377968f3dc893e8060ff520128)",
+      "author_name": "Niels Widger",
+      "author_email": "niels@qacafe.com",
+      "authored_date": "2023-11-07T10:51:21.000-05:00",
+      "committer_name": "Guy Harris",
+      "committer_email": "gharris@sonic.net",
+      "committed_date": "2023-11-07T21:50:43.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/6695d3189d4300411aef0e72cb95f96d75b049c4"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 838148118,
+      "head_commit_sha": "6695d3189d4300411aef0e72cb95f96d75b049c4",
+      "base_commit_sha": "75bc9a22872e2ac8c17973fe084048cfcc276da1",
+      "start_commit_sha": "75bc9a22872e2ac8c17973fe084048cfcc276da1",
+      "created_at": "2023-11-07T21:50:54.082Z",
+      "merge_request_id": 262290749,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": "13de5dd62e9fe372a7c1bbe651a69c53ac587436"
+    }
+  ]
+}

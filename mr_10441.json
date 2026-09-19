@@ -1,0 +1,757 @@
+{
+  "id": 219609631,
+  "iid": 10441,
+  "project_id": 7898047,
+  "title": "Fix SSHv2 decryption support after closing and reopening a capture file",
+  "description": "This PR fixes the faulty behaviour of the SSH keylog file handling within the SSH packet dissector. As of now, the dissector initializes the hash table containing the cryptographic keys within `proto_register_ssh`. The hash table is then populated with entries from the configured keylog file in `ssh_keylog_hash_write_secret()` by calling `ssh_keylog_read_file()`.\n\nHowever, all entries of the hash table are file scoped thus being destroyed when closing the capture file. This is not true for the hash table and the file pointer itself which maintain their state across different capture files and are only free'd on program exit. As the file pointer is not being reset, `ssh_keylog_read_file()` will not re-read the keylog file in subsequent calls - even across different capture files. As a consequence, decryption breaks (since keys and entries of the hash table have been free'd) whenever a SSH capture file is being reopened.\n\nI added a proper `ssh_init` and `ssh_cleanup` method to the dissector and registered them with Wireshark. `ssh_init` will create a new hash table and populate it via `ssh_keylog_read_file()` while `ssh_cleanup` will properly destroy the very same table as well as the file pointer. As a consequence, `ssh_keylog_read_file()` has been removed from `ssh_keylog_hash_write_secret()`. The overall concept has been adapted from the TLS packet dissector.",
+  "state": "merged",
+  "created_at": "2023-04-24T14:46:02.244Z",
+  "updated_at": "2023-04-27T08:55:35.886Z",
+  "merged_by": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merge_user": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "merged_at": "2023-04-26T02:54:38.309Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix/ssh2-keylog-scope",
+  "user_notes_count": 4,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 14343997,
+    "username": "Skrillor",
+    "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+    "name": "Fabian Bäumer",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+    "web_url": "https://gitlab.com/Skrillor"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 45349681,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "d6f2ecc8e0656ef0331823551fbbc82b92e363c3",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-04-24T14:46:08.326Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10441",
+  "references": {
+    "short": "!10441",
+    "relative": "!10441",
+    "full": "wireshark/wireshark!10441"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10441",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2023-04-26T00:22:12.148Z",
+  "latest_build_finished_at": "2023-04-26T00:44:54.980Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 848949089,
+    "iid": 45357,
+    "project_id": 7898047,
+    "sha": "d6f2ecc8e0656ef0331823551fbbc82b92e363c3",
+    "ref": "refs/merge-requests/10441/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-04-26T00:22:11.151Z",
+    "updated_at": "2023-04-26T00:44:54.990Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/848949089"
+  },
+  "head_pipeline": {
+    "id": 848949089,
+    "iid": 45357,
+    "project_id": 7898047,
+    "sha": "d6f2ecc8e0656ef0331823551fbbc82b92e363c3",
+    "ref": "refs/merge-requests/10441/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-04-26T00:22:11.151Z",
+    "updated_at": "2023-04-26T00:44:54.990Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/848949089",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764551,
+      "username": "johnthacker",
+      "public_email": "",
+      "name": "John Thacker",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+      "web_url": "https://gitlab.com/johnthacker"
+    },
+    "started_at": "2023-04-26T00:22:12.148Z",
+    "finished_at": "2023-04-26T00:44:54.980Z",
+    "committed_at": null,
+    "duration": 1362,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/848949089",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "872285a643be5663a35d376f7a4539fc053ed0c8",
+    "head_sha": "d6f2ecc8e0656ef0331823551fbbc82b92e363c3",
+    "start_sha": "872285a643be5663a35d376f7a4539fc053ed0c8"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "261cfd760d58ad4e358f926a217f5b06445ac256",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1366590449,
+          "type": "DiffNote",
+          "body": "This is here in `ssh_keylog_hash_write_secret` to handle the case where the keylog file has been overwritten since the last time it was called. (See the `file_needs_reopen()` call.) Removing it means that if the keylog file has been changed, the capture file has to be reloaded.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-04-25T11:36:26.188Z",
+          "updated_at": "2023-04-25T11:36:26.188Z",
+          "system": false,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+            "start_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+            "head_sha": "9253b559c1698e5ffdb9cad5c4a14b8a8c85ce06",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": 2193,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_2193_2209",
+                "type": "old",
+                "old_line": 2193,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_2193_2209",
+                "type": "old",
+                "old_line": 2193,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "resolved_at": "2023-04-25T15:09:37.662Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        },
+        {
+          "id": 1366608437,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/10441/diffs?diff_id=664821598&start_sha=9253b559c1698e5ffdb9cad5c4a14b8a8c85ce06#1bf6e4005e105405db89acc9c1073c2f14004190_2209_2210)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-25T11:48:21.281Z",
+          "updated_at": "2023-04-25T11:48:21.281Z",
+          "system": true,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+            "start_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+            "head_sha": "9253b559c1698e5ffdb9cad5c4a14b8a8c85ce06",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": 2193,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_2193_2209",
+                "type": "old",
+                "old_line": 2193,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_2193_2209",
+                "type": "old",
+                "old_line": 2193,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        },
+        {
+          "id": 1366621519,
+          "type": "DiffNote",
+          "body": "Thanks for pointing that out. I didn't think about possible changes in the keylog file while capturing. I reverted this removal. However, having `ssh_keylog_read_file()` here may introduce inconsistencies with the hash table as the hash table is never emptied (via `g_hash_table_remove_all`) nor destroyed (via `g_hash_table_destroy`) before reopening the keylog file. Therefore, entries which were present in the keylog file during a previous call will remain stored in the hash table until the capture file is closed (and `ssh_cleanup()` is being called). If we think about the change in keylog as a simple appending another key this doesn't cause any problems. If the file can be replaced entirely, one may want to clear the hash table before reopening the keylog file.",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-25T11:57:30.498Z",
+          "updated_at": "2023-04-25T11:57:30.498Z",
+          "system": false,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+            "start_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+            "head_sha": "9253b559c1698e5ffdb9cad5c4a14b8a8c85ce06",
+            "old_path": "epan/dissectors/packet-ssh.c",
+            "new_path": "epan/dissectors/packet-ssh.c",
+            "position_type": "text",
+            "old_line": 2193,
+            "new_line": null,
+            "line_range": {
+              "start": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_2193_2209",
+                "type": "old",
+                "old_line": 2193,
+                "new_line": null
+              },
+              "end": {
+                "line_code": "1bf6e4005e105405db89acc9c1073c2f14004190_2193_2209",
+                "type": "old",
+                "old_line": 2193,
+                "new_line": null
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "resolved_at": "2023-04-25T15:09:37.662Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "32c3de7bb998586c00c9fb8b861cf7c972a4aa1b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1366608440,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>14d02835 - revert(ssh2): ssh_keylog_read_file() removal</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10441/diffs?diff_id=664821598&start_sha=9253b559c1698e5ffdb9cad5c4a14b8a8c85ce06)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-25T11:48:21.462Z",
+          "updated_at": "2023-04-25T11:48:21.464Z",
+          "system": true,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c67290dc47cdd6374142711f00e1be9599b09d13",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1366628676,
+          "type": null,
+          "body": "Right now this ssh code is based on what's in tls and wireguard (so @Lekensteyn may have comments).\n\nThe implementation uses a `g_hash_table()` so that the keylog file is read and processed only when needed, and if and only if it has changed since the last time it was read. It is less efficient to process it once per file loading, as that means unnecessary extra file reads when a file is reopened - even if a capture file does not have any ssh, as all init routines are called - and that also means that files have to be reloaded if the file changes.\n\nIt's true that the entries of the hash table should not be file scoped if a `g_hash_table()` is used. `ssh_kex_make_bignum` always creates file scoped entries. They could (as with wireguard or tls) be copied to glib allocated members, and freed when the hash table is destroyed by creating the hash table with `g_hash_table_new_full()` appropriately.\n\nWith wireguard and TLS, there is also a UAT, so there's a shutdown routine for the UAT that destroys the keys. Without a UAT, you would call `register_shutdown_routine()` instead of `register_cleanup_routine()` to ensure that the hash table is freed at exit (and possibly also call `g_hash_table_remove_all()` when resetting the key log file when it has changed, to evict the old copies - wireguard doesn't do that when just the keylog file changes, only when the UAT does; I'm not sure if that's intentional.)\n\nAnother option is to copy the file scope entries to epan scoped entries, and use a `wmem_map_t` that is epan scoped instead of a `g_hash_table`. That would use more memory if the map was cleared when the keylog file was changed (unless the values are explicitly `wmem_free()`d upon removal), but might be simpler to manage the memory in another sense.\n\nLast option is to make the map a `wmem_map_t` that is autoreset epan scope / file scope, and just deal with the keylog file only being read once at startup, but reading an external file each time a new file is loaded even if it doesn't have ssh is a bit inefficient, as mentioned.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-04-25T12:00:57.109Z",
+          "updated_at": "2023-04-25T12:00:57.109Z",
+          "system": false,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fe66aa18449d0218dde42a6a05f9ee184045ae64",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1367005682,
+          "type": null,
+          "body": "added 9 commits\n\n<ul><li>14d02835...3ce3bd7d - 8 commits from branch <code>wireshark:master</code></li><li>955e9da2 - fix(ssh2): Bind hash table entries to hash table lifetime</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10441/diffs?diff_id=665087694&start_sha=14d02835d838d8d2d96f412eae9b6b1edc0cc195)",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-25T14:57:19.288Z",
+          "updated_at": "2023-04-25T14:57:19.290Z",
+          "system": true,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dc2d6608bedf3b41e04b9ce808a09c9425048c00",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1367030985,
+          "type": null,
+          "body": "I rewrote this PR to no longer read the keylog file whenever a capture file is being opened. Instead, the hash table keys and entries are being copied into glib allocated memory which is free'd whenever the key / entry pair is being removed from the table (thanks to `g_hash_table_new_full`). I didn't go for a UAT but rather implemented a lightweight shutdown routine which destroys the hash table via `g_hash_table_destroy`.",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-25T15:08:11.571Z",
+          "updated_at": "2023-04-25T15:08:11.571Z",
+          "system": false,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3554929147a56c628c354b405a58880dc01ac7e6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1367034684,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-25T15:09:37.714Z",
+          "updated_at": "2023-04-25T15:09:37.721Z",
+          "system": true,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ec1f3137bf4edfd770a0b92adbc02b8e23077980",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1367058907,
+          "type": null,
+          "body": "mentioned in merge request !10403",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-25T15:18:45.662Z",
+          "updated_at": "2023-04-25T15:18:45.664Z",
+          "system": true,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c0f9c1fcec67c55b23b92843f81ec49c32218052",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1367785999,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>955e9da2...872285a6 - 6 commits from branch <code>wireshark:master</code></li><li>d6f2ecc8 - fix(ssh2): Bind hash table entries to hash table lifetime</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10441/diffs?diff_id=665503790&start_sha=955e9da2ded23f0cf15624f29d4117d77d7f993c)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-04-26T00:22:09.678Z",
+          "updated_at": "2023-04-26T00:22:09.680Z",
+          "system": true,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "03b44de002fdac4fde65abbd1dbdb581fe2542f6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1367858526,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-04-26T02:54:35.248Z",
+          "updated_at": "2023-04-26T02:54:35.253Z",
+          "system": true,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "eb3f96f25a9547631b337fec911fc7fcb5eed9da",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1370049851,
+          "type": null,
+          "body": "mentioned in merge request !10465",
+          "author": {
+            "id": 14343997,
+            "username": "Skrillor",
+            "public_email": "fabian.baeumer@ruhr-uni-bochum.de",
+            "name": "Fabian Bäumer",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/14343997/avatar.png?v=1776801968",
+            "web_url": "https://gitlab.com/Skrillor"
+          },
+          "created_at": "2023-04-27T08:55:35.798Z",
+          "updated_at": "2023-04-27T08:55:35.801Z",
+          "system": true,
+          "noteable_id": 219609631,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10441,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1918,6 +1918,7 @@ ssh_keylog_read_file(void)\n     if (ssh_keylog_file && file_needs_reopen(ws_fileno(ssh_keylog_file),\n                 pref_keylog_file)) {\n         ssh_keylog_reset();\n+        g_hash_table_remove_all(ssh_master_key_map);\n     }\n \n     if (!ssh_keylog_file) {\n@@ -1954,6 +1955,7 @@ ssh_keylog_read_file(void)\n             if (ferror(ssh_keylog_file)) {\n                 ws_debug(\"Error while reading %s, closing it.\", pref_keylog_file);\n                 ssh_keylog_reset();\n+                g_hash_table_remove_all(ssh_master_key_map);\n             }\n             break;\n         }\n@@ -2043,6 +2045,9 @@ ssh_keylog_process_line(const char *line)\n \n         bn_priv->data[i] = c;\n     }\n+    ssh_bignum * bn_cookie_ht = g_new(ssh_bignum, 1);\n+    bn_cookie_ht->length = bn_cookie->length;\n+    bn_cookie_ht->data = (guint8 *) g_memdup2(bn_cookie->data, bn_cookie->length);\n \n     for (size_t i = 0; i < cookie_len/2; i ++) {\n         gchar v0 = cookie[i * 2];\n@@ -2060,8 +2065,11 @@ ssh_keylog_process_line(const char *line)\n \n         bn_cookie->data[i] = c;\n     }\n+    ssh_bignum * bn_priv_ht = g_new(ssh_bignum, 1);\n+    bn_priv_ht->length = bn_priv->length;\n+    bn_priv_ht->data = (guint8 *) g_memdup2(bn_priv->data, bn_priv->length);\n \n-    g_hash_table_insert(ssh_master_key_map, bn_cookie, bn_priv);\n+    g_hash_table_insert(ssh_master_key_map, bn_cookie_ht, bn_priv_ht);\n     g_strfreev(split);\n }\n \n@@ -4066,8 +4074,26 @@ ssh_hash  (gconstpointer v)\n \n     return hash;\n }\n+\n+static void\n+ssh_free_glib_allocated_bignum(gpointer data)\n+{\n+    ssh_bignum * bignum;\n+    if (data == NULL) {\n+        return;\n+    }\n+\n+    bignum = (ssh_bignum *) data;\n+    g_free(bignum->data);\n+    g_free(bignum);\n+}\n /* Functions for SSH random hashtables. }}} */\n \n+static void\n+ssh_shutdown(void) {\n+    g_hash_table_destroy(ssh_master_key_map);\n+}\n+\n void\n proto_register_ssh(void)\n {\n@@ -4782,7 +4808,7 @@ proto_register_ssh(void)\n                        \"To use this option, you must also enable \\\"Allow subdissectors to reassemble TCP streams\\\" in the TCP protocol settings.\",\n                        &ssh_desegment);\n \n-    ssh_master_key_map = g_hash_table_new(ssh_hash, ssh_equal);\n+    ssh_master_key_map = g_hash_table_new_full(ssh_hash, ssh_equal, ssh_free_glib_allocated_bignum, ssh_free_glib_allocated_bignum);\n     prefs_register_filename_preference(ssh_module, \"keylog_file\", \"Key log filename\",\n             \"The path to the file which contains a list of key exchange secrets in the following format:\\n\"\n             \"\\\"<hex-encoded-cookie> <hex-encoded-key>\\\" (without quotes or leading spaces).\\n\",\n@@ -4796,6 +4822,7 @@ proto_register_ssh(void)\n     secrets_register_type(SECRETS_TYPE_SSH, ssh_secrets_block_callback);\n \n     ssh_handle = register_dissector(\"ssh\", dissect_ssh, proto_ssh);\n+    register_shutdown_routine(ssh_shutdown);\n }\n \n void\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ssh.c",
+      "old_path": "epan/dissectors/packet-ssh.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "d6f2ecc8e0656ef0331823551fbbc82b92e363c3",
+      "short_id": "d6f2ecc8",
+      "created_at": "2023-04-26T00:22:05.000+00:00",
+      "parent_ids": [
+        "872285a643be5663a35d376f7a4539fc053ed0c8"
+      ],
+      "title": "fix(ssh2): Bind hash table entries to hash table lifetime",
+      "message": "fix(ssh2): Bind hash table entries to hash table lifetime\n",
+      "author_name": "Fabian Bäumer",
+      "author_email": "fabian.baeumer@rub.de",
+      "authored_date": "2023-04-25T16:47:06.000+02:00",
+      "committer_name": "John Thacker",
+      "committer_email": "johnthacker@gmail.com",
+      "committed_date": "2023-04-26T00:22:05.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/d6f2ecc8e0656ef0331823551fbbc82b92e363c3"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 665503790,
+      "head_commit_sha": "d6f2ecc8e0656ef0331823551fbbc82b92e363c3",
+      "base_commit_sha": "872285a643be5663a35d376f7a4539fc053ed0c8",
+      "start_commit_sha": "872285a643be5663a35d376f7a4539fc053ed0c8",
+      "created_at": "2023-04-26T00:22:08.933Z",
+      "merge_request_id": 219609631,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 665087694,
+      "head_commit_sha": "955e9da2ded23f0cf15624f29d4117d77d7f993c",
+      "base_commit_sha": "3ce3bd7d604ad2c5fa71b3f6f1ed8220b85dc7ba",
+      "start_commit_sha": "5aed22f55a79a3259641e071857d14d5330a1bca",
+      "created_at": "2023-04-25T14:57:18.476Z",
+      "merge_request_id": 219609631,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 664821598,
+      "head_commit_sha": "14d02835d838d8d2d96f412eae9b6b1edc0cc195",
+      "base_commit_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+      "start_commit_sha": "3ce3bd7d604ad2c5fa71b3f6f1ed8220b85dc7ba",
+      "created_at": "2023-04-25T11:48:20.197Z",
+      "merge_request_id": 219609631,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 663754639,
+      "head_commit_sha": "9253b559c1698e5ffdb9cad5c4a14b8a8c85ce06",
+      "base_commit_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+      "start_commit_sha": "58c28464470986f5de02cf1bd27fcb0c1e7da097",
+      "created_at": "2023-04-24T14:46:03.662Z",
+      "merge_request_id": 219609631,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

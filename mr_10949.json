@@ -1,0 +1,1607 @@
+{
+  "id": 229137200,
+  "iid": 10949,
+  "project_id": 7898047,
+  "title": "Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT",
+  "description": "## Change Description\n\nMake reassemble_streaming_data_and_call_subdissector() allow subdissector to set pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT.\n\n\n## Test cases introduction\n\nI have written some code to test the new features. Please refer to the reference section for package capture samples and plugin source code. The test cases involve two protocols, ProtoA and ProtoB. ProtoA can be transmitted over UDP or TCP, while ProtoB is transmitted as payload of ProtoA. Their formats are as follows:\n\n```\n/**\n * Packet format of ProtoA:\n * \n * +--1 byte--+--1 byte--+--2 bytes--+--2 bytes--+--- bytes of Length---+\n * | Flag=\"A\" | StreamId |   SeqNo   |   Length  |    Payload (ProtoB)  |\n * +----------+----------+-----------+-----------+----------------------+\n *\n * Packet format of ProtoB:\n *\n * +--1 byte--+--1 byte--+--2 bytes--+--2 bytes--+--- bytes of Length---+\n * | Flag=\"B\" | StreamId |   SeqNo   |   Length  |        Payload       |\n * +----------+----------+-----------+-----------+----------------------+\n */\n```\n\nThere are three cases:\n\n```\n /* The symbols used in the following figures.:\n  * - A5(9): A ProtoA packet with a sequence number of 5 and a total length of 9 bytes.\n  * - B2(12): A ProtoB packet with a sequence number of 2 and a total length of 12 bytes.\n  * - A2.1(7): The 1st part of a ProtoA packet with sequence number 2 is 7 bytes in length.\n  * - B3.2(8): The 2nd part of a ProtoB packet with sequence number 3 is 8 bytes in length.\n  * - UTP3(24): The payload of the 3rd UDP or TCP packet, with a length of 24 bytes.\n  * - +--------------------+\n  *   |       B9(12)       |\n  *   +----3----+----9-----+  : means the A5 and A6 contains segments of B9 (9 + 15 bytes).\n  *   |  A5(9)  |  A6(15)  |\n  *   +---------+----------+\n  * - ASID=2: The stream ID of all ProtoA packets in this row is 2.\n  * \n  * Case 1. Each ProtoA packet is transmitted as a separate UDP or TCP packet:\n  * \n  *               +-------------------+             +---------------------+---------------------+       \n  *               |      B3(10)       |             |        B6(9)        |        B7(10)       |       \n  * +-----A1(6+28=34)-----+   +-------+---A2(28)----+-------+   +------A3(19)-----+   +------A4(22)------+\n  * |B1(8) |B2(12)|B3.1(8)|   |B3.2(2)|B4(9) |B5(10)|B6.1(1)|   | B6.2(8) |B7.1(5)|   | B7.2(5) | B8(11) |\n  * +------+------+-------+   +-------+------+------+-------+   +---------+-------+   +---------+--------+\n  * |      UTP1(34)       |   |          UTP2(28)           |   |     UTP3(19)    |   |     UTP4(22)     |\n  * +-------------+-------+   +-------+-------------+-------+   +---------+-------+   +---------+--------+\n  *               |                   |             |                     |                     |\n  *               +-------------------+             +---------------------+---------------------+\n  * \n  * +-----------------------+  \n  * |        B9(12)         |                    \n  * +--A5(9)--+   +--A6(15)-+   +--------A7(27)---------+ \n  * | B9.1(3) |   | B9.2(9) |   |  B10(10)  |  B11(11)  | \n  * +---------+   +---------+   +-----------+-----------+ \n  * | UTP5(9) |   |UTP6(15) |   |       UTP7(27)        |\n  * +---------+   +---------+   +-----------------------+\n  * |                       |\n  * +-----------------------+ \n  *\n  *         +-------------------------------------------------------------------+\n  *         |                            B13(14)                                |\n  * +-----A8(19)-----+   +-A9(10)-+   +-----A10(7)----+   +-A11(8)-+   +-----A12(23)----+\n  * |B12(12)|B13.1(1)|   |B13.2(4)|   |    B13.3(1)   |   |B13.4(2)|   |B13.5(6)|B14(11)|   \n  * +-------+--------+   +--------+   +---------------+   +--------+   +--------+-------+\n  * |    UTP8(19)    |   |UTP9(10)|   |    UTP10(7)   |   |UTP11(8)|   |    UTP12(23)   |\n  * +-------+--------+   +--------+   +---------------+   +--------+   +--------+-------+\n  *         |                                                                   |\n  *         +-------------------------------------------------------------------+\n  * \n  * \n  * Case 2. The boundaries of PorotoA packets do not align with UDP or TCP. UDP or TCP packets:\n  * \n  *               +-------------------+             +---------------------+---------------------+       \n  *               |      B3(10)       |             |        B6(9)        |        B7(10)       |       \n  * +-----A1(6+28=34)-----+   +-------+---A2(28)----+-------+   +------A3(19)-----+   +------A4(22)------+\n  * |B1(8) |B2(12)|B3.1(8)|   |B3.2(2)|B4(9) |B5(10)|B6.1(1)|   | B6.2(8) |B7.1(5)|   | B7.2(5) | B8(11) |\n  * +------+------+-------+   +-------+---+--+------+-------+   +-------+-+-------+   +-------+-+--------+\n  * |       A1(34)         \\ /  A2.1(7)   |     A2.2(21)     \\ / A3.1(3)| A3.2(16) \\ / A4.1(8)| A4.2(14) |\n  * +-----------------------+-------------+-------------------+---------+-----------+---------+----------+\n  * |     UTP1(41)-(UDP/TCP Payload)      |           UTP2(24)          |      UTP3(24)       | UTP4(14) |\n  * +-------------------------------------+-----------------------------+---------------------+----------+\n  * \n  * +-----------------------+  \n  * |        B9(12)         |                    \n  * +--A5(9)--+   +--A6(15)-+   +--------A7(27)---------+ \n  * | B9.1(3) |   | B9.2(9) |   |  B10(10)  |  B11(11)  | \n  * +---------+   +---------+   +-----------+-+---------+\n  * |  A5(9)   \\ /  A6(15)  |   |   A7.1(24)  | A7.2(3) |\n  * +-----------+-----------+   +-------------+---------+\n  * |      UTP5(24)         |   |  UTP6(24)   | UTP7(3) |\n  * +-----------------------+   +-------------+---------+\n  *\n  *         +-------------------------------------------------------------------+\n  *         |                            B13(14)                                |\n  * +-----A8(19)-----+   +-A9(10)-+   +---A10(7)------+   +-A11(8)-+   +-----A12(23)----+\n  * |B12(12)|B13.1(1)|   |B13.2(4)|   |    B13.3(1)   |   |B13.4(2)|   |B13.5(6)|B14(11)|   \n  * +-------+--------+   +--------+   +-------+-------+   +--------+   +--------+--+----+\n  * |     A8(19)      \\ /  A9(10)  \\ /A10.1(5)|A10.2(2)\\ /  A11(8)  \\ /     A12(23)     |\n  * +------------------+------------+---------+---------+------------+------------------+\n  * |              UTP8(34)                   |              UTP9(33)                   |\n  * +-----------------------------------------+-----------------------------------------+\n  * \n  * Case 3. A UDP or TCP connection contains two ProtoA streams (interleaved):\n  * \n  *        +----------+----------+----------+----------+----------+----------+----------+----------+\n  * ASID=1 |  A1(34)  |  A2(28)  |          |  A3(19)  |          |          |  A4(22)  |          |\n  * ASID=2 |          |          |  A1(34)  |          |  A2(28)  |  A3(19)  |          |  A4(22)  |\n  *        +----------+--23--+-5-+----------+-1-+--18--+----------+-5-+--14--+----------+----------+\n  *        | UPT1(57=34+23)  |     UPT2(40)     |       UPT3(51)      |         UPT4(58)           |\n  *        +-----------------+------------------+---------------------+----------------------------+\n  * \n  *        +----------+----------+----------+----------+----------+----------+----------------+----------+\n  * ASID=1 |  A5(9)   |  A6(15)  |  A7(27)  |          |          |  A8(19)  |                |  A9(10)  |\n  * ASID=2 |          |          |          |  A5(9)   |  A6(15)  |          |     A7(27)     |          |\n  *        +----------+----------+-14--+-13-+----------+----------+-3-+--16--+-1-+---20---+-6-+----------+\n  *        |          UPT5(38)         |          UPT6(40)            | UPT7(17) |UPT8(20)|   UPT9(16)   |\n  *        +---------------------------+------------------------------+----------+--------+--------------+\n  *\n  *        +----------+----------+----------+----------+----------+----------+----------+-------------+\n  * ASID=1 |  A10(7)  |          |          |  A11(8)  |          |  A12(23) |          |             |\n  * ASID=2 |          |  A8(19)  |  A9(10)  |          |  A10(7)  |          |  A11(8)  |   A12(23)   |\n  *        +----------+----------+--6--+-4--+----------+-2-+--5---+----------+----------+----22---+-1-+\n  *        | UPT10(7) |   UPT11(25)    |     UPT12(14)     |         UPT13(36)          |UPT14(22)|FIN\n  *        +----------+----------------+-------------------+----------------------------+---------+\n  */\n```\n\nCase1: There is only one ProtoA stream (ID=1) over each UDP or TCP connection. All A1-A12 and B1-B14 are parsed successfully.\n\n![case1](/uploads/46cddfcea240bc54937c5215ae13a932/case1.png)\n\nCase2: The payload of ProtoB and ProtoA is identical to Case1. But the boundaries of ProtoA packets are not aligned with UDP and TCP packets. All A1-A12 and B1-B14 are parsed successfully.\n\n![case2](/uploads/97468f2100ec7cf9a9d3153277d251b3/case2.png)\n\nCase3: There are two ProtoA stream (ID=1 and 2) over each UDP or TCP connection. All A1-A12 and B1-B14 are parsed successfully of the 1st ProtoA stream. But the B13, B14 and A12 of the 2nd ProtoA stream have not been fully parsed yet because of uncompleted A12 packet as expected.\n\n![case3](/uploads/91ab517ed22db57fedeb27cfbbec6a3b/case3.png)\n![case3-2](/uploads/836f29c04a79cf6d3123dd1c50d3c09a/case3-2.png)\n\n\n## References\n\n[streaming_reassembly_proto_a_proto_b_source.tar.gz](/uploads/718ecf46ccfb5d8f5edd87839660ddeb/streaming_reassembly_proto_a_proto_b_source.tar.gz)\n\n[proto_a_proto_b_udp_tcp_reassembly_sample_case1.pcapng](/uploads/17038be9bc6df121fe4f5428d044e9b0/proto_a_proto_b_udp_tcp_reassembly_sample_case1.pcapng)\n\n[proto_a_proto_b_udp_tcp_reassembly_sample_case2.pcapng](/uploads/76621523e788431bd10bdc943eed12ad/proto_a_proto_b_udp_tcp_reassembly_sample_case2.pcapng)\n\n[proto_a_proto_b_udp_tcp_reassembly_sample_case3.pcapng](/uploads/81860455ddb6be1ca1a97f78d8706c00/proto_a_proto_b_udp_tcp_reassembly_sample_case3.pcapng)",
+  "state": "merged",
+  "created_at": "2023-06-07T17:38:16.582Z",
+  "updated_at": "2023-06-27T15:50:29.323Z",
+  "merged_by": {
+    "id": 6722527,
+    "username": "pquantin",
+    "public_email": "",
+    "name": "Pascal Quantin",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+    "web_url": "https://gitlab.com/pquantin"
+  },
+  "merge_user": {
+    "id": 6722527,
+    "username": "pquantin",
+    "public_email": "",
+    "name": "Pascal Quantin",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+    "web_url": "https://gitlab.com/pquantin"
+  },
+  "merged_at": "2023-06-13T21:45:48.830Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "make_reassemble_helper_support_ONE_MORE_SEGMENT",
+  "user_notes_count": 7,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7308371,
+    "username": "huangqiangxiong",
+    "public_email": "",
+    "name": "Huang Qiangxiong",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+    "web_url": "https://gitlab.com/huangqiangxiong"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 21839746,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "aa54f33700f43be4ec8505308b6dd4e522ee6f87",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-06-07T17:38:21.862Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!10949",
+  "references": {
+    "short": "!10949",
+    "relative": "!10949",
+    "full": "wireshark/wireshark!10949"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/10949",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-06-13T21:03:53.403Z",
+  "latest_build_finished_at": "2023-06-13T21:45:47.548Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 898990172,
+    "iid": 47728,
+    "project_id": 7898047,
+    "sha": "aa54f33700f43be4ec8505308b6dd4e522ee6f87",
+    "ref": "refs/merge-requests/10949/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-06-13T21:03:50.023Z",
+    "updated_at": "2023-06-13T21:45:47.556Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/898990172"
+  },
+  "head_pipeline": {
+    "id": 898990172,
+    "iid": 47728,
+    "project_id": 7898047,
+    "sha": "aa54f33700f43be4ec8505308b6dd4e522ee6f87",
+    "ref": "refs/merge-requests/10949/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-06-13T21:03:50.023Z",
+    "updated_at": "2023-06-13T21:45:47.556Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/898990172",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6722527,
+      "username": "pquantin",
+      "public_email": "",
+      "name": "Pascal Quantin",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+      "web_url": "https://gitlab.com/pquantin"
+    },
+    "started_at": "2023-06-13T21:03:53.403Z",
+    "finished_at": "2023-06-13T21:45:47.548Z",
+    "committed_at": null,
+    "duration": 2006,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/898990172",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "7839a96040f4d6c5956cc8363967bb9b0889fa95",
+    "head_sha": "aa54f33700f43be4ec8505308b6dd4e522ee6f87",
+    "start_sha": "7839a96040f4d6c5956cc8363967bb9b0889fa95"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "3d32c60373b6de7f50d1cf0da903c3be3bd6889b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1422493388,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-07T17:40:27.252Z",
+          "updated_at": "2023-06-07T17:40:27.254Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "99dd3c0bd7c48c58c25a593a8aa2b9c29bf55fe3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1422772291,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>a8236372 - Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=702649373&start_sha=444eeffa84bd0900cbf4fde72313edf22c9aa81b)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-07T22:57:08.728Z",
+          "updated_at": "2023-06-07T22:57:08.730Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b258315e2143b6dbf33275bf3d58fd5d59a4772b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1422783436,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-07T23:21:12.904Z",
+          "updated_at": "2023-06-07T23:21:12.907Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "50794d0c99995c3652a534a97dce4d86772182de",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1422784838,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-07T23:25:34.510Z",
+          "updated_at": "2023-06-07T23:25:34.512Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "81653784b9c820196f714dd790ea6ba558fd835f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1423710656,
+          "type": null,
+          "body": "added 19 commits\n\n<ul><li>a8236372...1744ce4a - 18 commits from branch <code>wireshark:master</code></li><li>593218ed - Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=703251410&start_sha=a8236372fb2f5844b99802ff3cb572cf0edac0b4)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-08T12:16:56.658Z",
+          "updated_at": "2023-06-08T12:16:56.660Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6b79095207bebdbd5ba8b58014fb204d3c908c5f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1425122686,
+          "type": null,
+          "body": "marked this merge request as **draft**",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-09T11:59:05.650Z",
+          "updated_at": "2023-06-09T11:59:05.653Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "aada32915d4ceee92322bef821f120cb08785915",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1425295164,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>593218ed...aa8c6567 - 7 commits from branch <code>wireshark:master</code></li><li>105c44a2 - Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=704425052&start_sha=593218ed8bf10525983b8d16f5cf3156edef5952)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-09T13:47:16.722Z",
+          "updated_at": "2023-06-09T13:47:16.725Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "166a8826e1cfc92beb1a2d737b7889f7f2b5ab46",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1425299884,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-09T13:50:45.870Z",
+          "updated_at": "2023-06-09T13:50:45.872Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c98a24dc1f30f318ee6f5cdd1c0424b8858fb1a3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1425308210,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>105c44a2...857c08ae - 5 commits from branch <code>wireshark:master</code></li><li>3f658365 - Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=704436045&start_sha=105c44a21fcb462aa4d0c47fd05c0e885457bfbc)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-09T13:56:35.881Z",
+          "updated_at": "2023-06-09T13:56:35.884Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1c527cd631c78c704be82e51a17dbebb7619b94c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1425334676,
+          "type": null,
+          "body": "Abandon helper functions in the old version of this MR and use three helper macros instead to avoid memory management issue of hf.",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-09T14:13:12.347Z",
+          "updated_at": "2023-06-09T14:13:12.347Z",
+          "system": false,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "42389dd3602d10aaf4ff2d57810ce5630865f194",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1425334924,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-09T14:13:21.574Z",
+          "updated_at": "2023-06-09T14:13:21.576Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "202bc4a756af91659ba94b6aabab444dad081e80",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1426329964,
+          "type": "DiffNote",
+          "body": "This is an unrelated change",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-06-11T22:19:42.240Z",
+          "updated_at": "2023-06-11T22:19:42.240Z",
+          "system": false,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "start_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "head_sha": "3f6583651328ef275e93740887931b0f4f8c5759",
+            "old_path": "packaging/debian/libwireshark0.symbols",
+            "new_path": "packaging/debian/libwireshark0.symbols",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2161,
+            "line_range": {
+              "start": {
+                "line_code": "a44fc9a166ae1249f0d093e3b39db799bb231b76_2163_2162",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2162
+              },
+              "end": {
+                "line_code": "a44fc9a166ae1249f0d093e3b39db799bb231b76_2163_2162",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2162
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "resolved_at": "2023-06-13T12:08:47.040Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        },
+        {
+          "id": 1428628187,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=706823995&start_sha=3f6583651328ef275e93740887931b0f4f8c5759#a44fc9a166ae1249f0d093e3b39db799bb231b76_2161_2162)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:05:52.263Z",
+          "updated_at": "2023-06-13T12:05:52.263Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "start_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "head_sha": "3f6583651328ef275e93740887931b0f4f8c5759",
+            "old_path": "packaging/debian/libwireshark0.symbols",
+            "new_path": "packaging/debian/libwireshark0.symbols",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2161,
+            "line_range": {
+              "start": {
+                "line_code": "a44fc9a166ae1249f0d093e3b39db799bb231b76_2163_2162",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2162
+              },
+              "end": {
+                "line_code": "a44fc9a166ae1249f0d093e3b39db799bb231b76_2163_2162",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2162
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ee472a55eee076ea913b8101a409c831affaef36",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1426329966,
+          "type": "DiffNote",
+          "body": "The macros are interesting, but should go in a separate MR with likely a dissector using them",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-06-11T22:19:42.784Z",
+          "updated_at": "2023-06-11T22:19:42.784Z",
+          "system": false,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "7839a96040f4d6c5956cc8363967bb9b0889fa95",
+            "start_sha": "7839a96040f4d6c5956cc8363967bb9b0889fa95",
+            "head_sha": "aa54f33700f43be4ec8505308b6dd4e522ee6f87",
+            "old_path": "epan/reassemble.h",
+            "new_path": "epan/reassemble.h",
+            "position_type": "text",
+            "old_line": 535,
+            "new_line": 535,
+            "line_range": {
+              "start": {
+                "line_code": "2c31a86eb2baf0c155bc817afa365abd1f4f0718_534_535",
+                "type": "new",
+                "old_line": null,
+                "new_line": 535
+              },
+              "end": {
+                "line_code": "2c31a86eb2baf0c155bc817afa365abd1f4f0718_534_535",
+                "type": "new",
+                "old_line": null,
+                "new_line": 535
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "resolved_at": "2023-06-13T12:08:53.494Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        },
+        {
+          "id": 1427427221,
+          "type": "DiffNote",
+          "body": "OK. I create another MR https://gitlab.com/wireshark/wireshark/-/merge_requests/11011 for helper macros. And make the http dissector to use these macros based on MR https://gitlab.com/wireshark/wireshark/-/merge_requests/10191. @pquantin Would you please help to review that MR https://gitlab.com/wireshark/wireshark/-/merge_requests/11011. Since plugin dissector packet-proto-a based on these macros, I will update this MR if !11011 is merged.",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-12T16:00:06.200Z",
+          "updated_at": "2023-06-12T16:04:29.922Z",
+          "system": false,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "7839a96040f4d6c5956cc8363967bb9b0889fa95",
+            "start_sha": "7839a96040f4d6c5956cc8363967bb9b0889fa95",
+            "head_sha": "aa54f33700f43be4ec8505308b6dd4e522ee6f87",
+            "old_path": "epan/reassemble.h",
+            "new_path": "epan/reassemble.h",
+            "position_type": "text",
+            "old_line": 535,
+            "new_line": 535,
+            "line_range": {
+              "start": {
+                "line_code": "2c31a86eb2baf0c155bc817afa365abd1f4f0718_534_535",
+                "type": "new",
+                "old_line": null,
+                "new_line": 535
+              },
+              "end": {
+                "line_code": "2c31a86eb2baf0c155bc817afa365abd1f4f0718_534_535",
+                "type": "new",
+                "old_line": null,
+                "new_line": 535
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "resolved_at": "2023-06-13T12:08:53.494Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "70807a6312e9c568dc53e597165d2e5fa3e5f231",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1426329969,
+          "type": "DiffNote",
+          "body": "typo: shortten -> shorten",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-06-11T22:19:43.209Z",
+          "updated_at": "2023-06-11T22:19:43.209Z",
+          "system": false,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "start_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "head_sha": "3f6583651328ef275e93740887931b0f4f8c5759",
+            "old_path": "epan/reassemble.c",
+            "new_path": "epan/reassemble.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 3401,
+            "line_range": {
+              "start": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_3402_3401",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3401
+              },
+              "end": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_3402_3401",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3401
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "resolved_at": "2023-06-13T12:09:26.383Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        },
+        {
+          "id": 1428628210,
+          "type": "DiffNote",
+          "body": "changed this line in [version 6 of the diff](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=706823995&start_sha=3f6583651328ef275e93740887931b0f4f8c5759#ef8c1b660fbd49cf872125917b67c6a19be2f617_3401_3401)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:05:53.241Z",
+          "updated_at": "2023-06-13T12:05:53.241Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "start_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "head_sha": "3f6583651328ef275e93740887931b0f4f8c5759",
+            "old_path": "epan/reassemble.c",
+            "new_path": "epan/reassemble.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 3401,
+            "line_range": {
+              "start": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_3402_3401",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3401
+              },
+              "end": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_3402_3401",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3401
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        },
+        {
+          "id": 1428634427,
+          "type": "DiffNote",
+          "body": "Done",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:09:18.140Z",
+          "updated_at": "2023-06-13T12:09:18.140Z",
+          "system": false,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "start_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+            "head_sha": "3f6583651328ef275e93740887931b0f4f8c5759",
+            "old_path": "epan/reassemble.c",
+            "new_path": "epan/reassemble.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 3401,
+            "line_range": {
+              "start": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_3402_3401",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3401
+              },
+              "end": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_3402_3401",
+                "type": "new",
+                "old_line": null,
+                "new_line": 3401
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "resolved_at": "2023-06-13T12:09:26.383Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1967664d84cfccbdd51a6d3b03e05a7801e21bec",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1427182305,
+          "type": null,
+          "body": "marked this merge request as **draft**",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-12T13:31:22.623Z",
+          "updated_at": "2023-06-12T13:31:22.625Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b3e2f7d653749be1bd5724c6beba4d97c0c218bb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1427475712,
+          "type": null,
+          "body": "mentioned in merge request !11011",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-06-12T16:45:21.077Z",
+          "updated_at": "2023-06-12T16:45:21.079Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "60bae373d31723726266ef7502194a33ba76e664",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1428628215,
+          "type": null,
+          "body": "added 72 commits\n\n<ul><li>3f658365...1fea6aaf - 71 commits from branch <code>wireshark:master</code></li><li>fee07b53 - Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=706823995&start_sha=3f6583651328ef275e93740887931b0f4f8c5759)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:05:53.373Z",
+          "updated_at": "2023-06-13T12:05:53.375Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f3974776476942dc0d11e6ff59a71d55bbcae27f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1428628891,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>fee07b53...0b1c7569 - 7 commits from branch <code>wireshark:master</code></li><li>662aa2fe - Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=706824619&start_sha=fee07b53bfcf952d065a412de1e7c07c5e2d44e2)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:06:19.195Z",
+          "updated_at": "2023-06-13T12:06:19.196Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e1d3d259ebd73a218741588d773c52c2d91bc6ae",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1428632554,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:08:17.272Z",
+          "updated_at": "2023-06-13T12:08:17.274Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "869df92b24418f5db9915876d7b485023e450ab2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1428633896,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:09:00.463Z",
+          "updated_at": "2023-06-13T12:09:00.474Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "78d4ead20ebefdc0a1e83210ee1eb2b39c3486b6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1428634638,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:09:26.404Z",
+          "updated_at": "2023-06-13T12:09:26.409Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0a09b7745a4bbbab6472f315d2530d62005bf459",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1428637359,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:10:44.838Z",
+          "updated_at": "2023-06-13T12:10:44.841Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "05ada611b98db5c312ffc1814e8c165c9249c47c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1428638994,
+          "type": null,
+          "body": "@pquantin I have modified the MR according to your comments, please have a look again. Thanks.",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-13T12:11:40.649Z",
+          "updated_at": "2023-06-13T12:11:40.649Z",
+          "system": false,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "098734dc057ed205c0a8b9b43204caf4337b5e8d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1429606298,
+          "type": null,
+          "body": "added 12 commits\n\n<ul><li>662aa2fe...7839a960 - 11 commits from branch <code>wireshark:master</code></li><li>aa54f337 - Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/10949/diffs?diff_id=707423579&start_sha=662aa2fe9e04154ea3f97176416ccd6b917163cd)",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-06-13T21:03:47.789Z",
+          "updated_at": "2023-06-13T21:03:47.801Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e1eb599fec18965eed80de5d57278e46c3108080",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1429606355,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-06-13T21:03:51.763Z",
+          "updated_at": "2023-06-13T21:03:51.768Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "60edc31ac7b68a9799d8d6595b2b558b409a9cc8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1429606416,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for aa54f33700f43be4ec8505308b6dd4e522ee6f87 succeeds",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2023-06-13T21:03:56.448Z",
+          "updated_at": "2023-06-13T21:03:56.451Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "af1c7ce2d977d45fee2a55976a029d7b2ee0d7b0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1447981296,
+          "type": null,
+          "body": "mentioned in merge request !11255",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2023-06-27T15:50:29.274Z",
+          "updated_at": "2023-06-27T15:50:29.275Z",
+          "system": true,
+          "noteable_id": 229137200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 10949,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -3274,6 +3274,7 @@ reassemble_streaming_data_and_call_subdissector(\n \tguint32 reassembly_id = 0, frag_offset = 0;\n \tfragment_head* head = NULL;\n \tgboolean need_more = FALSE;\n+\tgboolean found_BoMSP = FALSE;\n \tmultisegment_pdu_t* cur_msp = NULL, * prev_msp = NULL;\n \tguint16 save_can_desegment;\n \tint save_desegment_offset;\n@@ -3287,7 +3288,11 @@ reassemble_streaming_data_and_call_subdissector(\n \t/* calculate how many bytes of this payload belongs to previous MSP (EoMSP) */\n \tif (!PINFO_FD_VISITED(pinfo)) {\n \t\t/* this is first scan */\n-\t\tif (reassembly_info->prev_deseg_len > 0) {\n+\t\tif (reassembly_info->prev_deseg_len == DESEGMENT_ONE_MORE_SEGMENT) {\n+\t\t\t/* assuming the entire tvb belongs to the previous MSP */\n+\t\t\tbytes_belong_to_prev_msp = length;\n+\t\t\treassembly_info->prev_deseg_len = length;\n+\t\t} else if (reassembly_info->prev_deseg_len > 0) {\n \t\t\t/* part or all of current payload belong to previous MSP */\n \t\t\tbytes_belong_to_prev_msp = MIN(reassembly_info->prev_deseg_len, length);\n \t\t\treassembly_info->prev_deseg_len -= bytes_belong_to_prev_msp;\n@@ -3382,25 +3387,43 @@ reassemble_streaming_data_and_call_subdissector(\n \t\t\t/* that must only happen during first scan the reassembly_info->prev_deseg_len might be only the\n \t\t\t * head length of entire message. */\n \t\t\tDISSECTOR_ASSERT(!PINFO_FD_VISITED(pinfo));\n-\t\t\tDISSECTOR_ASSERT_HINT(pinfo->desegment_len != DESEGMENT_ONE_MORE_SEGMENT\n-\t\t\t\t&& pinfo->desegment_len != DESEGMENT_UNTIL_FIN, \"Subdissector MUST NOT \"\n-\t\t\t\t\"set pinfo->desegment_len to DESEGMENT_ONE_MORE_SEGMENT or DESEGMENT_UNTIL_FIN. \"\n-\t\t\t\t\"Instead, it can set pinfo->desegment_len to the length of head if the length of \"\n-\t\t\t\t\"entire message is not able to be determined.\");\n-\t\t\tDISSECTOR_ASSERT_HINT(pinfo->desegment_offset == 0, \"Subdissector MUST NOT set pinfo->desegment_len greater than \"\n-\t\t\t\t\"the length of one message if the length message is undetermined.\");\n-\n-\t\t\t/* Remove the data added by previous fragment_add(), and reopen fragments for adding more bytes. */\n-\t\t\tfragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, NULL, reassembly_info->last_msp->length);\n-\t\t\tfragment_set_partial_reassembly(&streaming_reassembly_table, pinfo, reassembly_id, NULL);\n-\n-\t\t\treassembly_info->prev_deseg_len = bytes_belong_to_prev_msp + pinfo->desegment_len;\n-\t\t\tbytes_belong_to_prev_msp = MIN(reassembly_info->prev_deseg_len, length);\n-\t\t\treassembly_info->prev_deseg_len -= bytes_belong_to_prev_msp;\n-\t\t\tneed_more = (reassembly_info->prev_deseg_len > 0);\n-\t\t} else {\n+\t\t\tDISSECTOR_ASSERT_HINT(pinfo->desegment_len != DESEGMENT_UNTIL_FIN, \"Subdissector MUST NOT \"\n+\t\t\t\t\"set pinfo->desegment_len to DESEGMENT_UNTIL_FIN. Instead, it can set pinfo->desegment_len to \"\n+\t\t\t\t\" DESEGMENT_ONE_MORE_SEGMENT or the length of head if the length of entire message is not able to be determined.\");\n+\n+\t\t\tif (pinfo->desegment_offset > 0) {\n+\t\t\t\tDISSECTOR_ASSERT_HINT(pinfo->desegment_offset > reassembly_info->last_msp->length\n+\t\t\t\t\t&& pinfo->desegment_offset < reassembly_info->last_msp->length + bytes_belong_to_prev_msp,\n+\t\t\t\t\twmem_strdup_printf(pinfo->pool,\n+\t\t\t\t\t\t\"Subdissector MUST NOT set pinfo->desegment_offset(%d) in previous or next part of MSP, must between (%d, %d).\",\n+\t\t\t\t\t\tpinfo->desegment_offset, reassembly_info->last_msp->length, reassembly_info->last_msp->length + bytes_belong_to_prev_msp));\n+\n+\t\t\t\t/* shorten the bytes_belong_to_prev_msp and just truncate the ressembled tvb */\n+\t\t\t\tbytes_belong_to_prev_msp = pinfo->desegment_offset - reassembly_info->last_msp->length;\n+\t\t\t\tfragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, NULL, pinfo->desegment_offset);\n+\t\t\t\tfound_BoMSP = TRUE;\n+\t\t\t} else {\n+\t\t\t\tif (pinfo->desegment_len == DESEGMENT_ONE_MORE_SEGMENT) {\n+\t\t\t\t\t/* just need more bytes, all remaining bytes belongs to previous MSP (to run fragment_add again) */\n+\t\t\t\t\tbytes_belong_to_prev_msp = length;\n+\t\t\t\t}\n+\n+\t\t\t\t/* Remove the data added by previous fragment_add(), and reopen fragments for adding more bytes. */\n+\t\t\t\tfragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, NULL, reassembly_info->last_msp->length);\n+\t\t\t\tfragment_set_partial_reassembly(&streaming_reassembly_table, pinfo, reassembly_id, NULL);\n+\n+\t\t\t\treassembly_info->prev_deseg_len = bytes_belong_to_prev_msp + pinfo->desegment_len;\n+\t\t\t\tbytes_belong_to_prev_msp = MIN(reassembly_info->prev_deseg_len, length);\n+\t\t\t\treassembly_info->prev_deseg_len -= bytes_belong_to_prev_msp;\n+\t\t\t\tneed_more = (reassembly_info->prev_deseg_len > 0);\n+\t\t\t\tcontinue;\n+\t\t\t}\n+\t\t}\n+\n+\t\tif (pinfo->desegment_len == 0 || found_BoMSP) {\n \t\t\t/* We will arrive here, only when the MSP is defragmented and dissected or this\n \t\t\t * payload all belongs to previous MSP (only fragment_add() with need_more=TRUE called)\n+\t\t\t * or BoMSP is parsed while pinfo->desegment_offset > 0 and pinfo->desegment_len != 0\n \t\t\t */\n \t\t\toffset += bytes_belong_to_prev_msp;\n \t\t\tlength -= bytes_belong_to_prev_msp;\n@@ -3413,14 +3436,14 @@ reassemble_streaming_data_and_call_subdissector(\n \t\t\t\t/* completed current msp */\n \t\t\t\treassembly_info->last_msp->last_frame = cur_frame_num;\n \t\t\t\treassembly_info->last_msp->end_offset_at_last_frame = offset;\n-\t\t\t\treassembly_info->prev_deseg_len = 0;\n+\t\t\t\treassembly_info->prev_deseg_len = pinfo->desegment_len;\n \t\t\t}\n \t\t\tbytes_belong_to_prev_msp = 0; /* break */\n \t\t}\n \t}\n \n \t/* to find and handle OmNFP, and find BoMSP at first scan. */\n-\tif (length > 0) {\n+\tif (length > 0 && !found_BoMSP) {\n \t\tif (!PINFO_FD_VISITED(pinfo)) {\n \t\t\t/* It is first scan, to dissect remaining bytes to find whether it is OmNFP only, or BoMSP only or OmNFP + BoMSP. */\n \t\t\tdatalen = length;\n@@ -3448,6 +3471,9 @@ reassemble_streaming_data_and_call_subdissector(\n \t\t\t\tpinfo, subdissector_tree, subdissector_data);\n \n \t\t\tif (pinfo->desegment_len) {\n+\t\t\t\tDISSECTOR_ASSERT_HINT(pinfo->desegment_len != DESEGMENT_UNTIL_FIN, \"Subdissector MUST NOT \"\n+\t\t\t\t\t\"set pinfo->desegment_len to DESEGMENT_UNTIL_FIN. Instead, it can set pinfo->desegment_len to \"\n+\t\t\t\t\t\" DESEGMENT_ONE_MORE_SEGMENT or the length of head if the length of entire message is not able to be determined.\");\n \t\t\t\t/* only happen during first scan */\n \t\t\t\tDISSECTOR_ASSERT(!PINFO_FD_VISITED(pinfo) && datalen == length);\n \t\t\t\toffset += pinfo->desegment_offset;\n@@ -3471,6 +3497,7 @@ reassemble_streaming_data_and_call_subdissector(\n \t\t\t/* create a msp for current frame during first scan */\n \t\t\tcur_msp = wmem_new0(wmem_file_scope(), multisegment_pdu_t);\n \t\t\tcur_msp->first_frame = cur_frame_num;\n+\t\t\tcur_msp->last_frame = G_MAXUINT64;\n \t\t\tcur_msp->start_offset_at_first_frame = offset;\n \t\t\tcur_msp->length = length;\n \t\t\tcur_msp->streaming_reassembly_id = reassembly_id = create_streaming_reassembly_id();\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/reassemble.c",
+      "old_path": "epan/reassemble.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -809,13 +809,15 @@ streaming_reassembly_info_new(void);\n  *\n  * The subdissector (ProtoB dissector) needs to set the pinfo->desegment_len to cooperate with the function\n  * reassemble_streaming_data_and_call_subdissector() to complete the reassembly task.\n- * The pinfo->desegment_len should contain the estimated number of additional bytes required for completing\n+ * The pinfo->desegment_len should be DESEGMENT_ONE_MORE_SEGMENT or contain the estimated number of additional bytes required for completing\n  * the current PDU (MSP), and set pinfo->desegment_offset to the offset in the tvbuff at which the dissector will\n  * continue processing when next called. Next time the subdissector is called, it will be passed a tvbuff composed\n  * of the end of the data from the previous tvbuff together with desegment_len more bytes. If the dissector cannot\n  * tell how many more bytes it will need, it should set pinfo->desegment_len to additional bytes required for parsing\n  * message head. It will then be called again as soon as more data becomes available. Subdissector MUST NOT set the\n- * pinfo->desegment_len to DESEGMENT_ONE_MORE_SEGMENT or DESEGMENT_UNTIL_FIN, we don't support these two values yet.\n+ * pinfo->desegment_len to DESEGMENT_UNTIL_FIN, we don't support it yet. Note that the subdissector MUST return the\n+ * length of the tvb handled by itself (return 0 length if nothing is parsed in MoMSP), otherwise it may cause\n+ * unexpected dissecting errors.\n  *\n  * Following is sample code of ProtoB which on top of ProtoA mentioned above:\n  * <code>\n@@ -832,6 +834,7 @@ streaming_reassembly_info_new(void);\n  *                 if (pinfo->can_desegment) {\n  *                     pinfo->desegment_offset = offset;\n  *                     // calculate how many additional bytes needed to parse head of a ProtoB message\n+ *                     // or just return DESEGMENT_ONE_MORE_SEGMENT\n  *                     pinfo->desegment_len = PROTO_B_MESSAGE_HEAD_LEN - (tvb_len - offset);\n  *                     return offset; // return the length handled by ProtoB\n  *                 }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/reassemble.h",
+      "old_path": "epan/reassemble.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "aa54f33700f43be4ec8505308b6dd4e522ee6f87",
+      "short_id": "aa54f337",
+      "created_at": "2023-06-13T21:03:43.000+00:00",
+      "parent_ids": [
+        "7839a96040f4d6c5956cc8363967bb9b0889fa95"
+      ],
+      "title": "Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT",
+      "message": "Reassembly: make streaming reassembly support DESEGMENT_ONE_MORE_SEGMENT\n\nMake reassemble_streaming_data_and_call_subdissector() allow subdissector\nto set pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT.\n",
+      "author_name": "Huang Qiangxiong",
+      "author_email": "qiangxiong.huang@qq.com",
+      "authored_date": "2023-06-07T00:32:03.000+08:00",
+      "committer_name": "Pascal Quantin",
+      "committer_email": "pascal@wireshark.org",
+      "committed_date": "2023-06-13T21:03:43.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/aa54f33700f43be4ec8505308b6dd4e522ee6f87"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 707423579,
+      "head_commit_sha": "aa54f33700f43be4ec8505308b6dd4e522ee6f87",
+      "base_commit_sha": "7839a96040f4d6c5956cc8363967bb9b0889fa95",
+      "start_commit_sha": "7839a96040f4d6c5956cc8363967bb9b0889fa95",
+      "created_at": "2023-06-13T21:03:46.575Z",
+      "merge_request_id": 229137200,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 706824619,
+      "head_commit_sha": "662aa2fe9e04154ea3f97176416ccd6b917163cd",
+      "base_commit_sha": "0b1c7569f096cb83a8e773dd52ae1385e0624542",
+      "start_commit_sha": "0b1c7569f096cb83a8e773dd52ae1385e0624542",
+      "created_at": "2023-06-13T12:06:18.095Z",
+      "merge_request_id": 229137200,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 706823995,
+      "head_commit_sha": "fee07b53bfcf952d065a412de1e7c07c5e2d44e2",
+      "base_commit_sha": "1fea6aaf7a6918b326b47283806dfe2450f64097",
+      "start_commit_sha": "0b1c7569f096cb83a8e773dd52ae1385e0624542",
+      "created_at": "2023-06-13T12:05:50.483Z",
+      "merge_request_id": 229137200,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 704436045,
+      "head_commit_sha": "3f6583651328ef275e93740887931b0f4f8c5759",
+      "base_commit_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+      "start_commit_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+      "created_at": "2023-06-09T13:56:35.128Z",
+      "merge_request_id": 229137200,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 704425052,
+      "head_commit_sha": "105c44a21fcb462aa4d0c47fd05c0e885457bfbc",
+      "base_commit_sha": "aa8c656783cb03bdf3d4a582ee5dd7b5c057e024",
+      "start_commit_sha": "857c08ae262d536f2aef5f49ccc2d697599b81d1",
+      "created_at": "2023-06-09T13:47:15.786Z",
+      "merge_request_id": 229137200,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 703251410,
+      "head_commit_sha": "593218ed8bf10525983b8d16f5cf3156edef5952",
+      "base_commit_sha": "1744ce4a0f3af5adef40a19afcede29dd9c57e0c",
+      "start_commit_sha": "1744ce4a0f3af5adef40a19afcede29dd9c57e0c",
+      "created_at": "2023-06-08T12:16:55.889Z",
+      "merge_request_id": 229137200,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 702649373,
+      "head_commit_sha": "a8236372fb2f5844b99802ff3cb572cf0edac0b4",
+      "base_commit_sha": "b49cbe2a87c86667b8341c8bf5916765ac11653a",
+      "start_commit_sha": "28c3b0dffad10843c50d74ea595fdd2ac41fa068",
+      "created_at": "2023-06-07T22:57:08.030Z",
+      "merge_request_id": 229137200,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 702446792,
+      "head_commit_sha": "444eeffa84bd0900cbf4fde72313edf22c9aa81b",
+      "base_commit_sha": "b49cbe2a87c86667b8341c8bf5916765ac11653a",
+      "start_commit_sha": "28c3b0dffad10843c50d74ea595fdd2ac41fa068",
+      "created_at": "2023-06-07T17:38:18.176Z",
+      "merge_request_id": 229137200,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    }
+  ]
+}

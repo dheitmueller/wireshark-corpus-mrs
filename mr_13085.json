@@ -1,0 +1,401 @@
+{
+  "id": 261817535,
+  "iid": 13085,
+  "project_id": 7898047,
+  "title": "Infiniband dissector: Implement FLUSH and ATOMIC Write dissector",
+  "description": "FLUSH and ATOMIC Write were newly added in IBTA Specification v1.5. The SoftRoCE driver (linux kernel) has already enabled the operations[1][2], and there is already an example application that uses these operations[3]. IB SPEC: https://cw.infinibandta.org/site/login\n\nThis patch series enables to analyze packets of these new operations. I made the patches referring to IBTA Specification v1.6. Please note that **the spec is proprietary and MEMBERS ONLY**, and **it is not allowed to quote any part of them on this thread**. While I believe my work is complete, please tell me the corresponding section or the page number if you find any error. Sorry for inconvenience, but it cannot be helped.\n\n\nI got a packet capture of these operations. To help reviewers, I attach a part of the output below.\n\n- Patch 1:\nThe first patch simply defines the new operations according to the spec.\nAfter applying the patch, packets can be detected by tshark like this:\n```\n    9   0.004996 192.168.10.10 → 192.168.10.11 RRoCE 78 RC Flush QP=0x000017\n   10   0.005004 192.168.10.10 → 192.168.10.11 RRoCE 82 RC Atomic Write QP=0x000017\n```\n\n- Patch 2:\nThe second patch makes it possible to parse FLUSH packets.\nHere is an example output from 'tshark -V -r <filename>' command. \n```\nInfiniBand\n    Base Transport Header\n        Opcode: Reliable Connection (RC) - FLUSH (28)\n        0... .... = Solicited Event: False\n        .0.. .... = MigReq: False\n        ..00 .... = Pad Count: 0\n        .... 0000 = Header Version: 0\n        Partition Key: 65535\n        Reserved: 00\n        Destination Queue Pair: 0x000017\n        1... .... = Acknowledge Request: True\n        .000 0000 = Reserved (7 bits): 0\n        Packet Sequence Number: 7619090\n    FETH - FLUSH Extended Transport Header\n        0000 0000 0000 0000 0000 0000 000. .... = Reserved (27bits): 0\n        ...0 0... = Selectivity Level: 0\n        .... .010 = Placement Type: 2\n    RETH - RDMA Extended Transport Header\n        Virtual Address: 0x00007f54cc600010\n        Remote Key: 0x00001462\n        DMA Length: 17 (0x00000011)\n    Invariant CRC: 0x1676363c\n```\nparse_FETH() was added to parse 'FLUSH Extended Transport Header'.\n\n- Patch 3:\nThe third patch makes it possible to parse ATOMIC Write packets.\nHere is an example output from 'tshark -V -r <filename>' command. \n```\nInfiniBand\n    Base Transport Header\n        Opcode: Reliable Connection (RC) - ATOMIC WRITE (29)\n        0... .... = Solicited Event: False\n        .0.. .... = MigReq: False\n        ..00 .... = Pad Count: 0\n        .... 0000 = Header Version: 0\n        Partition Key: 65535\n        Reserved: 00\n        Destination Queue Pair: 0x000017\n        1... .... = Acknowledge Request: True\n        .000 0000 = Reserved (7 bits): 0\n        Packet Sequence Number: 7619091\n    RETH - RDMA Extended Transport Header\n        Virtual Address: 0x00007f54cc600008\n        Remote Key: 0x00001462\n        DMA Length: 8 (0x00000008)\n    Invariant CRC: 0xd8b788c1\nData (8 bytes)\n\n0000  21 00 00 00 00 00 00 00                           !.......\n    Data: 2100000000000000\n    [Length: 8]\n```\nUnlike FLUSH, new parser is not necessary.\n\n- Patch 4:\nThis is a trivial fix of comment.\n\n\n[1] [PATCH v7 0/8] RDMA/rxe: Add atomic write operation\nhttps://lore.kernel.org/linux-rdma/1669905432-14-1-git-send-email-yangx.jy@fujitsu.com/\n\n[2] [for-next PATCH 00/10] RDMA/rxe: Add RDMA FLUSH operation\nhttps://lore.kernel.org/lkml/20221206130201.30986-1-lizhijian@fujitsu.com/\n\n[3] Example of performing an RPMA atomic write to a persistent memory region\nhttps://github.com/pmem/rpma/tree/main/examples/07-atomic-write",
+  "state": "merged",
+  "created_at": "2023-11-06T10:58:00.489Z",
+  "updated_at": "2023-11-07T20:34:17.485Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2023-11-07T20:34:13.861Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "flush-atm-write",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 18497409,
+    "username": "ddmatsu",
+    "public_email": null,
+    "name": "Daisuke Matsuda",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/8fbad581f449c5792d6941174bebad4b4ce815974c293aabc313fe27ab92945d?s=80&d=identicon",
+    "web_url": "https://gitlab.com/ddmatsu"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 51630734,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "9daf31cc1084a6ffc8b59b61a7b1a2d56a9b5354",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-11-06T10:58:10.141Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!13085",
+  "references": {
+    "short": "!13085",
+    "relative": "!13085",
+    "full": "wireshark/wireshark!13085"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/13085",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-11-06T10:58:05.425Z",
+  "latest_build_finished_at": "2023-11-06T11:08:14.878Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1062237511,
+    "iid": 16,
+    "project_id": 51630734,
+    "sha": "815b2d04b6e7ce89986586751c991daa79ab9379",
+    "ref": "flush-atm-write",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-11-06T10:58:04.440Z",
+    "updated_at": "2023-11-06T11:08:14.896Z",
+    "web_url": "https://gitlab.com/ddmatsu/wireshark/-/pipelines/1062237511"
+  },
+  "head_pipeline": {
+    "id": 1064334383,
+    "iid": 55606,
+    "project_id": 7898047,
+    "sha": "9daf31cc1084a6ffc8b59b61a7b1a2d56a9b5354",
+    "ref": "refs/merge-requests/13085/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2023-11-07T20:33:46.392Z",
+    "updated_at": "2023-11-07T20:33:46.392Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1064334383",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1064334383",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "b7cc44eb346d73e973e2ee5124477b657f1c85a8",
+    "head_sha": "9daf31cc1084a6ffc8b59b61a7b1a2d56a9b5354",
+    "start_sha": "b7cc44eb346d73e973e2ee5124477b657f1c85a8"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "51c162cb4424a6c697dc5afd7a12f60175bbcaa6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1635318894,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 18497409,
+            "username": "ddmatsu",
+            "public_email": null,
+            "name": "Daisuke Matsuda",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/8fbad581f449c5792d6941174bebad4b4ce815974c293aabc313fe27ab92945d?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ddmatsu"
+          },
+          "created_at": "2023-11-06T11:00:56.584Z",
+          "updated_at": "2023-11-06T11:00:56.595Z",
+          "system": true,
+          "noteable_id": 261817535,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13085,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9bf565fda6a35d272e420808858ba23dc4f713c0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1638022309,
+          "type": null,
+          "body": "added 28 commits\n\n<ul><li>815b2d04...b7cc44eb - 24 commits from branch <code>wireshark:master</code></li><li>f85da38c - Infiniband dissector: Add definitions of FLUSH and ATOMIC Write</li><li>472de027 - Infiniband dissector: Enable to parse FLUSH operation packets</li><li>186e6512 - Infiniband dissector: Enable to parse ATOMIC Write operation packets</li><li>9daf31cc - Infiniband dissector: Fix typo in comment of parse_DCCETH()</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/13085/diffs?diff_id=838092171&start_sha=815b2d04b6e7ce89986586751c991daa79ab9379)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-11-07T20:33:43.995Z",
+          "updated_at": "2023-11-07T20:33:44.033Z",
+          "system": true,
+          "noteable_id": 261817535,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13085,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "177bfcf0286771bce128d3b1a535590f70673088",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1638022399,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-11-07T20:33:48.233Z",
+          "updated_at": "2023-11-07T20:33:48.249Z",
+          "system": true,
+          "noteable_id": 261817535,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13085,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -153,6 +153,7 @@ static void parse_RDETH(proto_tree *, tvbuff_t *, gint *offset);\n static void parse_IPvSix(proto_tree *, tvbuff_t *, gint *offset, packet_info *);\n static void parse_RWH(proto_tree *, tvbuff_t *, gint *offset, packet_info *, proto_tree *);\n static void parse_DCCETH(proto_tree *parentTree, tvbuff_t *tvb, gint *offset);\n+static void parse_FETH(proto_tree *, tvbuff_t *, gint *offset);\n \n static void parse_SUBN_LID_ROUTED(proto_tree *, packet_info *, tvbuff_t *, gint *offset);\n static void parse_SUBN_DIRECTED_ROUTE(proto_tree *, packet_info *, tvbuff_t *, gint *offset);\n@@ -551,6 +552,12 @@ static int hf_infiniband_original_remote_data = -1;\n static int hf_infiniband_IMMDT = -1;\n /* Invalidate Extended Transport Header (IETH) */\n static int hf_infiniband_IETH = -1;\n+/* FLUSH Extended Transport Header (FETH) */\n+static int hf_infiniband_FETH = -1;\n+static int hf_infiniband_reserved27 = -1;\n+static int hf_infiniband_selectivity_level = -1;\n+static int hf_infiniband_placement_type = -1;\n+\n /* Payload */\n static int hf_infiniband_payload = -1;\n static int hf_infiniband_invariant_crc = -1;\n@@ -1232,6 +1239,8 @@ static const value_string bth_opcode_tbl[] = {\n     { 0x15, \"Reliable Connection (RC) - Reserved\" },\n     { 0x16, \"Reliable Connection (RC) - SEND Last with Invalidate\" },\n     { 0x17, \"Reliable Connection (RC) - SEND Only with Invalidate\" },\n+    { 0x1C, \"Reliable Connection (RC) - FLUSH\" },\n+    { 0x1D, \"Reliable Connection (RC) - ATOMIC WRITE\" },\n     { 0x20, \"Unreliable Connection (UC) - SEND First\" },\n     { 0x21, \"Unreliable Connection (UC) - SEND Middle\" },\n     { 0x22, \"Unreliable Connection (UC) - SEND Last\" },\n@@ -1266,6 +1275,8 @@ static const value_string bth_opcode_tbl[] = {\n     { 0x53, \"Reliable Datagram (RD) - CmpSwap\" },\n     { 0x54, \"Reliable Datagram (RD) - FetchAdd\" },\n     { 0x55, \"Reliable Datagram (RD) - RESYNC\" },\n+    { 0x5C, \"Reliable Datagram (RD) - FLUSH\" },\n+    { 0x5D, \"Reliable Datagram (RD) - ATOMIC WRITE\" },\n     { 0x64, \"Unreliable Datagram (UD) - SEND only\" },\n     { 0x65, \"Unreliable Datagram (UD) - SEND only with Immediate\" },\n     { 0x80, \"CNP\" },\n@@ -1292,6 +1303,8 @@ static const value_string bth_opcode_tbl[] = {\n     { 0xB4, \"Extended Reliable Connection (XRC) - FetchAdd\" },\n     { 0xB6, \"Extended Reliable Connection (XRC) - SEND Last with Invalidate\" },\n     { 0xB7, \"Extended Reliable Connection (XRC) - SEND Only with Invalidate\" },\n+    { 0xBC, \"Extended Reliable Connection (XRC) - FLUSH\" },\n+    { 0xBD, \"Extended Reliable Connection (XRC) - ATOMIC WRITE\" },\n     { 0, NULL}\n };\n \n@@ -1408,6 +1421,8 @@ static const value_string OpCodeMap[] =\n     { RC_FETCH_ADD,                 \"RC Fetch Add \"},\n     { RC_SEND_LAST_INVAL,           \"RC Send Last Invalidate \"},\n     { RC_SEND_ONLY_INVAL,           \"RC Send Only Invalidate \" },\n+    { RC_FLUSH,                     \"RC Flush \" },\n+    { RC_ATOMIC_WRITE,              \"RC Atomic Write \" },\n \n     { RD_SEND_FIRST,                \"RD Send First \"},\n     { RD_SEND_MIDDLE,               \"RD Send Middle \" },\n@@ -1431,6 +1446,8 @@ static const value_string OpCodeMap[] =\n     { RD_CMP_SWAP,                  \"RD Compare Swap \"},\n     { RD_FETCH_ADD,                 \"RD Fetch Add \"},\n     { RD_RESYNC,                    \"RD RESYNC \"},\n+    { RD_FLUSH,                     \"RD Flush \"},\n+    { RD_ATOMIC_WRITE,              \"RD Atomic Write \" },\n \n     { UD_SEND_ONLY,                 \"UD Send Only \"},\n     { UD_SEND_ONLY_IMM,             \"UD Send Only Immediate \"},\n@@ -1531,6 +1548,12 @@ static const value_string DctOpCodeMap[] =\n /* ___________________________________ */\n #define DCCETH                      23\n /* ___________________________________ */\n+#define FETH_RETH                   24\n+/* ___________________________________ */\n+#define RDETH_FETH_RETH             25\n+/* ___________________________________ */\n+#define RDETH_RETH_PAYLD            26\n+/* ___________________________________ */\n \n \n /* Infiniband transport services\n@@ -2185,7 +2208,31 @@ skip_lrh:\n \n                 parse_PAYLOAD(all_headers_tree, pinfo, &info, tvb, &offset, packetLength, crclen, tree);\n                 break;\n+            case FETH_RETH:\n+                parse_FETH(all_headers_tree, tvb, &offset);\n+                parse_RETH(all_headers_tree, tvb, &offset, &info);\n+\n+                /*packetLength -= 4;*/ /* FETH */\n+                /*packetLength -= 16;*/ /* RETH */\n+                break;\n+            case RDETH_FETH_RETH:\n+                parse_RDETH(all_headers_tree, tvb, &offset);\n+                parse_FETH(all_headers_tree, tvb, &offset);\n+                parse_RETH(all_headers_tree, tvb, &offset, &info);\n+\n+                /*packetLength -= 4;*/ /* RDETH */\n+                /*packetLength -= 4;*/ /* FETH */\n+                /*packetLength -= 16;*/ /* RETH */\n+                break;\n+            case RDETH_RETH_PAYLD:\n+                parse_RDETH(all_headers_tree, tvb, &offset);\n+                parse_RETH(all_headers_tree, tvb, &offset, &info);\n+\n+                packetLength -= 4;\n+                packetLength -= 16;\n \n+                parse_PAYLOAD(all_headers_tree, pinfo, &info, tvb, &offset, packetLength, crclen, tree);\n+                break;\n             default:\n                 parse_VENDOR(all_headers_tree, tvb, &offset);\n                 break;\n@@ -2349,6 +2396,18 @@ find_next_header_sequence(struct infinibandinfo* ibInfo)\n     if ((ibInfo->opCode ^ UD_SEND_ONLY_IMM) == 0)\n         return DETH_IMMDT_PAYLD;\n \n+    if ((ibInfo->opCode ^ RC_FLUSH) == 0)\n+        return FETH_RETH;\n+\n+    if ((ibInfo->opCode ^ RD_FLUSH) == 0)\n+        return RDETH_FETH_RETH;\n+\n+    if ((ibInfo->opCode ^ RC_ATOMIC_WRITE) == 0)\n+        return RETH_PAYLD;\n+\n+    if ((ibInfo->opCode ^ RD_ATOMIC_WRITE) == 0)\n+        return RDETH_RETH_PAYLD;\n+\n     return -1;\n }\n \n@@ -2420,7 +2479,7 @@ parse_DETH(proto_tree *parentTree, packet_info *pinfo, tvbuff_t *tvb, gint *offs\n     *offset = local_offset;\n }\n \n-/* Parse DETH - DC Connected Extended Transport Header\n+/* Parse DCCETH - DC Connected Extended Transport Header\n * IN: parentTree to add the dissection to - in this code the all_headers_tree\n * IN: dctConnect - True if this is a DCT-Connect packet.\n * IN: tvb - the data buffer from wireshark\n@@ -2600,6 +2659,31 @@ parse_IETH(proto_tree * parentTree, tvbuff_t *tvb, gint *offset)\n     *offset = local_offset;\n }\n \n+/* Parse FETH - FLUSH extended transport header\n+* IN: parentTree to add the dissection to - in this code the all_headers_tree\n+* IN: tvb - the data buffer from wireshark\n+* IN/OUT: The current and updated offset */\n+static void\n+parse_FETH(proto_tree * parentTree, tvbuff_t *tvb, gint *offset)\n+{\n+    gint        local_offset = *offset;\n+    /* FETH - FLUSH Extended Transport Header */\n+    proto_item *FETH_header_item;\n+    proto_tree *FETH_header_tree;\n+\n+    FETH_header_item = proto_tree_add_item(parentTree, hf_infiniband_FETH, tvb, local_offset, 4, ENC_NA);\n+    proto_item_set_text(FETH_header_item, \"%s\", \"FETH - FLUSH Extended Transport Header\");\n+    FETH_header_tree = proto_item_add_subtree(FETH_header_item, ett_ieth);\n+\n+    proto_tree_add_item(FETH_header_tree, hf_infiniband_reserved27, tvb, local_offset, 4, ENC_BIG_ENDIAN);\n+    local_offset += 3;\n+    proto_tree_add_item(FETH_header_tree, hf_infiniband_selectivity_level, tvb, local_offset, 1, ENC_BIG_ENDIAN);\n+    proto_tree_add_item(FETH_header_tree, hf_infiniband_placement_type, tvb, local_offset, 1, ENC_BIG_ENDIAN);\n+\n+    local_offset += 1;\n+    *offset = local_offset;\n+}\n+\n static void update_sport(packet_info *pinfo)\n {\n     conversation_t *conv;\n@@ -6164,6 +6248,18 @@ skip_lrh:\n             case DCCETH:\n                 offset += 16; /* DCCETH */\n                 break;\n+            case FETH_RETH:\n+                offset += 4; /* FETH */\n+                offset += 16; /* RETH */\n+                break;\n+            case RDETH_FETH_RETH:\n+                offset += 4; /* RDETH */\n+                offset += 4; /* FETH */\n+                offset += 16; /* RETH */\n+                break;\n+            case  RDETH_RETH_PAYLD:\n+                offset += 4; /* RDETH */\n+                offset += 16; /* RETH */\n             default:\n                 break;\n         }\n@@ -6502,6 +6598,24 @@ void proto_register_infiniband(void)\n                 FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL}\n         },\n \n+        /* FLUSH Extended Transport Header (FETH) */\n+        { &hf_infiniband_FETH, {\n+                \"FLUSH Extended Transport Header\", \"infiniband.feth\",\n+                FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL}\n+        },\n+        { &hf_infiniband_reserved27, {\n+                \"Reserved (27bits)\", \"infiniband.feth.reserved27\",\n+                FT_UINT32, BASE_DEC, NULL, 0xFFFFFFE0, NULL, HFILL}\n+        },\n+        { &hf_infiniband_selectivity_level, {\n+                \"Selectivity Level\", \"infiniband.feth.sel\",\n+                FT_UINT8, BASE_DEC, NULL, 0x18, NULL, HFILL}\n+        },\n+        { &hf_infiniband_placement_type, {\n+                \"Placement Type\", \"infiniband.feth.plt\",\n+                FT_UINT8, BASE_DEC, NULL, 0x07, NULL, HFILL}\n+        },\n+\n         /* Payload */\n         { &hf_infiniband_payload, {\n                 \"Payload\", \"infiniband.payload\",\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-infiniband.c",
+      "old_path": "epan/dissectors/packet-infiniband.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -55,6 +55,8 @@ typedef struct {\n #define RC_FETCH_ADD                    20 /*0b00010100 */\n #define RC_SEND_LAST_INVAL              22 /*0b00010110 */\n #define RC_SEND_ONLY_INVAL              23 /*0b00010111 */\n+#define RC_FLUSH                        28 /*0b00011100 */\n+#define RC_ATOMIC_WRITE                 29 /*0b00011101 */\n \n /* Reliable Datagram (RD)\n * [7-5] = 010 */\n@@ -80,6 +82,8 @@ typedef struct {\n #define RD_CMP_SWAP                     83 /*0b01010011 */\n #define RD_FETCH_ADD                    84 /*0b01010100 */\n #define RD_RESYNC                       85 /*0b01010101 */\n+#define RD_FLUSH                        92 /*0b01011100 */\n+#define RD_ATOMIC_WRITE                 93 /*0b01011101 */\n \n /* Unreliable Datagram (UD)\n * [7-5] = 011 */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-infiniband.h",
+      "old_path": "epan/dissectors/packet-infiniband.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "9daf31cc1084a6ffc8b59b61a7b1a2d56a9b5354",
+      "short_id": "9daf31cc",
+      "created_at": "2023-11-07T20:33:37.000+00:00",
+      "parent_ids": [
+        "186e6512f9e768329c5ff0a03accbd947078a32d"
+      ],
+      "title": "Infiniband dissector: Fix typo in comment of parse_DCCETH()",
+      "message": "Infiniband dissector: Fix typo in comment of parse_DCCETH()\n\nSigned-off-by: Daisuke Matsuda <matsuda-daisuke@fujitsu.com>\n",
+      "author_name": "Daisuke Matsuda",
+      "author_email": "matsuda-daisuke@fujitsu.com",
+      "authored_date": "2023-11-06T18:57:32.000+09:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-11-07T20:33:37.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9daf31cc1084a6ffc8b59b61a7b1a2d56a9b5354"
+    },
+    {
+      "id": "186e6512f9e768329c5ff0a03accbd947078a32d",
+      "short_id": "186e6512",
+      "created_at": "2023-11-07T20:33:37.000+00:00",
+      "parent_ids": [
+        "472de027ea9a2c3489e98a533aaef5a3e52bfcef"
+      ],
+      "title": "Infiniband dissector: Enable to parse ATOMIC Write operation packets",
+      "message": "Infiniband dissector: Enable to parse ATOMIC Write operation packets\n\nRDMA opcode \"ATOMIC Write\" was newly added in IBTA Specification 1.5. This\npatch enables to parse ATOMIC Write operation packets.\n\nSigned-off-by: Daisuke Matsuda <matsuda-daisuke@fujitsu.com>\n",
+      "author_name": "Daisuke Matsuda",
+      "author_email": "matsuda-daisuke@fujitsu.com",
+      "authored_date": "2023-11-06T18:19:23.000+09:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-11-07T20:33:37.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/186e6512f9e768329c5ff0a03accbd947078a32d"
+    },
+    {
+      "id": "472de027ea9a2c3489e98a533aaef5a3e52bfcef",
+      "short_id": "472de027",
+      "created_at": "2023-11-07T20:33:37.000+00:00",
+      "parent_ids": [
+        "f85da38c5ad14ada97e8525f7c8fe6bcf4353ba9"
+      ],
+      "title": "Infiniband dissector: Enable to parse FLUSH operation packets",
+      "message": "Infiniband dissector: Enable to parse FLUSH operation packets\n\nRDMA opcode \"FLUSH\" was newly added in IBTA Specification 1.5. This patch\nenables to parse FLUSH operation packets.\n\nSigned-off-by: Daisuke Matsuda <matsuda-daisuke@fujitsu.com>\n",
+      "author_name": "Daisuke Matsuda",
+      "author_email": "matsuda-daisuke@fujitsu.com",
+      "authored_date": "2023-11-06T17:06:18.000+09:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-11-07T20:33:37.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/472de027ea9a2c3489e98a533aaef5a3e52bfcef"
+    },
+    {
+      "id": "f85da38c5ad14ada97e8525f7c8fe6bcf4353ba9",
+      "short_id": "f85da38c",
+      "created_at": "2023-11-07T20:33:37.000+00:00",
+      "parent_ids": [
+        "b7cc44eb346d73e973e2ee5124477b657f1c85a8"
+      ],
+      "title": "Infiniband dissector: Add definitions of FLUSH and ATOMIC Write",
+      "message": "Infiniband dissector: Add definitions of FLUSH and ATOMIC Write\n\nFLUSH and ATOMIC Write were newly added in IBTA Specification 1.5. This\npatch adds the definitions of these new operations. Wireshark can now\ndistinguish the packets just like this:\n  RRoCE 78 RC Flush QP=0x000017\n  RRoCE 82 RC Atomic Write QP=0x000017\n\nSigned-off-by: Daisuke Matsuda <matsuda-daisuke@fujitsu.com>\n",
+      "author_name": "Daisuke Matsuda",
+      "author_email": "matsuda-daisuke@fujitsu.com",
+      "authored_date": "2023-11-02T18:49:12.000+09:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-11-07T20:33:37.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/f85da38c5ad14ada97e8525f7c8fe6bcf4353ba9"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 838092171,
+      "head_commit_sha": "9daf31cc1084a6ffc8b59b61a7b1a2d56a9b5354",
+      "base_commit_sha": "b7cc44eb346d73e973e2ee5124477b657f1c85a8",
+      "start_commit_sha": "b7cc44eb346d73e973e2ee5124477b657f1c85a8",
+      "created_at": "2023-11-07T20:33:42.876Z",
+      "merge_request_id": 261817535,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "4faaa7edb51e79647f4bca582abb9d2774836432"
+    },
+    {
+      "id": 836070370,
+      "head_commit_sha": "815b2d04b6e7ce89986586751c991daa79ab9379",
+      "base_commit_sha": "dc6113083e425d6c2f86020d9bdbab2c29255e44",
+      "start_commit_sha": "dc6113083e425d6c2f86020d9bdbab2c29255e44",
+      "created_at": "2023-11-06T10:58:02.601Z",
+      "merge_request_id": 261817535,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": "4faaa7edb51e79647f4bca582abb9d2774836432"
+    }
+  ]
+}

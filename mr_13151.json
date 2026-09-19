@@ -1,0 +1,339 @@
+{
+  "id": 262678847,
+  "iid": 13151,
+  "project_id": 7898047,
+  "title": "Ethernet, PRP: Convert PRP to trailer dissector",
+  "description": "Pass the \"payload_offset\" value to add_ethernet_trailer, as\nused in ethertype (and generally 14 for full frames). This\nallows computing the \"frame length including addresses before\nany tags or trailers were added\" which is often where padding\nactually starts. This fixes detection of padding vs trailier\nwith ISL (see Sample Captures page) as well as a large number\nof tag formats (802.1AD, etc.), at least when PADDING_ZERO is set.\nFor PADDING_ANY, continue to use the old length method.\n\nThis also allows passing the payload length post-ethertype/length\nfield to the trailer subdissectors, which allows the PRP dissector\nto be converted from a postdissector to a eth trailer heuristic\ndissector.\n\nWhen we are in \"maybe FCS\" mode, call the heuristic dissectors\ntwice if need be, once with and once without the putative FCS.\nAs these are heuristic dissectors, they can't indicate the number\nof bytes consumed, so if there's a trailer but also an FCS later,\nreturning TRUE for the trailer prevents us from detecting an\nFCS. (Some heuristic trailer dissectors have loops to deal with\npossible padding after the trailer and will return TRUE the first\ntime; we still can't deal with this. Perhaps they should only\nskip before zeros in their loops; in no case are multiple trailers\nhandled well, previously or now.)\n\nFix MACsec padding, trailer, and FCS detection when the short length\nfield is present by calling set_actual_length. The current workaround\nhas issues because it's only in effect for the next ethertype call\n(where fcs_len is 0), not the previous one.\n\nDon't allow computing the FCS when we don't actually have the\nentire frame. Most tag dissectors calling the ethertype dissector\na second time set fcs_len to 0 because of this already.\n\nFix #15884, #17068, #17067\n\nThe first two will work automatically in default auto detect mode.\nFor #17067 this requires setting the \"Fixed ethernet trailer length\"\npref in ethernet to the PRP size; the more general problem of\nautodetecting any FCS or trailer after the MACsec ICV (for non\nshort length) continues to need a different solution.\n\nAdd some relevant comments about still unsolved issues.\n\n\n(cherry picked from commit b34ec48b1e77911aba840fcef0c4fcff9903db49)",
+  "state": "closed",
+  "created_at": "2023-11-09T09:19:53.873Z",
+  "updated_at": "2023-11-10T06:55:20.564Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "closed_at": "2023-11-10T06:54:10.896Z",
+  "target_branch": "release-4.2",
+  "source_branch": "cherry-pick-b34ec48b",
+  "user_notes_count": 2,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 7898047,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "43a43516483cd0444e01533a2f7a0488e5f02dc3",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-11-09T09:20:02.047Z",
+  "reference": "!13151",
+  "references": {
+    "short": "!13151",
+    "relative": "!13151",
+    "full": "wireshark/wireshark!13151"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/13151",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "6",
+  "latest_build_started_at": "2023-11-09T09:20:01.096Z",
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1066381663,
+    "iid": 55730,
+    "project_id": 7898047,
+    "sha": "43a43516483cd0444e01533a2f7a0488e5f02dc3",
+    "ref": "refs/merge-requests/13151/head",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2023-11-09T09:19:59.847Z",
+    "updated_at": "2023-11-09T09:43:10.922Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1066381663"
+  },
+  "head_pipeline": {
+    "id": 1066381663,
+    "iid": 55730,
+    "project_id": 7898047,
+    "sha": "43a43516483cd0444e01533a2f7a0488e5f02dc3",
+    "ref": "refs/merge-requests/13151/head",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2023-11-09T09:19:59.847Z",
+    "updated_at": "2023-11-09T09:43:10.922Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1066381663",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2023-11-09T09:20:01.096Z",
+    "finished_at": "2023-11-09T09:43:10.884Z",
+    "committed_at": null,
+    "duration": 1058,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_failed",
+      "text": "Failed",
+      "label": "failed",
+      "group": "failed",
+      "tooltip": "failed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1066381663",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_failed-41304d7f7e3828808b0c26771f0309e55296819a9beea3ea9fbf6689d9857c12.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "0197eaf618d7eb8cf0a09222e61d66c6d1e45da8",
+    "head_sha": "43a43516483cd0444e01533a2f7a0488e5f02dc3",
+    "start_sha": "0197eaf618d7eb8cf0a09222e61d66c6d1e45da8"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "ae007347d6a381edb805d6df5ca1e0a89abb88ba",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1642390799,
+          "type": null,
+          "body": "This depends on a few other smaller Ethernet trailer commits I did in some other dissectors in order to cherry-pick cleanly. I'm fine with not getting it into 4.2.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-11-10T06:52:18.934Z",
+          "updated_at": "2023-11-10T06:52:18.934Z",
+          "system": false,
+          "noteable_id": 262678847,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13151,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2f4625f9987678fdf10a9a1d953c39b189eddab1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1642392164,
+          "type": null,
+          "body": "Ok, sounded like it solved some bugs.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-11-10T06:54:10.392Z",
+          "updated_at": "2023-11-10T06:55:20.545Z",
+          "system": false,
+          "noteable_id": 262678847,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 13151,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -688,7 +688,8 @@ static gboolean check_is_802_2(tvbuff_t *tvb, int fcs_len)\n  */\n void\n add_ethernet_trailer(packet_info *pinfo, proto_tree *tree, proto_tree *fh_tree,\n-    int trailer_id, tvbuff_t *tvb, tvbuff_t *trailer_tvb, int fcs_len)\n+    int trailer_id, tvbuff_t *tvb, tvbuff_t *trailer_tvb, int fcs_len,\n+    int payload_offset)\n {\n   /* If there're some bytes left over, it could be a combination of:\n      - padding to meet the minimum 64 byte frame length\n@@ -714,17 +715,62 @@ add_ethernet_trailer(packet_info *pinfo, proto_tree *tree, proto_tree *fh_tree,\n     trailer_length = tvb_captured_length(trailer_tvb);\n     trailer_reported_length = tvb_reported_length(trailer_tvb);\n \n-    /* There couldn't be a padding if the length of the frame (including the trailer) is still\n-       less than 60 bytes. */\n-    maybe_padded = (pinfo->fd->pkt_len >= 60 && (pinfo->fd->pkt_len - trailer_reported_length) < 60);\n+    /* Theoretically padding is added if the frame length without the FCS is\n+     * less than 60 bytes, starting from the addresses. In practice, frames\n+     * are often padded so that the length is 60 bytes not counting any tags\n+     * before the final Ethertype. (I.e., padding so that the payload portion\n+     * is 46.)\n+     *\n+     * Padding might be added to a frame at one point in a network, and then a\n+     * tag or trailer added later without removing the padding. Conversely, a\n+     * frame might have padding and a tag and trailer, and then the tag removed,\n+     * dropping the frame below 60 octets, leading to more padding at the end,\n+     * after the trailer. https://gitlab.com/wireshark/wireshark/-/wikis/PRP\n+     * has useful illustrations of both situations. The heuristic trailer\n+     * dissectors can try to deal with both situations (though looping through\n+     * the trailer bytes increases false positives.)\n+     *\n+     * By increasing the minimum frame size (padding payload to 46) the former\n+     * situation always occurs, and trailers appear at the end. IEEE Std\n+     * 802.1Q-2014 G.2.1 \"Treatment of PAD fields in IEEE 802.3 frames\"\n+     * and G.2.3 \"Minimum PDU size\" specifically state it is permissible for a\n+     * Bridge to to adopt a minimum tagged frame length of 68 bytes (64 without\n+     * FCS) when 802.1Q is used. Other specs don't directly address this, but\n+     * we often see padding on frames that are more than 60 octets without FCS.\n+     */\n+    int frame_len;\n+    if (eth_padding == PADDING_ANY) {\n+      /* This is a size at which there definitely should be padding,\n+       * which we use with PADDING_ANY to be conservative so we don't\n+       * mark any possible trailer as padding. Fo certain cases (tags,\n+       * trailers, especially encapsulation like ISL, GSE Bridged Frames)\n+       * some padding will be classified as trailer.\n+       */\n+      frame_len = pinfo->fd->pkt_len;\n+    } else {\n+      /* This is the size up to which there might be padding, if padding\n+       * was added before adding tags after the first ethertype.\n+       * Use this if we're testing PADDING_ZERO, which is strict.\n+       * Consecutive zeroes up to this point will be padding,\n+       * anything starting with the first non-zero will be trailer.\n+       */\n+      frame_len = tvb_reported_length(tvb) + (14 - payload_offset);\n+    }\n+    maybe_padded = (frame_len >= 60 && (frame_len - trailer_reported_length) < 60);\n \n     if (eth_padding != PADDING_NONE && maybe_padded) {\n-      padding_length = 60 - (pinfo->fd->pkt_len - trailer_reported_length);\n+      /* XXX: There could be another 4 bytes of padding if a Bridge extends\n+       * the minimum frame size of 68 on untagged fraomes, see discussion\n+       * above of IEEE 802.1Q Annex G. If we require padding to be zeros,\n+       * we could possibly use 64 instead of 60. (Too many false positives\n+       * with PADDING_ANY.)\n+       */\n+      padding_length = 60 - (frame_len - trailer_reported_length);\n       /* Require padding to be zeros */\n       if (eth_padding == PADDING_ZEROS) {\n         for (guint i = 0; i < padding_length; i++) {\n           if (tvb_get_gint8(trailer_tvb, i) != 0) {\n-            padding_length = 0;\n+            padding_length = i;\n             break;\n           }\n         }\n@@ -739,12 +785,29 @@ add_ethernet_trailer(packet_info *pinfo, proto_tree *tree, proto_tree *fh_tree,\n       }\n     }\n \n+    int payload_length = tvb_reported_length(tvb) - payload_offset;\n+    bool dissected = FALSE;\n+\n+    if (fcs_len != 4) {\n+      /* Try trailer dissection without an FCS */\n+      real_trailer_tvb = tvb_new_subset_remaining(trailer_tvb, padding_length);\n+      /* Call all ethernet trailer dissectors to dissect the trailer if\n+         we actually have a trailer. The PRP trailer dissector wants\n+         to know about the payload (LSDU) length. */\n+      if (tvb_reported_length(real_trailer_tvb) != 0) {\n+        dissected = dissector_try_heuristic(eth_trailer_subdissector_list,\n+                                            real_trailer_tvb, pinfo, tree,\n+                                            &hdtbl_entry, &payload_length);\n+      }\n+    }\n+\n     if (fcs_len != 0) {\n       /* If fcs_len is 4, we assume we definitely have an FCS.\n-         Otherwise, then, if the frame is big enough that, if we\n+         If fcs_len is -1, if the frame is big enough that, if we\n          have a trailer, it probably includes an FCS, and we have\n-         enough space in the trailer for the FCS, we assume we\n-         have an FCS.\n+         enough space in the trailer for the FCS, and we didn't\n+         have a heuristic trailer dissector successfully dissect\n+         without an FCS, we assume we have an FCS.\n \n          \"Big enough\" means 64 bytes or more; any frame that big\n          needs no trailer, as there's no need to pad an Ethernet\n@@ -752,22 +815,13 @@ add_ethernet_trailer(packet_info *pinfo, proto_tree *tree, proto_tree *fh_tree,\n \n          XXX: This is not quite true. See IEEE Std 802.1Q-2014\n          G.2.1 \"Treatment of PAD fields in IEEE 802.3 frames\" and\n-         G.2.3 \"Minimum PDU size.\" It is permissible for a Bridge\n-         to adopt a minimum tagged frame length of 68 bytes (64\n-         without counting FCS) to avoid having to remove up to 4\n-         octets of padding when receiving an untagged padded IEEE\n-         802.3 frame and adding tagging to it, it being easier to\n-         add extra padding than to remove it. (Illustrated at\n-         https://gitlab.com/wireshark/wireshark/-/wikis/PRP )\n-         The same calculation with 4 more octets can apply to 802.1ad\n-         QinQ. These cases are hard to deal with, though, especially\n-         if PADDING_ANY is set.\n+         G.2.3 \"Minimum PDU size\" and the discussion above.\n \n          The trailer must be at least 4 bytes long to have enough\n          space for an FCS. */\n \n-      if (fcs_len == 4 || (tvb_reported_length(tvb) >= 64 &&\n-        trailer_reported_length >= 4)) {\n+      if (fcs_len == 4 || (fcs_len == -1 && !dissected &&\n+        frame_len >= 64 && trailer_reported_length >= 4)) {\n         /* Either we know we have an FCS, or we believe we have an FCS. */\n         if (trailer_length < trailer_reported_length) {\n           /* The packet is claimed to have enough data for a 4-byte FCS,\n@@ -777,52 +831,48 @@ add_ethernet_trailer(packet_info *pinfo, proto_tree *tree, proto_tree *fh_tree,\n              length; that will slice off what of the FCS, if any, is\n              in the captured packet. */\n           trailer_reported_length -= 4;\n-          if (trailer_length > trailer_reported_length)\n+          if (trailer_length > trailer_reported_length) {\n+            payload_length -= (trailer_length - trailer_reported_length);\n             trailer_length = trailer_reported_length;\n+          }\n           has_fcs = TRUE;\n         } else {\n           /* We captured all of the packet, including what appears to\n              be a 4-byte FCS.  Slice it off. */\n           trailer_length -= 4;\n           trailer_reported_length -= 4;\n+          payload_length -= 4;\n           has_fcs = TRUE;\n         }\n+\n+        real_trailer_tvb = tvb_new_subset_length_caplen(trailer_tvb, padding_length,\n+                                  trailer_length, trailer_reported_length);\n+\n+        /* Call all ethernet trailer dissectors to dissect the trailer if\n+           we actually have a trailer.  */\n+        if (tvb_reported_length(real_trailer_tvb) != 0) {\n+          dissected = dissector_try_heuristic(eth_trailer_subdissector_list,\n+                                              real_trailer_tvb, pinfo, tree,\n+                                              &hdtbl_entry, &payload_length);\n+        }\n       }\n     }\n \n-    /* Create a new tvb without the padding and/or the (assumed) fcs */\n-    if (fcs_len==4)\n-      real_trailer_tvb = tvb_new_subset_length_caplen(trailer_tvb, padding_length,\n-                                trailer_length, trailer_reported_length);\n-    else\n-      real_trailer_tvb = tvb_new_subset_remaining(trailer_tvb, padding_length);\n-\n-    /* Call all ethernet trailer dissectors to dissect the trailer if\n-       we actually have a trailer.  */\n-    if (tvb_reported_length(real_trailer_tvb) != 0) {\n-      if (dissector_try_heuristic(eth_trailer_subdissector_list,\n-                                   real_trailer_tvb, pinfo, tree, &hdtbl_entry, NULL) ) {\n-        /* If we're not sure that there is a FCS, all trailer data\n-           has been given to the ethernet-trailer dissector, so\n-           stop dissecting here */\n-        if (fcs_len!=4)\n-            return;\n-      } else {\n-        /* No luck with the trailer dissectors, so just display the\n-           extra bytes as general trailer */\n-        if (trailer_length != 0) {\n-          tvb_ensure_bytes_exist(tvb, 0, trailer_length);\n-          proto_item *pi = proto_tree_add_item(fh_tree, trailer_id, real_trailer_tvb, 0,\n-            trailer_length, ENC_NA);\n-          if (maybe_padded) {\n-            if (eth_padding == PADDING_ANY && padding_length > 0) {\n-              expert_add_info_format(pinfo, pi, &ei_eth_padding_bad,\n-                  \"Padding was assumed, and an undecoded trailer exists. Some of the trailer may have been consumed by padding.\");\n-            }\n-            else if (eth_padding == PADDING_ZEROS && padding_length == 0) {\n-              expert_add_info_format(pinfo, pi, &ei_eth_padding_bad,\n-                  \"Didn't find padding of zeros, and an undecoded trailer exists. There may be padding of non-zeros.\");\n-            }\n+    if (!dissected) {\n+      /* No luck with the trailer dissectors, so just display the\n+         extra bytes as general trailer */\n+      if (trailer_length != 0) {\n+        tvb_ensure_bytes_exist(real_trailer_tvb, 0, trailer_length);\n+        proto_item *pi = proto_tree_add_item(fh_tree, trailer_id, real_trailer_tvb, 0,\n+          trailer_length, ENC_NA);\n+        if (maybe_padded) {\n+          if (eth_padding == PADDING_ANY && padding_length > 0) {\n+            expert_add_info_format(pinfo, pi, &ei_eth_padding_bad,\n+                \"Padding was assumed, and an undecoded trailer exists. Some of the trailer may have been consumed by padding.\");\n+          }\n+          else if (eth_padding == PADDING_ZEROS && padding_length == 0) {\n+            expert_add_info_format(pinfo, pi, &ei_eth_padding_bad,\n+                \"Didn't find padding of zeros, and an undecoded trailer exists. There may be padding of non-zeros.\");\n           }\n         }\n       }\n@@ -830,7 +880,11 @@ add_ethernet_trailer(packet_info *pinfo, proto_tree *tree, proto_tree *fh_tree,\n \n     if (has_fcs) {\n       guint32 sent_fcs = tvb_get_ntohl(trailer_tvb, padding_length+trailer_length);\n-      if(eth_check_fcs){\n+      /* If we don't have the entire header, we can't actually check the FCS.\n+       * Dissectors that don't have the entire header (say, a tag) probably\n+       * should have set fcs_len to zero in the ethertype_data struct.\n+       * XXX: Maybe add an expert info saying why we aren't checking the FCS? */\n+      if (eth_check_fcs && payload_offset == ETH_HEADER_SIZE) {\n         guint32 fcs = crc32_802_tvb(tvb, tvb_captured_length(tvb) - 4);\n         proto_tree_add_checksum(fh_tree, trailer_tvb, padding_length+trailer_length, hf_eth_fcs, hf_eth_fcs_status, &ei_eth_fcs_bad, pinfo, fcs, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY);\n \n@@ -897,7 +951,7 @@ dissect_eth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n     /* Now handle the ethernet trailer and optional FCS */\n     next_tvb = tvb_new_subset_remaining(real_tvb, tvb_captured_length(real_tvb) - total_trailer_length);\n     add_ethernet_trailer(pinfo, tree, fh_tree, hf_eth_trailer, real_tvb, next_tvb,\n-                         fcs_len);\n+                         fcs_len, ETH_HEADER_SIZE);\n   } else {\n     dissect_eth_common(real_tvb, pinfo, tree, fcs_len);\n   }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-eth.c",
+      "old_path": "epan/dissectors/packet-eth.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -18,6 +18,6 @@ typedef struct _eth_hdr {\n \n void add_ethernet_trailer(packet_info *pinfo, proto_tree *tree, proto_tree *fh_tree,\n \t\t\t  int trailer_id, tvbuff_t *tvb, tvbuff_t *trailer_tvb,\n-\t\t\t  int fcs_len);\n+\t\t\t  int fcs_len, int payload_offset);\n \n #endif\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-eth.h",
+      "old_path": "epan/dissectors/packet-eth.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -368,7 +368,41 @@ add_dix_trailer(packet_info *pinfo, proto_tree *tree, proto_tree *fh_tree, int t\n \t} else\n \t\ttrailer_tvb = NULL;\t/* no trailer */\n \n-\tadd_ethernet_trailer(pinfo, tree, fh_tree, trailer_id, tvb, trailer_tvb, fcs_len);\n+\t/* XXX: If the length of next_tvb is less than it was before, but this\n+\t * is not the first time the ethertype dissector has been called, we\n+\t * would rather not add the trailer here, but instead also reduce the\n+\t * length of tvb and have the previous ethertype dissector add the\n+\t * trailer instead. That's the only way we can properly detect and\n+\t * check the FCS in \"maybefcs\" mode (we need the full frame.)\n+\t * It also would be less confusing because we would always just\n+\t * use eth.trailer instead of sometimes e.g. vlan.trailer (#18252).\n+\t *\n+\t * It does require that the second time the ethertype dissector was\n+\t * called that ethertype_data.payload_offset was set and the original\n+\t * tvb used instead of creating a new subset tvb - in the latter case\n+\t * tvb here is not the same as the next_tvb from the previous ethertype\n+\t * dissector. That's not the case for ethertypes like 802.1AE MACSec\n+\t * that add a trailer as well, where we likely took a subset to shave\n+\t * off the trailer.\n+\t *\n+\t * We can't just \"set the reported length of the backing tvbuff\",\n+\t * because the ultimately backing tvbuff might be something that\n+\t * encapsulates the Ethernet frame, e.g. ISL or GSE Bridged Frames)\n+\t *\n+\t * To see if the ethertype dissector was called earlier from the entire\n+\t * Ethernet frame, we can't just check if offset_after_etype != 14, as\n+\t * it could be something that calls ethertype directly without having the\n+\t * entire Ethernet frame somewhere (e.g. a Linux \"cooked mode\" capture\n+\t * (packet-sll), or something set in the USER ENCAP UAT, etc.)\n+\t * We also can't check pinfo->curr_proto_layer_num or proto_layers if\n+\t * there are multiple entire Ethernet frames encapsulated in this\n+\t * frame, e.g. a DVB BaseBand Frame with multiple GSE frames with\n+\t * Bridge Frame encapsulation.\n+\t *\n+\t * We might need to add a new field to ethertype_data, or set\n+\t * something in pinfo->pool scoped packet data.\n+\t */\n+\tadd_ethernet_trailer(pinfo, tree, fh_tree, trailer_id, tvb, trailer_tvb, fcs_len, offset_after_etype);\n }\n \n void\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ethertype.c",
+      "old_path": "epan/dissectors/packet-ethertype.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -110,7 +110,7 @@ dissect_802_3(volatile int length, gboolean is_802_2, tvbuff_t *tvb,\n      is what we want, as it'll report that the packet was cut short. */\n   trailer_tvb = tvb_new_subset_remaining(tvb, offset_after_length + length);\n \n-  add_ethernet_trailer(pinfo, tree, fh_tree, trailer_id, tvb, trailer_tvb, fcs_len);\n+  add_ethernet_trailer(pinfo, tree, fh_tree, trailer_id, tvb, trailer_tvb, fcs_len, offset_after_length);\n }\n \n void\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ieee8023.c",
+      "old_path": "epan/dissectors/packet-ieee8023.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -281,7 +281,7 @@ dissect_isl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int fcs_len)\n \n       /* Now add the Ethernet trailer and FCS.\n          XXX - do this only if we're encapsulated in Ethernet? */\n-      add_ethernet_trailer(pinfo, tree, fh_tree, hf_isl_trailer, tvb, trailer_tvb, fcs_len);\n+      add_ethernet_trailer(pinfo, tree, fh_tree, hf_isl_trailer, tvb, trailer_tvb, fcs_len, 14);\n     }\n     break;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-isl.c",
+      "old_path": "epan/dissectors/packet-isl.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -49,13 +49,12 @@ static gint ett_prp_redundancy_control_trailer = -1;\n \n /* Code to actually dissect the packets */\n static int\n-dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)\n+dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data)\n {\n     proto_item *ti;\n     proto_tree *prp_tree;\n-    guint       i;\n-    guint       length;\n-    guint       offset;\n+    int         i;\n+    int         length;\n     guint16     lan_id;\n     guint16     lsdu_size;\n     guint16     prp1_suffix;\n@@ -66,35 +65,6 @@ dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, pr\n     trailer_length = 0;\n     length = tvb_reported_length(tvb);\n \n-    if(length < 14)\n-        return 0;\n-\n-    /*\n-     * This is horribly broken.  It assumes the frame is an Ethernet\n-     * frame, with a type field at an offset of 12 bytes from the header.\n-     * That is not guaranteed to be true.\n-     *\n-     * Ideally, this should be a heuristic dissector registered in\n-     * the \"eth.trailer\" heuristic dissector table (and it can\n-     * be registered as \"disabled by default\" there); unfortunately,\n-     * it needs to know the length of the entire frame for the\n-     * PRP-0 heuristic, so it'd have to be passed that length\n-     * out of band.\n-     */\n-    if (!tvb_bytes_exist(tvb, 12, 2))\n-        return 0;\n-    if(ETHERTYPE_VLAN == tvb_get_ntohs(tvb, 12)) /* tagged frame */\n-    {\n-        offset = 18;\n-    }\n-    else /* untagged */\n-    {\n-        offset = 14;\n-    }\n-\n-    if (!tree)\n-        return tvb_captured_length(tvb);\n-\n     /*\n      * Is there enough data in the packet to every try to search for a\n      * trailer?\n@@ -102,23 +72,25 @@ dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, pr\n     if (!tvb_bytes_exist(tvb, (length-4)+2, 2))\n         return 0;  /* no */\n \n+    if (data == NULL) {\n+        return 0;\n+    }\n+\n+    int lsdu_size_correct = *(int*)data;\n+\n     /* search for PRP-0 trailer */\n     /* If the frame is >  64 bytes, the PRP-0 trailer is always at the end. */\n     /* If the frame is <= 64 bytes, the PRP-0 trailer may be anywhere (before the padding) */\n-    for(i=length-4; i>=offset; i--)\n+    for(i = 0; i <= length - 4; i++)\n     {\n-        lan_id    = tvb_get_ntohs(tvb, (i+2)) >> 12;\n-        lsdu_size = tvb_get_ntohs(tvb, (i+2)) & 0x0fff;\n-        if(lsdu_size == i+4-offset && (lan_id == 0xa || lan_id == 0xb))\n+        lan_id    = tvb_get_ntohs(tvb, length - 2 - i) >> 12;\n+        lsdu_size = tvb_get_ntohs(tvb, length - 2 - i) & 0x0fff;\n+        if(lsdu_size == (lsdu_size_correct - i) && (lan_id == 0xa || lan_id == 0xb))\n         {\n-            trailer_start  = i;\n+            trailer_start  = length - 4 - i;\n             trailer_length = 4;\n             break;\n         }\n-\n-        if (length > 64) {\n-            break; /* don't search, just check the last position */\n-        }\n     }\n \n     /* check for PRP-1 trailer */\n@@ -167,7 +139,6 @@ dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, pr\n                                 tvb, trailer_start+2, 2, ENC_BIG_ENDIAN);\n         } else {\n             /* PRP-1 */\n-            int lsdu_size_correct = length-offset;\n             if (lsdu_size == lsdu_size_correct) {\n                 proto_tree_add_uint_format(prp_tree, hf_prp_redundancy_control_trailer_size,\n                                            tvb, trailer_start+2, 2, lsdu_size,\n@@ -182,7 +153,7 @@ dissect_prp_redundancy_control_trailer(tvbuff_t *tvb, packet_info *pinfo _U_, pr\n                                 tvb, trailer_start+4, 2, ENC_BIG_ENDIAN);\n         }\n     }\n-    return tvb_captured_length(tvb);\n+    return trailer_length;\n }\n \n /* Register the protocol with Wireshark */\n@@ -226,18 +197,10 @@ void proto_register_prp(void)\n     };\n \n     module_t *prp_module;\n-    dissector_handle_t prp_handle;\n \n     /* Register the protocol name and description */\n     proto_prp = proto_register_protocol(\"Parallel Redundancy Protocol (IEC62439 Part 3)\", \"PRP\", \"prp\");\n \n-    /*  Post dissectors (such as the trailer dissector for this protocol)\n-     *  get called for every single frame anyone loads into Wireshark.\n-     *  Since this protocol is not of general interest we disable this\n-     *  protocol by default.\n-     */\n-    proto_disable_by_default(proto_prp);\n-\n     prp_module = prefs_register_protocol_obsolete(proto_prp);\n \n     prefs_register_obsolete_preference(prp_module, \"enable\");\n@@ -246,9 +209,8 @@ void proto_register_prp(void)\n     proto_register_field_array(proto_prp, hf, array_length(hf));\n     proto_register_subtree_array(ett, array_length(ett));\n \n-    prp_handle = register_dissector(\"prp\", dissect_prp_redundancy_control_trailer, proto_prp);\n-\n-    register_postdissector(prp_handle);\n+    heur_dissector_add(\"eth.trailer\", dissect_prp_redundancy_control_trailer,\n+        \"PRP Trailer\", \"prp_eth\", proto_prp, HEURISTIC_ENABLE);\n }\n \n /*\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-prp.c",
+      "old_path": "epan/dissectors/packet-prp.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "43a43516483cd0444e01533a2f7a0488e5f02dc3",
+      "short_id": "43a43516",
+      "created_at": "2023-11-09T09:19:46.000+00:00",
+      "parent_ids": [
+        "0197eaf618d7eb8cf0a09222e61d66c6d1e45da8"
+      ],
+      "title": "Ethernet, PRP: Convert PRP to trailer dissector",
+      "message": "Ethernet, PRP: Convert PRP to trailer dissector\n\nPass the \"payload_offset\" value to add_ethernet_trailer, as\nused in ethertype (and generally 14 for full frames). This\nallows computing the \"frame length including addresses before\nany tags or trailers were added\" which is often where padding\nactually starts. This fixes detection of padding vs trailier\nwith ISL (see Sample Captures page) as well as a large number\nof tag formats (802.1AD, etc.), at least when PADDING_ZERO is set.\nFor PADDING_ANY, continue to use the old length method.\n\nThis also allows passing the payload length post-ethertype/length\nfield to the trailer subdissectors, which allows the PRP dissector\nto be converted from a postdissector to a eth trailer heuristic\ndissector.\n\nWhen we are in \"maybe FCS\" mode, call the heuristic dissectors\ntwice if need be, once with and once without the putative FCS.\nAs these are heuristic dissectors, they can't indicate the number\nof bytes consumed, so if there's a trailer but also an FCS later,\nreturning TRUE for the trailer prevents us from detecting an\nFCS. (Some heuristic trailer dissectors have loops to deal with\npossible padding after the trailer and will return TRUE the first\ntime; we still can't deal with this. Perhaps they should only\nskip before zeros in their loops; in no case are multiple trailers\nhandled well, previously or now.)\n\nFix MACsec padding, trailer, and FCS detection when the short length\nfield is present by calling set_actual_length. The current workaround\nhas issues because it's only in effect for the next ethertype call\n(where fcs_len is 0), not the previous one.\n\nDon't allow computing the FCS when we don't actually have the\nentire frame. Most tag dissectors calling the ethertype dissector\na second time set fcs_len to 0 because of this already.\n\nFix #15884, #17068, #17067\n\nThe first two will work automatically in default auto detect mode.\nFor #17067 this requires setting the \"Fixed ethernet trailer length\"\npref in ethernet to the PRP size; the more general problem of\nautodetecting any FCS or trailer after the MACsec ICV (for non\nshort length) continues to need a different solution.\n\nAdd some relevant comments about still unsolved issues.\n\n\n(cherry picked from commit b34ec48b1e77911aba840fcef0c4fcff9903db49)",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2023-11-04T09:37:26.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-11-09T09:19:46.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/43a43516483cd0444e01533a2f7a0488e5f02dc3"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 839879313,
+      "head_commit_sha": "43a43516483cd0444e01533a2f7a0488e5f02dc3",
+      "base_commit_sha": "0197eaf618d7eb8cf0a09222e61d66c6d1e45da8",
+      "start_commit_sha": "0197eaf618d7eb8cf0a09222e61d66c6d1e45da8",
+      "created_at": "2023-11-09T09:19:54.560Z",
+      "merge_request_id": 262678847,
+      "state": "collected",
+      "real_size": "6",
+      "patch_id_sha": "c368809e1fcd01840d0239ae20f22a857b151932"
+    }
+  ]
+}

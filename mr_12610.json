@@ -1,0 +1,331 @@
+{
+  "id": 257002390,
+  "iid": 12610,
+  "project_id": 7898047,
+  "title": "HTTP3: fix ASAN stack-use-after-return error",
+  "description": "The 'quic_stream_info' type is not supposed to be stored persistently in\nfile-scoped memory, it is stack memory from `dissect_quic_frame_type`.\nBefore this fix, subsequent calls into the HTTP/3 dissector would result\nin invalid memory access.\n\nThe crash can be reproduced while processing frame 10 of:\n\n    tshark -r test/captures/quic-fragmented-handshakes.pcapng.gz\n\nThis fixes the following error:\n\n    ==67434==ERROR: AddressSanitizer: stack-use-after-return on address 0x7fffd49f8aa0 at pc 0x7fffea23bc4e bp 0x7fffffff1ff0 sp 0x7fffffff1fe8\n    READ of size 4 at 0x7fffd49f8aa0 thread T0\n    [Detaching after fork from child process 67441]\n        #0 0x7fffea23bc4d in http3_packet_get_direction epan/dissectors/packet-http3.c:691:44\n        #1 0x7fffea23ee33 in dissect_http3_qpack_enc epan/dissectors/packet-http3.c:1693:51\n        #2 0x7fffea232cdc in dissect_http3_uni_stream epan/dissectors/packet-http3.c:1796:18\n        #3 0x7fffea231d26 in dissect_http3 epan/dissectors/packet-http3.c:1883:9\n        ...\n        #8 0x7fffeb01322c in process_quic_stream epan/dissectors/packet-quic.c:1464:9\n        #9 0x7fffeb0107d0 in desegment_quic_stream epan/dissectors/packet-quic.c:1614:9\n        #10 0x7fffeb009a92 in dissect_quic_stream_payload epan/dissectors/packet-quic.c:1813:5\n        #11 0x7fffeb003653 in dissect_quic_frame_type epan/dissectors/packet-quic.c:2474:13\n        #12 0x7fffeaffad46 in quic_process_payload epan/dissectors/packet-quic.c:3510:36\n\nFixes: v4.1.1rc0-41-g80f9a28921 (\"Adding HTTP/3 dissection to Wireshark.\")\n\n\n(cherry picked from commit d9bd00a22fbdb65d01e93c0f67dde8ab8812f66e)\n\nRelates to !12604",
+  "state": "merged",
+  "created_at": "2023-10-15T12:15:23.262Z",
+  "updated_at": "2023-10-15T14:23:52.263Z",
+  "merged_by": {
+    "id": 2415432,
+    "username": "Lekensteyn",
+    "public_email": "",
+    "name": "Peter Wu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Lekensteyn"
+  },
+  "merge_user": {
+    "id": 2415432,
+    "username": "Lekensteyn",
+    "public_email": "",
+    "name": "Peter Wu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Lekensteyn"
+  },
+  "merged_at": "2023-10-15T12:27:31.339Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-4.2",
+  "source_branch": "cherry-pick-d9bd00a2",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 2415432,
+    "username": "Lekensteyn",
+    "public_email": "",
+    "name": "Peter Wu",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+    "web_url": "https://gitlab.com/Lekensteyn"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 7898047,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "c7361428534ce974f2c9c7f786d82121ad66afda",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-10-15T12:15:36.189Z",
+  "reference": "!12610",
+  "references": {
+    "short": "!12610",
+    "relative": "!12610",
+    "full": "wireshark/wireshark!12610"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/12610",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-10-15T12:15:30.925Z",
+  "latest_build_finished_at": "2023-10-15T12:27:29.828Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 1037172342,
+    "iid": 53721,
+    "project_id": 7898047,
+    "sha": "c7361428534ce974f2c9c7f786d82121ad66afda",
+    "ref": "refs/merge-requests/12610/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-10-15T12:15:30.024Z",
+    "updated_at": "2023-10-15T12:27:29.836Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1037172342"
+  },
+  "head_pipeline": {
+    "id": 1037172342,
+    "iid": 53721,
+    "project_id": 7898047,
+    "sha": "c7361428534ce974f2c9c7f786d82121ad66afda",
+    "ref": "refs/merge-requests/12610/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-10-15T12:15:30.024Z",
+    "updated_at": "2023-10-15T12:27:29.836Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/1037172342",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 2415432,
+      "username": "Lekensteyn",
+      "public_email": "",
+      "name": "Peter Wu",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+      "web_url": "https://gitlab.com/Lekensteyn"
+    },
+    "started_at": "2023-10-15T12:15:30.925Z",
+    "finished_at": "2023-10-15T12:27:29.828Z",
+    "committed_at": null,
+    "duration": 718,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/1037172342",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "1d8d689c2d25189a250290845153b2e1fa2f24b0",
+    "head_sha": "c7361428534ce974f2c9c7f786d82121ad66afda",
+    "start_sha": "1d8d689c2d25189a250290845153b2e1fa2f24b0"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "c413f37857116d1fc21678ed8b79b7284047aaad",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1604339372,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2023-10-15T12:15:33.543Z",
+          "updated_at": "2023-10-15T12:15:33.551Z",
+          "system": true,
+          "noteable_id": 257002390,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12610,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bc618f41f71d7a2f821097f50667e8f62a83e763",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1604339408,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for c7361428534ce974f2c9c7f786d82121ad66afda succeeds",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2023-10-15T12:15:46.528Z",
+          "updated_at": "2023-10-15T12:15:46.534Z",
+          "system": true,
+          "noteable_id": 257002390,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12610,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cca2074a46fe43ee2d4ecc55bb7adfc08d51cbfd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1604375987,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2023-10-15T14:23:52.741Z",
+          "updated_at": "2023-10-15T14:23:52.753Z",
+          "system": true,
+          "noteable_id": 257002390,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 12610,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -337,7 +337,6 @@ typedef enum _http3_stream_dir {\n  */\n typedef struct _http3_stream_info {\n     guint64           id;                 /**< HTTP3 stream id */\n-    quic_stream_info *quic_stream_info;   /**< Underlying QUIC stream info */\n     guint64           uni_stream_type;    /**< Unidirectional stream type */\n     guint64           broken_from_offset; /**< Unrecognized stream starting at offset (if non-zero). */\n     http3_stream_dir  direction;\n@@ -686,9 +685,9 @@ http3_get_header_data(packet_info *pinfo, guint offset)\n }\n \n static inline http3_stream_dir\n-http3_packet_get_direction(http3_stream_info_t *http3_stream)\n+http3_packet_get_direction(quic_stream_info *stream_info)\n {\n-    return http3_stream->quic_stream_info->from_server\n+    return stream_info->from_server\n         ? FROM_CLIENT_TO_SERVER\n         : FROM_SERVER_TO_CLIENT;\n }\n@@ -751,7 +750,7 @@ try_add_named_header_field(proto_tree *tree, tvbuff_t *tvb, int offset, guint32\n \n static int\n dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint tvb_offset, guint offset,\n-                      http3_stream_info_t *http3_stream)\n+                      quic_stream_info *stream_info, http3_stream_info_t *http3_stream)\n {\n     const gchar  *authority_header_value = NULL;\n     const gchar  *method_header_value    = NULL;\n@@ -791,7 +790,7 @@ dissect_http3_headers(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint\n         nghttp3_qpack_stream_context_new(&sctx, http3_stream->id, nghttp3_mem_default());\n \n         length           = tvb_reported_length_remaining(tvb, tvb_offset);\n-        packet_direction = http3_packet_get_direction(http3_stream);\n+        packet_direction = http3_packet_get_direction(stream_info);\n         decoder          = http3_session->qpack_decoder[packet_direction];\n \n         DISSECTOR_ASSERT(decoder);\n@@ -1126,11 +1125,11 @@ http3_session_lookup_or_create(packet_info *pinfo)\n \n \n static conversation_t *\n-http3_find_inner_conversation(packet_info *pinfo, http3_stream_info_t *http3_stream, void **ctx)\n+http3_find_inner_conversation(packet_info *pinfo, quic_stream_info *stream_info, http3_stream_info_t *http3_stream, void **ctx)\n {\n     conversation_t *inner_conv = NULL;\n \n-    if (http3_stream->quic_stream_info != NULL) {\n+    if (stream_info != NULL) {\n         if (ctx) {\n             *ctx = pinfo->conv_elements;\n         }\n@@ -1182,7 +1181,7 @@ http3_reset_inner_conversation(packet_info *pinfo, void *ctx)\n \n static int\n dissect_http3_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *http3_tree, guint offset _U_,\n-                   http3_stream_info_t *http3_stream)\n+                   quic_stream_info *stream_info, http3_stream_info_t *http3_stream)\n {\n     void                *saved_ctx = NULL;\n     gint                remaining;\n@@ -1190,7 +1189,7 @@ dissect_http3_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *http3_tree, gu\n     proto_item          *ti_data _U_;\n \n     remaining = tvb_reported_length(tvb);\n-    inner_conv = http3_find_inner_conversation(pinfo, http3_stream, &saved_ctx);\n+    inner_conv = http3_find_inner_conversation(pinfo, stream_info, http3_stream, &saved_ctx);\n     ti_data    = proto_tree_add_item(http3_tree, hf_http3_data, tvb, offset, remaining, ENC_NA);\n     http3_reset_inner_conversation(pinfo, saved_ctx);\n \n@@ -1293,7 +1292,7 @@ dissect_http3_priority_update(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree\n }\n \n static int\n-dissect_http3_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, http3_stream_info_t *http3_stream)\n+dissect_http3_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, quic_stream_info *stream_info, http3_stream_info_t *http3_stream)\n {\n     guint64     frame_type, frame_length;\n     int         lenvar;\n@@ -1325,12 +1324,12 @@ dissect_http3_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int off\n         switch (frame_type) {\n         case HTTP3_DATA: { /* TODO: dissect Data Frame */\n             tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, (int)frame_length);\n-            dissect_http3_data(next_tvb, pinfo, ft_tree, 0, http3_stream);\n+            dissect_http3_data(next_tvb, pinfo, ft_tree, 0, stream_info, http3_stream);\n         } break;\n         case HTTP3_HEADERS: { /* TODO: dissect Headers Frame */\n #ifdef HAVE_NGHTTP3\n             tvbuff_t *next_tvb = tvb_new_subset_length(tvb, offset, (int)frame_length);\n-            dissect_http3_headers(next_tvb, pinfo, ft_tree, 0, offset, http3_stream);\n+            dissect_http3_headers(next_tvb, pinfo, ft_tree, 0, offset, stream_info, http3_stream);\n #endif /* HAVE_NGHTTP3 */\n         } break;\n         case HTTP3_CANCEL_PUSH: /* TODO: dissect Cancel_Push Frame */\n@@ -1658,7 +1657,7 @@ dissect_http3_qpack_encoder_stream(tvbuff_t *tvb, packet_info *pinfo _U_, proto_\n \n static gint\n dissect_http3_qpack_enc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset,\n-                        http3_stream_info_t *http3_stream)\n+                        quic_stream_info *stream_info, http3_stream_info_t *http3_stream)\n {\n     gint                  remaining, remaining_captured, retval, decoded = 0;\n     proto_item *          qpack_update;\n@@ -1690,7 +1689,7 @@ dissect_http3_qpack_enc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n     if (qpack_buf && 0 < remaining) {\n         gint                   qpack_buf_len = decoded - offset, nread;\n         proto_item *           ti;\n-        http3_stream_dir       packet_direction = http3_packet_get_direction(http3_stream);\n+        http3_stream_dir       packet_direction = http3_packet_get_direction(stream_info);\n         nghttp3_qpack_decoder *decoder          = http3_session->qpack_decoder[packet_direction];\n         guint32                icnt_before, icnt_after;\n \n@@ -1722,6 +1721,7 @@ dissect_http3_qpack_enc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n         proto_item_set_generated(ti);\n     }\n #else\n+    (void)stream_info;\n     (void)qpack_buf;\n     (void)qpack_update;\n     (void)decoded;\n@@ -1731,8 +1731,8 @@ dissect_http3_qpack_enc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n }\n \n static int\n-dissect_http3_client_bidi_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, quic_stream_info *stream_info _U_,\n-                         http3_stream_info_t *http3_stream)\n+dissect_http3_client_bidi_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset,\n+                                 quic_stream_info *stream_info, http3_stream_info_t *http3_stream)\n {\n     proto_item *ti_stream;\n     proto_tree *stream_tree;\n@@ -1744,7 +1744,7 @@ dissect_http3_client_bidi_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *\n         if (!http3_check_frame_size(tvb, pinfo, offset)) {\n             return tvb_captured_length(tvb);\n         }\n-        offset = dissect_http3_frame(tvb, pinfo, stream_tree, offset, http3_stream);\n+        offset = dissect_http3_frame(tvb, pinfo, stream_tree, offset, stream_info, http3_stream);\n     }\n \n     return offset;\n@@ -1793,7 +1793,7 @@ dissect_http3_uni_stream(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, in\n         }\n         break;\n     case HTTP3_STREAM_TYPE_QPACK_ENCODER:\n-        offset = dissect_http3_qpack_enc(tvb, pinfo, stream_tree, offset, http3_stream);\n+        offset = dissect_http3_qpack_enc(tvb, pinfo, stream_tree, offset, stream_info, http3_stream);\n         break;\n     case HTTP3_STREAM_TYPE_QPACK_DECODER:\n         // TODO\n@@ -1856,7 +1856,6 @@ dissect_http3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n     if (!http3_stream) {\n         http3_stream = wmem_new0(wmem_file_scope(), http3_stream_info_t);\n         quic_stream_add_proto_data(pinfo, stream_info, http3_stream);\n-        http3_stream->quic_stream_info = stream_info;\n         http3_stream->id               = stream_info->stream_id;\n     }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-http3.c",
+      "old_path": "epan/dissectors/packet-http3.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1461,6 +1461,8 @@ process_quic_stream(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *t\n         // Traverse the STREAM frame tree.\n         proto_tree *top_tree = proto_tree_get_parent_tree(tree);\n         top_tree = proto_tree_get_parent_tree(top_tree);\n+        // Subdissectors MUST NOT assume that 'stream_info' remains valid after\n+        // returning. Copying the pointer will result in illegal memory access.\n         call_dissector_with_data(quic_info->app_handle, next_tvb, pinfo, top_tree, stream_info);\n     }\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-quic.c",
+      "old_path": "epan/dissectors/packet-quic.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "c7361428534ce974f2c9c7f786d82121ad66afda",
+      "short_id": "c7361428",
+      "created_at": "2023-10-15T12:14:54.000+00:00",
+      "parent_ids": [
+        "1d8d689c2d25189a250290845153b2e1fa2f24b0"
+      ],
+      "title": "HTTP3: fix ASAN stack-use-after-return error",
+      "message": "HTTP3: fix ASAN stack-use-after-return error\n\nThe 'quic_stream_info' type is not supposed to be stored persistently in\nfile-scoped memory, it is stack memory from `dissect_quic_frame_type`.\nBefore this fix, subsequent calls into the HTTP/3 dissector would result\nin invalid memory access.\n\nThe crash can be reproduced while processing frame 10 of:\n\n    tshark -r test/captures/quic-fragmented-handshakes.pcapng.gz\n\nThis fixes the following error:\n\n    ==67434==ERROR: AddressSanitizer: stack-use-after-return on address 0x7fffd49f8aa0 at pc 0x7fffea23bc4e bp 0x7fffffff1ff0 sp 0x7fffffff1fe8\n    READ of size 4 at 0x7fffd49f8aa0 thread T0\n    [Detaching after fork from child process 67441]\n        #0 0x7fffea23bc4d in http3_packet_get_direction epan/dissectors/packet-http3.c:691:44\n        #1 0x7fffea23ee33 in dissect_http3_qpack_enc epan/dissectors/packet-http3.c:1693:51\n        #2 0x7fffea232cdc in dissect_http3_uni_stream epan/dissectors/packet-http3.c:1796:18\n        #3 0x7fffea231d26 in dissect_http3 epan/dissectors/packet-http3.c:1883:9\n        ...\n        #8 0x7fffeb01322c in process_quic_stream epan/dissectors/packet-quic.c:1464:9\n        #9 0x7fffeb0107d0 in desegment_quic_stream epan/dissectors/packet-quic.c:1614:9\n        #10 0x7fffeb009a92 in dissect_quic_stream_payload epan/dissectors/packet-quic.c:1813:5\n        #11 0x7fffeb003653 in dissect_quic_frame_type epan/dissectors/packet-quic.c:2474:13\n        #12 0x7fffeaffad46 in quic_process_payload epan/dissectors/packet-quic.c:3510:36\n\nFixes: v4.1.1rc0-41-g80f9a28921 (\"Adding HTTP/3 dissection to Wireshark.\")\n\n\n(cherry picked from commit d9bd00a22fbdb65d01e93c0f67dde8ab8812f66e)",
+      "author_name": "Peter Wu",
+      "author_email": "peter@lekensteyn.nl",
+      "authored_date": "2023-10-14T17:20:24.000+02:00",
+      "committer_name": "Peter Wu",
+      "committer_email": "peter@lekensteyn.nl",
+      "committed_date": "2023-10-15T12:14:54.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c7361428534ce974f2c9c7f786d82121ad66afda"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 816012311,
+      "head_commit_sha": "c7361428534ce974f2c9c7f786d82121ad66afda",
+      "base_commit_sha": "1d8d689c2d25189a250290845153b2e1fa2f24b0",
+      "start_commit_sha": "1d8d689c2d25189a250290845153b2e1fa2f24b0",
+      "created_at": "2023-10-15T12:15:24.711Z",
+      "merge_request_id": 257002390,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": "5a447b0ebf925f20722476c7267d5d18de72f6b8"
+    }
+  ]
+}

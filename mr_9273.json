@@ -1,0 +1,490 @@
+{
+  "id": 197012344,
+  "iid": 9273,
+  "project_id": 7898047,
+  "title": "zstd: fix leak of tvbs",
+  "description": "# Summary\n- Fix leak of `tvbuff_t` in `tvb_uncompress_zstd`\n\n# Background & Motivation\n\nThe leaks are currently reported by running `tvbtest` with valgrind:\n\n```\nvalgrind --leak-check=full ./build/run/tvbtest\n\n==17501==\n==17501== HEAP SUMMARY:\n==17501==     in use at exit: 674,484 bytes in 19 blocks\n==17501==   total heap usage: 2,628 allocs, 2,609 frees, 2,619,716 bytes allocated\n==17501==\n==17501== 655,680 (320 direct, 655,360 indirect) bytes in 5 blocks are definitely lost in loss record 12 of 12\n==17501==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)\n==17501==    by 0xCF5D718: g_malloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==17501==    by 0xCF74B64: g_slice_alloc (in /usr/lib/x86_64-linux-gnu/libglib-2.0.so.0.7200.1)\n==17501==    by 0x8699496: tvb_new (tvbuff.c:69)\n==17501==    by 0x86A2035: tvb_new_real_data (tvbuff_real.c:65)\n==17501==    by 0x86A31E8: tvb_uncompress_zstd (tvbuff_zstd.c:64)\n==17501==    by 0x10D19D: zstd_tests (tvbtest.c:769)\n==17501==    by 0x10D3A3: main (tvbtest.c:811)\n==17501==\n==17501== LEAK SUMMARY:\n==17501==    definitely lost: 320 bytes in 5 blocks\n==17501==    indirectly lost: 655,360 bytes in 5 blocks\n==17501==      possibly lost: 0 bytes in 0 blocks\n==17501==    still reachable: 18,804 bytes in 9 blocks\n==17501==         suppressed: 0 bytes in 0 blocks\n==17501== Reachable blocks (those to which a pointer was found) are not shown.\n==17501== To see them, rerun with: --leak-check=full --show-leak-kinds=all\n==17501==\n==17501== For lists of detected and suppressed errors, rerun with: -s\n==17501== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)\n```\n\nThis was recently introduced in https://gitlab.com/wireshark/wireshark/-/merge_requests/9060.\n\nThe cause of the leak was misuse of a composite `tvbuff_t`:\n\n```c\ntvbuff_t *output_tvb = tvb_new_real_data((guint8 *)output.dst, (guint)output.pos, (gint)output.pos);\ntvb_set_free_cb(output_tvb, g_free);\ntvb_composite_append(composite_tvb, output_tvb);\n```\n\n`output_tvb` is always leaked. The first call to `tvb_composite_append` adds `composite_tvb` to the chain of `output_tvb`.\nThe `composite_tvb` is returned. But calling `tvb_free` on `composite_tvb` does not free `output_tvb`.\n\nThe proposed solution is to remove use of a composite `tvbuff_t`. It may not be possible for a composite tvb to free the data of the appended or prepended tvbs. [`tvb_new_composite` notes this requirement](https://gitlab.com/wireshark/wireshark/-/blob/f2218ae5f0ef259199f624abcd3f57d12894fa5a/epan/tvbuff_composite.c#L185-186):\n\n> * A composite TVB references the concatenation of one or more TVBs, each of\n> * them MUST be part be part of the same chain (the same memory \"scope\").",
+  "state": "merged",
+  "created_at": "2023-01-02T02:08:18.252Z",
+  "updated_at": "2023-01-02T12:14:15.425Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2023-01-02T12:14:14.420Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fix-zstd-leak",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 2471213,
+    "username": "kevinAlbs",
+    "public_email": "",
+    "name": "Kevin Albertson",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+    "web_url": "https://gitlab.com/kevinAlbs"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 40456604,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "336c0ae99253774f5927665c8b59eb5022c2c19b",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2023-01-02T02:08:18.252Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!9273",
+  "references": {
+    "short": "!9273",
+    "relative": "!9273",
+    "full": "wireshark/wireshark!9273"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/9273",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2023-01-02T07:55:44.558Z",
+  "latest_build_finished_at": "2023-01-02T08:18:28.408Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 735965398,
+    "iid": 40583,
+    "project_id": 7898047,
+    "sha": "29bbf671830f436154d49a5d3cf05b6c1926ecc4",
+    "ref": "refs/merge-requests/9273/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2023-01-02T07:55:43.943Z",
+    "updated_at": "2023-01-02T08:18:28.414Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/735965398"
+  },
+  "head_pipeline": {
+    "id": 736123520,
+    "iid": 40600,
+    "project_id": 7898047,
+    "sha": "336c0ae99253774f5927665c8b59eb5022c2c19b",
+    "ref": "refs/merge-requests/9273/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2023-01-02T12:13:57.471Z",
+    "updated_at": "2023-01-02T12:13:57.471Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/736123520",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/736123520",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "a2e18feae7adb5603a42c851d774fad7d1937d21",
+    "head_sha": "336c0ae99253774f5927665c8b59eb5022c2c19b",
+    "start_sha": "a2e18feae7adb5603a42c851d774fad7d1937d21"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "b0473ae7bc270efed90397a930fdae7f717cea29",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1224957863,
+          "type": null,
+          "body": "marked this merge request as **draft**",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-02T02:08:27.158Z",
+          "updated_at": "2023-01-02T02:08:27.161Z",
+          "system": true,
+          "noteable_id": 197012344,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9273,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "61a670cb88a76d2a4da682e05285cd95216aaf7b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1224962870,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>eeb43332 - zstd: add test for uncompressing 0 length</li><li>f62395bb - zstd: fix leak of tvbs</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9273/diffs?diff_id=567893208&start_sha=2f7c8560b3dbd6d2b26c183dbcc3711ef88ad505)",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-02T02:55:01.372Z",
+          "updated_at": "2023-01-02T02:55:01.373Z",
+          "system": true,
+          "noteable_id": 197012344,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9273,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3258633a56f58e9e273fc96cf1e28ad4d8661264",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1224962905,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 2471213,
+            "username": "kevinAlbs",
+            "public_email": "",
+            "name": "Kevin Albertson",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/dc74cce5fc9eae542807607d52383861bf0cdf393bf5571fd50c8a6be20c8749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/kevinAlbs"
+          },
+          "created_at": "2023-01-02T02:55:26.951Z",
+          "updated_at": "2023-01-02T02:55:26.953Z",
+          "system": true,
+          "noteable_id": 197012344,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9273,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a401c182e81e55db6ff3ddb4ec392a342301908e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1225031893,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-02T07:55:38.369Z",
+          "updated_at": "2023-01-02T07:55:38.377Z",
+          "system": true,
+          "noteable_id": 197012344,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9273,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "00d4765371897b4976715846aaf23ec1b6966f57",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1225031942,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>f62395bb...f37c7c40 - 4 commits from branch <code>wireshark:master</code></li><li>7a482d96 - zstd: add test for uncompressing 0 length</li><li>29bbf671 - zstd: fix leak of tvbs</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9273/diffs?diff_id=567949983&start_sha=f62395bb432db68ebd064d3761e8a7c47879f032)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-02T07:55:42.356Z",
+          "updated_at": "2023-01-02T07:55:42.358Z",
+          "system": true,
+          "noteable_id": 197012344,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9273,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "93985664ea9d1b534f1c62443e9ac537cd1be5de",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1225239160,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>29bbf671...a2e18fea - 6 commits from branch <code>wireshark:master</code></li><li>8ad7e2f5 - zstd: add test for uncompressing 0 length</li><li>336c0ae9 - zstd: fix leak of tvbs</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/9273/diffs?diff_id=568101096&start_sha=29bbf671830f436154d49a5d3cf05b6c1926ecc4)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-01-02T12:13:56.876Z",
+          "updated_at": "2023-01-02T12:13:56.878Z",
+          "system": true,
+          "noteable_id": 197012344,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 9273,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -757,6 +757,12 @@ zstd_tests (void) {\n \t\t\t              \"\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09\\x0A\\x0B\\x0C\\x0D\\x0E\\x0F\"),\n \t\t\t.expect = NULL\n \t\t},\n+\t\t{\n+\t\t\t.desc = \"Uncompressing no data\",\n+\t\t\t.data = \"\\0\",\n+\t\t\t.len = 0,\n+\t\t\t.expect = \"\"\n+\t\t},\n \n \t};\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/tvbtest.c",
+      "old_path": "epan/tvbtest.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -37,7 +37,8 @@ tvbuff_t *tvb_uncompress_zstd(tvbuff_t *tvb, const int offset, int comprlen)\n     ZSTD_inBuffer input = {tvb_memdup(NULL, tvb, offset, comprlen), comprlen, 0};\n     ZSTD_DStream *zds = ZSTD_createDStream();\n     size_t rc = 0;\n-    tvbuff_t *composite_tvb = NULL;\n+    uint8_t *uncompr = NULL;\n+    size_t uncompr_len = 0;\n     bool ok = false;\n     int count = 0;\n \n@@ -52,20 +53,19 @@ tvbuff_t *tvb_uncompress_zstd(tvbuff_t *tvb, const int offset, int comprlen)\n             goto end;\n         }\n \n-        // Do not create a composite buffer if there is no output data.\n-        // Empty buffers are ignored by tvb_composite_append().\n-        // tvb_composite_finalize() throws if there are no non-empty members.\n         if (output.pos > 0)\n         {\n-            if (!composite_tvb)\n+            if (!uncompr)\n             {\n-                composite_tvb = tvb_new_composite();\n+                DISSECTOR_ASSERT (uncompr_len == 0);\n+                uncompr = g_malloc(output.pos);\n+            } else {\n+                uncompr = g_realloc(uncompr, uncompr_len + output.pos);\n             }\n-            tvbuff_t *output_tvb = tvb_new_real_data((guint8 *)output.dst, (guint)output.pos, (gint)output.pos);\n-            tvb_set_free_cb(output_tvb, g_free);\n-            tvb_composite_append(composite_tvb, output_tvb);\n+            memcpy (uncompr + uncompr_len, output.dst, output.pos);\n+            uncompr_len += output.pos;\n             // Reset the output buffer.\n-            output = (ZSTD_outBuffer){g_malloc(ZSTD_DStreamOutSize()), ZSTD_DStreamOutSize(), 0};\n+            output.pos = 0;\n         }\n         count++;\n         DISSECTOR_ASSERT_HINT(count < MAX_LOOP_ITERATIONS, \"MAX_LOOP_ITERATIONS exceeded\");\n@@ -80,19 +80,18 @@ tvbuff_t *tvb_uncompress_zstd(tvbuff_t *tvb, const int offset, int comprlen)\n end:\n     g_free((void *)output.dst);\n     wmem_free(NULL, (void *)input.src);\n-    if (composite_tvb)\n-    {\n-        tvb_composite_finalize(composite_tvb);\n-    }\n     ZSTD_freeDStream(zds);\n     if (ok)\n     {\n-        return composite_tvb;\n+        tvbuff_t *uncompr_tvb;\n+        uncompr_tvb = tvb_new_real_data (uncompr, (guint)uncompr_len, (guint)uncompr_len);\n+        tvb_set_free_cb (uncompr_tvb, g_free);\n+        return uncompr_tvb;\n     }\n \n-    if (composite_tvb)\n+    if (uncompr)\n     {\n-        tvb_free(composite_tvb);\n+        g_free (uncompr);\n     }\n \n     return NULL;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/tvbuff_zstd.c",
+      "old_path": "epan/tvbuff_zstd.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "336c0ae99253774f5927665c8b59eb5022c2c19b",
+      "short_id": "336c0ae9",
+      "created_at": "2023-01-02T12:13:54.000+00:00",
+      "parent_ids": [
+        "8ad7e2f53848e77aa5407a2bc7245031813cea2b"
+      ],
+      "title": "zstd: fix leak of tvbs",
+      "message": "zstd: fix leak of tvbs\n\nReplace use of composite tvb with creation of one tvb.\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2023-01-01T20:51:35.000-05:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-01-02T12:13:54.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/336c0ae99253774f5927665c8b59eb5022c2c19b"
+    },
+    {
+      "id": "8ad7e2f53848e77aa5407a2bc7245031813cea2b",
+      "short_id": "8ad7e2f5",
+      "created_at": "2023-01-02T12:13:54.000+00:00",
+      "parent_ids": [
+        "a2e18feae7adb5603a42c851d774fad7d1937d21"
+      ],
+      "title": "zstd: add test for uncompressing 0 length",
+      "message": "zstd: add test for uncompressing 0 length\n",
+      "author_name": "Kevin Albertson",
+      "author_email": "kevin.eric.albertson@gmail.com",
+      "authored_date": "2023-01-01T20:50:02.000-05:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-01-02T12:13:54.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8ad7e2f53848e77aa5407a2bc7245031813cea2b"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 568101096,
+      "head_commit_sha": "336c0ae99253774f5927665c8b59eb5022c2c19b",
+      "base_commit_sha": "a2e18feae7adb5603a42c851d774fad7d1937d21",
+      "start_commit_sha": "a2e18feae7adb5603a42c851d774fad7d1937d21",
+      "created_at": "2023-01-02T12:13:56.188Z",
+      "merge_request_id": 197012344,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 567949983,
+      "head_commit_sha": "29bbf671830f436154d49a5d3cf05b6c1926ecc4",
+      "base_commit_sha": "f37c7c4062db513bd4dc6fffa36a0c90c74a4339",
+      "start_commit_sha": "f37c7c4062db513bd4dc6fffa36a0c90c74a4339",
+      "created_at": "2023-01-02T07:55:41.725Z",
+      "merge_request_id": 197012344,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 567893208,
+      "head_commit_sha": "f62395bb432db68ebd064d3761e8a7c47879f032",
+      "base_commit_sha": "f2218ae5f0ef259199f624abcd3f57d12894fa5a",
+      "start_commit_sha": "f5bfe8978576d26e1ef0501d4f2a5aaa35af344a",
+      "created_at": "2023-01-02T02:55:00.559Z",
+      "merge_request_id": 197012344,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 567889261,
+      "head_commit_sha": "2f7c8560b3dbd6d2b26c183dbcc3711ef88ad505",
+      "base_commit_sha": "f2218ae5f0ef259199f624abcd3f57d12894fa5a",
+      "start_commit_sha": "f2218ae5f0ef259199f624abcd3f57d12894fa5a",
+      "created_at": "2023-01-02T02:08:20.027Z",
+      "merge_request_id": 197012344,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    }
+  ]
+}
