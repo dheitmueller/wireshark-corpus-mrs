@@ -1,0 +1,527 @@
+{
+  "id": 180515904,
+  "iid": 8358,
+  "project_id": 7898047,
+  "title": "tls: add support for DESEGMENT_UNTIL_FIN, sequence numbers",
+  "description": "Add a tlsinfo struct that is similar to tcpinfo, and carries\nthe sequence number (within the TLS stream) and the end of\nstream notification (from the TCP FIN or close_notify alerts)\nin addition to the session app handle pointer already used\nby TLS heuristic dissectors.\n\nHave HTTP use the end of stream notification in order to\nhandle DESEGMENT_UNTIL_FIN the same way it does when HTTP\nis directly over TCP. Also have HTTP use the sequence number\nin order to reduce chunked processing from O(N^2) to O(N)\nsimilar to done over TCP.\n\nUpdate all the TLS heuristic dissectors that set the app\nhandle to use the new structure.\n\nNote the workaround for the issue #15159 - the TLS dissector\nhas to report to the TCP dissector that desegmentation at FIN\nis required, so that the TCP dissector will know to call the\nTLS dissector at FIN. However, the TLS dissector does not request\nthat the TCP dissector resend bytes belonging to records that\nTLS has already desegmented (and decrypted, if possible), to\navoid decrypting twice (and upsetting the decoder state.)\n\nThis can mean the TCP dissector calling the TLS dissector to\ndesegment at FIN with a zero byte payload. In such as case, the\nTLS dissector artificially returns \"1\" byte dissected to avoid\nindicating rejecting the payload and having the TLS (and subdissector)\nlayers removed. (TCP ignores the value returned when desegmenting\nat FIN.)\n\nFix #9154. Fix #14382.",
+  "state": "merged",
+  "created_at": "2022-10-02T16:09:28.049Z",
+  "updated_at": "2023-03-09T12:42:09.483Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2022-11-01T10:03:59.818Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "tls_fin",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [
+    {
+      "id": 2415432,
+      "username": "Lekensteyn",
+      "public_email": "",
+      "name": "Peter Wu",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+      "web_url": "https://gitlab.com/Lekensteyn"
+    }
+  ],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "dcbd3874d3617bf498dcd719c68d70c5793b87b6",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2022-10-02T16:09:28.049Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!8358",
+  "references": {
+    "short": "!8358",
+    "relative": "!8358",
+    "full": "wireshark/wireshark!8358"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/8358",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "9",
+  "latest_build_started_at": "2022-10-11T14:48:15.534Z",
+  "latest_build_finished_at": "2022-10-11T15:15:27.320Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 663939469,
+    "iid": 37228,
+    "project_id": 7898047,
+    "sha": "b8eefcf2645470501497785c454b723abb24f2a1",
+    "ref": "refs/merge-requests/8358/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-10-11T14:48:14.589Z",
+    "updated_at": "2022-10-11T15:15:27.333Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/663939469"
+  },
+  "head_pipeline": {
+    "id": 682339129,
+    "iid": 38295,
+    "project_id": 7898047,
+    "sha": "dcbd3874d3617bf498dcd719c68d70c5793b87b6",
+    "ref": "refs/merge-requests/8358/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2022-11-01T10:03:39.478Z",
+    "updated_at": "2022-11-01T10:03:39.478Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/682339129",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/682339129",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "6759377b93651f15c94335eaa407f5f9438a1de4",
+    "head_sha": "dcbd3874d3617bf498dcd719c68d70c5793b87b6",
+    "start_sha": "6759377b93651f15c94335eaa407f5f9438a1de4"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "2ac9a8c5ced77bb3117ccd7a38eedc65cd413506",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1131667237,
+          "type": null,
+          "body": "added 102 commits\n\n<ul><li>14bfa40a...a19834b9 - 101 commits from branch <code>wireshark:master</code></li><li>b8eefcf2 - tls: add support for DESEGMENT_UNTIL_FIN, sequence numbers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/8358/diffs?diff_id=505654474&start_sha=14bfa40a1bb36e026079f2cbd9ab438d263f20f5)",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-10-11T14:48:13.327Z",
+          "updated_at": "2022-10-11T14:48:13.328Z",
+          "system": true,
+          "noteable_id": 180515904,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 8358,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f337ca7d8a8f0eda10077d117a96241fc6595869",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1131990133,
+          "type": null,
+          "body": "requested review from @Lekensteyn",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-10-11T18:36:33.344Z",
+          "updated_at": "2022-10-11T18:36:33.347Z",
+          "system": true,
+          "noteable_id": 180515904,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 8358,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "16538a8f4ea1702ce5a2f9aa5f6d1d5170a02c45",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1155707553,
+          "type": null,
+          "body": "added 280 commits\n\n<ul><li>b8eefcf2...6759377b - 279 commits from branch <code>wireshark:master</code></li><li>dcbd3874 - tls: add support for DESEGMENT_UNTIL_FIN, sequence numbers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/8358/diffs?diff_id=521958581&start_sha=b8eefcf2645470501497785c454b723abb24f2a1)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2022-11-01T10:03:38.691Z",
+          "updated_at": "2022-11-01T10:03:38.693Z",
+          "system": true,
+          "noteable_id": 180515904,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 8358,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2993219035e41766d2a4f282be25451395405f0a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1155707889,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2022-11-01T10:03:54.870Z",
+          "updated_at": "2022-11-01T10:03:54.876Z",
+          "system": true,
+          "noteable_id": 180515904,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 8358,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e543b52b7776b7beaff01ed8cdcc5ebd30cb64d7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1307289347,
+          "type": null,
+          "body": "mentioned in issue #18893",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-03-09T12:42:09.439Z",
+          "updated_at": "2023-03-09T12:42:09.440Z",
+          "system": true,
+          "noteable_id": 180515904,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 8358,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1656,13 +1656,13 @@ dissect_aim(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n static int\n dissect_aim_ssl_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n-\tdissector_handle_t *app_handle = (dissector_handle_t *) data;\n+\tstruct tlsinfo *tlsinfo = (struct tlsinfo *) data;\n \t/* XXX improve heuristics */\n \tif (tvb_reported_length(tvb) < 1 || tvb_get_guint8(tvb, 0) != 0x2a) {\n \t\treturn FALSE;\n \t}\n \tdissect_aim(tvb, pinfo, tree, NULL);\n-\t*app_handle = aim_handle;\n+\t*(tlsinfo->app_handle) = aim_handle;\n \treturn TRUE;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-aim.c",
+      "old_path": "epan/dissectors/packet-aim.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -448,7 +448,7 @@ dissect_fix_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data\n static gboolean\n dissect_fix_heur_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n-    dissector_handle_t *app_handle = (dissector_handle_t *) data;\n+    struct tlsinfo *tlsinfo = (struct tlsinfo *)data;\n     /* get at least the fix version: 8=FIX.x.x */\n     if (fix_marker(tvb, 0) != 0) {\n         /* not a fix packet */\n@@ -456,7 +456,7 @@ dissect_fix_heur_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *\n     }\n \n     dissect_fix_pdus(tvb, pinfo, tree, data);\n-    *app_handle = fix_handle;\n+    *(tlsinfo->app_handle) = fix_handle;\n     return TRUE;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-fix.c",
+      "old_path": "epan/dissectors/packet-fix.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -3940,18 +3940,13 @@ dissect_http_tls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data\n {\n \tconversation_t *conversation;\n \thttp_conv_t *conv_data;\n+\tgboolean end_of_stream;\n \n \tconv_data = get_http_conversation_data(pinfo, &conversation);\n \n-\t/*\n-\t * XXX - we need to provide an end-of-stream indication.\n-\t * tls should also provide the byte offset inside the stream,\n-\t * similar to TCP sequence numbers. It already provides the\n-\t * app_handle to heuristic dissectors as the (void *)data,\n-\t * so we'd have to change it everywhere or pass it a different\n-\t * way (e.g., pinfo->pool proto data).\n-\t */\n-\tdissect_http_on_stream(tvb, pinfo, tree, conv_data, FALSE, NULL);\n+\tstruct tlsinfo *tlsinfo = (struct tlsinfo *)data;\n+\tend_of_stream = (tlsinfo && tlsinfo->end_of_stream);\n+\tdissect_http_on_stream(tvb, pinfo, tree, conv_data, end_of_stream, tlsinfo ? &tlsinfo->seq : NULL);\n \treturn tvb_captured_length(tvb);\n }\n \n@@ -3987,8 +3982,7 @@ dissect_http_heur_tls(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void\n \t\treturn FALSE;\n \t}\n \n-        conv_data = wmem_new0(wmem_file_scope(), http_conv_t);\n-        conversation_add_proto_data(conversation, proto_http, conv_data);\n+\tconv_data = get_http_conversation_data(pinfo, &conversation);\n \tdissect_http_tls(tvb, pinfo, tree, data);\n \treturn TRUE;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-http.c",
+      "old_path": "epan/dissectors/packet-http.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -48,6 +48,7 @@\n #include <epan/addr_resolv.h>\n \n #include \"packet-tcp.h\"\n+#include \"packet-tls.h\"\n #include \"wsutil/pint.h\"\n #include \"wsutil/strtoi.h\"\n #include \"wsutil/str_util.h\"\n@@ -3944,9 +3945,9 @@ dissect_http2_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da\n static gboolean\n dissect_http2_heur_ssl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n-    dissector_handle_t *app_handle = (dissector_handle_t *) data;\n+    struct tlsinfo *tlsinfo = (struct tlsinfo *) data;\n     if (dissect_http2_heur(tvb, pinfo, tree, NULL)) {\n-        *app_handle = http2_handle;\n+        *(tlsinfo->app_handle) = http2_handle;\n         return TRUE;\n     }\n     return FALSE;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-http2.c",
+      "old_path": "epan/dissectors/packet-http2.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -11,6 +11,7 @@\n #include \"config.h\"\n #include <epan/packet.h>\n #include <epan/ipproto.h>\n+#include <epan/dissectors/packet-tls.h>\n \n void proto_reg_handoff_li5g(void);\n void proto_register_li5g(void);\n@@ -194,6 +195,7 @@ dissect_li5g(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_\n static gboolean\n dissect_li5g_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n+    struct tlsinfo* tlsinfo = (struct tlsinfo*)data;\n     if (tvb_captured_length(tvb) < LI_5G_HEADER_LEN_MIN)\n         return FALSE;\n     /* the version should be 1 */\n@@ -204,7 +206,7 @@ dissect_li5g_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat\n         return (FALSE);\n \n     /* TLS can hold it, no need to find the disect every time */\n-    *(dissector_handle_t *)data = li5g_handle;\n+    *(tlsinfo->app_handle) = li5g_handle;\n     dissect_li5g(tvb, pinfo, tree, data);\n \n     return TRUE;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-li5g.c",
+      "old_path": "epan/dissectors/packet-li5g.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -4001,8 +4001,8 @@ static gboolean    dissect_mq_heur_nontcp(tvbuff_t* tvb, packet_info* pinfo, pro\n \n static gboolean    dissect_mq_heur_ssl(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, void* data)\n {\n-    dissector_handle_t* app_handle = (dissector_handle_t*)data;\n-    return dissect_mq_heur(tvb, pinfo, tree, FALSE, app_handle);\n+    struct tlsinfo *tlsinfo = (struct tlsinfo*)data;\n+    return dissect_mq_heur(tvb, pinfo, tree, FALSE, tlsinfo->app_handle);\n }\n \n void proto_register_mq(void)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mq.c",
+      "old_path": "epan/dissectors/packet-mq.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -8404,7 +8404,7 @@ dissect_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n              * for this flow, terminate reassembly and dissect the\n              * results. */\n             tcpd->fwd->fin = pinfo->num;\n-            msp=(struct tcp_multisegment_pdu *)wmem_tree_lookup32_le(tcpd->fwd->multisegment_pdus, tcph->th_seq-1);\n+            msp=(struct tcp_multisegment_pdu *)wmem_tree_lookup32_le(tcpd->fwd->multisegment_pdus, tcph->th_seq);\n             if(msp) {\n                 fragment_head *ipfd_head;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tcp.c",
+      "old_path": "epan/dissectors/packet-tcp.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tls.c",
+      "old_path": "epan/dissectors/packet-tls.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -14,6 +14,15 @@\n #include \"ws_symbol_export.h\"\n #include <epan/packet.h>\n \n+struct tlsinfo {\n+        guint32 seq; /* The sequence number within the TLS stream. */\n+        gboolean is_reassembled;\n+        gboolean end_of_stream; /* TCP FIN, close_notify, etc. */\n+        /* The app handle for the session, set by heuristic dissectors\n+         * to be called in the future. */\n+        dissector_handle_t *app_handle;\n+};\n+\n /** Maps Session-ID to pre-master secrets. */\n WS_DLL_PUBLIC GHashTable *ssl_session_hash;\n /** Maps Client Random to pre-master secrets. */\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tls.h",
+      "old_path": "epan/dissectors/packet-tls.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "dcbd3874d3617bf498dcd719c68d70c5793b87b6",
+      "short_id": "dcbd3874",
+      "created_at": "2022-11-01T10:03:35.000+00:00",
+      "parent_ids": [
+        "6759377b93651f15c94335eaa407f5f9438a1de4"
+      ],
+      "title": "tls: add support for DESEGMENT_UNTIL_FIN, sequence numbers",
+      "message": "tls: add support for DESEGMENT_UNTIL_FIN, sequence numbers\n\nAdd a tlsinfo struct that is similar to tcpinfo, and carries\nthe sequence number (within the TLS stream) and the end of\nstream notification (from the TCP FIN or close_notify alerts)\nin addition to the session app handle pointer already used\nby TLS heuristic dissectors.\n\nHave HTTP use the end of stream notification in order to\nhandle DESEGMENT_UNTIL_FIN the same way it does when HTTP\nis directly over TCP. Also have HTTP use the sequence number\nin order to reduce chunked processing from O(N^2) to O(N)\nsimilar to done over TCP.\n\nUpdate all the TLS heuristic dissectors that set the app\nhandle to use the new structure.\n\nNote the workaround for the issue #15159 - the TLS dissector\nhas to report to the TCP dissector that desegmentation at FIN\nis required, so that the TCP dissector will know to call the\nTLS dissector at FIN. However, the TLS dissector does not request\nthat the TCP dissector resend bytes belonging to records that\nTLS has already desegmented (and decrypted, if possible), to\navoid decrypting twice (and upsetting the decoder state.)\n\nThis can mean the TCP dissector calling the TLS dissector to\ndesegment at FIN with a zero byte payload. In such as case, the\nTLS dissector artificially returns \"1\" byte dissected to avoid\nindicating rejecting the payload and having the TLS (and subdissector)\nlayers removed. (TCP ignores the value returned when desegmenting\nat FIN.)\n\nFix #9154. Fix #14382.\n",
+      "author_name": "John Thacker",
+      "author_email": "johnthacker@gmail.com",
+      "authored_date": "2022-09-30T21:24:28.000-04:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2022-11-01T10:03:35.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/dcbd3874d3617bf498dcd719c68d70c5793b87b6"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 521958581,
+      "head_commit_sha": "dcbd3874d3617bf498dcd719c68d70c5793b87b6",
+      "base_commit_sha": "6759377b93651f15c94335eaa407f5f9438a1de4",
+      "start_commit_sha": "6759377b93651f15c94335eaa407f5f9438a1de4",
+      "created_at": "2022-11-01T10:03:37.750Z",
+      "merge_request_id": 180515904,
+      "state": "collected",
+      "real_size": "9",
+      "patch_id_sha": null
+    },
+    {
+      "id": 505654474,
+      "head_commit_sha": "b8eefcf2645470501497785c454b723abb24f2a1",
+      "base_commit_sha": "a19834b98cda6d31bc31534b8cd497d055645439",
+      "start_commit_sha": "a19834b98cda6d31bc31534b8cd497d055645439",
+      "created_at": "2022-10-11T14:48:12.651Z",
+      "merge_request_id": 180515904,
+      "state": "without_files",
+      "real_size": "9",
+      "patch_id_sha": null
+    },
+    {
+      "id": 498622437,
+      "head_commit_sha": "14bfa40a1bb36e026079f2cbd9ab438d263f20f5",
+      "base_commit_sha": "afa2579124e4e9fb37ad503424f0af092b3c0e7e",
+      "start_commit_sha": "afa2579124e4e9fb37ad503424f0af092b3c0e7e",
+      "created_at": "2022-10-02T16:09:28.091Z",
+      "merge_request_id": 180515904,
+      "state": "without_files",
+      "real_size": "9",
+      "patch_id_sha": null
+    }
+  ]
+}
