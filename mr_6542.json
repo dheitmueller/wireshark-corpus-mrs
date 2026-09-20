@@ -1,0 +1,1093 @@
+{
+  "id": 147318200,
+  "iid": 6542,
+  "project_id": 7898047,
+  "title": "uds: Don't append parameter record if not available",
+  "description": "I've recently worked with a CAN trace with UDS packets and noticed an assertion triggered by the UDS dissector. \n\nIf a UDS reply is decoded with `50 7e ff ff ff ff ff` meaning no parameter record is attached, the dissector will run into the following assert: \n\n```\n[Dissector bug, protocol UDS: C:\\gitlab-builds\\builds\\-fyeYoMP\\0\\wireshark\\wireshark\\epan\\tvbuff.c:4387: failed assertion \"len > 0\"]\n    [Expert Info (Error/Malformed): C:\\gitlab-builds\\builds\\-fyeYoMP\\0\\wireshark\\wireshark\\epan\\tvbuff.c:4387: failed assertion \"len > 0\"]\n        [C:\\gitlab-builds\\builds\\-fyeYoMP\\0\\wireshark\\wireshark\\epan\\tvbuff.c:4387: failed assertion \"len > 0\"]\n        [Severity level: Error]\n        [Group: Malformed]\n```\n\n![grafik](/uploads/610cc9fc71d9dd6b8d8c3a2bdea0b117/grafik.png)\n\nThe data hex dump:\n\n```\n0000   98 da fb ee 08 00 00 00 02 50 7e ff ff ff ff ff   .........P~.....\n```\n\nand the corresponding pcapng file: [uds-dissector-bug.pcapng](/uploads/5a5029ba415573e0331eb2898e168294/uds-dissector-bug.pcapng)\n\nThis is caused by calling `tvb_bytes_to_str_punct` with a length of `0`, which is `0` when the parameter record is missing. \n\nI've fixed the issue by checking the `parameter_record_length != 0` before calling `tvb_bytes_to_str_punkt`. \n\nFixed: \n\n```\nUnified Diagnostic Services\n    0.01 0000 = Service Identifier: Diagnostic Session Control (0x10)\n    .1.. .... = Reply Flag: 0x1\n    Diagnostic Session Control\n        Type: Unknown (0x7e)\n        Parameter Record: <MISSING>\n\n```\n\n![grafik](/uploads/5e88946bb1468265e9841e12a9527c08/grafik.png)\n\nI'm not sure if a missing parameter record is up to spec nor did I check if omitting the parameter record in this case is correct, but at least this will avoid running into the assertion failure. \n\nI'm open to suggestions if a better approch exists.",
+  "state": "merged",
+  "created_at": "2022-03-28T07:54:03.907Z",
+  "updated_at": "2023-02-20T16:36:29.024Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2022-03-28T15:44:12.885Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "uds-fix",
+  "user_notes_count": 5,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 1481026,
+    "username": "Sh3Rm4n",
+    "public_email": "",
+    "name": "Fabian Viöl",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1481026/avatar.png?v=1763111150",
+    "web_url": "https://gitlab.com/Sh3Rm4n"
+  },
+  "assignees": [
+    {
+      "id": 1481026,
+      "username": "Sh3Rm4n",
+      "public_email": "",
+      "name": "Fabian Viöl",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1481026/avatar.png?v=1763111150",
+      "web_url": "https://gitlab.com/Sh3Rm4n"
+    },
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 1481026,
+    "username": "Sh3Rm4n",
+    "public_email": "",
+    "name": "Fabian Viöl",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1481026/avatar.png?v=1763111150",
+    "web_url": "https://gitlab.com/Sh3Rm4n"
+  },
+  "reviewers": [],
+  "source_project_id": 34856165,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "b55e012524b81d09fb23c5a6ffb1271408b8402c",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2022-03-28T07:54:03.907Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!6542",
+  "references": {
+    "short": "!6542",
+    "relative": "!6542",
+    "full": "wireshark/wireshark!6542"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/6542",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2022-03-28T15:29:18.239Z",
+  "latest_build_finished_at": "2022-03-28T15:44:08.508Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 502991141,
+    "iid": 29677,
+    "project_id": 7898047,
+    "sha": "b55e012524b81d09fb23c5a6ffb1271408b8402c",
+    "ref": "refs/merge-requests/6542/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-03-28T15:29:16.593Z",
+    "updated_at": "2022-03-28T15:44:08.525Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/502991141"
+  },
+  "head_pipeline": {
+    "id": 502991141,
+    "iid": 29677,
+    "project_id": 7898047,
+    "sha": "b55e012524b81d09fb23c5a6ffb1271408b8402c",
+    "ref": "refs/merge-requests/6542/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-03-28T15:29:16.593Z",
+    "updated_at": "2022-03-28T15:44:08.525Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/502991141",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    },
+    "started_at": "2022-03-28T15:29:18.239Z",
+    "finished_at": "2022-03-28T15:44:08.508Z",
+    "committed_at": null,
+    "duration": 890,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/502991141",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "b9b45a4a8f6239ab23c1cec1ab79952ec0498647",
+    "head_sha": "b55e012524b81d09fb23c5a6ffb1271408b8402c",
+    "start_sha": "b9b45a4a8f6239ab23c1cec1ab79952ec0498647"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "368e63065e1c80d47302ad970a42eae9284f6a85",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 890946854,
+          "type": null,
+          "body": "added 23 commits\n\n<ul><li>2c08445e...1ff681ce - 22 commits from branch <code>wireshark:master</code></li><li>fd2d0a02 - uds: Don&#39;t append parameter record if not available</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/6542/diffs?diff_id=360438354&start_sha=2c08445e8aaa45cbcacda067d23fc0d059b79d4e)",
+          "author": {
+            "id": 1481026,
+            "username": "Sh3Rm4n",
+            "public_email": "",
+            "name": "Fabian Viöl",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/1481026/avatar.png?v=1763111150",
+            "web_url": "https://gitlab.com/Sh3Rm4n"
+          },
+          "created_at": "2022-03-28T07:55:33.204Z",
+          "updated_at": "2022-03-28T07:55:33.206Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9225eb13854785c219d4d93d586407d5828842c2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891224166,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T11:01:40.794Z",
+          "updated_at": "2022-03-28T11:01:40.797Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0b8316bfb9e75db394d1abc428377b364b29ad9e",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 891224331,
+          "type": "DiscussionNote",
+          "body": "Thanks !",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T11:01:46.808Z",
+          "updated_at": "2022-03-28T15:48:52.303Z",
+          "system": false,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2022-03-28T14:08:43.733Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        },
+        {
+          "id": 891228866,
+          "type": "DiscussionNote",
+          "body": "Don't forget to back port to release-3.6",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2022-03-28T11:04:53.579Z",
+          "updated_at": "2022-03-28T11:04:53.579Z",
+          "system": false,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2022-03-28T14:08:43.733Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        },
+        {
+          "id": 891505557,
+          "type": "DiscussionNote",
+          "body": "Yes, it is my idea !",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T14:08:43.294Z",
+          "updated_at": "2022-03-28T14:08:43.294Z",
+          "system": false,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2022-03-28T14:08:43.733Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e0717e000beba9948c9a302ebd4cb0f3ea761fd3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891224435,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T11:01:50.263Z",
+          "updated_at": "2022-03-28T11:01:50.266Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d4ad42a6302087fcfd9101672c15e755010cdf70",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891302623,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>fd2d0a02...ac0a6963 - 5 commits from branch <code>wireshark:master</code></li><li>a5d2ed9d - uds: Don&#39;t append parameter record if not available</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/6542/diffs?diff_id=360688884&start_sha=fd2d0a0208d49fd0a26d2346a7dad8d2f5348056)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T12:03:30.674Z",
+          "updated_at": "2022-03-28T12:03:30.676Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1e869c520300bc8da47c2e909c6673525641c400",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891302739,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T12:03:37.216Z",
+          "updated_at": "2022-03-28T12:03:37.218Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "35918b71e3f8de20ac1df7bd47b237184dffa35c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891355445,
+          "type": null,
+          "body": "assigned to @Sh3Rm4n and unassigned @ws-gitlab-utility",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T12:39:34.913Z",
+          "updated_at": "2022-03-28T12:39:34.916Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "48a3b869b12df6c939224cdc46aae368b1694a2e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891355604,
+          "type": null,
+          "body": "I couldn't merge this branch: Merge request was rejected by GitLab: 'Branch cannot be merged'",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T12:39:39.100Z",
+          "updated_at": "2022-03-28T12:39:39.100Z",
+          "system": false,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5f4cb87d533994814d4ec780bf7d0b346515836f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891504937,
+          "type": null,
+          "body": "added 5 commits\n\n<ul><li>a5d2ed9d...8df57029 - 4 commits from branch <code>wireshark:master</code></li><li>49160852 - uds: Don&#39;t append parameter record if not available</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/6542/diffs?diff_id=360833223&start_sha=a5d2ed9dc8b61faf252aa242544977240583d287)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T14:08:18.071Z",
+          "updated_at": "2022-03-28T14:08:18.073Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "14349f2fae1f7e13a6d462854e3d66f01cd1cb17",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891505104,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T14:08:24.712Z",
+          "updated_at": "2022-03-28T14:08:24.713Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2844b48b877f4ac4f090a21fc3e00b054c35fa54",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891505254,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility and unassigned @Sh3Rm4n",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T14:08:32.047Z",
+          "updated_at": "2022-03-28T14:08:32.049Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d54c70fcfb2c1eded0822d3eeb1504d086207c68",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891505570,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T14:08:43.775Z",
+          "updated_at": "2022-03-28T14:08:43.780Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5b640b9cf9436f99b247e8ba42b0df564507b560",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891533101,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>f54bad02 - 1 commit from branch <code>wireshark:master</code></li><li>870e139c - uds: Don&#39;t append parameter record if not available</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/6542/diffs?diff_id=360854620&start_sha=4916085205642ce32127d4bf5e77962ec4e39ece)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T14:25:31.944Z",
+          "updated_at": "2022-03-28T14:25:31.945Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "769f26fb7686e5713886f9df6b3a99cead3e72ac",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891553155,
+          "type": null,
+          "body": "assigned to @Sh3Rm4n and unassigned @ws-gitlab-utility",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T14:34:54.584Z",
+          "updated_at": "2022-03-28T14:34:54.586Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e7789a7fc52f55b337d916b4aa126fa3ea377361",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891553169,
+          "type": null,
+          "body": "I couldn't merge this branch: Insufficient approvals (have: [] missing: 1)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T14:34:55.097Z",
+          "updated_at": "2022-03-28T14:34:55.097Z",
+          "system": false,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d3a961fdf49330aa523b98cd5daf2d745cf5c5ef",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891645610,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T15:24:38.557Z",
+          "updated_at": "2022-03-28T15:24:38.560Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "76b7ca007eb5e62283571bba8bf2cd39e562ec4c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891645713,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-03-28T15:24:43.692Z",
+          "updated_at": "2022-03-28T15:24:43.694Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5fec9bcf35c6bdd3723d12cf5b122176071e5a8d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891653752,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>b9b45a4a - 1 commit from branch <code>wireshark:master</code></li><li>b55e0125 - uds: Don&#39;t append parameter record if not available</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/6542/diffs?diff_id=360931177&start_sha=870e139cac80c1a675097f612adb242b448c897b)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T15:29:13.826Z",
+          "updated_at": "2022-03-28T15:29:13.828Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c061667b923afaad5c47b82850a2873bb11974d9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 891653922,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-03-28T15:29:19.058Z",
+          "updated_at": "2022-03-28T15:29:19.060Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9048f6805b4dc99fa077aaefcae924c262e8ab29",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1285757265,
+          "type": null,
+          "body": "mentioned in issue #18865",
+          "author": {
+            "id": 6701257,
+            "username": "chuckcraft",
+            "public_email": "",
+            "name": "Chuck Craft",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/0809ffc6d9d98013a1895132bc055c622830b8a20bfa49328f53d5eb4a1206cb?s=80&d=identicon",
+            "web_url": "https://gitlab.com/chuckcraft"
+          },
+          "created_at": "2023-02-20T16:36:28.989Z",
+          "updated_at": "2023-02-20T16:36:28.991Z",
+          "system": true,
+          "noteable_id": 147318200,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6542,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -817,9 +817,12 @@ dissect_uds_internal(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint3\n                 guint32 parameter_record_length = data_length - UDS_DSC_PARAMETER_RECORD_OFFSET;\n                 proto_tree_add_item(subtree, hf_uds_dsc_parameter_record, tvb,\n                                     UDS_DSC_PARAMETER_RECORD_OFFSET, parameter_record_length, ENC_NA);\n-                col_append_fstr(pinfo->cinfo, COL_INFO, \"   %s\",\n-                                tvb_bytes_to_str_punct(pinfo->pool, tvb, UDS_DSC_PARAMETER_RECORD_OFFSET,\n-                                                       parameter_record_length, ' '));\n+                if (parameter_record_length != 0) {\n+                    col_append_fstr(pinfo->cinfo, COL_INFO, \"   %s\",\n+                                    tvb_bytes_to_str_punct(pinfo->pool, tvb, UDS_DSC_PARAMETER_RECORD_OFFSET,\n+                                                           parameter_record_length, ' '));\n+                }\n+\n             }\n             break;\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-uds.c",
+      "old_path": "epan/dissectors/packet-uds.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "b55e012524b81d09fb23c5a6ffb1271408b8402c",
+      "short_id": "b55e0125",
+      "created_at": "2022-03-28T15:29:10.000+00:00",
+      "parent_ids": [
+        "b9b45a4a8f6239ab23c1cec1ab79952ec0498647"
+      ],
+      "title": "uds: Don't append parameter record if not available",
+      "message": "uds: Don't append parameter record if not available\n",
+      "author_name": "Fabian Viöl",
+      "author_email": "Fabian.Vioel@webfleet.com",
+      "authored_date": "2022-03-28T09:13:57.000+02:00",
+      "committer_name": "A Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2022-03-28T15:29:10.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/b55e012524b81d09fb23c5a6ffb1271408b8402c"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 360931177,
+      "head_commit_sha": "b55e012524b81d09fb23c5a6ffb1271408b8402c",
+      "base_commit_sha": "b9b45a4a8f6239ab23c1cec1ab79952ec0498647",
+      "start_commit_sha": "b9b45a4a8f6239ab23c1cec1ab79952ec0498647",
+      "created_at": "2022-03-28T15:29:12.889Z",
+      "merge_request_id": 147318200,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 360854620,
+      "head_commit_sha": "870e139cac80c1a675097f612adb242b448c897b",
+      "base_commit_sha": "f54bad026fd36cc26cde5c5e42a843700ad1629e",
+      "start_commit_sha": "f54bad026fd36cc26cde5c5e42a843700ad1629e",
+      "created_at": "2022-03-28T14:25:29.848Z",
+      "merge_request_id": 147318200,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 360833223,
+      "head_commit_sha": "4916085205642ce32127d4bf5e77962ec4e39ece",
+      "base_commit_sha": "8df570294f01f2395b85254b32c3ad874f860744",
+      "start_commit_sha": "8df570294f01f2395b85254b32c3ad874f860744",
+      "created_at": "2022-03-28T14:08:15.707Z",
+      "merge_request_id": 147318200,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 360688884,
+      "head_commit_sha": "a5d2ed9dc8b61faf252aa242544977240583d287",
+      "base_commit_sha": "ac0a69636ba799f976c7fc01f137c0bbb89b0a17",
+      "start_commit_sha": "ac0a69636ba799f976c7fc01f137c0bbb89b0a17",
+      "created_at": "2022-03-28T12:03:30.038Z",
+      "merge_request_id": 147318200,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 360438354,
+      "head_commit_sha": "fd2d0a0208d49fd0a26d2346a7dad8d2f5348056",
+      "base_commit_sha": "1ff681cec647b19a149228e88b7f3a9063b2aca5",
+      "start_commit_sha": "1ff681cec647b19a149228e88b7f3a9063b2aca5",
+      "created_at": "2022-03-28T07:55:31.029Z",
+      "merge_request_id": 147318200,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 360436751,
+      "head_commit_sha": "2c08445e8aaa45cbcacda067d23fc0d059b79d4e",
+      "base_commit_sha": "14bf5bbdf1e81a6ea3edd7afb65c1b1b928ba367",
+      "start_commit_sha": "1ff681cec647b19a149228e88b7f3a9063b2aca5",
+      "created_at": "2022-03-28T07:54:03.971Z",
+      "merge_request_id": 147318200,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

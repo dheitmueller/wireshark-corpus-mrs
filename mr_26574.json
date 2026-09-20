@@ -1,0 +1,232 @@
+{
+  "id": 535746849,
+  "iid": 26574,
+  "project_id": 7898047,
+  "title": "wsutil: Read the Linux socket tables through netlink",
+  "description": "The first of the two Linux follow-ups mentioned in !26518 in reply to @AndersBroman's question about hosts with very many sockets. It only touches the Linux backend of `wsutil/process_lookup.h` (!26493).\n\nThe backend read the sockets from `/proc/net/{tcp,udp}{,6}`. The kernel takes a long time to produce those text tables when there are many sockets. This reads them through a `NETLINK_SOCK_DIAG` socket instead, as `ss` does: one `inet_diag_req_v2` dump per address family and protocol, from which the addresses, ports and inode of each socket are taken. Which processes have each inode open still comes from `/proc/<pid>/fd`.\n\nMeasured in the CI container with 50,000 UDP sockets held by 5 processes, per refresh:\n\n| | before | after |\n|---|---|---|\n| refresh | 9 to 10.5 s | 0.7 to 0.9 s |\n\nOf what remains, the four netlink dumps are 0.10 to 0.16 s, measured separately; the rest is the scan of `/proc/<pid>/fd` (50,000 readlink calls, 0.55 to 0.8 s), which is the same as before.\n\n- No privilege is needed, and the sockets are those of the caller's network namespace, as before. No new dependency: the uapi headers, no libnl.\n- TIME_WAIT sockets, which nobody has open, are left out of the request rather than skipped afterwards.\n- Messages that do not come from the kernel, or that answer an earlier request, are ignored.\n- Fallback: if the netlink socket can't be created, or a request fails (a kernel without the `inet_diag` module of a protocol, a sandbox that refuses netlink), `/proc/net` is read instead from then on, with the existing parser. IPv6 is still only asked for when `/proc/net/tcp6` exists.\n\nTests: the existing `test_wsutil` process lookup tests now run through netlink (checked with strace: four dumps per refresh, no `/proc/net` reads) and pass with gcc, and with clang and ASan. Both fallbacks were exercised with LD_PRELOAD shims, one refusing the `NETLINK_SOCK_DIAG` socket and one failing the second dump request: in both cases a sample of 516 of the 50,000 sockets is found, as through netlink. Together with !26518, its capture tests pass as a user and as root.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_01MeQMmftoMWrDyC8HdFk7sT",
+  "state": "opened",
+  "created_at": "2026-09-20T10:33:56.218Z",
+  "updated_at": "2026-09-20T11:59:27.084Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "wsutil-process-lookup-sock-diag",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 42234152,
+    "username": "fiddyschmitt",
+    "public_email": null,
+    "name": "Fidel PS",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+    "web_url": "https://gitlab.com/fiddyschmitt"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 86329048,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_approved",
+  "merge_after": null,
+  "sha": "e396312fe1b31409c1e0958c248b0476dbd342ee",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2026-09-20T10:34:02.616Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!26574",
+  "references": {
+    "short": "!26574",
+    "relative": "!26574",
+    "full": "wireshark/wireshark!26574"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/26574",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2026-09-20T10:34:02.959Z",
+  "latest_build_finished_at": "2026-09-20T11:00:24.763Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 2865170158,
+    "iid": 41,
+    "project_id": 86329048,
+    "sha": "e396312fe1b31409c1e0958c248b0476dbd342ee",
+    "ref": "wsutil-process-lookup-sock-diag",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-20T10:34:02.101Z",
+    "updated_at": "2026-09-20T11:00:24.776Z",
+    "web_url": "https://gitlab.com/fiddyschmitt/wireshark/-/pipelines/2865170158"
+  },
+  "head_pipeline": {
+    "id": 2865170158,
+    "iid": 41,
+    "project_id": 86329048,
+    "sha": "e396312fe1b31409c1e0958c248b0476dbd342ee",
+    "ref": "wsutil-process-lookup-sock-diag",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2026-09-20T10:34:02.101Z",
+    "updated_at": "2026-09-20T11:00:24.776Z",
+    "web_url": "https://gitlab.com/fiddyschmitt/wireshark/-/pipelines/2865170158",
+    "before_sha": "e396312fe1b31409c1e0958c248b0476dbd342ee",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 42234152,
+      "username": "fiddyschmitt",
+      "public_email": null,
+      "name": "Fidel PS",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+      "web_url": "https://gitlab.com/fiddyschmitt"
+    },
+    "started_at": "2026-09-20T10:34:02.959Z",
+    "finished_at": "2026-09-20T11:00:24.763Z",
+    "committed_at": null,
+    "duration": 1580,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/fiddyschmitt/wireshark/-/pipelines/2865170158",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": false
+  },
+  "diff_refs": {
+    "base_sha": "cb05a4619b245a35ba99e901451d5218ed49c7bd",
+    "head_sha": "e396312fe1b31409c1e0958c248b0476dbd342ee",
+    "start_sha": "cb05a4619b245a35ba99e901451d5218ed49c7bd"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "af432e24e4c5d1c3994ffa9664156c3c60e07b09",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 3871911893,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 42234152,
+            "username": "fiddyschmitt",
+            "public_email": null,
+            "name": "Fidel PS",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/ab569aa0db2c82395869a44f07d3f0c620d8a576858d67e35ba6abb4a9a92be4?s=80&d=identicon",
+            "web_url": "https://gitlab.com/fiddyschmitt"
+          },
+          "created_at": "2026-09-20T11:59:27.199Z",
+          "updated_at": "2026-09-20T11:59:27.201Z",
+          "system": true,
+          "noteable_id": 535746849,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 26574,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1,5 +1,5 @@\n /* process_lookup-linux.c\n- * Look up the processes that have a network socket open: Linux, through /proc\n+ * Look up the processes that have a network socket open: Linux, through netlink and /proc\n  *\n  * Wireshark - Network traffic analyzer\n  * By Gerald Combs <gerald@wireshark.org>\n@@ -21,22 +21,37 @@\n #include <unistd.h>\n #include <pwd.h>\n #include <sys/types.h>\n+#include <sys/socket.h>\n+#include <netinet/in.h>\n+#include <netinet/tcp.h>\n+#include <linux/netlink.h>\n+#include <linux/sock_diag.h>\n+#include <linux/inet_diag.h>\n \n /*\n- * The sockets come from /proc/net/{tcp,tcp6,udp,udp6}, which list every\n- * socket in the network namespace with its owner's UID and its inode, and\n- * the processes that have each open from the socket inodes in\n- * /proc/<pid>/fd, which can be read for the caller's own processes and,\n- * with CAP_SYS_PTRACE or as root, for everybody's. Sockets nobody has open\n- * any more, such as TIME_WAIT ones, have inode 0 and are skipped.\n+ * The sockets of the network namespace, each with its inode, come from the\n+ * kernel through a NETLINK_SOCK_DIAG socket, as they do for ss, or, where\n+ * that is not possible, from /proc/net/{tcp,tcp6,udp,udp6}, which give the\n+ * same as text but take the kernel several times as long to produce when\n+ * there are tens of thousands of sockets. The processes that have each\n+ * socket open come from the socket inodes in /proc/<pid>/fd, which can be\n+ * read for the caller's own processes and, with CAP_SYS_PTRACE or as root,\n+ * for everybody's. Sockets nobody has open any more, such as TIME_WAIT\n+ * ones, have inode 0 and are skipped.\n  */\n \n #define NS_PER_S 1000000000ULL\n \n+/* The receive buffer for the dumps, the size that ss uses. */\n+#define DIAG_BUF_SIZE 32768\n+\n typedef struct {\n     GHashTable *inode_to_pids;  /* uint64_t * -> GArray of the uint32_t pids that have the socket open */\n     uint64_t    boot_time_s;    /* seconds since the Epoch */\n     long        clk_tck;\n+    int         diag_fd;        /* the NETLINK_SOCK_DIAG socket, or -1 to read /proc/net instead */\n+    uint32_t    diag_seq;       /* the sequence number of the last request */\n+    uint8_t    *diag_buf;\n } linux_state_t;\n \n static void\n@@ -76,6 +91,10 @@ linux_open(char **err_msg)\n     state->clk_tck = sysconf(_SC_CLK_TCK);\n     if (state->clk_tck <= 0)\n         state->clk_tck = 100;\n+    /* No privilege is needed for this; if it fails, /proc/net is read instead. */\n+    state->diag_fd = socket(AF_NETLINK, SOCK_DGRAM | SOCK_CLOEXEC, NETLINK_SOCK_DIAG);\n+    if (state->diag_fd >= 0)\n+        state->diag_buf = (uint8_t *)g_malloc(DIAG_BUF_SIZE);\n     return state;\n }\n \n@@ -84,6 +103,9 @@ linux_close(void *p)\n {\n     linux_state_t *state = (linux_state_t *)p;\n \n+    if (state->diag_fd >= 0)\n+        close(state->diag_fd);\n+    g_free(state->diag_buf);\n     g_hash_table_destroy(state->inode_to_pids);\n     g_free(state);\n }\n@@ -244,25 +266,131 @@ read_socket_table(linux_state_t *state, const char *path, uint8_t protocol,\n     return true;\n }\n \n+/*\n+ * Ask the kernel for the sockets of an address family and a protocol, which\n+ * it sends as a series of messages. Returns false, with errno set, if that\n+ * can't be done, e.g. ENOENT if the kernel has no inet_diag module for the\n+ * protocol; some of the sockets may have been reported by then.\n+ */\n+static bool\n+read_sockets_netlink(linux_state_t *state, int family, uint8_t protocol,\n+                     ws_process_lookup_add_socket_func add, void *ctx)\n+{\n+    struct {\n+        struct nlmsghdr         nlh;\n+        struct inet_diag_req_v2 req;\n+    } request;\n+    struct sockaddr_nl kernel;\n+\n+    memset(&request, 0, sizeof request);\n+    request.nlh.nlmsg_len = sizeof request;\n+    request.nlh.nlmsg_type = SOCK_DIAG_BY_FAMILY;\n+    request.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;\n+    request.nlh.nlmsg_seq = ++state->diag_seq;\n+    request.req.sdiag_family = (uint8_t)family;\n+    request.req.sdiag_protocol = protocol;\n+    /* In every state but TIME_WAIT: nobody has those open. */\n+    request.req.idiag_states = ~(1U << TCP_TIME_WAIT);\n+\n+    memset(&kernel, 0, sizeof kernel);\n+    kernel.nl_family = AF_NETLINK;\n+    if (sendto(state->diag_fd, &request, sizeof request, 0,\n+               (const struct sockaddr *)&kernel, sizeof kernel) < 0)\n+        return false;\n+\n+    for (;;) {\n+        struct sockaddr_nl from;\n+        socklen_t from_len = sizeof from;\n+        struct nlmsghdr *nlh;\n+        ssize_t received;\n+        unsigned len;  /* what NLMSG_OK() compares with the unsigned length of a message */\n+\n+        received = recvfrom(state->diag_fd, state->diag_buf, DIAG_BUF_SIZE, 0,\n+                            (struct sockaddr *)&from, &from_len);\n+        if (received < 0) {\n+            if (errno == EINTR)\n+                continue;\n+            return false;\n+        }\n+        if (from_len != sizeof from || from.nl_pid != 0)\n+            continue;  /* not from the kernel */\n+        len = (unsigned)received;\n+\n+        for (nlh = (struct nlmsghdr *)state->diag_buf; NLMSG_OK(nlh, len); nlh = NLMSG_NEXT(nlh, len)) {\n+            const struct inet_diag_msg *msg;\n+            uint64_t inode_key;\n+            const GArray *pids;\n+            uint8_t ip_version;\n+            ws_process_lookup_socket_key_t key;\n+\n+            if (nlh->nlmsg_seq != state->diag_seq)\n+                continue;\n+            if (nlh->nlmsg_type == NLMSG_DONE)\n+                return true;\n+            if (nlh->nlmsg_type == NLMSG_ERROR) {\n+                const struct nlmsgerr *nlerr = (const struct nlmsgerr *)NLMSG_DATA(nlh);\n+\n+                errno = (nlh->nlmsg_len >= NLMSG_LENGTH(sizeof *nlerr)) ? -nlerr->error : EIO;\n+                return false;\n+            }\n+            if (nlh->nlmsg_type != SOCK_DIAG_BY_FAMILY || nlh->nlmsg_len < NLMSG_LENGTH(sizeof *msg))\n+                continue;\n+            msg = (const struct inet_diag_msg *)NLMSG_DATA(nlh);\n+            if (msg->idiag_inode == 0)\n+                continue;  /* nobody has it open (any more) */\n+            inode_key = msg->idiag_inode;\n+            pids = (const GArray *)g_hash_table_lookup(state->inode_to_pids, &inode_key);\n+            if (pids == NULL)\n+                continue;  /* not our process, and we may not look */\n+            if (msg->idiag_family == AF_INET)\n+                ip_version = 4;\n+            else if (msg->idiag_family == AF_INET6)\n+                ip_version = 6;\n+            else\n+                continue;\n+            /* The addresses are as they are in a packet, in the first of four words if IPv4. */\n+            ws_process_lookup_key_init(&key, protocol, ip_version,\n+                                       (const uint8_t *)msg->id.idiag_src, g_ntohs(msg->id.idiag_sport),\n+                                       (const uint8_t *)msg->id.idiag_dst, g_ntohs(msg->id.idiag_dport));\n+            for (unsigned i = 0; i < pids->len; i++)\n+                add(ctx, &key, g_array_index(pids, uint32_t, i));\n+        }\n+    }\n+}\n+\n static bool\n linux_refresh(void *p, ws_process_lookup_add_socket_func add, void *ctx, char **err_msg)\n {\n     linux_state_t *state = (linux_state_t *)p;\n     static const struct {\n         const char *path;\n+        int         family;\n         uint8_t     protocol;\n         bool        required;\n     } tables[] = {\n-        { \"/proc/net/tcp\",  WS_PROCESS_LOOKUP_TCP, true },\n-        { \"/proc/net/udp\",  WS_PROCESS_LOOKUP_UDP, true },\n-        { \"/proc/net/tcp6\", WS_PROCESS_LOOKUP_TCP, false },  /* absent without IPv6 */\n-        { \"/proc/net/udp6\", WS_PROCESS_LOOKUP_UDP, false },\n+        { \"/proc/net/tcp\",  AF_INET,  WS_PROCESS_LOOKUP_TCP, true },\n+        { \"/proc/net/udp\",  AF_INET,  WS_PROCESS_LOOKUP_UDP, true },\n+        { \"/proc/net/tcp6\", AF_INET6, WS_PROCESS_LOOKUP_TCP, false },  /* absent without IPv6 */\n+        { \"/proc/net/udp6\", AF_INET6, WS_PROCESS_LOOKUP_UDP, false },\n     };\n \n     scan_socket_fds(state);\n     for (size_t i = 0; i < G_N_ELEMENTS(tables); i++) {\n         if (!tables[i].required && access(tables[i].path, R_OK) != 0)\n             continue;\n+        if (state->diag_fd >= 0) {\n+            if (read_sockets_netlink(state, tables[i].family, tables[i].protocol, add, ctx))\n+                continue;\n+            /*\n+             * Not with this kernel, or not in this sandbox. Whatever was\n+             * reported before it failed is reported again below, which does\n+             * no harm.\n+             */\n+            ws_debug(\"reading the sockets through netlink failed, reading /proc/net from now on: %s\",\n+                     g_strerror(errno));\n+            close(state->diag_fd);\n+            state->diag_fd = -1;\n+        }\n         if (!read_socket_table(state, tables[i].path, tables[i].protocol, add, ctx, err_msg))\n             return false;\n     }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wsutil/process_lookup-linux.c",
+      "old_path": "wsutil/process_lookup-linux.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": false
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "e396312fe1b31409c1e0958c248b0476dbd342ee",
+      "short_id": "e396312f",
+      "created_at": "2026-09-20T20:25:24.000+10:00",
+      "parent_ids": [
+        "cb05a4619b245a35ba99e901451d5218ed49c7bd"
+      ],
+      "title": "wsutil: Read the Linux socket tables through netlink",
+      "message": "wsutil: Read the Linux socket tables through netlink\n\nGet the sockets for the process lookup from the kernel through a\nNETLINK_SOCK_DIAG socket, as ss does, rather than from\n/proc/net/{tcp,udp}{,6}. The text tables take the kernel a long time to\nproduce when there are many sockets: with 50,000 UDP sockets a refresh\ntook about 10 s, and takes under 1 s now, of which the netlink dumps\nare about 0.1 s and the rest is the scan of /proc/<pid>/fd that tells\nwhich processes have the sockets open, which is unchanged.\n\nNo privilege is needed, and the sockets are those of the same network\nnamespace as before. TIME_WAIT sockets, which nobody has open, are left\nout of the request. If the netlink socket can't be created, or a request\nfails (a kernel without the inet_diag module of a protocol, a sandbox),\n/proc/net is read instead, from then on.\n\nAssisted-by: Claude\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_01MeQMmftoMWrDyC8HdFk7sT\n",
+      "author_name": "Fidel Perez-Smith",
+      "author_email": "fiddyschmitt@gmail.com",
+      "authored_date": "2026-09-19T22:12:31.000+10:00",
+      "committer_name": "Fidel Perez-Smith",
+      "committer_email": "fiddyschmitt@gmail.com",
+      "committed_date": "2026-09-20T20:25:24.000+10:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e396312fe1b31409c1e0958c248b0476dbd342ee"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 2039628768,
+      "head_commit_sha": "e396312fe1b31409c1e0958c248b0476dbd342ee",
+      "base_commit_sha": "cb05a4619b245a35ba99e901451d5218ed49c7bd",
+      "start_commit_sha": "cb05a4619b245a35ba99e901451d5218ed49c7bd",
+      "created_at": "2026-09-20T10:33:59.759Z",
+      "merge_request_id": 535746849,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": "5842ce8d154b0ef14ec99fa39011326566cbfff4"
+    }
+  ]
+}

@@ -1,0 +1,1027 @@
+{
+  "id": 136262069,
+  "iid": 5964,
+  "project_id": 7898047,
+  "title": "Allow disabling unused dissectors from PHS dialog",
+  "description": "Implements the feature request in #16923.\n\nUI changes:\n\nAdds two major new features to the Protocol Hierarchy Statistics (PHS)\nGUI.  One disables all dissectors, then re-enables only the dissectors\nshown in the dialog (and thus, only for the protocols used in the\ncurrent file).  The other feature reverts this change if possible (see\nnotes below).\n\nAdds `Copy > protocol short names` to the PHS GUI. Copies the list of\nprotocol short names in use to the clipboard, comma-separated, for use\non the command line.\n\nCommand line `--enable-protocol/--disable-protocol` (and\n`--enable-heuristic/--disable-heuristic`) options now accept\nmultiple protocol names separated by commas, to allow en/disabling\nmultiple protocols at once with less typing.\n\nCommand line `--enable-protocol/--disable-protocol` options now accept\n'ALL' as an argument. For `--disable-protocol`, disables all protocols.\nFor `--enable-protocol`, enables all protocols *that are not disabled by\ndefault.*\n\nAPI changes:\n\n`proto_enable_proto_by_name()` now always enables protocols that it is\nasked to enable. Old behaviour was to only enable protocols that are\ndisabled by default. This behaviour change allows the new \"disable\nunused protocols\" feature in the PHS GUI to function as it's described\nabove. This also allows command-line options such as `tshark\n--disable-protocol ALL --enable-protocol eth,ip` to provide equivalent\nfunctionality as the new GUI feature.\n\nAdded `proto_disable_heuristic_by_name()` which takes a protocol name as\nits single argument. Revised `proto_enable_heuristic_by_name()` to also\nonly take a single argument. This was changed to simplify the use of\nboth functions as callbacks in `ui/dissect_opts.c` (which is where\nwas added support for comma-separated protocol names).\n\n`proto_enable_proto_by_name()` and `proto_disable_proto_by_name()` now\nreturn a boolean, true if the requested protocol exists and false if\nnot, for API symmetry with `proto_enable_heuristic_by_name()`.\n\nTrack when changes made to the enabled/disabled status of protocols\nhave not yet been saved to the user's profile, and make this information\navailable via a new function `enabled_protos_unsaved_changes()` in\n`epan/disabled_protos.c`. This could already occur when using\n`--enable-protocol/--disable-protocol` for Wireshark; now it is also\npossible if the new \"disable unused protocols\" feature on the PHS GUI is\nused.\n\nMade `read_enabled_and_disabled_lists()` in `epan/disabled_protos.h`\na public function, as this seemed the most minimal way to undo changes\nto the enabled/disabled status of protocols. The suggested alternative\nof calling `epan_load_settings()` would also revert other unsaved\nchanges, particularly to user preferences. If that behaviour is\npreferred over exposing this function, then it can be done.\n\nNotes:\n\nAs has always been the case, if one uses\n`--enable-protocol/--disable-protocol` on the Wireshark command line,\nthen goes to `Analyze > Enabled Protocols...` and makes changes,\nthese changes cause the enabled/disabled state of all protocols to\nbe written to the user's profile. This is more important to note now\nthat large numbers of protocols can be easily enabled/disabled\nfrom the command line.\n\nThe temporary changes made by the new PHS GUI feature are also subject\nto this behaviour. As a result, if one makes changes in the Enabled\nProtocols dialog, it becomes impossible to return all protocols to the\nenabled/disabled state they had before making use of the new feature.\n\nOther:\n\nIt may make sense for `--enable-protocol ALL` to enable all protocols\n*including* those which are disabled by default. The function\n`proto_reenable_all()` in `epan/proto.c` would need to be modified or\nduplicated in order to allow this behaviour.\n\nIt may make sense for the button which resets protocol enabled/disabled\nstatus to appear on the Enabled Protocols dialog. I investigated this,\nbut lack sufficient Qt knowledge to cause this reset to be reflected in\nthe state of the checkboxes in the dialog.\n\nCloses #16923",
+  "state": "merged",
+  "created_at": "2022-01-20T19:14:18.132Z",
+  "updated_at": "2023-08-09T01:56:01.849Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2023-06-13T17:12:27.272Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "16923-disable-protos-in-phs",
+  "user_notes_count": 7,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20710065,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "8a03316d945b444ce92e0e87607b7f8678747466",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "80ae370811595f294c65cb71e1d213d5b49e33fd",
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2022-01-20T19:14:18.132Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!5964",
+  "references": {
+    "short": "!5964",
+    "relative": "!5964",
+    "full": "wireshark/wireshark!5964"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/5964",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "12",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": {
+    "id": 898791910,
+    "iid": 47702,
+    "project_id": 7898047,
+    "sha": "8a03316d945b444ce92e0e87607b7f8678747466",
+    "ref": "refs/merge-requests/5964/head",
+    "status": "skipped",
+    "source": "merge_request_event",
+    "created_at": "2023-06-13T17:11:36.001Z",
+    "updated_at": "2023-06-13T17:11:36.001Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/898791910",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": null,
+    "finished_at": null,
+    "committed_at": null,
+    "duration": null,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_skipped",
+      "text": "Skipped",
+      "label": "skipped",
+      "group": "skipped",
+      "tooltip": "skipped",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/898791910",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_skipped-0b9c5e543588945e8c4ca57786bbf2d0c56631959c9f853300392d0315be829b.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "801554fb799869690a24cd61b540f1e5f8d2fccb",
+    "head_sha": "8a03316d945b444ce92e0e87607b7f8678747466",
+    "start_sha": "801554fb799869690a24cd61b540f1e5f8d2fccb"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "e72bd86719cd98a241e82581301370f4977bdcd9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 817131173,
+          "type": null,
+          "body": "I have a few issues here. I don't see an issue with copying the protocol names, just to have that functionality a little bit different, as that specific menu is meant as something else. But at the moment, I cannot see a better place as well. One could add it to the context menu, but there the reasoning is often, that only functions that are available someplace else should be put into context menus.\n\nI have a bigger issue with the disable/enable functionality. We already have a similar functionality in the \"Enabled protocols\" dialog. There you can enable/disable or invert. I am not really sure what \"Revert\" should achieve. Let's assume you have a bunch of protocols disabled, then open this dialog and disable the protocols. If you revert will you get all the protocols back or will the already disabled protocols stay? If you close the dialog you cannot revert at all?\n\nI would much rather see this functionality in the same terms as \"Enabled protocols\" and be able to enable/disable.\n\nOverall, could it not make more sense, to add an additional filter to \"Enabled protocols\", to only show protocols present in the file? You would get the same result, just with a lot fewer changes and also the functionality for mass-enable/disable would stay in the same dialog, instead of adding functionality someplace else.",
+          "author": {
+            "id": 2498449,
+            "username": "rknall",
+            "public_email": "",
+            "name": "Roland Knall",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9e1d973c5007651b2ca47071f80324c2de5349d873e365cf0761df5542dfe382?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rknall"
+          },
+          "created_at": "2022-01-20T21:08:33.360Z",
+          "updated_at": "2022-01-20T21:08:33.360Z",
+          "system": false,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "03bd55207f8c75763cad0ce4c7dcdcf973fef657",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 817160868,
+          "type": "DiscussionNote",
+          "body": "> Overall, could it not make more sense, to add an additional filter to \"Enabled protocols\", to only show protocols present in the file? You would get the same result, just with a lot fewer changes and also the functionality for mass-enable/disable would stay in the same dialog, instead of adding functionality someplace else.\n\nI do not believe that this approach would result in fewer changes. In fact, I think it could lead to *more* changes. It was relatively trivial for me to add the feature to the PHS dialog, because this dialog is already collecting the list of protocols in use in the file; I got the protocol short names almost \"for free.\" For the Enabled Protocols dialog to have this same feature, it would need to do its own scan over the entire file to find what protocols are in use.\n\nNote that I'm not discouraging this idea, just managing expectations about what it would entail.\n\n> I would much rather see this functionality in the same terms as \"Enabled protocols\" and be able to enable/disable.\n\nIt would make more sense from an end-user standpoint for the feature to be in the Enabled Protocols dialog. Assuming the feature would get a new button on this dialog, then we could wait to scan the file for its protocols until the button is actually pressed. The scan would still take a long time on large files, but at least it wouldn't impact the dialog's initial load time.\n\n> I am not really sure what \"Revert\" should achieve. Let's assume you have a bunch of protocols disabled, then open this dialog and disable the protocols. If you revert will you get all the protocols back or will the already disabled protocols stay? If you close the dialog you cannot revert at all?\n\nTo make discussion easier, I will define \"temporary changes\" to the enabled/disabled state of protocols: these are changes that exist in Wireshark's memory and affect its dissection, but which have not been saved to the user's profile. They are lost when Wireshark exits.\n\nWhen you say \"open this dialog and disable the protocols\" I assume you mean the PHS dialog. As written in this patch, these changes are temporary. If you use the revert function it will revert those specific changes (and also protocols that were disabled with `--disable-protocol` on the Wireshark command line; see below) but it will leave protocols disabled that you disabled in the Enabled Protocols dialog.\n\nNote that any change made on the Enabled Protocols dialog causes *all* enabled/disabled protocols to be written to the user's profile -- that is to say, \"temporary\" changes cease to be temporary. This dialog does not currently have a way to make temporary changes. If we're fortunate, then it may be straightforward to add a \"Save\" button to this dialog, and have all changes made in this dialog be temporary unless/until one clicks Save. (This would parallel the behaviour of the Decode As dialog, for example.) If we're less fortunate then it will take more work.\n\nThe concept of temporarily enabling/disabling protocols in Wireshark seems to be incompletely thought out. Apart from this patch, the only way it's used is in the `--enable-protocol/--disable-protocol` command line options to Wireshark. That alone may be a good reason to reject this patch, because it makes use of a \"feature\" which may not be intentional.\n\nI do think it's a useful feature to have, though. I will investigate adding a Save button to the Enabled Protocols dialog.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2022-01-20T21:47:09.598Z",
+          "updated_at": "2022-01-20T22:12:11.034Z",
+          "system": false,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2023-03-21T14:46:42.671Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        },
+        {
+          "id": 817175338,
+          "type": "DiscussionNote",
+          "body": "> I do not believe that this approach would result in fewer changes. In fact, I think it could lead to *more* changes. It was relatively trivial for me to add the feature to the PHS dialog, because this dialog is already collecting the list of protocols in use in the file; I got the protocol short names almost \"for free.\" For the Enabled Protocols dialog to have this same feature, it would need to do its own scan over the entire file to find what protocols are in use.\n\nNo it doesn't. It is actually much less. You would just need to add the same tap as it is being used for the protocol hierarchy. Therefore, it is actually much less code and would require next to none changes to the underlying epan ecosystem.\n\nThat's another thing. Enabling/Disabling a bunch of dissectors is already implemented and can easily be adapted to be used in the fashion you require. Implementing new methods just seems to be counterintuitive.\n\n> It would make more sense from an end-user standpoint for the feature to be in the Enabled Protocols dialog. Assuming the feature would get a new button on this dialog, then we could wait to scan the file for its protocols until the button is actually pressed. The scan would still take a long time on large files, but at least it wouldn't impact the dialog's initial load time.\n\nAgain, no need for waiting, same loading time as for the hierarchy dialog.\n\n> To make discussion easier, I will define \"temporary changes\" to the enabled/disabled state of protocols: these are changes that exist in Wireshark's memory and affect its dissection, but which have not been saved to the user's profile. They are lost when Wireshark exits.\n> \n> When you say \"open this dialog and disable the protocols\" I assume you mean the PHS dialog. As written in this patch, these changes are temporary. If you use the revert function it will revert those specific changes (and also protocols that were disabled with `--disable-protocol` on the Wireshark command line; see below) but it will leave protocols disabled that you disabled in the Enabled Protocols dialog.\n> \n> Note that any change made on the Enabled Protocols dialog causes *all* enabled/disabled protocols to be written to the user's profile -- that is to say, \"temporary\" changes cease to be temporary. This dialog does not currently have a way to make temporary changes. If we're fortunate, then it may be straightforward to add a \"Save\" button to this dialog, and have all changes made in this dialog be temporary unless/until one clicks Save. (This would parallel the behaviour of the Decode As dialog, for example.) If we're less fortunate then it will take more work.\n> \n> The concept of temporarily enabling/disabling protocols in Wireshark seems to be incompletely thought out. Apart from this patch, the only way it's used is in the `--enable-protocol/--disable-protocol` command line options to Wireshark. That alone may be a good reason to reject this patch, because it makes use of a \"feature\" which may not be intentional.\n> \n> I do think it's a useful feature to have, though. I will investigate adding a Save button to the Enabled Protocols dialog.\n\nThis actually breaks a lot of usability Wireshark currently has. \n\nTo clarify in that regard. If you change configuration, it should neither be temporary, nor require special handling to be saved. It should be repeatable and predictive. Both is not always the case here. e.g. you can disable a bunch of protocols but reenabling will enable not all disabled ones, as they have been disabled by another method?\n\nAlso, please don't implement a separate save button. Profiles are not \"temporary\", and I can easily see people destroying their profiles, because they accidentally enabled/disabled some protocols. \n\nTo be clear, my issue here is predictability and repeatability. The same method if reversed should lead to the same outcome. A -> B  =  B -> A. In this case here it is more likely to be A -> B = B -> A'.\n\nI accept the idea and think it can be useful. And as such it would be a nice feature to add. But I would much rather see the functionality to be channelized within the \"Enabled Protocols\" dialog (as the name suggests, that's where the functionality will be searched for), than the Hierarchy dialog.",
+          "author": {
+            "id": 2498449,
+            "username": "rknall",
+            "public_email": "",
+            "name": "Roland Knall",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9e1d973c5007651b2ca47071f80324c2de5349d873e365cf0761df5542dfe382?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rknall"
+          },
+          "created_at": "2022-01-20T22:12:10.921Z",
+          "updated_at": "2022-01-20T22:12:10.921Z",
+          "system": false,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2023-03-21T14:46:42.671Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        },
+        {
+          "id": 817198778,
+          "type": "DiscussionNote",
+          "body": "You seem to have misunderstood at least some of my comment. I'm not against the idea of adding the feature to the Enabled Protocols dialog at all. I actually said it would make more sense to the user if it were there. I'm sorry that I wasn't clear that I'm agreeing with you; hopefully it is clearer now.\n\nCould you please quote smaller sections of my comments so I can better understand the concerns you're having?\n\n> To clarify in that regard. If you change configuration, it should neither be temporary, nor require special handling to be saved.\n\nYou should know that this is the behaviour that you get with the \"Decode As\" functionality, as I said above. It has separate buttons for \"OK\" and \"Save\". Only \"Save\" causes the change to be written to the user's profile. Clicking \"OK\" *without* clicking \"Save\" causes one's changes to apply only for the remainder of the current Wireshark session.\n\nTo put it another way, the \"Decode As\" changes are *temporary* until the user explicitly makes them permanent.\n\nI believe this is also the behaviour you get if you right-click in a packet's protocol tree and change one of its settings that way. Changes made there do not persist beyond the current Wireshark session, unless you go to the Preferences dialog and also make changes there. Saving your preferences from this dialog causes all preference changes to be saved and no longer temporary.\n\nThat is the precedent I was using to inspire my suggestion of a similar Save button on the Enabled Protocols dialog. It would allow the user to temporarily enable or disable protocols without \"destroying their profiles, because they accidentally enabled/disabled some protocols\" as you put it.\n\nBy the way, this is a risk that exists right now -- without my patch -- and which we have no way of mitigating. Check out master, build it, run it, and imagine you've disabled some protocols previously in your profile. If you go to Enabled Protocols, click Disable All, and click OK, then I hope you backed up your profile, because that's the only way you can get back to the set of disabled protocols that you had before making this mistake.\n\nTo clarify, my idea of adding a Save button to the Enabled Protocols dialog is meant to be *entirely independent of this patch*. I think it would mesh nicely with solving the problem that this patch also aims to solve, but I also think it would be a helpful feature on its own.\n\n> Profiles are not \"temporary\",\n\nI never said they were. In fact, I was explicit in defining that the state of being \"temporary\" *ended* when the changes were written to the profile on disk. I evidently did a poor job of explaining this, for which I apologize.\n\n> To be clear, my issue here is predictability and repeatability. The same method if reversed should lead to the same outcome. A -> B = B -> A. In this case here it is more likely to be A -> B = B -> A'.\n\nI guess I again have failed to make myself clear. This patch, as currently written, **does** give the behaviour `A -> B = B -> A`. It only breaks this rule if you do something in the Enabled Protocols dialog, thus adding a `C` state.\n\nBut again, I'm not married to this specific implementation. As I hope I've made clear by now, I like the idea of having this feature in the Enabled Protocols dialog instead.\n\n> No it doesn't. It is actually much less. You would just need to add the same tap as it is being used for the protocol hierarchy. Therefore, it is actually much less code and would require next to none changes to the underlying epan ecosystem.\n\nPerhaps it seems like it would be more code to me because I am not a Qt expert like you. I did look at adding this feature to the Enabled Protocols dialog (as you'll see in my commit message / review summary message), but I could not get the checkboxes to reflect changes in a protocol's enabled/disabled status that were made by routines in that dialog.\n\nThe epan changes are still necessary if we want to have an equivalent feature for TShark, which I do.\n\n> That's another thing. Enabling/Disabling a bunch of dissectors is already implemented and can easily be adapted to be used in the fashion you require. Implementing new methods just seems to be counterintuitive.\n\nI'm confused. I only implemented one new method, `proto_disable_all()`. I call that, and then call `proto_enable_proto_by_name()` on the protocols that exist in this file. How is this counterintuitive? What would you suggest instead that would make more sense? Keep in mind that I also want equivalent functionality in TShark.\n\nI genuinely want to learn how to be a better contributor. And it seems like you already have a strong idea of how this could be done. Would you be interested in doing your own approach for addressing #16923? If you do, please tag me on your pull request, so I can see what you mean.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2022-01-20T23:01:13.005Z",
+          "updated_at": "2022-01-20T23:01:13.005Z",
+          "system": false,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2023-03-21T14:46:42.671Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "af0b3e490cae67b3b86f2d6fa212896323090e19",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 817825426,
+          "type": null,
+          "body": "mentioned in merge request !5970",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2022-01-21T13:16:32.643Z",
+          "updated_at": "2022-01-21T13:16:32.644Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f8ece5a56793e7ffe41f1772319cf756c3ecc24a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1198503138,
+          "type": null,
+          "body": "added 2569 commits\n\n<ul><li>b7132942...bad5ae8c - 2568 commits from branch <code>wireshark:master</code></li><li>8d2e063e - Allow disabling unused dissectors from PHS dialog</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/5964/diffs?diff_id=550711959&start_sha=b71329427c72cb4f5c7c2186e75c0f05c0945559)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2022-12-06T16:45:12.260Z",
+          "updated_at": "2022-12-06T16:45:12.262Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b59baab08681d711a6ed5605f886cdd030da9fe4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1322545951,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2023-03-21T14:46:42.728Z",
+          "updated_at": "2023-03-21T14:46:42.736Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ea6c5d4cbf72e3c4e5be7266c36d079f0141f5a9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1426097799,
+          "type": null,
+          "body": "Roland can you check?",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-06-10T22:01:36.200Z",
+          "updated_at": "2023-06-10T22:01:36.200Z",
+          "system": false,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "54becbd6f38b83cdfaea35afd1b7c3437d2f72dd",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 1426340452,
+          "type": "DiscussionNote",
+          "body": "Can you rebase please?\nFast-forward merge is not possible. To merge this request, first rebase locally.",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-06-11T23:12:56.148Z",
+          "updated_at": "2023-06-13T12:09:13.779Z",
+          "system": false,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2023-06-13T14:45:45.449Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        },
+        {
+          "id": 1428634301,
+          "type": "DiscussionNote",
+          "body": "Done. Note, though, that Roland is the only person who's weighed in on this patch so far, and seems clearly against it.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2023-06-13T12:09:13.743Z",
+          "updated_at": "2023-06-13T12:09:13.743Z",
+          "system": false,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "resolved_at": "2023-06-13T14:45:45.449Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "293acb6839a9649e711fd45428e5b56123ff7847",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1428633328,
+          "type": null,
+          "body": "added 1846 commits\n\n<ul><li>8d2e063e...017af7dc - 1845 commits from branch <code>wireshark:master</code></li><li>d6a6b6f6 - Allow disabling unused dissectors from PHS dialog</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/5964/diffs?diff_id=706828081&start_sha=8d2e063eaea3c40c1095ffd5ff2a1bfd29ccff87)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2023-06-13T12:08:41.890Z",
+          "updated_at": "2023-06-13T12:08:41.892Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c12fa6c7dee7f5433f270306768e2ea7fe4c04fa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1429088281,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-06-13T14:45:45.489Z",
+          "updated_at": "2023-06-13T14:45:45.494Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "983b866f66a76130758943f4d6411a6ee6e80383",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1429089334,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-06-13T14:45:59.278Z",
+          "updated_at": "2023-06-13T14:45:59.284Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "dda64ebe2d3cc983c7426056428dc8d0688e0f4a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1429089916,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>a76b2254 - 1 commit from branch <code>wireshark:master</code></li><li>83981200 - Allow disabling unused dissectors from PHS dialog</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/5964/diffs?diff_id=707080873&start_sha=d6a6b6f68fe5393fd8cdde6bc7d8aba16825c12c)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-06-13T14:46:07.487Z",
+          "updated_at": "2023-06-13T14:46:07.490Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9d6948a5c53f97980919b9d8718c898c13531133",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1429370908,
+          "type": null,
+          "body": "added 5 commits\n\n<ul><li>83981200...801554fb - 4 commits from branch <code>wireshark:master</code></li><li>8a03316d - Allow disabling unused dissectors from PHS dialog</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/5964/diffs?diff_id=707246626&start_sha=83981200f5b36b4b9444680c52af4a0b99e1b3bd)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2023-06-13T17:11:34.737Z",
+          "updated_at": "2023-06-13T17:11:34.740Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "add0605b74259a798dc93c1404d65eb077d16c82",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1429407616,
+          "type": null,
+          "body": "mentioned in issue #19113",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789862585",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2023-06-13T17:43:35.745Z",
+          "updated_at": "2023-06-13T17:43:35.747Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c83f5939fbdfe0cc013f7403c84b3fe16ec79859",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1505389878,
+          "type": null,
+          "body": "mentioned in merge request !10856",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2023-08-09T01:56:01.807Z",
+          "updated_at": "2023-08-09T01:56:01.809Z",
+          "system": true,
+          "noteable_id": 136262069,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 5964,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -44,10 +44,13 @@ See the xref:tshark.html#decode_as[tshark](1) manual page for more examples.\n --\n // end::decode_as[]\n \n---disable-protocol <proto_name>::\n+--disable-protocol <proto_name>[,<proto_name>,...]::\n +\n --\n Disable dissection of proto_name.\n+Use a proto_name of *ALL* to override\n+your chosen profile's default enabled protocol list and temporarily\n+disable all protocols.\n --\n \n --disable-heuristic <short_name>::\n@@ -56,10 +59,18 @@ Disable dissection of proto_name.\n Disable dissection of heuristic protocol.\n --\n \n---enable-protocol <proto_name>::\n+--enable-protocol <proto_name>[,<proto_name>,...]::\n +\n --\n Enable dissection of proto_name.\n+Use a proto_name of *ALL* to override\n+your chosen profile's default disabled protocol list and temporarily\n+enable all protocols which are enabled by default.\n+\n+If a protocol is implicated in both *--disable-protocol*\n+and *--enable-protocol*, the protocol is enabled. This allows you to\n+temporarily disable all protocols but a list of exceptions.\n+Example: *--disable-protocol ALL --enable-protocol eth,ip*\n --\n \n --enable-heuristic <short_name>::\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "doc/dissection-options.adoc",
+      "old_path": "doc/dissection-options.adoc",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -62,8 +62,16 @@ static GList *enabled_protos = NULL;\n static GList *global_disabled_heuristics = NULL;\n static GList *disabled_heuristics = NULL;\n \n+static gboolean unsaved_changes = FALSE;\n+\n #define INIT_BUF_SIZE   128\n \n+gboolean\n+enabled_protos_unsaved_changes(void)\n+{\n+  return unsaved_changes;\n+}\n+\n static void\n discard_existing_list (GList **flp)\n {\n@@ -468,21 +476,31 @@ read_protos_list(char **gpath_return, int *gopen_errno_return,\n /*\n  * Disable a particular protocol by name\n  */\n-void\n+gboolean\n proto_disable_proto_by_name(const char *name)\n {\n-    protocol_t *protocol;\n-    int proto_id;\n-\n-    proto_id = proto_get_id_by_filter_name(name);\n-    if (proto_id >= 0 ) {\n-        protocol = find_protocol_by_id(proto_id);\n-        if (proto_is_protocol_enabled(protocol) == TRUE) {\n-            if (proto_can_toggle_protocol(proto_id) == TRUE) {\n-                proto_set_decoding(proto_id, FALSE);\n-            }\n-        }\n+  protocol_t *protocol;\n+  int proto_id;\n+\n+  proto_id = proto_get_id_by_filter_name(name);\n+  if (proto_id >= 0 ) {\n+    protocol = find_protocol_by_id(proto_id);\n+    if (proto_is_protocol_enabled(protocol) == TRUE) {\n+      if (proto_can_toggle_protocol(proto_id) == TRUE) {\n+        unsaved_changes = TRUE;\n+        proto_set_decoding(proto_id, FALSE);\n+      }\n     }\n+    return TRUE;\n+  }\n+  else if (!strcmp(name, \"ALL\")) {\n+    unsaved_changes = TRUE;\n+    proto_disable_all();\n+    return TRUE;\n+  }\n+  else {\n+    return FALSE;\n+  }\n }\n \n static gboolean disable_proto_list_check(protocol_t  *protocol)\n@@ -497,7 +515,7 @@ static gboolean disable_proto_list_check(protocol_t  *protocol)\n  * Enabling dissectors (that are disabled by default)\n  ************************************************************************/\n \n-WS_DLL_PUBLIC void\n+gboolean\n proto_enable_proto_by_name(const char *name)\n {\n   protocol_t *protocol;\n@@ -506,12 +524,21 @@ proto_enable_proto_by_name(const char *name)\n   proto_id = proto_get_id_by_filter_name(name);\n   if (proto_id >= 0 ) {\n     protocol = find_protocol_by_id(proto_id);\n-    if ((proto_is_protocol_enabled_by_default(protocol) == FALSE) &&\n-        (proto_is_protocol_enabled(protocol) == FALSE)) {\n+    if ((proto_is_protocol_enabled(protocol) == FALSE)) {\n       if (proto_can_toggle_protocol(proto_id) == TRUE) {\n+        unsaved_changes = TRUE;\n         proto_set_decoding(proto_id, TRUE);\n       }\n     }\n+    return TRUE;\n+  }\n+  else if (!strcmp(name, \"ALL\")) {\n+    unsaved_changes = TRUE;\n+    proto_reenable_all();\n+    return TRUE;\n+  }\n+  else {\n+    return FALSE;\n   }\n }\n \n@@ -868,11 +895,12 @@ save_disabled_heur_dissector_list(char **pref_path_return, int *errno_return)\n   g_free(ff_path);\n }\n \n-gboolean\n-proto_enable_heuristic_by_name(const char *name, gboolean enable)\n+static gboolean\n+proto_set_heuristic_by_name(const char *name, gboolean enable)\n {\n   heur_dtbl_entry_t* heur = find_heur_dissector_by_unique_short_name(name);\n   if (heur != NULL) {\n+      unsaved_changes |= (heur->enabled != enable);\n       heur->enabled = enable;\n       return TRUE;\n   } else {\n@@ -880,6 +908,18 @@ proto_enable_heuristic_by_name(const char *name, gboolean enable)\n   }\n }\n \n+gboolean\n+proto_enable_heuristic_by_name(const char *name)\n+{\n+  return proto_set_heuristic_by_name(name, TRUE);\n+}\n+\n+gboolean\n+proto_disable_heuristic_by_name(const char *name)\n+{\n+  return proto_set_heuristic_by_name(name, FALSE);\n+}\n+\n static void\n disabled_protos_free(gpointer p, gpointer user_data _U_)\n {\n@@ -1000,6 +1040,7 @@ read_enabled_and_disabled_lists(void)\n   set_protos_list(disabled_protos, global_disabled_protos, FALSE);\n   set_protos_list(enabled_protos, global_enabled_protos, TRUE);\n   set_disabled_heur_dissector_list();\n+  unsaved_changes = FALSE;\n }\n \n /*\n@@ -1012,6 +1053,7 @@ save_enabled_and_disabled_lists(void)\n   char *pf_dir_path;\n   char *pf_path;\n   int pf_save_errno;\n+  gboolean ok = TRUE;\n \n   /* Create the directory that holds personal configuration files, if\n      necessary.  */\n@@ -1028,6 +1070,7 @@ save_enabled_and_disabled_lists(void)\n     report_failure(\"Could not save to your disabled protocols file\\n\\\"%s\\\": %s.\",\n                    pf_path, g_strerror(pf_save_errno));\n     g_free(pf_path);\n+    ok = FALSE;\n   }\n \n   save_protos_list(&pf_path, &pf_save_errno, ENABLED_PROTOCOLS_FILE_NAME,\n@@ -1037,6 +1080,7 @@ save_enabled_and_disabled_lists(void)\n     report_failure(\"Could not save to your enabled protocols file\\n\\\"%s\\\": %s.\",\n                    pf_path, g_strerror(pf_save_errno));\n     g_free(pf_path);\n+    ok = FALSE;\n   }\n \n   save_disabled_heur_dissector_list(&pf_path, &pf_save_errno);\n@@ -1044,7 +1088,11 @@ save_enabled_and_disabled_lists(void)\n     report_failure(\"Could not save to your disabled heuristic protocol file\\n\\\"%s\\\": %s.\",\n                    pf_path, g_strerror(pf_save_errno));\n     g_free(pf_path);\n+    ok = FALSE;\n   }\n+\n+  if (ok)\n+    unsaved_changes = FALSE;\n }\n \n void\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/disabled_protos.c",
+      "old_path": "epan/disabled_protos.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -16,26 +16,47 @@\n extern \"C\" {\n #endif /* __cplusplus */\n \n+#include <glib.h>\n+#include <ws_symbol_export.h>\n+\n+/*\n+ * Tell if protocols have been enabled/disabled since\n+ * we've last loaded (or saved) the lists.\n+ */\n+WS_DLL_PUBLIC gboolean\n+enabled_protos_unsaved_changes(void);\n+\n /*\n  * Disable a particular protocol by name\n+ * On success (found the protocol), return TRUE.\n+ * On failure (didn't find the protocol), return FALSE.\n  */\n-WS_DLL_PUBLIC void\n+WS_DLL_PUBLIC gboolean\n proto_disable_proto_by_name(const char *name);\n \n /*\n- * Enable a particular protocol by name.  This will only enable\n- * protocols that are disabled by default.  All others will be ignored.\n+ * Enable a particular protocol by name\n+ * On success (found the protocol), return TRUE.\n+ * On failure (didn't find the protocol), return FALSE.\n  */\n-WS_DLL_PUBLIC void\n+WS_DLL_PUBLIC gboolean\n proto_enable_proto_by_name(const char *name);\n \n /*\n- * Enable/disable a particular heuristic dissector by name\n+ * Enable a particular heuristic dissector by name\n+ * On success (found the protocol), return TRUE.\n+ * On failure (didn't find the protocol), return FALSE.\n+ */\n+WS_DLL_PUBLIC gboolean\n+proto_enable_heuristic_by_name(const char *name);\n+\n+/*\n+ * Disable a particular heuristic dissector by name\n  * On success (found the protocol), return TRUE.\n  * On failure (didn't find the protocol), return FALSE.\n  */\n WS_DLL_PUBLIC gboolean\n-proto_enable_heuristic_by_name(const char *name, gboolean enable);\n+proto_disable_heuristic_by_name(const char *name);\n \n /*\n  * Read the files that enable and disable protocols and heuristic\n@@ -43,8 +64,10 @@ proto_enable_heuristic_by_name(const char *name, gboolean enable);\n  *\n  * This is called by epan_load_settings(); programs should call that\n  * rather than individually calling the routines it calls.\n+ * This is only public (instead of extern) to allow users who temporarily\n+ * disable protocols in the PHS GUI to re-enable them.\n  */\n-extern void\n+WS_DLL_PUBLIC void\n read_enabled_and_disabled_lists(void);\n \n /*\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/disabled_protos.h",
+      "old_path": "epan/disabled_protos.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -8029,6 +8029,28 @@ proto_set_decoding(const int proto_id, const gboolean enabled)\n \tprotocol->is_enabled = enabled;\n }\n \n+void\n+proto_disable_all(void)\n+{\n+\t/* This doesn't explicitly disable heuristic protocols,\n+\t * but the heuristic doesn't get called if the parent\n+\t * protocol isn't enabled.\n+\t */\n+\tprotocol_t *protocol;\n+\tGList      *list_item = protocols;\n+\n+\tif (protocols == NULL)\n+\t\treturn;\n+\n+\twhile (list_item) {\n+\t\tprotocol = (protocol_t *)list_item->data;\n+\t\tif (protocol->can_toggle) {\n+\t\t\tprotocol->is_enabled = FALSE;\n+\t\t}\n+\t\tlist_item = g_list_next(list_item);\n+\t}\n+}\n+\n void\n proto_reenable_all(void)\n {\n@@ -8040,8 +8062,8 @@ proto_reenable_all(void)\n \n \twhile (list_item) {\n \t\tprotocol = (protocol_t *)list_item->data;\n-\t\tif (protocol->can_toggle && protocol->enabled_by_default)\n-\t\t\tprotocol->is_enabled = TRUE;\n+\t\tif (protocol->can_toggle)\n+\t\t\tprotocol->is_enabled = protocol->enabled_by_default;\n \t\tlist_item = g_list_next(list_item);\n \t}\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/proto.c",
+      "old_path": "epan/proto.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -2705,6 +2705,9 @@ WS_DLL_PUBLIC void proto_disable_by_default(const int proto_id);\n  @param enabled enable / disable the protocol */\n WS_DLL_PUBLIC void proto_set_decoding(const int proto_id, const gboolean enabled);\n \n+/** Disable all protocols. */\n+WS_DLL_PUBLIC void proto_disable_all(void);\n+\n /** Re-enable all protocols that are not marked as disabled by default. */\n WS_DLL_PUBLIC void proto_reenable_all(void);\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/proto.h",
+      "old_path": "epan/proto.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -578,6 +578,7 @@ libwireshark.so.0 libwireshark0 #MINVER#\n  elem_v@Base 1.9.1\n  elem_v_short@Base 1.9.1\n  endpoint_table_set_gui_info@Base 4.0.0-rc2\n+ enabled_protos_unsaved_changes@Base 3.7.0\n  enterprises_base_custom@Base 2.5.0\n  enterprises_lookup@Base 2.5.0\n  eo_ct2ext@Base 2.3.0\n@@ -1195,7 +1196,9 @@ libwireshark.so.0 libwireshark0 #MINVER#\n  proto_checksum_vals@Base 2.2.0\n  proto_construct_match_selected_string@Base 1.9.1\n  proto_deregister_field@Base 1.99.9\n+ proto_disable_all@Base 3.7.0\n  proto_disable_by_default@Base 2.1.2\n+ proto_disable_heuristic_by_name@Base 3.7.0\n  proto_disable_proto_by_name@Base 1.99.8\n  proto_enable_heuristic_by_name@Base 1.99.8\n  proto_enable_proto_by_name@Base 2.3.0\n@@ -1434,6 +1437,7 @@ libwireshark.so.0 libwireshark0 #MINVER#\n  range_foreach@Base 1.9.1\n  range_remove_value@Base 2.3.0\n  ranges_are_equal@Base 1.9.1\n+ read_enabled_and_disabled_lists@Base 3.7.0\n  read_keytab_file@Base 1.9.1\n  read_keytab_file_from_preferences@Base 1.9.1\n  read_prefs_file@Base 1.9.1\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "packaging/debian/libwireshark0.symbols",
+      "old_path": "packaging/debian/libwireshark0.symbols",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -97,7 +97,7 @@ class TestTsharkOptions:\n     def test_tshark_valid_chars(self, cmd_tshark, test_env):\n         for char_arg in 'Ghv':\n             process = subprocesstest.run((cmd_tshark, '-' + char_arg), env=test_env)\n-            process.returncode == ExitCodes.OK\n+            assert process.returncode == ExitCodes.OK\n \n     # XXX Should we generate individual test functions instead of looping?\n     def test_tshark_interface_chars(self, cmd_tshark, cmd_dumpcap, test_env):\n@@ -108,6 +108,19 @@ class TestTsharkOptions:\n             process = subprocesstest.run((cmd_tshark, '-' + char_arg), env=test_env)\n             assert process.returncode in valid_returns\n \n+    def test_tshark_disable_protos(self, cmd_tshark, capture_file, test_env):\n+        '''--disable-protocol/--enable-protocol from !16923'''\n+        process = subprocesstest.run((cmd_tshark, \"-r\", capture_file(\"http.pcap\"),\n+                    \"--disable-protocol\", \"ALL\",\n+                    \"--enable-protocol\", \"eth,ip\",\n+                    \"-Tjson\", \"-eeth.type\", \"-eip.proto\", \"-ehttp.host\",\n+                    ), capture_output=True, env=test_env)\n+        assert process.returncode == ExitCodes.OK\n+        obj = json.loads(process.stdout)[0]['_source']['layers']\n+        assert obj.get('eth.type', 'NOT FOUND') == ['0x0800']\n+        assert obj.get('ip.proto', 'NOT FOUND') == ['6']\n+        assert obj.get('http.host', 'NOT FOUND') == 'NOT FOUND'\n+\n \n class TestTsharkCaptureClopts:\n     def test_tshark_invalid_capfilter(self, cmd_tshark, capture_interface, result_file, test_env):\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_clopts.py",
+      "old_path": "test/suite_clopts.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -22,6 +22,8 @@\n \n #include <wsutil/cmdarg_err.h>\n \n+static int pc_proto_id = -1;\n+\n void register_tap_listener_protohierstat(void);\n \n typedef struct _phs_t {\n@@ -125,6 +127,16 @@ phs_draw(phs_t *rs, int indentation)\n \t\tif (rs->protocol == -1) {\n \t\t\treturn;\n \t\t}\n+\t\t/*\n+\t\t * If the first child is a tree of comments, skip over it.\n+\t\t * This keeps us from having a top-level \"pkt_comment\"\n+\t\t * entry that represents a nonexistent protocol,\n+\t\t * and matches how the GUI treats comments.\n+\t\t */\n+\t\tif (G_UNLIKELY(rs->protocol == pc_proto_id)) {\n+\t\t\tphs_draw(rs->child, indentation);\n+\t\t\tcontinue;\n+\t\t}\n \t\tstr[0] = 0;\n \t\tstroff = 0;\n \t\tfor (i=0; i<indentation; i++) {\n@@ -173,6 +185,8 @@ protohierstat_init(const char *opt_arg, void *userdata _U_)\n \t\texit(1);\n \t}\n \n+\tpc_proto_id = proto_registrar_get_id_byname(\"pkt_comment\");\n+\n \trs = new_phs_t(NULL);\n \trs->filter = g_strdup(filter);\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/cli/tap-protohierstat.c",
+      "old_path": "ui/cli/tap-protohierstat.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -21,6 +21,9 @@\n #include <ui/qt/utils/qt_ui_utils.h>\n #include \"main_application.h\"\n \n+#include <epan/proto.h>\n+#include <epan/disabled_protos.h>\n+\n #include <QClipboard>\n #include <QPushButton>\n #include <QTextStream>\n@@ -48,6 +51,11 @@ const int end_bytes_col_ = 7;\n const int end_bandwidth_col_ = 8;\n const int pdus_col_ = 9;\n \n+struct addTreeNodeData {\n+    QSet<QString> *protos;\n+    QTreeWidgetItem *widget;\n+};\n+\n class ProtocolHierarchyTreeWidgetItem : public QTreeWidgetItem\n {\n public:\n@@ -181,7 +189,8 @@ ProtocolHierarchyDialog::ProtocolHierarchyDialog(QWidget &parent, CaptureFile &c\n     ph_stats_t *ph_stats = ph_stats_new(cap_file_.capFile());\n     if (ph_stats) {\n         ui->hierStatsTreeWidget->invisibleRootItem()->setData(0, Qt::UserRole, VariantPointer<ph_stats_t>::asQVariant(ph_stats));\n-        g_node_children_foreach(ph_stats->stats_tree, G_TRAVERSE_ALL, addTreeNode, ui->hierStatsTreeWidget->invisibleRootItem());\n+        addTreeNodeData atnd { &used_protos_, ui->hierStatsTreeWidget->invisibleRootItem() };\n+        g_node_children_foreach(ph_stats->stats_tree, G_TRAVERSE_ALL, addTreeNode, (void *)&atnd);\n         ph_stats_free(ph_stats);\n     }\n \n@@ -226,9 +235,9 @@ ProtocolHierarchyDialog::ProtocolHierarchyDialog(QWidget &parent, CaptureFile &c\n     ctx_menu_.addAction(ui->actionCopyAsCsv);\n     ctx_menu_.addAction(ui->actionCopyAsYaml);\n \n-    copy_button_ = ui->buttonBox->addButton(tr(\"Copy\"), QDialogButtonBox::ApplyRole);\n+    QPushButton *copy_button = ui->buttonBox->addButton(tr(\"Copy\"), QDialogButtonBox::ApplyRole);\n \n-    QMenu *copy_menu = new QMenu(copy_button_);\n+    QMenu *copy_menu = new QMenu(copy_button);\n     QAction *ca;\n     ca = copy_menu->addAction(tr(\"as CSV\"));\n     ca->setToolTip(ui->actionCopyAsCsv->toolTip());\n@@ -236,7 +245,22 @@ ProtocolHierarchyDialog::ProtocolHierarchyDialog(QWidget &parent, CaptureFile &c\n     ca = copy_menu->addAction(tr(\"as YAML\"));\n     ca->setToolTip(ui->actionCopyAsYaml->toolTip());\n     connect(ca, &QAction::triggered, this, &ProtocolHierarchyDialog::on_actionCopyAsYaml_triggered);\n-    copy_button_->setMenu(copy_menu);\n+    copy_button->setMenu(copy_menu);\n+    connect(ca, SIGNAL(triggered()), this, SLOT(on_actionCopyAsYaml_triggered()));\n+    ca = copy_menu->addAction(tr(\"protocol short names\"));\n+    ca->setToolTip(ui->actionCopyProtoList->toolTip());\n+    connect(ca, SIGNAL(triggered()), this, SLOT(on_actionCopyProtoList_triggered()));\n+    copy_button->setMenu(copy_menu);\n+\n+    QPushButton *protos_button = ui->buttonBox->addButton(tr(\"Protocols\"), QDialogButtonBox::ApplyRole);\n+    QMenu *protos_menu = new QMenu(protos_button);\n+    proto_disable_ = protos_menu->addAction(tr(\"Disable unused\"));\n+    proto_disable_->setToolTip(ui->actionDisableProtos->toolTip());\n+    connect(proto_disable_, SIGNAL(triggered()), this, SLOT(on_actionDisableProtos_triggered()));\n+    proto_revert_ = protos_menu->addAction(tr(\"Revert changes\"));\n+    proto_revert_->setToolTip(ui->actionRevertProtos->toolTip());\n+    connect(proto_revert_, SIGNAL(triggered()), this, SLOT(on_actionRevertProtos_triggered()));\n+    protos_button->setMenu(protos_menu);\n \n     QPushButton *close_bt = ui->buttonBox->button(QDialogButtonBox::Close);\n     if (close_bt) {\n@@ -286,12 +310,16 @@ void ProtocolHierarchyDialog::addTreeNode(GNode *node, gpointer data)\n     ph_stats_node_t *stats = (ph_stats_node_t *)node->data;\n     if (!stats) return;\n \n-    QTreeWidgetItem *parent_ti = static_cast<QTreeWidgetItem *>(data);\n+    addTreeNodeData *atndp = (addTreeNodeData *)data;\n+    QTreeWidgetItem *parent_ti = atndp->widget;\n     if (!parent_ti) return;\n \n+    atndp->protos->insert(QString(stats->hfinfo->abbrev));\n+\n     ProtocolHierarchyTreeWidgetItem *phti = new ProtocolHierarchyTreeWidgetItem(parent_ti, *stats);\n+    addTreeNodeData atnd { atndp->protos, phti };\n \n-    g_node_children_foreach(node, G_TRAVERSE_ALL, addTreeNode, phti);\n+    g_node_children_foreach(node, G_TRAVERSE_ALL, addTreeNode, (void *)&atnd);\n \n }\n \n@@ -306,6 +334,8 @@ void ProtocolHierarchyDialog::updateWidgets()\n     hint += \"</i></small>\";\n     ui->hintLabel->setText(hint);\n \n+    proto_revert_->setEnabled(enabled_protos_unsaved_changes());\n+\n     WiresharkDialog::updateWidgets();\n }\n \n@@ -375,6 +405,59 @@ void ProtocolHierarchyDialog::on_actionCopyAsYaml_triggered()\n     mainApp->clipboard()->setText(stream.readAll());\n }\n \n+void ProtocolHierarchyDialog::on_actionCopyProtoList_triggered()\n+{\n+    QString plist;\n+    QTextStream stream(&plist, QIODevice::Text);\n+    bool first = true;\n+    QSetIterator<QString> iter(used_protos_);\n+    while (iter.hasNext()) {\n+        if (!first) stream << ',';\n+        stream << iter.next();\n+        first = false;\n+    }\n+    mainApp->clipboard()->setText(stream.readAll());\n+}\n+\n+void ProtocolHierarchyDialog::on_actionDisableProtos_triggered()\n+{\n+    proto_disable_all();\n+\n+    QSetIterator<QString> iter(used_protos_);\n+    while (iter.hasNext()) {\n+        proto_enable_proto_by_name(iter.next().toStdString().c_str());\n+    }\n+    /* Note that we aren't saving the changes here; they only apply\n+     * to the current dissection.\n+     * (Though if the user goes to the Enabled Protocols dialog and\n+     * makes changes, these changes as well as the user's will be saved.)\n+     */\n+    proto_revert_->setEnabled(enabled_protos_unsaved_changes());\n+\n+    QString hint = \"<small><i>\"\n+        + tr(\"Unused protocols have been disabled.\")\n+        + \"</i></small>\";\n+    ui->hintLabel->setText(hint);\n+\n+    // If we've done everything right, nothing should change.\n+    //wsApp->emitAppSignal(WiresharkApplication::PacketDissectionChanged);\n+}\n+\n+void ProtocolHierarchyDialog::on_actionRevertProtos_triggered()\n+{\n+    proto_reenable_all();\n+    read_enabled_and_disabled_lists();\n+\n+    proto_revert_->setEnabled(enabled_protos_unsaved_changes());\n+    QString hint = \"<small><i>\"\n+        + tr(\"Protocol changes have been reverted.\")\n+        + \"</i></small>\";\n+    ui->hintLabel->setText(hint);\n+\n+    // If we've done everything right, nothing should change.\n+    //wsApp->emitAppSignal(WiresharkApplication::PacketDissectionChanged);\n+}\n+\n void ProtocolHierarchyDialog::on_buttonBox_helpRequested()\n {\n     mainApp->helpTopicAction(HELP_STATS_PROTO_HIERARCHY_DIALOG);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/protocol_hierarchy_dialog.cpp",
+      "old_path": "ui/qt/protocol_hierarchy_dialog.cpp",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -11,6 +11,7 @@\n #define PROTOCOL_HIERARCHY_DIALOG_H\n \n #include <QMenu>\n+#include <QSet>\n \n #include \"filter_action.h\"\n #include <ui/qt/models/percent_bar_delegate.h>\n@@ -39,14 +40,19 @@ private slots:\n     void filterActionTriggered();\n     void on_actionCopyAsCsv_triggered();\n     void on_actionCopyAsYaml_triggered();\n+    void on_actionCopyProtoList_triggered();\n+    void on_actionDisableProtos_triggered();\n+    void on_actionRevertProtos_triggered();\n     void on_buttonBox_helpRequested();\n \n private:\n     Ui::ProtocolHierarchyDialog *ui;\n-    QPushButton *copy_button_;\n+    QAction *proto_disable_;\n+    QAction *proto_revert_;\n     QMenu ctx_menu_;\n     PercentBarDelegate percent_bar_delegate_;\n     QString display_filter_;\n+    QSet<QString> used_protos_;\n \n     // Callback for g_node_children_foreach\n     static void addTreeNode(GNode *node, gpointer data);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/protocol_hierarchy_dialog.h",
+      "old_path": "ui/qt/protocol_hierarchy_dialog.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -114,6 +114,30 @@\n     <string>Copy stream list as YAML.</string>\n    </property>\n   </action>\n+  <action name=\"actionCopyProtoList\">\n+   <property name=\"text\">\n+    <string>Copy short names</string>\n+   </property>\n+   <property name=\"toolTip\">\n+    <string>Copy short protocol names in use.</string>\n+   </property>\n+  </action>\n+  <action name=\"actionDisableProtos\">\n+   <property name=\"text\">\n+    <string>Disable unused protocols</string>\n+   </property>\n+   <property name=\"toolTip\">\n+    <string>Disable all protocols but those listed.</string>\n+   </property>\n+  </action>\n+  <action name=\"actionRevertProtos\">\n+   <property name=\"text\">\n+    <string>Re-enable unused protocols</string>\n+   </property>\n+   <property name=\"toolTip\">\n+    <string>Re-enable protocols that were disabled in this dialog.</string>\n+   </property>\n+  </action>\n  </widget>\n  <resources/>\n  <connections>\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/qt/protocol_hierarchy_dialog.ui",
+      "old_path": "ui/qt/protocol_hierarchy_dialog.ui",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -205,45 +205,69 @@ dissect_opts_handle_opt(int opt, char *optarg_str_p)\n     return TRUE;\n }\n \n-gboolean\n-setup_enabled_and_disabled_protocols(void)\n+typedef gboolean (proto_set_func)(const char *);\n+\n+static gboolean\n+slist_break_commas(GSList *list, proto_set_func callback)\n {\n     gboolean success = TRUE;\n+    gboolean rv;\n+    GSList *iter;\n+    char *c;\n+    char *proto_name;\n \n-    if (global_dissect_options.disable_protocol_slist) {\n-        GSList *proto_disable;\n-\n-        for (proto_disable = global_dissect_options.disable_protocol_slist; proto_disable != NULL; proto_disable = g_slist_next(proto_disable))\n-            proto_disable_proto_by_name((char*)proto_disable->data);\n-    }\n-\n-    if (global_dissect_options.enable_protocol_slist) {\n-        GSList *proto_enable;\n-\n-        for (proto_enable = global_dissect_options.enable_protocol_slist; proto_enable != NULL; proto_enable = g_slist_next(proto_enable))\n-            proto_enable_proto_by_name((char*)proto_enable->data);\n-    }\n-\n-    if (global_dissect_options.enable_heur_slist) {\n-        GSList *heur_enable;\n-\n-        for (heur_enable = global_dissect_options.enable_heur_slist; heur_enable != NULL; heur_enable = g_slist_next(heur_enable)) {\n-            if (!proto_enable_heuristic_by_name((char*)heur_enable->data, TRUE)) {\n-                cmdarg_err(\"No such protocol %s, can't enable\", (char*)heur_enable->data);\n+    for (iter = list; iter != NULL; iter = g_slist_next(iter)) {\n+        proto_name = (char *)iter->data;\n+        c = strchr(proto_name, ',');\n+        if (c == NULL) {\n+            rv = callback(proto_name);\n+            if (!rv) {\n+                cmdarg_err(\"No such protocol %s\", proto_name);\n                 success = FALSE;\n             }\n         }\n-    }\n-\n-    if (global_dissect_options.disable_heur_slist) {\n-        GSList *heur_disable;\n+        else {\n+            char *start;\n+            char save;\n \n-        for (heur_disable = global_dissect_options.disable_heur_slist; heur_disable != NULL; heur_disable = g_slist_next(heur_disable)) {\n-            if (!proto_enable_heuristic_by_name((char*)heur_disable->data, FALSE)) {\n-                cmdarg_err(\"No such protocol %s, can't disable\", (char*)heur_disable->data);\n-                success = FALSE;\n+            start = proto_name;\n+            while(1) {\n+                if (c != NULL) {\n+                    save = *c;\n+                    *c = '\\0';\n+                }\n+                rv = callback(start);\n+                if (!rv) {\n+                    cmdarg_err(\"No such protocol %s\", start);\n+                    success = FALSE;\n+                }\n+                if (c != NULL) {\n+                    *c = save;\n+                    start = (save == ',' ? c+1 : c);\n+                    c = strchr(start, ',');\n+                }\n+                else {\n+                    break;\n+                }\n             }\n         }\n     }\n+\n+    return success;\n+}\n+\n+gboolean\n+setup_enabled_and_disabled_protocols(void)\n+{\n+    gboolean success = TRUE;\n+\n+    success &= slist_break_commas(global_dissect_options.disable_protocol_slist,\n+            proto_disable_proto_by_name);\n+    success &= slist_break_commas(global_dissect_options.enable_protocol_slist,\n+            proto_enable_proto_by_name);\n+    success &= slist_break_commas(global_dissect_options.enable_heur_slist,\n+            proto_enable_heuristic_by_name);\n+    success &= slist_break_commas(global_dissect_options.disable_heur_slist,\n+            proto_disable_heuristic_by_name);\n     return success;\n }\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "ui/dissect_opts.c",
+      "old_path": "ui/dissect_opts.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "8a03316d945b444ce92e0e87607b7f8678747466",
+      "short_id": "8a03316d",
+      "created_at": "2023-06-13T17:11:31.000+00:00",
+      "parent_ids": [
+        "801554fb799869690a24cd61b540f1e5f8d2fccb"
+      ],
+      "title": "Allow disabling unused dissectors from PHS dialog",
+      "message": "Allow disabling unused dissectors from PHS dialog\n\nImplements the feature request in #16923.\n\nUI changes:\n\nAdds two major new features to the Protocol Hierarchy Statistics (PHS)\nGUI.  One disables all dissectors, then re-enables only the dissectors\nshown in the dialog (and thus, only for the protocols used in the\ncurrent file).  The other feature reverts this change if possible (see\nnotes below).\n\nAdds `Copy > protocol short names` to the PHS GUI. Copies the list of\nprotocol short names in use to the clipboard, comma-separated, for use\non the command line.\n\nCommand line `--enable-protocol/--disable-protocol` (and\n`--enable-heuristic/--disable-heuristic`) options now accept\nmultiple protocol names separated by commas, to allow en/disabling\nmultiple protocols at once with less typing.\n\nCommand line `--enable-protocol/--disable-protocol` options now accept\n'ALL' as an argument. For `--disable-protocol`, disables all protocols.\nFor `--enable-protocol`, enables all protocols *that are not disabled by\ndefault.*\n\nAPI changes:\n\n`proto_enable_proto_by_name()` now always enables protocols that it is\nasked to enable. Old behaviour was to only enable protocols that are\ndisabled by default. This behaviour change allows the new \"disable\nunused protocols\" feature in the PHS GUI to function as it's described\nabove. This also allows command-line options such as `tshark\n--disable-protocol ALL --enable-protocol eth,ip` to provide equivalent\nfunctionality as the new GUI feature.\n\nAdded `proto_disable_heuristic_by_name()` which takes a protocol name as\nits single argument. Revised `proto_enable_heuristic_by_name()` to also\nonly take a single argument. This was changed to simplify the use of\nboth functions as callbacks in `ui/dissect_opts.c` (which is where\nwas added support for comma-separated protocol names).\n\n`proto_enable_proto_by_name()` and `proto_disable_proto_by_name()` now\nreturn a boolean, true if the requested protocol exists and false if\nnot, for API symmetry with `proto_enable_heuristic_by_name()`.\n\nTrack when changes made to the enabled/disabled status of protocols\nhave not yet been saved to the user's profile, and make this information\navailable via a new function `enabled_protos_unsaved_changes()` in\n`epan/disabled_protos.c`. This could already occur when using\n`--enable-protocol/--disable-protocol` for Wireshark; now it is also\npossible if the new \"disable unused protocols\" feature on the PHS GUI is\nused.\n\nMade `read_enabled_and_disabled_lists()` in `epan/disabled_protos.h`\na public function, as this seemed the most minimal way to undo changes\nto the enabled/disabled status of protocols. The suggested alternative\nof calling `epan_load_settings()` would also revert other unsaved\nchanges, particularly to user preferences. If that behaviour is\npreferred over exposing this function, then it can be done.\n\nNotes:\n\nAs has always been the case, if one uses\n`--enable-protocol/--disable-protocol` on the Wireshark command line,\nthen goes to `Analyze > Enabled Protocols...` and makes changes,\nthese changes cause the enabled/disabled state of all protocols to\nbe written to the user's profile. This is more important to note now\nthat large numbers of protocols can be easily enabled/disabled\nfrom the command line.\n\nThe temporary changes made by the new PHS GUI feature are also subject\nto this behaviour. As a result, if one makes changes in the Enabled\nProtocols dialog, it becomes impossible to return all protocols to the\nenabled/disabled state they had before making use of the new feature.\n\nOther:\n\nIt may make sense for `--enable-protocol ALL` to enable all protocols\n*including* those which are disabled by default. The function\n`proto_reenable_all()` in `epan/proto.c` would need to be modified or\nduplicated in order to allow this behaviour.\n\nIt may make sense for the button which resets protocol enabled/disabled\nstatus to appear on the Enabled Protocols dialog. I investigated this,\nbut lack sufficient Qt knowledge to cause this reset to be reflected in\nthe state of the checkboxes in the dialog.\n",
+      "author_name": "David Perry",
+      "author_email": "boolean263@protonmail.com",
+      "authored_date": "2022-01-20T14:07:26.000-05:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2023-06-13T17:11:31.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8a03316d945b444ce92e0e87607b7f8678747466"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 707246626,
+      "head_commit_sha": "8a03316d945b444ce92e0e87607b7f8678747466",
+      "base_commit_sha": "801554fb799869690a24cd61b540f1e5f8d2fccb",
+      "start_commit_sha": "801554fb799869690a24cd61b540f1e5f8d2fccb",
+      "created_at": "2023-06-13T17:11:33.963Z",
+      "merge_request_id": 136262069,
+      "state": "collected",
+      "real_size": "12",
+      "patch_id_sha": null
+    },
+    {
+      "id": 707080873,
+      "head_commit_sha": "83981200f5b36b4b9444680c52af4a0b99e1b3bd",
+      "base_commit_sha": "a76b2254a23500570846512dc2b7297b15536188",
+      "start_commit_sha": "a76b2254a23500570846512dc2b7297b15536188",
+      "created_at": "2023-06-13T14:46:06.613Z",
+      "merge_request_id": 136262069,
+      "state": "without_files",
+      "real_size": "12",
+      "patch_id_sha": null
+    },
+    {
+      "id": 706828081,
+      "head_commit_sha": "d6a6b6f68fe5393fd8cdde6bc7d8aba16825c12c",
+      "base_commit_sha": "017af7dcd0fb5c13cb5338e1daa7c6fc1351a701",
+      "start_commit_sha": "017af7dcd0fb5c13cb5338e1daa7c6fc1351a701",
+      "created_at": "2023-06-13T12:08:41.061Z",
+      "merge_request_id": 136262069,
+      "state": "without_files",
+      "real_size": "12",
+      "patch_id_sha": null
+    },
+    {
+      "id": 550711959,
+      "head_commit_sha": "8d2e063eaea3c40c1095ffd5ff2a1bfd29ccff87",
+      "base_commit_sha": "bad5ae8c427652b9497b233c012ef219a6ab2c6d",
+      "start_commit_sha": "bad5ae8c427652b9497b233c012ef219a6ab2c6d",
+      "created_at": "2022-12-06T16:45:11.412Z",
+      "merge_request_id": 136262069,
+      "state": "without_files",
+      "real_size": "12",
+      "patch_id_sha": null
+    },
+    {
+      "id": 315562800,
+      "head_commit_sha": "b71329427c72cb4f5c7c2186e75c0f05c0945559",
+      "base_commit_sha": "de0fde6e464035ad17a4aeba42e48f987d4734b4",
+      "start_commit_sha": "de0fde6e464035ad17a4aeba42e48f987d4734b4",
+      "created_at": "2022-01-20T19:14:19.126Z",
+      "merge_request_id": 136262069,
+      "state": "without_files",
+      "real_size": "12",
+      "patch_id_sha": null
+    }
+  ]
+}

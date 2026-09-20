@@ -1,0 +1,188 @@
+{
+  "id": 143432599,
+  "iid": 6363,
+  "project_id": 7898047,
+  "title": "iWARP MPA: Resolved the problem that the iWARP Marker parses abnormally",
+  "description": "Fix the wrong iWARP Marker value in version 3.6\nRelated to #17739",
+  "state": "closed",
+  "created_at": "2022-03-05T01:47:35.115Z",
+  "updated_at": "2022-03-05T02:19:16.122Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 10053864,
+    "username": "easonweii",
+    "public_email": "",
+    "name": "Eason Wei",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/10053864/avatar.png?v=1695258761",
+    "web_url": "https://gitlab.com/easonweii"
+  },
+  "closed_at": "2022-03-05T02:19:16.151Z",
+  "target_branch": "master",
+  "source_branch": "master",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 10053864,
+    "username": "easonweii",
+    "public_email": "",
+    "name": "Eason Wei",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/10053864/avatar.png?v=1695258761",
+    "web_url": "https://gitlab.com/easonweii"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "178ae1785fc4b5d702e7d942f7a2662e81fff07c",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": null,
+  "prepared_at": "2022-03-05T01:47:35.115Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!6363",
+  "references": {
+    "short": "!6363",
+    "relative": "!6363",
+    "full": "wireshark/wireshark!6363"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/6363",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "e999b0a4d2d7fae14b894e05d60bc7d40553a0e8",
+    "head_sha": "178ae1785fc4b5d702e7d942f7a2662e81fff07c",
+    "start_sha": "e999b0a4d2d7fae14b894e05d60bc7d40553a0e8"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "25fa72a3fabe013229cd9ad8a58a7b1658e6df05",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 863702225,
+          "type": null,
+          "body": "changed title from **iWARP MPA: Resolved the problem that the iWARP Marker parses abnormally{- in version 3.6.-}** to **iWARP MPA: Resolved the problem that the iWARP Marker parses abnormally**",
+          "author": {
+            "id": 10053864,
+            "username": "easonweii",
+            "public_email": "",
+            "name": "Eason Wei",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/10053864/avatar.png?v=1695258761",
+            "web_url": "https://gitlab.com/easonweii"
+          },
+          "created_at": "2022-03-05T02:07:32.093Z",
+          "updated_at": "2022-03-05T02:07:32.095Z",
+          "system": true,
+          "noteable_id": 143432599,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 6363,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -748,6 +748,37 @@ dissect_mpa_fpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,\n \treturn ulpdu_length;\n }\n \n+/* Extracted from dissect_warp_mpa, Obtain the TCP seq of the first FPDU */\n+static mpa_state_t*\n+get_state_of_first_fpdu(packet_info *pinfo, struct tcpinfo *tcpinfo, guint8 *endpoint)\n+{\n+\tconversation_t *conversation = NULL;\n+\tmpa_state_t *state;\n+\n+\tconversation = find_conversation_pinfo(pinfo, 0);\n+\tstate = get_mpa_state(conversation);\n+\n+\tif (pinfo->srcport == state->minfo[MPA_INITIATOR].port) {\n+\t\t*endpoint = MPA_INITIATOR;\n+\t} else if (pinfo->srcport == state->minfo[MPA_RESPONDER].port) {\n+\t\t*endpoint = MPA_RESPONDER;\n+\t} else {\n+\t\tREPORT_DISSECTOR_BUG(\"endpoint cannot be determined\");\n+\t}\n+\n+\t/* Markers are used by either the Initiator or the Responder or both. */\n+\tif ((state->ini_exp_m_res || state->res_exp_m_ini) && *endpoint <= MPA_RESPONDER) {\n+\n+\t\t/* find the TCP sequence number of the first FPDU */\n+\t\tif (!state->minfo[*endpoint].valid) {\n+\t\t\tstate->minfo[*endpoint].seq = tcpinfo->seq;\n+\t\t\tstate->minfo[*endpoint].valid = TRUE;\n+\t\t}\n+\t}\n+\treturn state;\n+}\n+\n+\n /*\n  * Main dissection routine.\n  */\n@@ -755,7 +786,6 @@ static gboolean\n dissect_iwarp_mpa(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n \ttvbuff_t *next_tvb = NULL;\n-\tconversation_t *conversation = NULL;\n \tmpa_state_t *state = NULL;\n \tstruct tcpinfo *tcpinfo;\n \tguint8 endpoint = 3;\n@@ -768,28 +798,7 @@ dissect_iwarp_mpa(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat\n \t/* FPDU */\n \tif (tvb_captured_length(tvb) >= MPA_SMALLEST_FPDU_LEN && is_mpa_fpdu(pinfo)) {\n \n-\t\tconversation = find_conversation_pinfo(pinfo, 0);\n-\n-\t\tstate = get_mpa_state(conversation);\n-\n-\t\tif (pinfo->srcport == state->minfo[MPA_INITIATOR].port) {\n-\t\t\tendpoint = MPA_INITIATOR;\n-\t\t} else if (pinfo->srcport == state->minfo[MPA_RESPONDER].port) {\n-\t\t\tendpoint = MPA_RESPONDER;\n-\t\t} else {\n-\t\t\tREPORT_DISSECTOR_BUG(\"endpoint cannot be determined\");\n-\t\t}\n-\n-\t\t/* Markers are used by either the Initiator or the Responder or both. */\n-\t\tif ((state->ini_exp_m_res || state->res_exp_m_ini) && endpoint <= MPA_RESPONDER) {\n-\n-\t\t\t/* find the TCP sequence number of the first FPDU */\n-\t\t\tif (!state->minfo[endpoint].valid) {\n-\t\t\t\tstate->minfo[endpoint].seq = tcpinfo->seq;\n-\t\t\t\tstate->minfo[endpoint].valid = TRUE;\n-\t\t\t}\n-\t\t}\n-\n+\t\tstate = get_state_of_first_fpdu(pinfo, tcpinfo, &endpoint);\n \t\t/* dissect FPDU */\n \t\tulpdu_length = dissect_mpa_fpdu(tvb, pinfo, tree, state, tcpinfo,\n \t\t\t\tendpoint);\n@@ -839,6 +848,11 @@ iwrap_mpa_pdu_length(packet_info *pinfo _U_, tvbuff_t *tvb,\n \tgint remaining = tvb_captured_length_remaining(tvb, offset);\n \tguint pdu_length = 0;\n \tguint16 PD_Length;\n+\tmpa_state_t *state = NULL;\n+\tguint8 endpoint = 3;\n+\tguint32 num_of_m = 0;\n+\tstruct tcpinfo *tcpinfo;\n+\tint current_offset = offset;\n \n \ttag = tvb_get_ntoh64(tvb, offset);\n \tif (tag != MPA_REQ_REP_FRAME) {\n@@ -846,7 +860,22 @@ iwrap_mpa_pdu_length(packet_info *pinfo _U_, tvbuff_t *tvb,\n \t\tguint16 ULPDU_Length;\n \t\tguint8 pad_length;\n \n-\t\tULPDU_Length = tvb_get_ntohs(tvb, offset);\n+\t\ttcpinfo = (struct tcpinfo *)data;\n+\n+\t\tstate = get_state_of_first_fpdu(pinfo, tcpinfo, &endpoint);\n+\n+\t\tif (state -> minfo[endpoint] . valid && get_first_marker_offset(state, tcpinfo, endpoint) == 0) {\n+\t\t\tcurrent_offset += MPA_MARKER_LEN;\n+\t\t}\n+\n+\t\tif (state -> minfo[endpoint] . valid) {\n+\t\t\tnum_of_m = number_of_markers(state, tcpinfo, endpoint);\n+\t\t}\n+\n+\t\tif (num_of_m > 0) {\n+\t\t\tpdu_length += num_of_m * MPA_MARKER_LEN;\n+\t\t}\n+\t\tULPDU_Length = tvb_get_ntohs(tvb, current_offset);\n \t\tpad_length = fpdu_pad_length(ULPDU_Length);\n \n \t\tpdu_length += MPA_ULPDU_LENGTH_LEN;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-iwarp-mpa.c",
+      "old_path": "epan/dissectors/packet-iwarp-mpa.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "178ae1785fc4b5d702e7d942f7a2662e81fff07c",
+      "short_id": "178ae178",
+      "created_at": "2022-03-05T09:45:24.000+08:00",
+      "parent_ids": [
+        "e999b0a4d2d7fae14b894e05d60bc7d40553a0e8"
+      ],
+      "title": "iWARP MPA: Resolved the problem that the iWARP Marker parses abnormally in version 3.6.",
+      "message": "iWARP MPA: Resolved the problem that the iWARP Marker parses abnormally in version 3.6.\nFix the wrong iWARP Marker value in version 3.6\nRelated to #17739\n",
+      "author_name": "easonweii",
+      "author_email": "sharkhw@huawei.com",
+      "authored_date": "2022-03-05T09:45:24.000+08:00",
+      "committer_name": "easonweii",
+      "committer_email": "sharkhw@huawei.com",
+      "committed_date": "2022-03-05T09:45:24.000+08:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/178ae1785fc4b5d702e7d942f7a2662e81fff07c"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 344869721,
+      "head_commit_sha": "178ae1785fc4b5d702e7d942f7a2662e81fff07c",
+      "base_commit_sha": "e999b0a4d2d7fae14b894e05d60bc7d40553a0e8",
+      "start_commit_sha": "e999b0a4d2d7fae14b894e05d60bc7d40553a0e8",
+      "created_at": "2022-03-05T01:47:35.148Z",
+      "merge_request_id": 143432599,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,491 @@
+{
+  "id": 170745424,
+  "iid": 7711,
+  "project_id": 7898047,
+  "title": "mysql: Correct query attribute handling",
+  "description": "This fixes dissection of queries with new clients with query attribute\nsupport to servers that don't support this.\n\n[mysql_query_attrs.pcap](/uploads/5d45e0ecbb1d26095b956c3bb388439a/mysql_query_attrs.pcap)\n\nThis file has:\n- MySQL 8.0.30 on port 8030 (supporting query attributes)\n- TiDB on port 4000 (not supporting query attributes)\n- MySQL Client 8.0.30 as client in both cases.\n\nThis was introduced in https://gitlab.com/wireshark/wireshark/-/merge_requests/7422\n\nThis might need to get backported:\n```\n$ git tag --contains a89696dc2d5d2dfff3dfa3177dfe436c2d7593b9\nv3.7.2\nv3.7.3rc0\n```\n\nWith this PR:\n```\n$ ./run/tshark -r /tmp/mysql_query_attrs.pcap -d tcp.port==8030,mysql -d tcp.port==4000,mysql -Y 'mysql.caps.query_attrs || mysql.query' -Tfields -e frame.number -e mysql.version  -e mysql.caps.query_attrs -e mysql.query_attrs -e mysql.query -Eheader=y| column -t -s='    '\nframe.number  mysql.version                            mysql.caps.query_attrs  mysql.query_attrs  mysql.query\n4             8.0.30                                   1                                          \n6                                                      1                                          \n11                                                                             1                  select @@version_comment limit 1\n14                                                                             1                  SELECT 1\n24            5.7.25-TiDB-v6.2.0-alpha-681-gce41ce062  0                                          \n26                                                     1                                          \n29                                                                                                select @@version_comment limit 1\n32                                                                                                SELECT 1\n```\n\nHere you can see that on the first session both client and server set the flag and query attributes are in use.\nThe second session (frame 24-32) have the server not setting the flag, but the client does and query attributes are not in use.",
+  "state": "merged",
+  "created_at": "2022-08-11T08:13:32.384Z",
+  "updated_at": "2022-08-11T14:24:46.922Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2022-08-11T14:24:45.358Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "mysql_query_attrs",
+  "user_notes_count": 3,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5884947,
+    "username": "dveeden",
+    "public_email": "",
+    "name": "Daniël van Eeden",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+    "web_url": "https://gitlab.com/dveeden"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 38285998,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "913a96a2d39e2d30c50883e3ec87bd609a760813",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2022-08-11T08:13:32.384Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!7711",
+  "references": {
+    "short": "!7711",
+    "relative": "!7711",
+    "full": "wireshark/wireshark!7711"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/7711",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2022-08-11T14:09:02.627Z",
+  "latest_build_finished_at": "2022-08-11T14:24:38.940Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 610468815,
+    "iid": 34420,
+    "project_id": 7898047,
+    "sha": "913a96a2d39e2d30c50883e3ec87bd609a760813",
+    "ref": "refs/merge-requests/7711/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-08-11T14:09:01.340Z",
+    "updated_at": "2022-08-11T14:24:38.993Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/610468815"
+  },
+  "head_pipeline": {
+    "id": 610468815,
+    "iid": 34420,
+    "project_id": 7898047,
+    "sha": "913a96a2d39e2d30c50883e3ec87bd609a760813",
+    "ref": "refs/merge-requests/7711/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-08-11T14:09:01.340Z",
+    "updated_at": "2022-08-11T14:24:38.993Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/610468815",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    },
+    "started_at": "2022-08-11T14:09:02.627Z",
+    "finished_at": "2022-08-11T14:24:38.940Z",
+    "committed_at": null,
+    "duration": 936,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/610468815",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "903a5a74eed5ec49f07b40a8861f8fc5fbc01a02",
+    "head_sha": "913a96a2d39e2d30c50883e3ec87bd609a760813",
+    "start_sha": "903a5a74eed5ec49f07b40a8861f8fc5fbc01a02"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "530ef9d8fce2ec66d6bf5eac395e902a4e190030",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1058181050,
+          "type": null,
+          "body": "@yekaige could you review this as well?",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2022-08-11T08:14:58.959Z",
+          "updated_at": "2022-08-11T08:14:58.959Z",
+          "system": false,
+          "noteable_id": 170745424,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7711,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e4e0462c8b1644c3000051cd21e5586fba2de9fd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1058185649,
+          "type": null,
+          "body": "https://dev.mysql.com/doc/dev/mysql-server/latest/group__group__cs__capabilities__flags.html#ga3cd12e9fd3901274e239881796e5219b and https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_com_query.html aren't really clear on this behavior",
+          "author": {
+            "id": 5884947,
+            "username": "dveeden",
+            "public_email": "",
+            "name": "Daniël van Eeden",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/00c536bb5304097eb409787c4a770e820db2a200d04130b8ca03cbcda0f526f7?s=80&d=identicon",
+            "web_url": "https://gitlab.com/dveeden"
+          },
+          "created_at": "2022-08-11T08:18:42.652Z",
+          "updated_at": "2022-08-11T08:18:42.652Z",
+          "system": false,
+          "noteable_id": 170745424,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7711,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7d7aaf03a4f1cd1c075dd377e1fc640a3dc5eb49",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1058462971,
+          "type": null,
+          "body": "@dveeden Thanks! We do need to make sure both server and client have this flag been set. Before the client is going to send a COM_QUERY packet, it needs to check the server's flag, here is where it does this check: https://github.com/mysql/mysql-server/blob/8.0/sql-common/client.cc#L7712",
+          "author": {
+            "id": 9513801,
+            "username": "yekaige",
+            "public_email": "",
+            "name": "Kaige Ye",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/fe98e8c35371364e88fdde59e30fdc02d98379265d994e6914701c73855c8e5a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/yekaige"
+          },
+          "created_at": "2022-08-11T11:19:29.834Z",
+          "updated_at": "2022-08-11T13:53:59.281Z",
+          "system": false,
+          "noteable_id": 170745424,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7711,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "397e3deb01d79b04e31f26671439920489a7b1ec",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1058712058,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-08-11T14:08:34.201Z",
+          "updated_at": "2022-08-11T14:08:34.205Z",
+          "system": true,
+          "noteable_id": 170745424,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7711,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9548261a72fd5b40d402c8a01deaeaa9dd92b124",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1058712962,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2022-08-11T14:08:48.088Z",
+          "updated_at": "2022-08-11T14:08:48.091Z",
+          "system": true,
+          "noteable_id": 170745424,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7711,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1aea1f505e1b95c42e83dc3397599357cf3f306e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1058713485,
+          "type": null,
+          "body": "added 9 commits\n\n<ul><li>81d837d5...903a5a74 - 8 commits from branch <code>wireshark:master</code></li><li>913a96a2 - mysql: Correct query attribute handling</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/7711/diffs?diff_id=459189702&start_sha=81d837d5abb5efadb6dd75354c38996263c6603f)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-08-11T14:08:59.927Z",
+          "updated_at": "2022-08-11T14:08:59.929Z",
+          "system": true,
+          "noteable_id": 170745424,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7711,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a474ea7a0622aa9613102602387a55c87f139571",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1058713703,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-08-11T14:09:06.352Z",
+          "updated_at": "2022-08-11T14:09:06.354Z",
+          "system": true,
+          "noteable_id": 170745424,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7711,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2036,7 +2036,9 @@ mysql_dissect_request(tvbuff_t *tvb,packet_info *pinfo, int offset, proto_tree *\n \t\tbreak;\n \n \tcase MYSQL_QUERY:\n-\t\tif (conn_data->clnt_caps_ext & MYSQL_CAPS_QA) {\n+\t\t/* Check both the extended capabilities of the client and server. The flag is set by the client\n+\t\t * even if the server didn't set it. This is only actively used if both set the flag. */\n+\t\tif ((conn_data->clnt_caps_ext & MYSQL_CAPS_QA) && (conn_data->srv_caps_ext & MYSQL_CAPS_QA)){\n \t\t\tproto_item *query_attrs_item = proto_tree_add_item(req_tree, hf_mysql_query_attributes, tvb, offset, -1, ENC_NA);\n \t\t\tproto_item *query_attrs_tree = proto_item_add_subtree(query_attrs_item, ett_query_attributes);\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-mysql.c",
+      "old_path": "epan/dissectors/packet-mysql.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "913a96a2d39e2d30c50883e3ec87bd609a760813",
+      "short_id": "913a96a2",
+      "created_at": "2022-08-11T14:08:55.000+00:00",
+      "parent_ids": [
+        "903a5a74eed5ec49f07b40a8861f8fc5fbc01a02"
+      ],
+      "title": "mysql: Correct query attribute handling",
+      "message": "mysql: Correct query attribute handling\n\nThis fixes dissection of queries with new clients with query attribute\nsupport to servers that don't support this.\n",
+      "author_name": "Daniël van Eeden",
+      "author_email": "git@myname.nl",
+      "authored_date": "2022-08-11T09:44:51.000+02:00",
+      "committer_name": "A Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2022-08-11T14:08:55.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/913a96a2d39e2d30c50883e3ec87bd609a760813"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 459189702,
+      "head_commit_sha": "913a96a2d39e2d30c50883e3ec87bd609a760813",
+      "base_commit_sha": "903a5a74eed5ec49f07b40a8861f8fc5fbc01a02",
+      "start_commit_sha": "903a5a74eed5ec49f07b40a8861f8fc5fbc01a02",
+      "created_at": "2022-08-11T14:08:59.246Z",
+      "merge_request_id": 170745424,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 458802807,
+      "head_commit_sha": "81d837d5abb5efadb6dd75354c38996263c6603f",
+      "base_commit_sha": "1bdf7427b6c561d83e1bb6b89b46c0a0c745ba23",
+      "start_commit_sha": "6cd2258c559589aff7d9f10551016d78344cb7e8",
+      "created_at": "2022-08-11T08:13:32.447Z",
+      "merge_request_id": 170745424,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

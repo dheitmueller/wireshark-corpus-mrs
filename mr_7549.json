@@ -1,0 +1,425 @@
+{
+  "id": 168215413,
+  "iid": 7549,
+  "project_id": 7898047,
+  "title": "Fix tools/*-setup.sh to work with no arguments",
+  "description": "They were checking for --help in an unusual manner that failed when\nrun with no arguments.\n\nI've checked that --help works for each script, and that debian-setup.sh\nactually works.\n\nNOTE: bsd-setup.sh and rpm-setup.sh seem to have sometimes-broken\nformatting, because they try to pass escape sequences to echo, which\nPOSIX says is implementation-defined (except on XSI-conformant systems).\n\nThese changes were mostly made using the following script, with a\nmanual fix in bsd-setup.sh because it isn't using \"switch case\".\n\n```python\n\nimport sys\nimport re\n\nusage_p = re.compile(r'^if \\[ \"\\$1\" = \"--help\" \\]\\nthen\\n((?:\\t(?:printf|echo) .*\\n)*)\\texit 1\\nfi$',\n                     re.MULTILINE)\n\ncase_p = re.compile(r'(^\\tcase \\$arg in$)',\n                    re.MULTILINE)\n\nroot_check_p = re.compile(r'(\\n# Check if the user is root(?:\\n|.)*?fi\\n)',\n                          re.MULTILINE)\n\ndone_p = re.compile(r'(^done\\n)',\n                    re.MULTILINE)\n\ndef fix_setup(name: str):\n    assert name.endswith('-setup.sh')\n\n    with open(name, 'r') as fin:\n        s = fin.read()\n\n    s = usage_p.sub(r'function print_usage() {\\n\\1}', s)\n    s = case_p.sub(r'''\\1\n\\t\\t--help)\n\\t\\t\\tprint_usage\n\\t\\t\\texit 0\n\\t\\t\\t;;''', s)\n\n    m1 = root_check_p.search(s)\n    if m1:\n        root_check = m1[0]\n        s = root_check_p.sub('', s)\n        pos = done_p.search(s).end()  # type: ignore[union-attr]\n        s = s[:pos] + root_check + s[pos:]\n\n    with open(name, 'w') as fout:\n        fout.write(s)\n\nif __name__ == '__main__':\n    for name in sys.argv[1:]:\n        fix_setup(name)\n```\n\n(cherry picked from commit c8d9c6fc6a92d83c34160b8c4490f6495d57f605)\n\n Conflicts:\n\ttools/alpine-setup.sh\n        tools/arch-setup.sh\n\ttools/msys2-setup.sh",
+  "state": "merged",
+  "created_at": "2022-07-27T23:47:14.520Z",
+  "updated_at": "2022-07-28T00:18:54.550Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2022-07-28T00:18:53.350Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-3.6",
+  "source_branch": "rpm-setup-3.6",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6764551,
+    "username": "johnthacker",
+    "public_email": "",
+    "name": "John Thacker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+    "web_url": "https://gitlab.com/johnthacker"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 20719152,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "a04fe37ae3b81b3ce80f0e585099aad7de8cb626",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2022-07-27T23:47:14.520Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!7549",
+  "references": {
+    "short": "!7549",
+    "relative": "!7549",
+    "full": "wireshark/wireshark!7549"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/7549",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "4",
+  "latest_build_started_at": "2022-07-27T23:54:09.494Z",
+  "latest_build_finished_at": "2022-07-28T00:18:41.582Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 598711890,
+    "iid": 33815,
+    "project_id": 7898047,
+    "sha": "a04fe37ae3b81b3ce80f0e585099aad7de8cb626",
+    "ref": "refs/merge-requests/7549/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-07-27T23:54:08.677Z",
+    "updated_at": "2022-07-28T00:18:41.596Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/598711890"
+  },
+  "head_pipeline": {
+    "id": 598711890,
+    "iid": 33815,
+    "project_id": 7898047,
+    "sha": "a04fe37ae3b81b3ce80f0e585099aad7de8cb626",
+    "ref": "refs/merge-requests/7549/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2022-07-27T23:54:08.677Z",
+    "updated_at": "2022-07-28T00:18:41.596Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/598711890",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    },
+    "started_at": "2022-07-27T23:54:09.494Z",
+    "finished_at": "2022-07-28T00:18:41.582Z",
+    "committed_at": null,
+    "duration": 1472,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/598711890",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "429806526adcff393c72b4c3382670bda7b1227a",
+    "head_sha": "a04fe37ae3b81b3ce80f0e585099aad7de8cb626",
+    "start_sha": "429806526adcff393c72b4c3382670bda7b1227a"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "bf2d75130e0ac97b6fc18252816f481c706c7975",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1041339778,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-07-27T23:53:20.699Z",
+          "updated_at": "2022-07-27T23:53:20.701Z",
+          "system": true,
+          "noteable_id": 168215413,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7549,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "79fc9e0cfcc3a1ac0e92c09a7b9ac43e1d4c1324",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1041339830,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-07-27T23:53:27.397Z",
+          "updated_at": "2022-07-27T23:53:27.399Z",
+          "system": true,
+          "noteable_id": 168215413,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7549,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "51fdb32ecbb5b93513e9c7e54ab2ff2a65fc2a6f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1041340186,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>42980652 - 1 commit from branch <code>wireshark:release-3.6</code></li><li>a04fe37a - Fix tools/*-setup.sh to work with no arguments</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/7549/diffs?diff_id=448214930&start_sha=4e35408b6e8810d7ef4cad4f39b89e4a810fd084)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-07-27T23:54:07.674Z",
+          "updated_at": "2022-07-27T23:54:07.676Z",
+          "system": true,
+          "noteable_id": 168215413,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7549,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "574f1f8ae610b8d02a67bb6588f1c8cbacc636bc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1041340222,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789862421",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2022-07-27T23:54:13.590Z",
+          "updated_at": "2022-07-27T23:54:13.592Z",
+          "system": true,
+          "noteable_id": 168215413,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 7549,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -11,27 +11,24 @@\n # that way.\n #\n \n-if [ \"$1\" = \"--help\" ]\n-then\n+set -e -u -o pipefail\n+\n+function print_usage() {\n \tprintf \"\\\\nUtility to setup a alpine system for Wireshark Development.\\\\n\"\n \tprintf \"The basic usage installs the needed software\\\\n\\\\n\"\n \tprintf \"Usage: %s [--install-optional] [--install-deb-deps] [...other options...]\\\\n\" \"$0\"\n \tprintf \"\\\\t--install-optional: install optional software as well\\\\n\"\n \tprintf \"\\\\t[other]: other options are passed as-is to apt\\\\n\"\n-\texit 1\n-fi\n-\n-# Check if the user is root\n-if [ \"$(id -u)\" -ne 0 ]\n-then\n-\techo \"You must be root.\"\n-\texit 1\n-fi\n+}\n \n ADDITIONAL=0\n OPTIONS=\n for arg; do\n \tcase $arg in\n+\t\t--help)\n+\t\t\tprint_usage\n+\t\t\texit 0\n+\t\t\t;;\n \t\t--install-optional)\n \t\t\tADDITIONAL=1\n \t\t\t;;\n@@ -41,6 +38,13 @@ for arg; do\n \tesac\n done\n \n+# Check if the user is root\n+if [ \"$(id -u)\" -ne 0 ]\n+then\n+\techo \"You must be root.\"\n+\texit 1\n+fi\n+\n BASIC_LIST=\"cmake \\\n \tninja \\\n \tgcc \\\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/alpine-setup.sh",
+      "old_path": "tools/alpine-setup.sh",
+      "a_mode": "100755",
+      "b_mode": "100755",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -13,22 +13,13 @@\n # that way.\n #\n \n-if [ \"$1\" = \"--help\" ]\n-then\n+function print_usage() {\n \techo \"\\nUtility to setup a bsd-based system for Wireshark Development.\\n\"\n \techo \"The basic usage installs the needed software\\n\\n\"\n \techo \"Usage: $0 [--install-optional] [...other options...]\\n\"\n \techo \"\\t--install-optional: install optional software as well\"\n \techo \"\\t[other]: other options are passed as-is to pkg manager.\\n\"\n-\texit 1\n-fi\n-\n-# Check if the user is root\n-if [ $(id -u) -ne 0 ]\n-then\n-\techo \"You must be root.\"\n-\texit 1\n-fi\n+}\n \n OPTIONS=\n for op\n@@ -36,11 +27,22 @@ do\n \tif [ \"$op\" = \"--install-optional\" ]\n \tthen\n \t\tADDITIONAL=1\n+\telif [ \"$op\" = \"--help\" ]\n+\tthen\n+\t\tprint_usage\n+\t\texit 0\n \telse\n \t\tOPTIONS=\"$OPTIONS $op\"\n \tfi\n done\n \n+# Check if the user is root\n+if [ $(id -u) -ne 0 ]\n+then\n+\techo \"You must be root.\"\n+\texit 1\n+fi\n+\n BASIC_LIST=\"\\\n \tcmake \\\n \tqt5 \\\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/bsd-setup.sh",
+      "old_path": "tools/bsd-setup.sh",
+      "a_mode": "100755",
+      "b_mode": "100755",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -13,8 +13,7 @@\n \n set -e -u -o pipefail\n \n-if [ \"$1\" = \"--help\" ]\n-then\n+function print_usage() {\n \tprintf \"\\\\nUtility to setup a debian-based system for Wireshark Development.\\\\n\"\n \tprintf \"The basic usage installs the needed software\\\\n\\\\n\"\n \tprintf \"Usage: %s [--install-optional] [--install-deb-deps] [...other options...]\\\\n\" \"$0\"\n@@ -22,15 +21,7 @@ then\n \tprintf \"\\\\t--install-deb-deps: install packages required to build the .deb file\\\\n\"\n \tprintf \"\\\\t--install-test-deps: install packages required to run all tests\\\\n\"\n \tprintf \"\\\\t[other]: other options are passed as-is to apt\\\\n\"\n-\texit 1\n-fi\n-\n-# Check if the user is root\n-if [ \"$(id -u)\" -ne 0 ]\n-then\n-\techo \"You must be root.\"\n-\texit 1\n-fi\n+}\n \n ADDITIONAL=0\n DEBDEPS=0\n@@ -38,6 +29,10 @@ TESTDEPS=0\n OPTIONS=\n for arg; do\n \tcase $arg in\n+\t\t--help)\n+\t\t\tprint_usage\n+\t\t\texit 0\n+\t\t\t;;\n \t\t--install-optional)\n \t\t\tADDITIONAL=1\n \t\t\t;;\n@@ -53,6 +48,13 @@ for arg; do\n \tesac\n done\n \n+# Check if the user is root\n+if [ \"$(id -u)\" -ne 0 ]\n+then\n+\techo \"You must be root.\"\n+\texit 1\n+fi\n+\n BASIC_LIST=\"gcc \\\n \tg++\\\n \tlibglib2.0-dev \\\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/debian-setup.sh",
+      "old_path": "tools/debian-setup.sh",
+      "a_mode": "100755",
+      "b_mode": "100755",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -13,29 +13,24 @@\n \n set -e -u -o pipefail\n \n-if [ \"$1\" = \"--help\" ]\n-then\n+function print_usage() {\n \techo \"\\nUtility to setup a rpm-based system for Wireshark Development.\\n\"\n \techo \"The basic usage installs the needed software\\n\\n\"\n \techo \"Usage: $0 [--install-optional] [...other options...]\\n\"\n \techo \"\\t--install-optional: install optional software as well\"\n \techo \"\\t--install-rpm-deps: install packages required to build the .rpm file\\\\n\"\n \techo \"\\t[other]: other options are passed as-is to the packet manager\\n\"\n-\texit 1\n-fi\n-\n-# Check if the user is root\n-if [ $(id -u) -ne 0 ]\n-then\n-\techo \"You must be root.\"\n-\texit 1\n-fi\n+}\n \n ADDITIONAL=0\n RPMDEPS=0\n OPTIONS=\n for arg; do\n \tcase $arg in\n+\t\t--help)\n+\t\t\tprint_usage\n+\t\t\texit 0\n+\t\t\t;;\n \t\t--install-optional)\n \t\t\tADDITIONAL=1\n \t\t\t;;\n@@ -48,6 +43,13 @@ for arg; do\n \tesac\n done\n \n+# Check if the user is root\n+if [ $(id -u) -ne 0 ]\n+then\n+\techo \"You must be root.\"\n+\texit 1\n+fi\n+\n BASIC_LIST=\"cmake \\\n \tgcc \\\n \tgcc-c++ \\\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/rpm-setup.sh",
+      "old_path": "tools/rpm-setup.sh",
+      "a_mode": "100755",
+      "b_mode": "100755",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "a04fe37ae3b81b3ce80f0e585099aad7de8cb626",
+      "short_id": "a04fe37a",
+      "created_at": "2022-07-27T23:54:04.000+00:00",
+      "parent_ids": [
+        "429806526adcff393c72b4c3382670bda7b1227a"
+      ],
+      "title": "Fix tools/*-setup.sh to work with no arguments",
+      "message": "Fix tools/*-setup.sh to work with no arguments\n\nThey were checking for --help in an unusual manner that failed when\nrun with no arguments.\n\nI've checked that --help works for each script, and that debian-setup.sh\nactually works.\n\nNOTE: bsd-setup.sh and rpm-setup.sh seem to have sometimes-broken\nformatting, because they try to pass escape sequences to echo, which\nPOSIX says is implementation-defined (except on XSI-conformant systems).\n\nThese changes were mostly made using the following script, with a\nmanual fix in bsd-setup.sh because it isn't using \"switch case\".\n\n```python\n\nimport sys\nimport re\n\nusage_p = re.compile(r'^if \\[ \"\\$1\" = \"--help\" \\]\\nthen\\n((?:\\t(?:printf|echo) .*\\n)*)\\texit 1\\nfi$',\n                     re.MULTILINE)\n\ncase_p = re.compile(r'(^\\tcase \\$arg in$)',\n                    re.MULTILINE)\n\nroot_check_p = re.compile(r'(\\n# Check if the user is root(?:\\n|.)*?fi\\n)',\n                          re.MULTILINE)\n\ndone_p = re.compile(r'(^done\\n)',\n                    re.MULTILINE)\n\ndef fix_setup(name: str):\n    assert name.endswith('-setup.sh')\n\n    with open(name, 'r') as fin:\n        s = fin.read()\n\n    s = usage_p.sub(r'function print_usage() {\\n\\1}', s)\n    s = case_p.sub(r'''\\1\n\\t\\t--help)\n\\t\\t\\tprint_usage\n\\t\\t\\texit 0\n\\t\\t\\t;;''', s)\n\n    m1 = root_check_p.search(s)\n    if m1:\n        root_check = m1[0]\n        s = root_check_p.sub('', s)\n        pos = done_p.search(s).end()  # type: ignore[union-attr]\n        s = s[:pos] + root_check + s[pos:]\n\n    with open(name, 'w') as fout:\n        fout.write(s)\n\nif __name__ == '__main__':\n    for name in sys.argv[1:]:\n        fix_setup(name)\n```\n\n(cherry picked from commit c8d9c6fc6a92d83c34160b8c4490f6495d57f605)\n\n Conflicts:\n\ttools/alpine-setup.sh\n        tools/arch-setup.sh\n\ttools/msys2-setup.sh\n",
+      "author_name": "naesten",
+      "author_email": "naesten@gmail.com",
+      "authored_date": "2022-04-17T22:25:57.000+00:00",
+      "committer_name": "A Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2022-07-27T23:54:04.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/a04fe37ae3b81b3ce80f0e585099aad7de8cb626"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 448214930,
+      "head_commit_sha": "a04fe37ae3b81b3ce80f0e585099aad7de8cb626",
+      "base_commit_sha": "429806526adcff393c72b4c3382670bda7b1227a",
+      "start_commit_sha": "429806526adcff393c72b4c3382670bda7b1227a",
+      "created_at": "2022-07-27T23:54:07.112Z",
+      "merge_request_id": 168215413,
+      "state": "collected",
+      "real_size": "4",
+      "patch_id_sha": null
+    },
+    {
+      "id": 448213082,
+      "head_commit_sha": "4e35408b6e8810d7ef4cad4f39b89e4a810fd084",
+      "base_commit_sha": "eca07c1181a6831bfd67b96c8597355e3be45589",
+      "start_commit_sha": "eca07c1181a6831bfd67b96c8597355e3be45589",
+      "created_at": "2022-07-27T23:47:14.599Z",
+      "merge_request_id": 168215413,
+      "state": "without_files",
+      "real_size": "4",
+      "patch_id_sha": null
+    }
+  ]
+}
