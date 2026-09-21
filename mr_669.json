@@ -1,0 +1,744 @@
+{
+  "id": 75294056,
+  "iid": 669,
+  "project_id": 7898047,
+  "title": "editcap, tshark: process IDBs in the middle of input files.",
+  "description": "Instead of grabbing the set of IDBs found at open time, have a loop\nusing wtap_get_next_interface_description() to read all unread IDBs run\nafter opening the input file, after reading a packet from the input\nfile, and after getting an EOF on the input file.\n\nAdd a routine wtap_uses_interface_ids() to check whether the file type\nand subtype for a dump file uses interface IDs and requires IDBs.  If\nso, in the aforementioned loop, add the IDBs to the dump stream.\n\nAdd a routine wtap_dump_add_idb() to add IDBs to a dump stream.  Have it\ncall a file-format-specific routine to add the IDBs; the only file type\nthat supports it is pcapng, and it 1) writes out the IDB and 2) adds it\nto the set of IDBs for the stream.\n\nAdd a wtap_dump_params_init_no_idbs() routine that prevents the IDBs\nfrom the input file from being used to initialize the output file; use\nit in cases where we're using the aforementioned loop to copy over IDBs.\n\nDon't require any IDBs to be present when opening a pcapng file for\nwriting; 1) the simplest pcapng file has just an SHB in it, 2) that\nrequirement causes dumps that don't provide IDBs at open time to fail,\nand 3) the real issue is that we don't want packets with an interface ID\nnot corresponding to a known IDB, and we already have a check for that.\n\n(There are some hacks here; eventually, when everything processes the\nIDBs in such a loop, we may be able to get rid of the \"two favors of\ndump parameter initialization\" hack.)\n\nFixes #15844.\n\nAddresses the same issue in #15502, but there are other issues there\nthat also need to be addressed.\n\nIn addition, the merge code also needs to be changed to handle this.",
+  "state": "merged",
+  "created_at": "2020-10-22T08:12:52.748Z",
+  "updated_at": "2022-11-04T17:56:16.384Z",
+  "merged_by": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "merge_user": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "merged_at": "2020-10-22T10:41:09.276Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "process-idbs-in-the-middle",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "assignees": [
+    {
+      "id": 5636682,
+      "username": "guyharris",
+      "public_email": "",
+      "name": "Guy Harris",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+      "web_url": "https://gitlab.com/guyharris"
+    }
+  ],
+  "assignee": {
+    "id": 5636682,
+    "username": "guyharris",
+    "public_email": "",
+    "name": "Guy Harris",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+    "web_url": "https://gitlab.com/guyharris"
+  },
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "d0270415a9d198eae0b8c739b17780e6c347ebcd",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2020-10-22T08:12:52.748Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!669",
+  "references": {
+    "short": "!669",
+    "relative": "!669",
+    "full": "wireshark/wireshark!669"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/669",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "8",
+  "latest_build_started_at": "2020-10-22T09:58:21.610Z",
+  "latest_build_finished_at": "2020-10-22T10:41:04.310Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 206210240,
+    "iid": 10095,
+    "project_id": 7898047,
+    "sha": "d0270415a9d198eae0b8c739b17780e6c347ebcd",
+    "ref": "refs/merge-requests/669/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2020-10-22T09:58:18.582Z",
+    "updated_at": "2020-10-22T10:41:04.317Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/206210240"
+  },
+  "head_pipeline": {
+    "id": 206210240,
+    "iid": 10095,
+    "project_id": 7898047,
+    "sha": "d0270415a9d198eae0b8c739b17780e6c347ebcd",
+    "ref": "refs/merge-requests/669/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2020-10-22T09:58:18.582Z",
+    "updated_at": "2020-10-22T10:41:04.317Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/206210240",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 5636682,
+      "username": "guyharris",
+      "public_email": "",
+      "name": "Guy Harris",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+      "web_url": "https://gitlab.com/guyharris"
+    },
+    "started_at": "2020-10-22T09:58:21.610Z",
+    "finished_at": "2020-10-22T10:41:04.310Z",
+    "committed_at": null,
+    "duration": 2562,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/206210240",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "e16ef82d7c4ae292c9a46530124aef268c35011f",
+    "head_sha": "d0270415a9d198eae0b8c739b17780e6c347ebcd",
+    "start_sha": "e16ef82d7c4ae292c9a46530124aef268c35011f"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "aa48f3514e11c98c66d7ffb358801943bf8fdbb9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434084701,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>e6adc940 - 1 commit from branch <code>wireshark:master</code></li><li>5853a1c2 - editcap, tshark: process IDBs in the middle of input files.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/669/diffs?diff_id=119722805&start_sha=2c0a463b83d59fd02b836599fd7b3b7587124ff5)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T08:13:13.543Z",
+          "updated_at": "2020-10-22T08:13:13.545Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7b75ae482ef553f6089e98b4df00c92ba2e13176",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434084913,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T08:13:31.596Z",
+          "updated_at": "2020-10-22T08:13:31.599Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2784c0fab5c2932bc33b0ec8fd6920e49063a8e2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434084970,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 5853a1c22659e34905e0cc0786449f120299a189 succeeds",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T08:13:35.930Z",
+          "updated_at": "2020-10-22T08:13:35.932Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "44a6046bcf76eebaf57d085729e4a5182784a1fe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434108254,
+          "type": null,
+          "body": "aborted the automatic merge because target branch was updated",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-10-22T08:45:10.192Z",
+          "updated_at": "2020-10-22T08:45:10.194Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cc454ff0091fdd4d4f5145fbfcc2ab97a4f1fe0e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434154746,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>e16ef82d - 1 commit from branch <code>wireshark:master</code></li><li>6c263951 - editcap, tshark: process IDBs in the middle of input files.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/669/diffs?diff_id=119750269&start_sha=5853a1c22659e34905e0cc0786449f120299a189)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T09:44:42.985Z",
+          "updated_at": "2020-10-22T09:44:42.986Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "41a225d0fd753144dd0ff35db82224bfac12915d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434155025,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T09:45:03.357Z",
+          "updated_at": "2020-10-22T09:45:03.359Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "390df38b62ab871a628a36bacb1a48e185a53390",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434155051,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 6c263951f0f37ee7557e63541726e3e79b970733 succeeds",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T09:45:05.431Z",
+          "updated_at": "2020-10-22T09:45:05.433Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6df5032cfe041c128f919471876626a52289ad7a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434165267,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>d0270415 - editcap, tshark: process IDBs in the middle of input files.</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/669/diffs?diff_id=119754229&start_sha=6c263951f0f37ee7557e63541726e3e79b970733)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T09:58:18.944Z",
+          "updated_at": "2020-10-22T09:58:18.945Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b9768373cdb97aaa6befb7c5461524fc8129d371",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434165921,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T09:59:12.948Z",
+          "updated_at": "2020-10-22T09:59:12.950Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "139a78462e7d760b2c5ba70085dd52d01d678d26",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 434165941,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for d0270415a9d198eae0b8c739b17780e6c347ebcd succeeds",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-10-22T09:59:14.596Z",
+          "updated_at": "2020-10-22T09:59:14.597Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e50f4b88b0c00039e9bddb8b92dcb23492bdaf98",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1160919891,
+          "type": null,
+          "body": "mentioned in issue #15502",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-11-04T17:56:16.342Z",
+          "updated_at": "2022-11-04T17:56:16.345Z",
+          "system": true,
+          "noteable_id": 75294056,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 669,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -61,6 +61,7 @@ libwiretap.so.0 libwiretap0 #MINVER#\n  wtap_deregister_file_type_subtype@Base 1.12.0~rc1\n  wtap_deregister_open_info@Base 1.12.0~rc1\n  wtap_dump@Base 1.9.1\n+ wtap_dump_add_idb@Base 3.3.2\n  wtap_dump_can_compress@Base 1.9.1\n  wtap_dump_can_open@Base 1.9.1\n  wtap_dump_can_write@Base 1.9.1\n@@ -70,6 +71,7 @@ libwiretap.so.0 libwiretap0 #MINVER#\n  wtap_dump_file_encap_type@Base 1.9.1\n  wtap_dump_file_seek@Base 1.12.0~rc1\n  wtap_dump_file_tell@Base 1.12.0~rc1\n+ wtap_dump_file_type_subtype@Base 3.3.2\n  wtap_dump_file_write@Base 1.12.0~rc1\n  wtap_dump_flush@Base 1.9.1\n  wtap_dump_get_needs_reload@Base 2.5.0\n@@ -80,6 +82,7 @@ libwiretap.so.0 libwiretap0 #MINVER#\n  wtap_dump_params_cleanup@Base 2.9.0\n  wtap_dump_params_discard_decryption_secrets@Base 3.0.0\n  wtap_dump_params_init@Base 2.9.0\n+ wtap_dump_params_init_no_idbs@Base 3.3.2\n  wtap_dump_set_addrinfo_list@Base 1.9.1\n  wtap_dump_supports_comment_types@Base 1.9.1\n  wtap_encap_description@Base 2.9.1\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "debian/libwiretap0.symbols",
+      "old_path": "debian/libwiretap0.symbols",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -2329,19 +2329,21 @@ wtap_dump_init_dumper(int file_type_subtype, wtap_compression_type compression_t\n \twdh->nrb_hdrs = params->nrb_hdrs;\n \t/* Set Interface Description Block data */\n \tif (interfaces && interfaces->len) {\n-\t\tguint itf_count;\n-\n-\t\t/* Note: this memory is owned by wtap_dumper and will become\n-\t\t * invalid after wtap_dump_close. */\n-\t\tfor (itf_count = 0; itf_count < interfaces->len; itf_count++) {\n-\t\t\tfile_int_data = g_array_index(interfaces, wtap_block_t, itf_count);\n-\t\t\tfile_int_data_mand = (wtapng_if_descr_mandatory_t*)wtap_block_get_mandatory_data(file_int_data);\n-\t\t\tdescr = wtap_block_make_copy(file_int_data);\n-\t\t\tif ((params->encap != WTAP_ENCAP_PER_PACKET) && (params->encap != file_int_data_mand->wtap_encap)) {\n-\t\t\t\tdescr_mand = (wtapng_if_descr_mandatory_t*)wtap_block_get_mandatory_data(descr);\n-\t\t\t\tdescr_mand->wtap_encap = params->encap;\n+\t\tif (!params->dont_copy_idbs) {\t/* XXX */\n+\t\t\tguint itf_count;\n+\n+\t\t\t/* Note: this memory is owned by wtap_dumper and will become\n+\t\t\t * invalid after wtap_dump_close. */\n+\t\t\tfor (itf_count = 0; itf_count < interfaces->len; itf_count++) {\n+\t\t\t\tfile_int_data = g_array_index(interfaces, wtap_block_t, itf_count);\n+\t\t\t\tfile_int_data_mand = (wtapng_if_descr_mandatory_t*)wtap_block_get_mandatory_data(file_int_data);\n+\t\t\t\tdescr = wtap_block_make_copy(file_int_data);\n+\t\t\t\tif ((params->encap != WTAP_ENCAP_PER_PACKET) && (params->encap != file_int_data_mand->wtap_encap)) {\n+\t\t\t\t\tdescr_mand = (wtapng_if_descr_mandatory_t*)wtap_block_get_mandatory_data(descr);\n+\t\t\t\t\tdescr_mand->wtap_encap = params->encap;\n+\t\t\t\t}\n+\t\t\t\tg_array_append_val(wdh->interface_data, descr);\n \t\t\t}\n-\t\t\tg_array_append_val(wdh->interface_data, descr);\n \t\t}\n \t} else {\n \t\tint snaplen;\n@@ -2692,6 +2694,21 @@ wtap_dump_open_finish(wtap_dumper *wdh, int file_type_subtype, int *err,\n \treturn TRUE;\t/* success! */\n }\n \n+gboolean\n+wtap_dump_add_idb(wtap_dumper *wdh, wtap_block_t idb, int *err,\n+                  gchar **err_info)\n+{\n+\tif (wdh->subtype_add_idb == NULL) {\n+\t\t/* Not supported. */\n+\t\t*err = WTAP_ERR_UNWRITABLE_REC_TYPE;\n+\t\t*err_info = g_strdup(\"Adding IDBs isn't supported by this file type\");\n+\t\treturn FALSE;\n+\t}\n+\t*err = 0;\n+\t*err_info = NULL;\n+\treturn (wdh->subtype_add_idb)(wdh, idb, err, err_info);\n+}\n+\n gboolean\n wtap_dump(wtap_dumper *wdh, const wtap_rec *rec,\n \t  const guint8 *pd, int *err, gchar **err_info)\n@@ -2751,6 +2768,12 @@ wtap_dump_close(wtap_dumper *wdh, int *err, gchar **err_info)\n \treturn ret;\n }\n \n+int\n+wtap_dump_file_type_subtype(wtap_dumper *wdh)\n+{\n+\treturn wdh->file_type_subtype;\n+}\n+\n gint64\n wtap_get_bytes_dumped(wtap_dumper *wdh)\n {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/file_access.c",
+      "old_path": "wiretap/file_access.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -4763,6 +4763,24 @@ pcapng_write_if_descr_block(wtap_dumper *wdh, wtap_block_t int_data, int *err)\n     return TRUE;\n }\n \n+static gboolean pcapng_add_idb(wtap_dumper *wdh, wtap_block_t idb,\n+                               int *err, gchar **err_info _U_)\n+{\n+\twtap_block_t idb_copy;\n+\n+\t/*\n+\t * Add a copy of this IDB to our array of IDBs.\n+\t */\n+\tidb_copy = wtap_block_create(WTAP_BLOCK_IF_DESCR);\n+\twtap_block_copy(idb_copy, idb);\n+\tg_array_append_val(wdh->interface_data, idb_copy);\n+\n+\t/*\n+\t * And write it to the output file.\n+\t */\n+\treturn pcapng_write_if_descr_block(wdh, idb_copy, err);\n+}\n+\n static gboolean pcapng_dump(wtap_dumper *wdh,\n                             const wtap_rec *rec,\n                             const guint8 *pd, int *err, gchar **err_info)\n@@ -4885,23 +4903,16 @@ static gboolean pcapng_dump_finish(wtap_dumper *wdh, int *err,\n /* Returns TRUE on success, FALSE on failure; sets \"*err\" to an error code on\n    failure */\n gboolean\n-pcapng_dump_open(wtap_dumper *wdh, int *err, gchar **err_info)\n+pcapng_dump_open(wtap_dumper *wdh, int *err, gchar **err_info _U_)\n {\n     guint i;\n \n     pcapng_debug(\"pcapng_dump_open\");\n     /* This is a pcapng file */\n+    wdh->subtype_add_idb = pcapng_add_idb;\n     wdh->subtype_write = pcapng_dump;\n     wdh->subtype_finish = pcapng_dump_finish;\n \n-    // XXX IDBs should be optional.\n-    if (wdh->interface_data->len == 0) {\n-        pcapng_debug(\"There are no interfaces. Can't handle that...\");\n-        *err = WTAP_ERR_INTERNAL;\n-        *err_info = g_strdup(\"pcapng: there are no interfaces\");\n-        return FALSE;\n-    }\n-\n     /* write the section header block */\n     if (!pcapng_write_section_header_block(wdh, err)) {\n         return FALSE;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/pcapng.c",
+      "old_path": "wiretap/pcapng.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -80,6 +80,9 @@ struct wtap_dumper;\n  */\n typedef void *WFILE_T;\n \n+typedef gboolean (*subtype_add_idb_func)(struct wtap_dumper*, wtap_block_t,\n+                                         int *, gchar **);\n+\n typedef gboolean (*subtype_write_func)(struct wtap_dumper*,\n                                        const wtap_rec *rec,\n                                        const guint8*, int*, gchar**);\n@@ -91,18 +94,19 @@ struct wtap_dumper {\n     int                     snaplen;\n     int                     encap;\n     wtap_compression_type   compression_type;\n-    gboolean                needs_reload;   /* TRUE if the file requires re-loading after saving with wtap */\n+    gboolean                needs_reload;    /* TRUE if the file requires re-loading after saving with wtap */\n     gint64                  bytes_dumped;\n \n-    void                    *priv;          /* this one holds per-file state and is free'd automatically by wtap_dump_close() */\n-    void                    *wslua_data;    /* this one holds wslua state info and is not free'd */\n+    void                    *priv;           /* this one holds per-file state and is free'd automatically by wtap_dump_close() */\n+    void                    *wslua_data;     /* this one holds wslua state info and is not free'd */\n \n-    subtype_write_func      subtype_write;  /* write out a record */\n-    subtype_finish_func     subtype_finish; /* write out information to finish writing file */\n+    subtype_add_idb_func    subtype_add_idb; /* add an IDB, writing it as necessary */\n+    subtype_write_func      subtype_write;   /* write out a record */\n+    subtype_finish_func     subtype_finish;  /* write out information to finish writing file */\n \n     addrinfo_lists_t        *addrinfo_lists; /**< Struct containing lists of resolved addresses */\n     GArray                  *shb_hdrs;\n-    GArray                  *nrb_hdrs;        /**< name resolution comment/custom_opt, or NULL */\n+    GArray                  *nrb_hdrs;       /**< name resolution comment/custom_opt, or NULL */\n     GArray                  *interface_data; /**< An array holding the interface data from pcapng IDB:s or equivalent(?) NULL if not present.*/\n     GArray                  *dsbs_initial;   /**< An array of initial DSBs (of type wtap_block_t) */\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap-int.h",
+      "old_path": "wiretap/wtap-int.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -449,6 +449,31 @@ wtap_dump_params_init(wtap_dump_params *params, wtap *wth)\n \t * Refer to the DSBs from the input file, wtap_dump will then copy DSBs\n \t * as they become available. */\n \tparams->dsbs_growing = wth->dsbs;\n+\tparams->dont_copy_idbs = FALSE;\n+}\n+\n+/*\n+ * XXX - eventually, we should make this wtap_dump_params_init(),\n+ * and have everything copy IDBs as they're read.\n+ */\n+void\n+wtap_dump_params_init_no_idbs(wtap_dump_params *params, wtap *wth)\n+{\n+\tmemset(params, 0, sizeof(*params));\n+\tif (wth == NULL)\n+\t\treturn;\n+\n+\tparams->encap = wtap_file_encap(wth);\n+\tparams->snaplen = wtap_snapshot_length(wth);\n+\tparams->tsprec = wtap_file_tsprec(wth);\n+\tparams->shb_hdrs = wtap_file_get_shb_for_new_file(wth);\n+\tparams->idb_inf = wtap_file_get_idb_info(wth);\n+\tparams->nrb_hdrs = wtap_file_get_nrb_for_new_file(wth);\n+\t/* Assume that the input handle remains open until the dumper is closed.\n+\t * Refer to the DSBs from the input file, wtap_dump will then copy DSBs\n+\t * as they become available. */\n+\tparams->dsbs_growing = wth->dsbs;\n+\tparams->dont_copy_idbs = TRUE;\n }\n \n void\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap.c",
+      "old_path": "wiretap/wtap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1576,6 +1576,7 @@ typedef struct wtap_dump_params {\n     const GArray *dsbs_growing;             /**< DSBs that will be written while writing packets, or NULL.\n                                                  This array may grow since the dumper was opened and will subsequently\n                                                  be written before newer packets are written in wtap_dump. */\n+    gboolean    dont_copy_idbs;             /**< XXX - don't copy IDBs; this should eventually always be the case. */\n } wtap_dump_params;\n \n /* Zero-initializer for wtap_dump_params. */\n@@ -2102,6 +2103,23 @@ gboolean wtap_dump_supports_comment_types(int filetype, guint32 comment_types);\n WS_DLL_PUBLIC\n void wtap_dump_params_init(wtap_dump_params *params, wtap *wth);\n \n+/**\n+ * Initialize the per-file information based on an existing file, but\n+ * don't copy over the interface information. Its contents must be freed\n+ * according to the requirements of wtap_dump_params.\n+ * If wth does not remain valid for the duration of the session, dsbs_growing\n+ * MUST be cleared after this function.\n+ *\n+ * XXX - this should eventually become wtap_dump_params_init(), with all\n+ * programs writing capture files copying IDBs over by hand, so that they\n+ * handle IDBs in the middle of the file.\n+ *\n+ * @param params The parameters for wtap_dump_* to initialize.\n+ * @param wth The wiretap session.\n+ */\n+WS_DLL_PUBLIC\n+void wtap_dump_params_init_no_idbs(wtap_dump_params *params, wtap *wth);\n+\n /**\n  * Remove any decryption secret information from the per-file information;\n  * used if we're stripping decryption secrets as we write the file.\n@@ -2191,11 +2209,16 @@ wtap_dumper* wtap_dump_open_stdout(int file_type_subtype,\n     int *err, gchar **err_info);\n \n WS_DLL_PUBLIC\n+gboolean wtap_dump_add_idb(wtap_dumper *wdh, wtap_block_t idb, int *err,\n+     gchar **err_info);\n+WS_DLL_PUBLIC\n gboolean wtap_dump(wtap_dumper *, const wtap_rec *, const guint8 *,\n      int *err, gchar **err_info);\n WS_DLL_PUBLIC\n gboolean wtap_dump_flush(wtap_dumper *, int *);\n WS_DLL_PUBLIC\n+int wtap_dump_file_type_subtype(wtap_dumper *wdh);\n+WS_DLL_PUBLIC\n gint64 wtap_get_bytes_dumped(wtap_dumper *);\n WS_DLL_PUBLIC\n void wtap_set_bytes_dumped(wtap_dumper *wdh, gint64 bytes_dumped);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/wtap.h",
+      "old_path": "wiretap/wtap.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1012,6 +1012,24 @@ editcap_dump_open(const char *filename, const wtap_dump_params *params,\n     return pdh;\n }\n \n+static gboolean\n+process_new_idbs(wtap *wth, wtap_dumper *pdh, int *err, gchar **err_info)\n+{\n+    wtap_block_t if_data;\n+\n+    while ((if_data = wtap_get_next_interface_description(wth)) != NULL) {\n+        /*\n+         * Only add IDBs if the output file requires interface IDs;\n+         * otherwise, it doesn't support writing IDBs.\n+         */\n+        if (wtap_uses_interface_ids(wtap_dump_file_type_subtype(pdh))) {\n+            if (!wtap_dump_add_idb(pdh, if_data, err, err_info))\n+                return FALSE;\n+        }\n+    }\n+    return TRUE;\n+}\n+\n int\n main(int argc, char *argv[])\n {\n@@ -1555,7 +1573,7 @@ invalid_time:\n         }\n     }\n \n-    wtap_dump_params_init(&params, wth);\n+    wtap_dump_params_init_no_idbs(&params, wth);\n \n     /*\n      * Discard any secrets we read in while opening the file.\n@@ -1669,6 +1687,12 @@ invalid_time:\n     wtap_rec_init(&read_rec);\n     ws_buffer_init(&read_buf, 1514);\n     while (wtap_read(wth, &read_rec, &read_buf, &read_err, &read_err_info, &data_offset)) {\n+        /*\n+         * XXX - what about non-packet records in the file after this?\n+         * We can *probably* ignore IDBs after this point, as they\n+         * presumably indicate that we weren't capturing on that\n+         * interface at this point, but what about, for example, NRBs?\n+         */\n         if (max_packet_number <= read_count)\n             break;\n \n@@ -1707,6 +1731,18 @@ invalid_time:\n             }\n         } /* first packet only handling */\n \n+        /*\n+         * Process whatever IDBs we haven't seen yet.\n+         */\n+        if (!process_new_idbs(wth, pdh, &write_err, &write_err_info)) {\n+            cfile_write_failure_message(\"editcap\", argv[optind],\n+                                        filename,\n+                                        write_err, write_err_info,\n+                                        read_count,\n+                                        out_file_type_subtype);\n+            ret = DUMP_ERROR;\n+            goto clean_exit;\n+        }\n \n         buf = ws_buffer_start_ptr(&read_buf);\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "editcap.c",
+      "old_path": "editcap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -3235,6 +3235,26 @@ process_packet_second_pass(capture_file *cf, epan_dissect_t *edt,\n   return passed || fdata->dependent_of_displayed;\n }\n \n+static gboolean\n+process_new_idbs(wtap *wth, wtap_dumper *pdh, int *err, gchar **err_info)\n+{\n+  wtap_block_t if_data;\n+\n+  while ((if_data = wtap_get_next_interface_description(wth)) != NULL) {\n+    /*\n+     * Only add IDBs if we're writing to a file and the output file\n+     * requires interface IDs; otherwise, it doesn't support writing IDBs.\n+     */\n+    if (pdh != NULL) {\n+      if (wtap_uses_interface_ids(wtap_dump_file_type_subtype(pdh))) {\n+        if (!wtap_dump_add_idb(pdh, if_data, err, err_info))\n+          return FALSE;\n+      }\n+    }\n+  }\n+  return TRUE;\n+}\n+\n static pass_status_t\n process_cap_file_second_pass(capture_file *cf, wtap_dumper *pdh,\n                              int *err, gchar **err_info,\n@@ -3249,6 +3269,16 @@ process_cap_file_second_pass(capture_file *cf, wtap_dumper *pdh,\n   epan_dissect_t *edt = NULL;\n   pass_status_t   status = PASS_SUCCEEDED;\n \n+  /*\n+   * Process whatever IDBs we haven't seen yet.  This will be all\n+   * the IDBs in the file, as we've finished reading it; they'll\n+   * all be at the beginning of the output file.\n+   */\n+  if (!process_new_idbs(cf->provider.wth, pdh, err, err_info)) {\n+    *err_framenum = 0;\n+    return PASS_WRITE_ERROR;\n+  }\n+\n   wtap_rec_init(&rec);\n   ws_buffer_init(&buf, 1514);\n \n@@ -3409,6 +3439,15 @@ process_cap_file_single_pass(capture_file *cf, wtap_dumper *pdh,\n     }\n     framenum++;\n \n+    /*\n+     * Process whatever IDBs we haven't seen yet.\n+     */\n+    if (!process_new_idbs(cf->provider.wth, pdh, err, err_info)) {\n+      *err_framenum = framenum;\n+      status = PASS_WRITE_ERROR;\n+      break;\n+    }\n+\n     tshark_debug(\"tshark: processing packet #%d\", framenum);\n \n     reset_epan_mem(cf, edt, create_proto_tree, print_packet_info && print_details);\n@@ -3472,7 +3511,7 @@ process_cap_file(capture_file *cf, char *save_file, int out_file_type,\n \n   if (save_file != NULL) {\n     /* Set up to write to the capture file. */\n-    wtap_dump_params_init(&params, cf->provider.wth);\n+    wtap_dump_params_init_no_idbs(&params, cf->provider.wth);\n \n     /* If we don't have an application name add Tshark */\n     if (wtap_block_get_string_option_value(g_array_index(params.shb_hdrs, wtap_block_t, 0), OPT_SHB_USERAPPL, &shb_user_appl) != WTAP_OPTTYPE_SUCCESS) {\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tshark.c",
+      "old_path": "tshark.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "d0270415a9d198eae0b8c739b17780e6c347ebcd",
+      "short_id": "d0270415",
+      "created_at": "2020-10-22T02:58:07.000-07:00",
+      "parent_ids": [
+        "e16ef82d7c4ae292c9a46530124aef268c35011f"
+      ],
+      "title": "editcap, tshark: process IDBs in the middle of input files.",
+      "message": "editcap, tshark: process IDBs in the middle of input files.\n\nInstead of grabbing the set of IDBs found at open time, have a loop\nusing wtap_get_next_interface_description() to read all unread IDBs run\nafter opening the input file, after reading a packet from the input\nfile, and after getting an EOF on the input file.\n\nAdd a routine wtap_uses_interface_ids() to check whether the file type\nand subtype for a dump file uses interface IDs and requires IDBs.  If\nso, in the aforementioned loop, add the IDBs to the dump stream.\n\nAdd a routine wtap_dump_add_idb() to add IDBs to a dump stream.  Have it\ncall a file-format-specific routine to add the IDBs; the only file type\nthat supports it is pcapng, and it 1) writes out the IDB and 2) adds it\nto the set of IDBs for the stream.\n\nAdd a wtap_dump_params_init_no_idbs() routine that prevents the IDBs\nfrom the input file from being used to initialize the output file; use\nit in cases where we're using the aforementioned loop to copy over IDBs.\n\nDon't require any IDBs to be present when opening a pcapng file for\nwriting; 1) the simplest pcapng file has just an SHB in it, 2) that\nrequirement causes dumps that don't provide IDBs at open time to fail,\nand 3) the real issue is that we don't want packets with an interface ID\nnot corresponding to a known IDB, and we already have a check for that.\n\n(There are some hacks here; eventually, when everything processes the\nIDBs in such a loop, we may be able to get rid of the \"two favors of\ndump parameter initialization\" hack.)\n\nFixes #15844.\n\nAddresses the same issue in #15502, but there are other issues there\nthat also need to be addressed.\n\nIn addition, the merge code also needs to be changed to handle this.\n",
+      "author_name": "Guy Harris",
+      "author_email": "gharris@sonic.net",
+      "authored_date": "2020-10-22T01:10:57.000-07:00",
+      "committer_name": "Guy Harris",
+      "committer_email": "gharris@sonic.net",
+      "committed_date": "2020-10-22T02:58:07.000-07:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/d0270415a9d198eae0b8c739b17780e6c347ebcd"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 119754229,
+      "head_commit_sha": "d0270415a9d198eae0b8c739b17780e6c347ebcd",
+      "base_commit_sha": "e16ef82d7c4ae292c9a46530124aef268c35011f",
+      "start_commit_sha": "e16ef82d7c4ae292c9a46530124aef268c35011f",
+      "created_at": "2020-10-22T09:58:17.669Z",
+      "merge_request_id": 75294056,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 119750269,
+      "head_commit_sha": "6c263951f0f37ee7557e63541726e3e79b970733",
+      "base_commit_sha": "e16ef82d7c4ae292c9a46530124aef268c35011f",
+      "start_commit_sha": "e16ef82d7c4ae292c9a46530124aef268c35011f",
+      "created_at": "2020-10-22T09:44:41.987Z",
+      "merge_request_id": 75294056,
+      "state": "without_files",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 119722805,
+      "head_commit_sha": "5853a1c22659e34905e0cc0786449f120299a189",
+      "base_commit_sha": "e6adc940ac5c0166101ae97430ee008653156b01",
+      "start_commit_sha": "e6adc940ac5c0166101ae97430ee008653156b01",
+      "created_at": "2020-10-22T08:13:12.307Z",
+      "merge_request_id": 75294056,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 119722745,
+      "head_commit_sha": "2c0a463b83d59fd02b836599fd7b3b7587124ff5",
+      "base_commit_sha": "8b80b9111a89f6ea2269a348ec44ac77c7c25a5f",
+      "start_commit_sha": "e6adc940ac5c0166101ae97430ee008653156b01",
+      "created_at": "2020-10-22T08:12:53.387Z",
+      "merge_request_id": 75294056,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,888 @@
+{
+  "id": 83400953,
+  "iid": 1552,
+  "project_id": 7898047,
+  "title": "Bluetooth: LE Control procedure request and response matching",
+  "description": "The changes in this merge request are made on top of https://gitlab.com/wireshark/wireshark/-/merge_requests/1448.\n\nMatching requests and responses makes it easier to read logs where both the master and slave initiate control procedures at the same time. Retransmitted packets are not part of the request/response tracing.\n\nIn order to perform the analysis, direction information must be available.\n    \nThe matching is implemented by storing control procedure contexts for each direction for each connection object as each direction may initiate its own procedure.\n    \nLimitations:\n- When there is a control procedure violation where a device initiates a new procedure before the previous is complete, only the first procedure is traced. It would be possible to create more advanced tracing by storing a list of contexts per frame. However, as this is anyways a specification violation, this adds unnecessary complexity.\n- Control procedures involving an instant are marked as completed when the last frame is sent even though the control procedure is completed when the instant is reached. This is the best possible approach when the event counter is not available. Due to this limitation, we are not able to detect the control procedure violation where a device initiates a new procedure before the instant is reached.\n\nWith this framework it will now be significantly easier to mark control procedure violations.\n\nAttached are three manually crafted logs containing various sequences of control procedure packets.\n1. [single_control_procs.pcap](/uploads/e82b86ebc14e06bf7820f1560c0b038f/single_control_procs.pcap) contains all valid sequences of all control procedures currently dissected by Wireshark. Each control procedure is completed with and without NACKing each non-empty packet. \n2. [concurrent_control_procs.pcap](/uploads/20c63fe339bc2152aac9b1cb3bec7008/concurrent_control_procs.pcap) contains entries where both sides initiates a procedures. The first packets contain cases where there are no procedure collisions. In the latter cases there are collisions, hence the master side sends an LL_REJECT_EXT_IND\n2. [invalid_control_procs.pcap](/uploads/85ca52ab1649b964a40b271f51819bc4/invalid_control_procs.pcap) contains invalid control procedure sequencing. First cases where the first sent control packet is not the first packet in any control procedure. The following cases are cases where one side initiates a second control procedure before the first is complete.\n\nAll logs are created using a python script using Scapy with https://github.com/secdev/scapy/pull/3037. See [control_proc_logs.py](/uploads/5f4440d18071068aa82a39f0baee3b98/control_proc_logs.py)\n\nI've validated this merge by inspecting the generated logs. I'm not sure if more structured validation is required.",
+  "state": "merged",
+  "created_at": "2021-01-01T17:53:29.477Z",
+  "updated_at": "2021-01-26T07:44:43.980Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2021-01-24T15:47:28.015Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "request_response_matching",
+  "user_notes_count": 8,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7804225,
+    "username": "rugeGerritsen",
+    "public_email": "",
+    "name": "Rubin Gerritsen",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+    "web_url": "https://gitlab.com/rugeGerritsen"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 23032290,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "0dab2494ca5e20c5ab90ea7fbe11ada1316e41ee",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-01-01T17:53:29.477Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!1552",
+  "references": {
+    "short": "!1552",
+    "relative": "!1552",
+    "full": "wireshark/wireshark!1552"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/1552",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2021-01-24T13:37:42.070Z",
+  "latest_build_finished_at": "2021-01-24T14:25:42.805Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 246065638,
+    "iid": 28,
+    "project_id": 23032290,
+    "sha": "0dab2494ca5e20c5ab90ea7fbe11ada1316e41ee",
+    "ref": "request_response_matching",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-01-24T13:37:40.461Z",
+    "updated_at": "2021-01-24T14:25:42.811Z",
+    "web_url": "https://gitlab.com/rugeGerritsen/wireshark/-/pipelines/246065638"
+  },
+  "head_pipeline": {
+    "id": 246065638,
+    "iid": 28,
+    "project_id": 23032290,
+    "sha": "0dab2494ca5e20c5ab90ea7fbe11ada1316e41ee",
+    "ref": "request_response_matching",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-01-24T13:37:40.461Z",
+    "updated_at": "2021-01-24T14:25:42.811Z",
+    "web_url": "https://gitlab.com/rugeGerritsen/wireshark/-/pipelines/246065638",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 7804225,
+      "username": "rugeGerritsen",
+      "public_email": "",
+      "name": "Rubin Gerritsen",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+      "web_url": "https://gitlab.com/rugeGerritsen"
+    },
+    "started_at": "2021-01-24T13:37:42.070Z",
+    "finished_at": "2021-01-24T14:25:42.805Z",
+    "committed_at": null,
+    "duration": 2880,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/rugeGerritsen/wireshark/-/pipelines/246065638",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "d50d075f8838d1af37067147eccc0fc910dbbc8c",
+    "head_sha": "0dab2494ca5e20c5ab90ea7fbe11ada1316e41ee",
+    "start_sha": "d50d075f8838d1af37067147eccc0fc910dbbc8c"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "5261874dad628790d5bb7ec3832e266a25c26007",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 476647696,
+          "type": null,
+          "body": "added 107 commits\n\n<ul><li>f742f59e...cf9ffd3d - 99 commits from branch <code>wireshark:master</code></li><li>b0b660ee - Bluetooth: Reorder dissection of control proc packets</li><li>11ce807c - Bluetooth: Extract out dissect_feature_set()</li><li>b5ef53b5 - Bluetooth: Extract out dissect_conn_param_req_rsp()</li><li>9e284aa2 - Bluetooth: Extract out dissect_length_req_rsp()</li><li>666e2e9f - Bluetooth: Extract out dissect_phy_req_rsp()</li><li>85740b53 - Bluetooth: Remove remaining control pdu fallthroughs</li><li>2a301f1e - Bluetooth: Extract out dissect_ctrl_pdu_without_data()</li><li>fc8b256e - Bluetooth: Match control procedure requests with responses</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1552/diffs?diff_id=133716689&start_sha=f742f59e9c420df23fa5dea04bbdd7be0e8d10bf)",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-01T17:53:49.422Z",
+          "updated_at": "2021-01-01T17:53:49.424Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3bac384a26ee4cebc9eeabcbcfa1c93c1fbc3d37",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 476888021,
+          "type": "DiscussionNote",
+          "body": "If all 8 commits are related to \"LE Control procedure request and response matching\" we usually squash before commit, so you may want to rewrite the commit message yourself before merge.",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2021-01-02T19:24:39.273Z",
+          "updated_at": "2021-01-03T14:12:05.624Z",
+          "system": false,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "resolved_at": "2021-01-11T13:49:44.565Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        },
+        {
+          "id": 477005075,
+          "type": "DiscussionNote",
+          "body": "@stigbjorlykke, the first 7 commits are the ones present in https://gitlab.com/wireshark/wireshark/-/merge_requests/1448. Do you want me to squash those commits in that merge request and merge that separately, or should we merge them as one big commit?",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-03T14:12:05.549Z",
+          "updated_at": "2021-01-03T14:12:05.549Z",
+          "system": false,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "resolved_at": "2021-01-11T13:49:44.565Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        },
+        {
+          "id": 482605017,
+          "type": "DiscussionNote",
+          "body": "Let's squash and merge !1448 first.",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2021-01-11T13:49:43.765Z",
+          "updated_at": "2021-01-11T13:49:43.765Z",
+          "system": false,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "resolved_at": "2021-01-11T13:49:44.565Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9514316cfa70a6e9cee0000c3fcedca98f18eaa2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 482605026,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2021-01-11T13:49:44.595Z",
+          "updated_at": "2021-01-11T13:49:44.600Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "be36741c5519ad4cf8561505de27310db4b9b368",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 482606392,
+          "type": null,
+          "body": "mentioned in merge request !1448",
+          "author": {
+            "id": 4753670,
+            "username": "stigbjorlykke",
+            "public_email": "",
+            "name": "Stig Bjørlykke",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/905aafc6b50e246885f5ea9273a9dc4f22e2658b71f9a1b551b797082bec3f80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/stigbjorlykke"
+          },
+          "created_at": "2021-01-11T13:51:32.579Z",
+          "updated_at": "2021-01-11T13:51:32.580Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0d4251c9f9711acca679313b0e76770b7149d712",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 482673808,
+          "type": null,
+          "body": "added 91 commits\n\n<ul><li>fc8b256e...0e846106 - 90 commits from branch <code>wireshark:master</code></li><li>f6016a74 - Bluetooth: Match control procedure requests with responses</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1552/diffs?diff_id=135261591&start_sha=fc8b256e44c4a8ce5b5fee6a02ede305da736541)",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-11T14:59:02.325Z",
+          "updated_at": "2021-01-11T14:59:02.326Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9f99ac315d8d6e38dd8bd459de4081f803eb7c91",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 484880599,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>5c1bfcda - Bluetooth: Add export info for control procedure protocol violations</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1552/diffs?diff_id=135892246&start_sha=f6016a7444d0f41ab59726b50e4fd19649f6d3d0)",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-13T19:49:26.981Z",
+          "updated_at": "2021-01-13T19:49:26.983Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b1fac1e71c7e0f81324685612a4d07c41aeaab7b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 484881250,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>e9a4533c - Bluetooth: Add expert info for control procedure protocol violations</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1552/diffs?diff_id=135892453&start_sha=5c1bfcda360f4429463f2525a97d18a394230172)",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-13T19:51:01.338Z",
+          "updated_at": "2021-01-13T19:51:01.339Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0ec51d577122635296b8154e801af9ebdf1890be",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 484882161,
+          "type": null,
+          "body": "@stigbjorlykke, I have added the changes required to detect control procedure violations. That commit can be squashed before merging. Keeping them separate for now to make it easier to review.",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-13T19:53:21.291Z",
+          "updated_at": "2021-01-13T19:53:21.291Z",
+          "system": false,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9f7c4cca03ba232a6c2e7a8f3ff68d933a1753af",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 492576536,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-01-24T12:59:08.955Z",
+          "updated_at": "2021-01-24T12:59:08.957Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0048e00eb319385e6f35e56ab7b7b1bb4b19d342",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 492576639,
+          "type": null,
+          "body": "Fast-forward merge is not possible. To merge this request, first rebase locally",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-01-24T13:00:16.200Z",
+          "updated_at": "2021-01-24T13:00:16.200Z",
+          "system": false,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4db25db142be34381d4a4741aff0b430d0beef41",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 492586344,
+          "type": null,
+          "body": "added 119 commits\n\n<ul><li>e9a4533c...d50d075f - 118 commits from branch <code>wireshark:master</code></li><li>0dab2494 - Bluetooth: Match control procedure requests with responses</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1552/diffs?diff_id=138109813&start_sha=e9a4533ca20533645b4877b451504bb178cb8ffe)",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-24T13:37:40.677Z",
+          "updated_at": "2021-01-24T13:37:40.678Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1b801c36a6ec679e72ffb13a35ee08061b60bee1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 492586448,
+          "type": null,
+          "body": "@AndersBroman, thanks for reviewing. I've squashed the two commits and rebased them on master to resolve the merge conflict.",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-24T13:38:42.452Z",
+          "updated_at": "2021-01-24T13:38:42.452Z",
+          "system": false,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bd51509cec83bad3e68f3954430535be4bfe7528",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 492613182,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-01-24T15:47:24.351Z",
+          "updated_at": "2021-01-24T15:47:24.352Z",
+          "system": true,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d1941941ab72028606db657990a2c17860bce014",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 493733829,
+          "type": null,
+          "body": "Hi @rugeGerritsen, it looks like this introduced a null pointer exception in #17175. Can you take a look?",
+          "author": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1789948913",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "created_at": "2021-01-26T00:10:04.093Z",
+          "updated_at": "2021-01-26T00:10:24.404Z",
+          "system": false,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "07338b4f4ca8650429e9eae28aa98948a83d6bde",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 493879164,
+          "type": null,
+          "body": "@geraldcombs, thanks for reporting this issue. I've created https://gitlab.com/wireshark/wireshark/-/merge_requests/1815 to resolve it.",
+          "author": {
+            "id": 7804225,
+            "username": "rugeGerritsen",
+            "public_email": "",
+            "name": "Rubin Gerritsen",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/05ef229941945f2645bc4abd64356df82ecbc8a0e1809d77c198f32af691f6bc?s=80&d=identicon",
+            "web_url": "https://gitlab.com/rugeGerritsen"
+          },
+          "created_at": "2021-01-26T07:44:43.940Z",
+          "updated_at": "2021-01-26T07:44:43.940Z",
+          "system": false,
+          "noteable_id": 83400953,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1552,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -204,6 +204,9 @@ static int hf_btle_ea_host_advertising_data_fragment_count = -1;\n static int hf_btle_ea_host_advertising_data_reassembled_in = -1;\n static int hf_btle_ea_host_advertising_data_reassembled_length = -1;\n \n+static int hf_request_in_frame = -1;\n+static int hf_response_in_frame = -1;\n+\n static gint ett_btle = -1;\n static gint ett_advertising_header = -1;\n static gint ett_link_layer_data = -1;\n@@ -304,6 +307,8 @@ static expert_field ei_crc_incorrect = EI_INIT;\n static expert_field ei_missing_fragment_start = EI_INIT;\n static expert_field ei_retransmit = EI_INIT;\n static expert_field ei_nack = EI_INIT;\n+static expert_field ei_control_proc_overlapping = EI_INIT;\n+static expert_field ei_control_proc_wrong_seq = EI_INIT;\n \n static dissector_handle_t btle_handle;\n static dissector_handle_t btcommon_ad_handle;\n@@ -372,12 +377,34 @@ typedef struct _ae_had_info_t {\n     guint32 first_frame_num;\n } ae_had_info_t;\n \n+typedef struct _control_proc_info_t {\n+    /* Sequence of frame numbers of the control procedure used for request/response matching.\n+     * The first entry corresponds to the request, the remaining frames are responses.\n+     * The longest sequence is needed for the encryption start procedure,\n+     * which consists of 5 frames. */\n+    guint  frames[5];\n+\n+    /* Opcode of the first control procedure packet. */\n+    guint8 proc_opcode;\n+\n+    /* The frame where the procedure completes. Set to 0 when not yet known.\n+     * This is used to avoid adding another frame to the control procedure\n+     * sequence after the procedure was aborted early.\n+     *\n+     * This frame number may be ignored in the case where an LL_UNKNOWN_RSP is\n+     * received after a procedure involving only one packet, like the\n+     * LL_MIN_USED_CHANNELS_IND. */\n+    guint  last_frame;\n+} control_proc_info_t;\n+\n /* Store information about a connection direction */\n typedef struct _direction_info_t {\n     guint    prev_seq_num : 1;          /* Previous sequence number for this direction */\n     guint    segmentation_started : 1;  /* 0 = No, 1 = Yes */\n     guint    segment_len_rem;           /* The remaining segment length, used to find last segment */\n     guint32  l2cap_index;               /* Unique identifier for each L2CAP message */\n+\n+    wmem_tree_t *control_procs;         /* Control procedures initiated from this direction. */\n } direction_info_t;\n \n typedef struct _connection_parameter_info_t {\n@@ -800,6 +827,127 @@ dissect_ctrl_pdu_without_data(tvbuff_t *tvb, packet_info *pinfo, proto_tree *btl\n     return offset;\n }\n \n+/* Mark the start of a new control procedure.\n+ * At first visit it will create a new control procedure context.\n+ * Otherwise it will update the existing context.\n+ *\n+ * If there is already an ongoing control procedure context, control procedure\n+ * contexts will not be created or modified.\n+ *\n+ * It returns the procedure context in case it exists, otherwise NULL.\n+ */\n+control_proc_info_t *\n+control_proc_start(tvbuff_t *tvb,\n+                   packet_info *pinfo,\n+                   proto_tree *btle_tree,\n+                   proto_item *control_proc_item,\n+                   wmem_tree_t *control_proc_tree,\n+                   guint8 opcode)\n+{\n+    control_proc_info_t *proc_info;\n+    if (!pinfo->fd->visited) {\n+        /* Check the if there is an existing ongoing procedure. */\n+        proc_info = (control_proc_info_t *)wmem_tree_lookup32_le(control_proc_tree, pinfo->num);\n+        if (proc_info && proc_info->last_frame == 0) {\n+            /* Control procedure violation - initiating new procedure before previous was complete */\n+            return NULL;\n+        } else {\n+            /* Create a new control procedure context. */\n+            proc_info = wmem_new0(wmem_file_scope(), control_proc_info_t);\n+            memset(proc_info, 0, sizeof(control_proc_info_t));\n+            proc_info->frames[0] = pinfo->num;\n+            proc_info->proc_opcode = opcode;\n+            wmem_tree_insert32(control_proc_tree, pinfo->num, proc_info);\n+        }\n+    } else {\n+        /* Match the responses with this request. */\n+        proc_info = (control_proc_info_t *)wmem_tree_lookup32(control_proc_tree, pinfo->num);\n+\n+        if (proc_info && proc_info->proc_opcode == opcode) {\n+            proto_item *sub_item;\n+            for (guint i = 1; i < sizeof(proc_info->frames)/sizeof(proc_info->frames[0]); i++) {\n+                if (proc_info->frames[i]) {\n+                    sub_item = proto_tree_add_uint(btle_tree, hf_response_in_frame, tvb, 0, 0, proc_info->frames[i]);\n+                    proto_item_set_generated(sub_item);\n+                }\n+            }\n+        } else {\n+            /* The found control procedure does not match the last one.\n+             * This indicates a protocol violation. */\n+            expert_add_info(pinfo, control_proc_item, &ei_control_proc_overlapping);\n+\n+            return NULL;\n+        }\n+    }\n+\n+    return proc_info;\n+}\n+\n+/* Checks if it is possible to add the frame at the given index\n+ * to the given control procedure context.\n+ *\n+ * It does not care if the procedure is already marked as completed.\n+ * Therefore this function can be used to add an LL_UNKNOWN_RSP to\n+ * a completed connection parameter update procedure.\n+ */\n+static gboolean\n+control_proc_can_add_frame_even_if_complete(packet_info *pinfo,\n+                                            control_proc_info_t *last_control_proc_info,\n+                                            guint8 proc_opcode,\n+                                            guint frame_num)\n+{\n+    if (frame_num == 0)\n+        return FALSE; /* This function must be used to add a frame to an ongoing procedure */\n+\n+    /* We need to check if the control procedure has been initiated. */\n+    if (!last_control_proc_info)\n+        return FALSE;\n+\n+    /* And that the new frame belongs to this control procedure */\n+    if (last_control_proc_info->proc_opcode != proc_opcode)\n+        return FALSE;\n+\n+    /* Previous frame has not yet been added. */\n+    if (last_control_proc_info->frames[frame_num - 1] == 0)\n+        return FALSE;\n+\n+    /* We need to check if we can add this frame at this index\n+     * in the control procedure sequence. */\n+\n+    /* The first time we visit the frame, we just need to check that the\n+     * spot is empty. */\n+    if (!pinfo->fd->visited && last_control_proc_info->frames[frame_num])\n+        return FALSE; /* Another opcode has already been added to the procedure at this index */\n+\n+    /* At later visits, we need to check that we are not replacing the frame with\n+     * another frame. */\n+    if (pinfo->fd->visited && (last_control_proc_info->frames[frame_num] != pinfo->num))\n+        return FALSE;\n+\n+    return TRUE;\n+}\n+\n+\n+static gboolean\n+control_proc_can_add_frame(packet_info *pinfo,\n+                           control_proc_info_t *last_control_proc_info,\n+                           guint8 proc_opcode,\n+                           guint frame_num)\n+{\n+    if (!control_proc_can_add_frame_even_if_complete(pinfo,\n+                                                     last_control_proc_info,\n+                                                     proc_opcode,\n+                                                     frame_num))\n+        return FALSE;\n+\n+    /* We check that we are not adding a frame to a completed procedure. */\n+    if (last_control_proc_info->last_frame != 0 &&\n+        pinfo->num > last_control_proc_info->last_frame)\n+        return FALSE;\n+\n+    return TRUE;\n+}\n+\n static gint\n dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n {\n@@ -1213,6 +1361,13 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 memcpy(connection_info->master_bd_addr, src_bd_addr, 6);\n                 memcpy(connection_info->slave_bd_addr,  dst_bd_addr, 6);\n \n+                /* We don't create control procedure context trees for BTLE_DIR_UNKNOWN,\n+                 * as the direction must be known for request/response matching. */\n+                connection_info->direction_info[BTLE_DIR_MASTER_SLAVE].control_procs =\n+                        wmem_tree_new(wmem_file_scope());\n+                connection_info->direction_info[BTLE_DIR_SLAVE_MASTER].control_procs =\n+                        wmem_tree_new(wmem_file_scope());\n+\n                 wmem_tree_insert32_array(connection_info_tree, key, connection_info);\n \n                 connection_parameter_info = wmem_new0(wmem_file_scope(), connection_parameter_info_t);\n@@ -1541,17 +1696,23 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n             }\n         }\n     } else if (btle_pdu_type == BTLE_PDU_TYPE_DATA) {\n-        proto_item  *data_header_item, *seq_item;\n+        proto_item  *data_header_item, *seq_item, *control_proc_item;\n         proto_tree  *data_header_tree;\n         guint8       oct;\n         guint8       llid;\n         guint8       control_opcode;\n         guint32      direction = BTLE_DIR_UNKNOWN;\n+        guint8       other_direction = BTLE_DIR_UNKNOWN;\n+\n         gboolean     add_l2cap_index = FALSE;\n         gboolean     retransmit = FALSE;\n \n+        /* Holds the last initiated control procedures for a given direction. */\n+        control_proc_info_t *last_control_proc[3] = {0};\n+\n         if (btle_context) {\n             direction = btle_context->direction;\n+            other_direction = (direction == BTLE_DIR_SLAVE_MASTER) ? BTLE_DIR_MASTER_SLAVE : BTLE_DIR_SLAVE_MASTER;\n         }\n \n         btle_frame_info_t *btle_frame_info = NULL;\n@@ -1613,6 +1774,12 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 set_address(&pinfo->net_dst, AT_STRINGZ, (int)strlen(str_addr_dst)+1, str_addr_dst);\n                 copy_address_shallow(&pinfo->dst, &pinfo->net_dst);\n \n+                /* Retrieve the last initiated control procedures. */\n+                last_control_proc[BTLE_DIR_MASTER_SLAVE] =\n+                        (control_proc_info_t *)wmem_tree_lookup32_le(connection_info->direction_info[BTLE_DIR_MASTER_SLAVE].control_procs, pinfo->num);\n+                last_control_proc[BTLE_DIR_SLAVE_MASTER] =\n+                        (control_proc_info_t *)wmem_tree_lookup32_le(connection_info->direction_info[BTLE_DIR_SLAVE_MASTER].control_procs, pinfo->num);\n+\n                 if (!pinfo->fd->visited) {\n                     address *addr;\n \n@@ -1636,7 +1803,6 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                     }\n                     else {\n                         guint8 seq_num = !!(oct & 0x8), next_expected_seq_num = !!(oct & 0x4);\n-                        guint8 other_direction = direction == BTLE_DIR_SLAVE_MASTER ? BTLE_DIR_MASTER_SLAVE : BTLE_DIR_SLAVE_MASTER;\n \n                         if (seq_num != connection_info->direction_info[direction].prev_seq_num) {\n                             /* SN is not equal to previous packet (in same direction) SN */\n@@ -1876,7 +2042,7 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n             }\n             break;\n         case 0x03: /* Control PDU */\n-            proto_tree_add_item(btle_tree, hf_control_opcode, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n+            control_proc_item = proto_tree_add_item(btle_tree, hf_control_opcode, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n             control_opcode = tvb_get_guint8(tvb, offset);\n             offset += 1;\n \n@@ -1884,7 +2050,7 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                     val_to_str_ext_const(control_opcode, &control_opcode_vals_ext, \"Unknown\"));\n \n             switch (control_opcode) {\n-            case 0x00: /* LL_CONNECTION_UPDATE_REQ */\n+            case 0x00: /* LL_CONNECTION_UPDATE_IND */\n                 item = proto_tree_add_item_ret_uint(btle_tree, hf_control_window_size, tvb, offset, 1, ENC_LITTLE_ENDIAN, &item_value);\n                 proto_item_append_text(item, \" (%g msec)\", item_value*1.25);\n                 offset += 1;\n@@ -1936,6 +2102,45 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                         }\n                     }\n                 }\n+\n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_CONNECTION_UPDATE_IND can only be sent from master to slave.\n+                     * It can either be sent as the first packet of the connection update procedure,\n+                     * or as the last packet in the connection parameter request procedure. */\n+                    if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        if (control_proc_can_add_frame(pinfo,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                       0x0F, 2)) {\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[2] = pinfo->num;\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->last_frame = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else if (control_proc_can_add_frame(pinfo,\n+                                                              last_control_proc[BTLE_DIR_SLAVE_MASTER],\n+                                                              0x0F, 1)) {\n+                            last_control_proc[BTLE_DIR_SLAVE_MASTER]->frames[1] = pinfo->num;\n+                            last_control_proc[BTLE_DIR_SLAVE_MASTER]->last_frame = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_SLAVE_MASTER]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else {\n+                            control_proc_info_t *proc_info;\n+                            proc_info = control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                                           connection_info->direction_info[direction].control_procs,\n+                                                           0x00);\n+\n+                            /* Procedure completes in the same frame. */\n+                            if (proc_info)\n+                                proc_info->last_frame = pinfo->num;\n+                        }\n+                    } else if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x01: /* LL_CHANNEL_MAP_REQ */\n                 sub_item = proto_tree_add_item(btle_tree, hf_control_channel_map, tvb, offset, 5, ENC_NA);\n@@ -1947,11 +2152,44 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 proto_tree_add_item(btle_tree, hf_control_instant, tvb, offset, 2, ENC_LITTLE_ENDIAN);\n                 offset += 2;\n \n+\n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_CHANNEL_MAP_REQ can only be sent from master to slave.\n+                     * It can either be sent as the first packet of the channel map update procedure,\n+                     * or as the last packet in the minimum number of used channels procedure. */\n+                    if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        if (control_proc_can_add_frame(pinfo,\n+                                                       last_control_proc[BTLE_DIR_SLAVE_MASTER],\n+                                                       0x19, 1)) {\n+                            last_control_proc[BTLE_DIR_SLAVE_MASTER]->frames[1] = pinfo->num;\n+                            last_control_proc[BTLE_DIR_SLAVE_MASTER]->last_frame = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_SLAVE_MASTER]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else {\n+                            control_proc_info_t *proc_info;\n+                            proc_info = control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                                           connection_info->direction_info[direction].control_procs,\n+                                                           0x01);\n+\n+                            /* Procedure completes in the same frame. */\n+                            if (proc_info)\n+                                proc_info->last_frame = pinfo->num;\n+                        }\n+                    } else if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x02: /* LL_TERMINATE_IND */\n                 proto_tree_add_item(btle_tree, hf_control_error_code, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n                 offset += 1;\n \n+                /* No need to mark procedure as started, as the procedure only consist\n+                 * of one packet which may be sent at any time, */\n+\n                 break;\n             case 0x03: /* LL_ENC_REQ */\n                 proto_tree_add_item(btle_tree, hf_control_random_number, tvb, offset, 8, ENC_LITTLE_ENDIAN);\n@@ -1966,6 +2204,17 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 proto_tree_add_item(btle_tree, hf_control_master_session_initialization_vector, tvb, offset, 4, ENC_LITTLE_ENDIAN);\n                 offset += 4;\n \n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_ENC_REQ can only be sent from master to slave. */\n+                    if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                           connection_info->direction_info[BTLE_DIR_MASTER_SLAVE].control_procs,\n+                                           0x03);\n+                    } else if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x04: /* LL_ENC_RSP */\n                 proto_tree_add_item(btle_tree, hf_control_slave_session_key_diversifier, tvb, offset, 8, ENC_LITTLE_ENDIAN);\n@@ -1974,14 +2223,76 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 proto_tree_add_item(btle_tree, hf_control_slave_session_initialization_vector, tvb, offset, 4, ENC_LITTLE_ENDIAN);\n                 offset += 4;\n \n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_ENC_REQ can only be sent from slave to master. */\n+                    if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        if (control_proc_can_add_frame(pinfo,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                       0x3, 1)) {\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[1] = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else {\n+                            expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                        }\n+                    } else if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x05: /* LL_START_ENC_REQ */\n                 offset = dissect_ctrl_pdu_without_data(tvb, pinfo, btle_tree, offset);\n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_START_ENC_REQ can only be sent from slave to master. */\n+                    if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        if (control_proc_can_add_frame(pinfo,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                       0x3, 2)) {\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[2] = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else {\n+                            expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                        }\n+                    } else if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n \n                 break;\n \n             case 0x06: /* LL_START_ENC_RSP */\n                 offset = dissect_ctrl_pdu_without_data(tvb, pinfo, btle_tree, offset);\n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN) {\n+                    /* This is either frame 4 or 5 of the procedure */\n+                    if (direction == BTLE_DIR_MASTER_SLAVE &&\n+                        control_proc_can_add_frame(pinfo,\n+                                                   last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                   0x3, 3)) {\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[3] = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else if (direction == BTLE_DIR_SLAVE_MASTER &&\n+                               control_proc_can_add_frame(pinfo,\n+                                                          last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                          0x3, 4)) {\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[4] = pinfo->num;\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n \n                 break;\n \n@@ -1989,13 +2300,58 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 proto_tree_add_item(btle_tree, hf_control_unknown_type, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n                 offset += 1;\n \n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN) {\n+                    /* LL_UNKNOWN_RSP can only be sent as the second frame of a procedure. */\n+                    if (last_control_proc[other_direction] &&\n+                        control_proc_can_add_frame_even_if_complete(pinfo,\n+                                                   last_control_proc[other_direction],\n+                                                   last_control_proc[other_direction]->proc_opcode,\n+                                                   1)) {\n+                        last_control_proc[other_direction]->frames[1] = pinfo->num;\n+                        last_control_proc[other_direction]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[other_direction]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x08: /* LL_FEATURE_REQ */\n                 offset = dissect_feature_set(tvb, btle_tree, offset);\n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_FEATURE_REQ can only be sent from master to slave. */\n+                    if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                             connection_info->direction_info[direction].control_procs,\n+                                             0x08);\n+                    } else if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n \n                 break;\n             case 0x09: /* LL_FEATURE_RSP */\n                 offset = dissect_feature_set(tvb, btle_tree, offset);\n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN) {\n+                    if (control_proc_can_add_frame(pinfo,\n+                                                   last_control_proc[other_direction],\n+                                                   0x08, 1) ||\n+                        control_proc_can_add_frame(pinfo,\n+                                                   last_control_proc[other_direction],\n+                                                   0x0E, 1)) {\n+                        last_control_proc[other_direction]->frames[1] = pinfo->num;\n+                        last_control_proc[other_direction]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[other_direction]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n \n                 break;\n             case 0x0A: /* LL_PAUSE_ENC_REQ */\n@@ -2004,10 +2360,46 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                     offset += tvb_reported_length_remaining(tvb, offset) - 3;\n                 }\n \n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_PAUSE_ENC_REQ can only be sent from master to slave. */\n+                    if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                           connection_info->direction_info[BTLE_DIR_MASTER_SLAVE].control_procs,\n+                                           0x0A);\n+                    } else if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x0B: /* LL_PAUSE_ENC_RSP */\n                 offset = dissect_ctrl_pdu_without_data(tvb, pinfo, btle_tree, offset);\n \n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN) {\n+                    if (direction == BTLE_DIR_SLAVE_MASTER &&\n+                        control_proc_can_add_frame(pinfo,\n+                                                   last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                   0x0A, 1)) {\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[1] = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else if (direction == BTLE_DIR_MASTER_SLAVE &&\n+                               control_proc_can_add_frame(pinfo,\n+                                                          last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                          0x0A, 2)) {\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[2] = pinfo->num;\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x0C: /* LL_VERSION_IND */\n                 proto_tree_add_item(btle_tree, hf_control_version_number, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n@@ -2019,24 +2411,110 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 proto_tree_add_item(btle_tree, hf_control_subversion_number, tvb, offset, 2, ENC_LITTLE_ENDIAN);\n                 offset += 2;\n \n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN) {\n+                    /* The LL_VERSION_IND can be sent as a request or response.\n+                     * We first check if it is a response. */\n+                    if (control_proc_can_add_frame(pinfo,\n+                                                   last_control_proc[other_direction],\n+                                                   0x0C, 1)) {\n+                        last_control_proc[other_direction]->frames[1] = pinfo->num;\n+                        last_control_proc[other_direction]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[other_direction]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else {\n+                        control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                           connection_info->direction_info[direction].control_procs,\n+                                           0x0C);\n+                    }\n+                }\n+\n                 break;\n             case 0x0D: /* LL_REJECT_IND */\n                 proto_tree_add_item(btle_tree, hf_control_error_code, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n                 offset += 1;\n \n+                /* LL_REJECT_IND my be sent as:\n+                 *  - A response to the LL_ENQ_REQ from the master\n+                 *  - After the LL_ENC_RSP from the slave */\n+                if (!btle_frame_info->retransmit) {\n+                    if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        if (control_proc_can_add_frame(pinfo,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                       0x03, 1)) {\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[1] = pinfo->num;\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->last_frame = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else if (control_proc_can_add_frame(pinfo,\n+                                                              last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                              0x03, 2)) {\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[2] = pinfo->num;\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->last_frame = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else {\n+                            expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                        }\n+                    } else if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x0E: /* LL_SLAVE_FEATURE_REQ */\n                 offset = dissect_feature_set(tvb, btle_tree, offset);\n-\n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_SLAVE_FEATURE_REQ can only be sent from slave to master. */\n+                    if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                           connection_info->direction_info[direction].control_procs,\n+                                           0x0E);\n+                    } else if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n                 break;\n \n             case 0x0F: /* LL_CONNECTION_PARAM_REQ */\n                 offset = dissect_conn_param_req_rsp(tvb, btle_tree, offset);\n+                if (!btle_frame_info->retransmit) {\n+                    if (direction != BTLE_DIR_UNKNOWN) {\n+                        control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                           connection_info->direction_info[direction].control_procs,\n+                                           0x0F);\n+                    }\n+                }\n \n                 break;\n             case 0x10: /* LL_CONNECTION_PARAM_RSP */\n                 offset = dissect_conn_param_req_rsp(tvb, btle_tree, offset);\n \n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_CONNECTION_PARAM_RSP can only be sent from slave to master\n+                     * as a response to a master initiated procedure */\n+                    if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        if (control_proc_can_add_frame(pinfo,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                       0x0F, 1)) {\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[1] = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else {\n+                            expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                        }\n+                    } else if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x11: /* LL_REJECT_EXT_IND */\n                 proto_tree_add_item(btle_tree, hf_control_reject_opcode, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n@@ -2045,30 +2523,137 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 proto_tree_add_item(btle_tree, hf_control_error_code, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n                 offset += 1;\n \n+                /* LL_REJECT_EXT_IND my be sent as:\n+                 *  - A response to the LL_ENQ_REQ from the master\n+                 *  - After the LL_ENC_RSP from the slave\n+                 *  - As a response to LL_CONNECTION_PARAM_REQ\n+                 *  - As a response to LL_CONNECTION_PARAM_RSP\n+                 *  - As a response during the phy update procedure.\n+                 */\n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN) {\n+                    if (direction == BTLE_DIR_SLAVE_MASTER &&\n+                        control_proc_can_add_frame(pinfo,\n+                                                   last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                   0x03, 1)) {\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[1] = pinfo->num;\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else if (direction == BTLE_DIR_SLAVE_MASTER &&\n+                               control_proc_can_add_frame(pinfo,\n+                                                          last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                          0x03, 2)) {\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[2] = pinfo->num;\n+                        last_control_proc[BTLE_DIR_MASTER_SLAVE]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+\n+                    } else if (control_proc_can_add_frame(pinfo,\n+                                                          last_control_proc[other_direction],\n+                                                          0x0F, 1)) {\n+                        last_control_proc[other_direction]->frames[1] = pinfo->num;\n+                        last_control_proc[other_direction]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[other_direction]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else if (control_proc_can_add_frame(pinfo,\n+                                                          last_control_proc[other_direction],\n+                                                          0x16, 1)) {\n+                        last_control_proc[other_direction]->frames[1] = pinfo->num;\n+                        last_control_proc[other_direction]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[other_direction]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x12: /* LL_PING_REQ */\n                 offset = dissect_ctrl_pdu_without_data(tvb, pinfo, btle_tree, offset);\n-\n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN)\n+                    control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                       connection_info->direction_info[direction].control_procs,\n+                                       0x12);\n                 break;\n             case 0x13: /* LL_PING_RSP */\n                 offset = dissect_ctrl_pdu_without_data(tvb, pinfo, btle_tree, offset);\n-\n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN) {\n+                    if (control_proc_can_add_frame(pinfo,\n+                                                   last_control_proc[other_direction],\n+                                                   0x12, 1)) {\n+                        last_control_proc[other_direction]->frames[1] = pinfo->num;\n+                        last_control_proc[other_direction]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[other_direction]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n                 break;\n \n             case 0x14: /* LL_LENGTH_REQ */\n                 dissect_length_req_rsp(tvb, btle_tree, offset);\n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN)\n+                    control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                       connection_info->direction_info[direction].control_procs,\n+                                       0x14);\n \n                 break;\n             case 0x15: /* LL_LENGTH_RSP */\n                 dissect_length_req_rsp(tvb, btle_tree, offset);\n-\n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN) {\n+                    if (control_proc_can_add_frame(pinfo,\n+                                                   last_control_proc[other_direction],\n+                                                   0x14, 1)) {\n+                        last_control_proc[other_direction]->frames[1] = pinfo->num;\n+                        last_control_proc[other_direction]->last_frame = pinfo->num;\n+\n+                        sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[other_direction]->frames[0]);\n+                        proto_item_set_generated(sub_item);\n+                    } else {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n                 break;\n             case 0x16: /* LL_PHY_REQ */\n                 dissect_phy_req_rsp(tvb, btle_tree, offset);\n+                if (!btle_frame_info->retransmit && direction != BTLE_DIR_UNKNOWN)\n+                    control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                       connection_info->direction_info[direction].control_procs,\n+                                       0x16);\n \n                 break;\n             case 0x17: /* LL_PHY_RSP */\n                 dissect_phy_req_rsp(tvb, btle_tree, offset);\n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_PHY_RSP can only be sent from slave to master. */\n+                    if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        if (control_proc_can_add_frame(pinfo,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                       0x16, 1)) {\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[1] = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else {\n+                            expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                        }\n+                    } else if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n \n                 break;\n             case 0x18: /* LL_PHY_UPDATE_IND */\n@@ -2081,6 +2666,37 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 proto_tree_add_item(btle_tree, hf_control_instant, tvb, offset, 2, ENC_LITTLE_ENDIAN);\n                 offset += 2;\n \n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_PHY_UPDATE_IND can only be sent from master to slave. */\n+                    if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        if (control_proc_can_add_frame(pinfo,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE],\n+                                                       0x16, 2)) {\n+\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[2] = pinfo->num;\n+                            last_control_proc[BTLE_DIR_MASTER_SLAVE]->last_frame = pinfo->num;\n+\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                       last_control_proc[BTLE_DIR_MASTER_SLAVE]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else if (control_proc_can_add_frame(pinfo,\n+                                                              last_control_proc[BTLE_DIR_SLAVE_MASTER],\n+                                                              0x16, 1)){\n+                            last_control_proc[BTLE_DIR_SLAVE_MASTER]->frames[1] = pinfo->num;\n+                            last_control_proc[BTLE_DIR_SLAVE_MASTER]->last_frame = pinfo->num;\n+\n+                            sub_item = proto_tree_add_uint(btle_tree, hf_request_in_frame, tvb, 0, 0,\n+                                                           last_control_proc[BTLE_DIR_SLAVE_MASTER]->frames[0]);\n+                            proto_item_set_generated(sub_item);\n+                        } else {\n+                            expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                        }\n+                    } else if (direction == BTLE_DIR_SLAVE_MASTER) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n+\n                 break;\n             case 0x19: /* LL_MIN_USED_CHANNELS_IND */\n                 proto_tree_add_bitmask(btle_tree, tvb, offset, hf_control_phys, ett_phys, hfx_control_phys, ENC_NA);\n@@ -2089,6 +2705,22 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                 proto_tree_add_item(btle_tree, hf_control_min_used_channels, tvb, offset, 1, ENC_LITTLE_ENDIAN);\n                 offset += 1;\n \n+                if (!btle_frame_info->retransmit) {\n+                    /* The LL_MIN_USED_CHANNELS_IND can only be sent from slave to master. */\n+                    if (direction == BTLE_DIR_SLAVE_MASTER) {\n+\n+                        control_proc_info_t *proc_info;\n+                        proc_info = control_proc_start(tvb, pinfo, btle_tree, control_proc_item,\n+                                                       connection_info->direction_info[direction].control_procs,\n+                                                       0x19);\n+\n+                        /* Procedure completes in the same frame. */\n+                        if (proc_info)\n+                            proc_info->last_frame = pinfo->num;\n+                    } else if (direction == BTLE_DIR_MASTER_SLAVE) {\n+                        expert_add_info(pinfo, control_proc_item, &ei_control_proc_wrong_seq);\n+                    }\n+                }\n                 break;\n             default:\n                 offset = dissect_ctrl_pdu_without_data(tvb, pinfo, btle_tree, offset);\n@@ -3032,6 +3664,16 @@ proto_register_btle(void)\n             FT_UINT32, BASE_DEC, NULL, 0x00,\n             NULL, HFILL }\n         },\n+        { &hf_request_in_frame,\n+        {\"Request in Frame\", \"btle.request_in_frame\",\n+            FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,\n+            NULL, HFILL}\n+        },\n+        { &hf_response_in_frame,\n+        {\"Response in Frame\", \"btle.response_in_frame\",\n+            FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,\n+            NULL, HFILL}\n+        },\n     };\n \n     static ei_register_info ei[] = {\n@@ -3043,6 +3685,10 @@ proto_register_btle(void)\n             { \"btle.access_address.bit_errors\", PI_PROTOCOL, PI_WARN,  \"AccessAddress has errors present at capture\", EXPFILL }},\n         { &ei_access_address_illegal,\n             { \"btle.access_address.illegal\",    PI_PROTOCOL, PI_ERROR, \"AccessAddress has illegal value\", EXPFILL }},\n+        { &ei_control_proc_overlapping,\n+            { \"btle.control_proc_overlapping\",  PI_PROTOCOL, PI_ERROR, \"Initiating a new control procedure before the previous was complete\", EXPFILL }},\n+        { &ei_control_proc_wrong_seq,\n+            { \"btle.control_proc_unknown_seq\",  PI_PROTOCOL, PI_ERROR, \"Incorrect control procedure packet sequencing or direction\", EXPFILL }},\n         { &ei_crc_cannot_be_determined,\n             { \"btle.crc.indeterminate\",         PI_CHECKSUM, PI_NOTE,  \"CRC unchecked, not all data available\", EXPFILL }},\n         { &ei_crc_incorrect,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-btle.c",
+      "old_path": "epan/dissectors/packet-btle.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "0dab2494ca5e20c5ab90ea7fbe11ada1316e41ee",
+      "short_id": "0dab2494",
+      "created_at": "2021-01-24T14:12:20.000+01:00",
+      "parent_ids": [
+        "d50d075f8838d1af37067147eccc0fc910dbbc8c"
+      ],
+      "title": "Bluetooth: Match control procedure requests with responses",
+      "message": "Bluetooth: Match control procedure requests with responses\n\nThis makes it easier to read logs where both the master\nand slave initiate control procedures at the same time.\nRetransmitted packets are not part of the request/response\ntracing.\n\nIn order to perform the analysis, direction information must\nbe available.\n\nThe matching is implemented by storing control procedure contexts\nfor each direction for each connection object as each direction\nmay initiate its own procedure.\n\nLimitations:\n- When there is a control procedure violation where a device\n  initiates a new procedure before the previous is complete,\n  only the first procedure is traced.\n  It would be possible to create more advanced tracing by\n  storing a list of contexts per frame.\n  However, as this is anyways a specification violation, this\n  adds unnecessary complexity.\n- Control procedures involving an instant are marked as completed\n  when the last frame is sent even though the control procedure\n  is completed when the instant is reached.\n  This is the best possible approach when the event counter is\n  not available.\n  Due to this limitation, we are not able to detect the control\n  procedure violation where a device initiates a new procedure\n  before the instant is reached.\n\nThe following control procedure violations are detected:\n- Starting a control procedure before the previous is complete.\n  Control procedure violations where a new procedure is started\n  before the instant is reached is currently not detected.\n  That requires knowing the event counter.\n- Control procedure packets that are not valid responses to an\n  existing ongoing control procedure.\n\nSigned-off-by: Rubin Gerritsen <rubin.gerritsen@nordicsemi.no>\n",
+      "author_name": "Rubin Gerritsen",
+      "author_email": "rubin.gerritsen@nordicsemi.no",
+      "authored_date": "2021-01-01T16:14:31.000+01:00",
+      "committer_name": "Rubin Gerritsen",
+      "committer_email": "rubin.gerritsen@nordicsemi.no",
+      "committed_date": "2021-01-24T14:12:20.000+01:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0dab2494ca5e20c5ab90ea7fbe11ada1316e41ee"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 138109813,
+      "head_commit_sha": "0dab2494ca5e20c5ab90ea7fbe11ada1316e41ee",
+      "base_commit_sha": "d50d075f8838d1af37067147eccc0fc910dbbc8c",
+      "start_commit_sha": "d50d075f8838d1af37067147eccc0fc910dbbc8c",
+      "created_at": "2021-01-24T13:37:39.615Z",
+      "merge_request_id": 83400953,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 135892453,
+      "head_commit_sha": "e9a4533ca20533645b4877b451504bb178cb8ffe",
+      "base_commit_sha": "0e846106760cddd4e98cc23d21c2c7d3000e584d",
+      "start_commit_sha": "77043708fee90c2948aa4164102aeb850019b5e5",
+      "created_at": "2021-01-13T19:51:00.089Z",
+      "merge_request_id": 83400953,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 135892246,
+      "head_commit_sha": "5c1bfcda360f4429463f2525a97d18a394230172",
+      "base_commit_sha": "0e846106760cddd4e98cc23d21c2c7d3000e584d",
+      "start_commit_sha": "77043708fee90c2948aa4164102aeb850019b5e5",
+      "created_at": "2021-01-13T19:49:25.594Z",
+      "merge_request_id": 83400953,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 135261591,
+      "head_commit_sha": "f6016a7444d0f41ab59726b50e4fd19649f6d3d0",
+      "base_commit_sha": "0e846106760cddd4e98cc23d21c2c7d3000e584d",
+      "start_commit_sha": "0e846106760cddd4e98cc23d21c2c7d3000e584d",
+      "created_at": "2021-01-11T14:59:01.095Z",
+      "merge_request_id": 83400953,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 133716689,
+      "head_commit_sha": "fc8b256e44c4a8ce5b5fee6a02ede305da736541",
+      "base_commit_sha": "cf9ffd3d831b5f68de54d58ea01cbdca50e9a6a5",
+      "start_commit_sha": "cf9ffd3d831b5f68de54d58ea01cbdca50e9a6a5",
+      "created_at": "2021-01-01T17:53:48.371Z",
+      "merge_request_id": 83400953,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 133716681,
+      "head_commit_sha": "f742f59e9c420df23fa5dea04bbdd7be0e8d10bf",
+      "base_commit_sha": "b06b760dd264623c3d6f90b5bc40f20698a35e74",
+      "start_commit_sha": "cf9ffd3d831b5f68de54d58ea01cbdca50e9a6a5",
+      "created_at": "2021-01-01T17:53:30.088Z",
+      "merge_request_id": 83400953,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

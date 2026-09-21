@@ -1,0 +1,1255 @@
+{
+  "id": 115484405,
+  "iid": 4104,
+  "project_id": 7898047,
+  "title": "Thrift: Allow partial definition of sub-dissectors",
+  "description": "When written by hand, it’s difficult to have a fully functional\nsubdissector for a given command if the structures in it contain at lot\nof fields and/or numerous level of sub-structures, making the definition\nof all sub-structures mandatory before we have all sub-structures fully\ndefined before we can dissect anything.\n\nThis patch makes it easy not to defined some structure fields and let\nthe generic Thrift dissector handle them.\n\nIf you care only about some fields for your analysis or you have some\nobsolete fields that may appear in your captures due to old client but\nare no longer defined in the .thrift files, you can still write the\nsub-dissector for your protocol just by omitting the obsolete field.\n\nFor example:\n```c\nstatic const thrift_member_t tcustom_data[] = {\n    { &hf_tcustom_data_id, 1, TRUE, DE_THRIFT_T_I64, TMFILL },\n    { &hf_tcustom_data_name, 2, TRUE, DE_THRIFT_T_BINARY, TMUTF8 },\n    { &hf_tcustom_data_content, 3, TRUE, DE_THRIFT_T_STRUCT, &ett_tcustom_resource, { .members = tcustom_resource } },\n    { NULL, 0, FALSE, DE_THRIFT_T_STOP, TMFILL }\n};\n```\n\ncould become:\n\n```c\nstatic const thrift_member_t tcustom_data[] = {\n    { &hf_tcustom_data_id, 1, TRUE, DE_THRIFT_T_I64, TMFILL },\n    { &hf_tcustom_data_name, 2, TRUE, DE_THRIFT_T_BINARY, TMUTF8 },\n    { NULL, 3, TRUE, DE_THRIFT_T_GENERIC, TMUTF8 },\n    { NULL, 0, FALSE, DE_THRIFT_T_STOP, TMFILL }\n};\n```\n\nand avoid the need to define the extremely complex \"resource\" struct.\n\nIn this case, the structured data would be dissected by the generic\ndissector while keeping the possibility for the user to filter on\nthe resource id or name.\n\n*Edit*: This change relies on the fact that structure fields are always order numerically on the network.\n\n* If the found field id is smaller than the next expected one, it means that the user did not provide a definition for it so we switch to generic dissection.\n* If the found field id is greater than the next expected one, it means that the field is missing so we continue with the optional/required check.\n* Plus additional checks to properly handle the case were the last fields of the structure are the ones that are not specified by the sub-dissector.",
+  "state": "merged",
+  "created_at": "2021-09-04T17:44:33.521Z",
+  "updated_at": "2021-09-07T14:05:05.958Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2021-09-07T14:05:06.017Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "thrift",
+  "user_notes_count": 7,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7724340,
+    "username": "EnigmaTriton",
+    "public_email": "",
+    "name": "Triton Circonflexe",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+    "web_url": "https://gitlab.com/EnigmaTriton"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 27561501,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "22768e218cd3d09a7a542cae95bce5f0d3ba1e7d",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-09-04T17:44:33.521Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!4104",
+  "references": {
+    "short": "!4104",
+    "relative": "!4104",
+    "full": "wireshark/wireshark!4104"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/4104",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "2",
+  "latest_build_started_at": "2021-09-07T09:36:44.044Z",
+  "latest_build_finished_at": "2021-09-07T09:54:51.801Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 366377424,
+    "iid": 64,
+    "project_id": 27561501,
+    "sha": "22768e218cd3d09a7a542cae95bce5f0d3ba1e7d",
+    "ref": "thrift",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-09-07T09:36:42.877Z",
+    "updated_at": "2021-09-07T09:54:52.006Z",
+    "web_url": "https://gitlab.com/EnigmaTriton/wireshark/-/pipelines/366377424"
+  },
+  "head_pipeline": {
+    "id": 366377424,
+    "iid": 64,
+    "project_id": 27561501,
+    "sha": "22768e218cd3d09a7a542cae95bce5f0d3ba1e7d",
+    "ref": "thrift",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-09-07T09:36:42.877Z",
+    "updated_at": "2021-09-07T09:54:52.006Z",
+    "web_url": "https://gitlab.com/EnigmaTriton/wireshark/-/pipelines/366377424",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 7724340,
+      "username": "EnigmaTriton",
+      "public_email": "",
+      "name": "Triton Circonflexe",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+      "web_url": "https://gitlab.com/EnigmaTriton"
+    },
+    "started_at": "2021-09-07T09:36:44.044Z",
+    "finished_at": "2021-09-07T09:54:51.801Z",
+    "committed_at": null,
+    "duration": 1084,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/EnigmaTriton/wireshark/-/pipelines/366377424",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "aae500d32b989192c380a56c8f90e13e8bfb81cb",
+    "head_sha": "22768e218cd3d09a7a542cae95bce5f0d3ba1e7d",
+    "start_sha": "aae500d32b989192c380a56c8f90e13e8bfb81cb"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "38295228b2e720e7695475a038baed3b1f4bdba3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 669498201,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-04T17:45:16.664Z",
+          "updated_at": "2021-09-04T17:45:16.666Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e757b1ad0d765e2288da39c3e3b4eb761ae6baf8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 669501583,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>eb422686 - Thrift: Allow partial definition of sub-dissectors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/4104/diffs?diff_id=240445611&start_sha=d466703d379640ec118f4b93f527965ba281a5a5)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-04T18:14:16.080Z",
+          "updated_at": "2021-09-04T18:14:16.081Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2d39050f5bed14ae4de06f264089d617f331610f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 669502605,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-04T18:24:09.159Z",
+          "updated_at": "2021-09-04T18:24:09.161Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8f5e9b96f5ad793dd27bfc8620bce6500c51b4cf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 669572645,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-05T08:29:42.551Z",
+          "updated_at": "2021-09-05T08:29:42.552Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "264c077f429ffab2f4779e29da814d26705ed11d",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 669601583,
+          "type": "DiscussionNote",
+          "body": "> This change relies on the fact that structure fields are always order numerically on the network.\n\nThis makes it less desirable to include, IMHO. Reason is that Wireshark especially is called into action when there's trouble in the communications, there's a lot of emphasis on handling _incorrect_ network data. Changing the dissector to make it less resistant against network protocol errors I find undesirable.",
+          "author": {
+            "id": 2398962,
+            "username": "JaapKeuter",
+            "public_email": "",
+            "name": "Jaap Keuter",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/722b0c520542a23cb8f8ea7070a45c88f9e9214dc700ac151e419e9649e0304e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/JaapKeuter"
+          },
+          "created_at": "2021-09-05T12:23:17.633Z",
+          "updated_at": "2021-09-05T15:22:24.244Z",
+          "system": false,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "resolved_at": "2021-09-06T20:15:28.523Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        },
+        {
+          "id": 669627187,
+          "type": "DiscussionNote",
+          "body": "I do see your point and I agree with the necessity to keep dissector resistant to errors.\n\nHowever, I don’t think that change makes the dissector less resistant to errors (I would even go to say it’s more resistant to the issue).\n\nThe caller (the sub-dissector) have absolutely no choice but to rely on this fact as there is no way to handle unordered fields.\n\nBefore the change, if the field were incorrectly ordered, the dissector would have fail even if this is not necessarily an issue on the application side (I’ll try to forge a request with unordered fields to see how an application might react if you think it will help take a decision).\n\nIf we consider a case where field 2 appears after field 3 on the network:\n\n* If field 2 was mandatory, it fails in exactly the same way (when finding field 3 instead of 2).\n* If field 2 was optional, it also fails in the same way (when finding field 2 instead of 4).\n\nThe only case were the unordered fields might go undetected is when it happens after _all_ the defined mandatory fields are dissected.\nI can add an additional check indicating that fields are unordered but in this case it should probably also be in the generic dissector without any specific sub-dissector (as a warning only because it can be well-formed).\n\nProposal:\n1. Update this MR to add a warning when we fallback to the generic dissector (it also helps tracking what is not handled yet so I don’t see any downside to this part). **Edit**: Done.\n2. Create a new MR to detect the unordered fields both in generic and specific sub-dissectors. **Edit**: Done in !4113\n\nWould it be acceptable as we are able to continue with the dissection but see the issue?",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-05T15:22:24.169Z",
+          "updated_at": "2021-09-05T19:55:41.802Z",
+          "system": false,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "resolved_at": "2021-09-06T20:15:28.523Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        },
+        {
+          "id": 670558587,
+          "type": "DiscussionNote",
+          "body": "Hello @JaapKeuter, I believe that Anders’ proposal (which is now implemented) addresses your concerns so I’m marking this thread as resolved.\n\nDo not hesitate if you think there is anything else.",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T20:15:28.008Z",
+          "updated_at": "2021-09-06T20:15:28.008Z",
+          "system": false,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "resolved_at": "2021-09-06T20:15:28.523Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d0136841e3f7a0c6b8e2a79cd5f6761d00783e6d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 669632515,
+          "type": null,
+          "body": "unapproved this merge request",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-05T15:54:31.981Z",
+          "updated_at": "2021-09-05T15:54:31.983Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f402ccf8dcc0111ccb9f37807d8710213e0bd9f2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 669641580,
+          "type": null,
+          "body": "added 5 commits\n\n<ul><li>eb422686...61e1e692 - 4 commits from branch <code>wireshark:master</code></li><li>99568bb8 - Thrift: Allow partial definition of sub-dissectors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/4104/diffs?diff_id=240542048&start_sha=eb4226865faa277740a23889ec1377664660b041)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-05T16:39:08.689Z",
+          "updated_at": "2021-09-05T16:39:08.690Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c04130357034ccea775b67cc015c10746c5429fe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 669671657,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>197911de - 1 commit from branch <code>wireshark:master</code></li><li>7c54fe5a - Thrift: Allow partial definition of sub-dissectors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/4104/diffs?diff_id=240555291&start_sha=99568bb8ca01f91e3c171af16a975ef254a930ce)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-05T19:38:55.415Z",
+          "updated_at": "2021-09-05T19:38:55.416Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e985a735766d16d0f3c2fed7f7d08c782170f4ae",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 669673667,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-05T19:59:16.093Z",
+          "updated_at": "2021-09-05T19:59:16.094Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4841b938508bf2ae419ce66e08eda302fdefb6c7",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 669812302,
+          "type": "DiscussionNote",
+          "body": "Hi,\nHow about having DE_THRIFT_FLD_ONLY or DE_GENERIC or something as an decoding option? In that way\nit should be clear that field 3 from your example is expected but it will only have the thrift fields\ndecoded.\nBest regards\nAnders",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-09-06T06:20:48.163Z",
+          "updated_at": "2021-09-06T06:33:55.126Z",
+          "system": false,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "resolved_at": "2021-09-06T20:18:42.455Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        },
+        {
+          "id": 669823116,
+          "type": "DiscussionNote",
+          "body": "Nice idea, and as long as I keep the value out of the {0..15} range, there is no risk of conflict with Thrift values (-1 seems right for this kind of use).\n\nI’ll see what I can cook, thanks for the proposal.",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T06:33:44.575Z",
+          "updated_at": "2021-09-06T06:34:18.181Z",
+          "system": false,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "resolved_at": "2021-09-06T20:18:42.455Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        },
+        {
+          "id": 670200342,
+          "type": "DiscussionNote",
+          "body": "Hello @AndersBroman, I updated the description (the second code block) from what I understood and will proceed for the matching implementation.\n\nPlease tell if it’s any different from what you had in mind.\n\nAlso, what do you think about the associated expert info? Maybe I can lower it to `PI_NOTE` as the user explicitly requested the delegation.",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T11:48:07.523Z",
+          "updated_at": "2021-09-06T11:50:35.524Z",
+          "system": false,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "resolved_at": "2021-09-06T20:18:42.455Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        },
+        {
+          "id": 670559409,
+          "type": "DiscussionNote",
+          "body": "Now implemented, so I mark this thread as resolved as well.\n\nNote: the `guint32` to `gint32` is a fix for a signedness comparison warning that was not seen previously (holding types so 0 to 15 anyway).",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T20:18:42.050Z",
+          "updated_at": "2021-09-06T20:18:42.050Z",
+          "system": false,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "resolved_at": "2021-09-06T20:18:42.455Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "17ab84e8d391552230f2923b292ea22bc5b30307",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670196365,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T11:45:21.245Z",
+          "updated_at": "2021-09-06T11:45:21.247Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1e08c701fde87eb8cec325ad5a7c38ad1940767c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670206117,
+          "type": null,
+          "body": "marked this merge request as **draft**",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T11:53:17.822Z",
+          "updated_at": "2021-09-06T11:53:17.824Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "46452084e843c656ba8c80164299eb6d1622ed00",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670206247,
+          "type": null,
+          "body": "unapproved this merge request",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T11:53:27.449Z",
+          "updated_at": "2021-09-06T11:53:27.451Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "65e6940b2187da463eaa26d93720cd9d053fb342",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670556314,
+          "type": null,
+          "body": "added 22 commits\n\n<ul><li>7c54fe5a...f6e0589f - 21 commits from branch <code>wireshark:master</code></li><li>e7fd28b7 - Thrift: Allow partial definition of sub-dissectors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/4104/diffs?diff_id=241089504&start_sha=7c54fe5aba09d587082d093fea71e2038ac424d6)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T20:07:14.985Z",
+          "updated_at": "2021-09-06T20:07:14.987Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8fad169002e5a5a79b6653b36c28ad9a047137d3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670556697,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>e7fd28b7...fece6e04 - 2 commits from branch <code>wireshark:master</code></li><li>7d97ef4a - Thrift: Allow partial definition of sub-dissectors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/4104/diffs?diff_id=241089750&start_sha=e7fd28b7ae64a4f1c3610a369a8284eed528d27c)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T20:08:26.035Z",
+          "updated_at": "2021-09-06T20:08:26.036Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e5aaaf08da84e4cc1ae555faaeb67bb4954d482c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670557968,
+          "type": null,
+          "body": "marked this merge request as **ready**",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T20:13:18.544Z",
+          "updated_at": "2021-09-06T20:13:18.545Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f2292436e5278ab6ee1c853be574592a4d3dbe4d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670558718,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T20:16:01.274Z",
+          "updated_at": "2021-09-06T20:16:01.275Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b792ac7482c83c7281c78eef14ce145207faf3c9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670559411,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-06T20:18:42.487Z",
+          "updated_at": "2021-09-06T20:18:42.491Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "acf9515d60fb4e11fb17ef890d6689b340a53a71",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670955726,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>7d97ef4a...aae500d3 - 6 commits from branch <code>wireshark:master</code></li><li>22768e21 - Thrift: Allow partial definition of sub-dissectors</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/4104/diffs?diff_id=241337545&start_sha=7d97ef4a7245e9bb6e5ff3f006a712728738c536)",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-07T09:36:40.997Z",
+          "updated_at": "2021-09-07T09:36:40.999Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d08bbe26ac40560022bdf2a0b3845aef151a42af",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 670958175,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 7724340,
+            "username": "EnigmaTriton",
+            "public_email": "",
+            "name": "Triton Circonflexe",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7724340/avatar.png?v=1789862405",
+            "web_url": "https://gitlab.com/EnigmaTriton"
+          },
+          "created_at": "2021-09-07T09:38:49.739Z",
+          "updated_at": "2021-09-07T09:38:49.741Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c4f585624d3112706487ba90bfce9fb498951722",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 671280044,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-09-07T14:04:54.278Z",
+          "updated_at": "2021-09-07T14:04:54.304Z",
+          "system": true,
+          "noteable_id": 115484405,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 4104,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -180,6 +180,7 @@ static expert_field ei_thrift_frame_too_short = EI_INIT;\n static expert_field ei_thrift_not_enough_data = EI_INIT;\n static expert_field ei_thrift_frame_too_long = EI_INIT;\n static expert_field ei_thrift_varint_too_large = EI_INIT;\n+static expert_field ei_thrift_undefined_field_id = EI_INIT;\n static expert_field ei_thrift_negative_field_id = EI_INIT;\n static expert_field ei_thrift_unordered_field_id = EI_INIT;\n static expert_field ei_thrift_application_exception = EI_INIT;\n@@ -1224,7 +1225,7 @@ dissect_thrift_b_linear(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n     proto_item *container_pi = NULL;\n     proto_item *len_pi = NULL;\n     proto_tree *sub_tree;\n-    guint32 key_type, val_type;\n+    gint32 key_type, val_type;\n     gint32 length;\n \n     /* Get the current state of dissection. */\n@@ -1617,8 +1618,26 @@ dissect_thrift_t_struct(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int\n             }\n         }\n \n-        /* Type is not T_STOP and field id matches one we know how to dissect. */\n-        offset = dissect_thrift_t_member(tvb, pinfo, sub_tree, offset, thrift_opt, TRUE, seq);\n+        if (seq->type != DE_THRIFT_T_GENERIC) {\n+            /* Type is not T_STOP and field id matches one we know how to dissect. */\n+            offset = dissect_thrift_t_member(tvb, pinfo, sub_tree, offset, thrift_opt, TRUE, seq);\n+        } else {\n+            /* The field is not defined in the struct, switch back to generic dissection.\n+             * Re-read the header ensuring it is displayed (no need to check result,\n+             * we already dissected it but without the header tree creation. */\n+            dissect_thrift_field_header(tvb, pinfo, sub_tree, &offset, thrift_opt, &field_header);\n+            expert_add_info(pinfo, field_header.fid_pi, &ei_thrift_undefined_field_id);\n+            // Then dissect just this field.\n+            if (thrift_opt->tprotocol & PROTO_THRIFT_COMPACT) {\n+                if (dissect_thrift_compact_type(tvb, pinfo, sub_tree, &offset, thrift_opt, field_header.fh_tree, field_header.type.compact, field_header.type_pi) == THRIFT_REQUEST_REASSEMBLY) {\n+                    return THRIFT_REQUEST_REASSEMBLY;\n+                }\n+            } else {\n+                if (dissect_thrift_binary_type(tvb, pinfo, sub_tree, &offset, thrift_opt, field_header.fh_tree, field_header.type.compact, field_header.type_pi) == THRIFT_REQUEST_REASSEMBLY) {\n+                    return THRIFT_REQUEST_REASSEMBLY;\n+                }\n+            }\n+        }\n         ABORT_SUBDISSECTION_ON_ISSUE(offset);\n         if (tvb_reported_length_remaining(tvb, offset) < TBP_THRIFT_TYPE_LEN) {\n             return THRIFT_REQUEST_REASSEMBLY;\n@@ -2665,6 +2684,7 @@ dissect_thrift_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int o\n          * - Field id > 0: The number of the exception that was raised by the method.\n          *   Note: This is different from the ME_THRIFT_T_EXCEPTION method type that is used in case the method is unknown\n          *         or the PDU invalid/impossible to decode for the other endpoint.\n+         * We read this before checking for sub-dissectors as the information might be useful to them.\n          */\n         int result = data_offset;\n         result = dissect_thrift_field_header(tvb, pinfo, NULL, &result, thrift_opt, &header);\n@@ -3365,6 +3385,7 @@ proto_register_thrift(void)\n         { &ei_thrift_frame_too_short, { \"thrift.frame_too_short\", PI_MALFORMED, PI_ERROR, \"Thrift frame shorter than data.\", EXPFILL } },\n         { &ei_thrift_frame_too_long, { \"thrift.frame_too_long\", PI_PROTOCOL, PI_WARN, \"Thrift frame longer than data.\", EXPFILL } },\n         { &ei_thrift_varint_too_large, { \"thrift.varint_too_large\", PI_PROTOCOL, PI_ERROR, \"Thrift varint value too large for target integer type.\", EXPFILL } },\n+        { &ei_thrift_undefined_field_id, { \"thrift.undefined_field_id\", PI_PROTOCOL, PI_NOTE, \"Field id not defined by sub-dissector, using generic Thrift dissector.\", EXPFILL } },\n         { &ei_thrift_negative_field_id, { \"thrift.negative_field_id\", PI_PROTOCOL, PI_NOTE, \"Encountered unexpected negative field id, possibly an old application.\", EXPFILL } },\n         { &ei_thrift_unordered_field_id, { \"thrift.unordered_field_id\", PI_PROTOCOL, PI_WARN, \"Field id not defined by sub-dissector, using generic Thrift dissector.\", EXPFILL } },\n         { &ei_thrift_application_exception, { \"thrift.application_exception\", PI_PROTOCOL, PI_NOTE, \"The application recognized the method but rejected the content.\", EXPFILL } },\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-thrift.c",
+      "old_path": "epan/dissectors/packet-thrift.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -19,7 +19,8 @@\n \n \n typedef enum {\n-    DE_THRIFT_T_STOP = 0,\n+    DE_THRIFT_T_GENERIC = -1, // Use this to delegate field dissection to generic dissector.\n+    DE_THRIFT_T_STOP,\n     DE_THRIFT_T_VOID, // DE_THRIFT_T_UNUSED_1?\n     DE_THRIFT_T_BOOL,\n     DE_THRIFT_T_I8,\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-thrift.h",
+      "old_path": "epan/dissectors/packet-thrift.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "22768e218cd3d09a7a542cae95bce5f0d3ba1e7d",
+      "short_id": "22768e21",
+      "created_at": "2021-09-07T11:36:00.000+02:00",
+      "parent_ids": [
+        "aae500d32b989192c380a56c8f90e13e8bfb81cb"
+      ],
+      "title": "Thrift: Allow partial definition of sub-dissectors",
+      "message": "Thrift: Allow partial definition of sub-dissectors\n\nWhen written by hand, it’s difficult to have a fully functional\nsubdissector for a given command if the structures in it contain at lot\nof fields and/or numerous level of sub-structures, making the definition\nof all sub-structures mandatory before we have all sub-structures fully\ndefined before we can dissect anything.\n\nThis patch makes it easy not to defined some structure fields and let\nthe generic Thrift dissector handle them.\n\nIf you care only about some fields for your analysis or you have some\nobsolete fields that may appear in your captures due to old client but\nare no longer defined in the .thrift files, you can still write the sub-\ndissector for your protocol just by omitting the obsolete field.\n\nFor example:\n\nstatic const thrift_member_t tcustom_data[] = {\n    { &hf_tcustom_data_id, 1, TRUE, DE_THRIFT_T_I64, TMFILL },\n    { &hf_tcustom_data_name, 2, TRUE, DE_THRIFT_T_BINARY, TMUTF8 },\n    { &hf_tcustom_data_content, 3, TRUE, DE_THRIFT_T_STRUCT, &ett_tcustom_resource, { .members = tcustom_resource } },\n    { NULL, 0, FALSE, DE_THRIFT_T_STOP, TMFILL }\n};\n\ncould become:\n\nstatic const thrift_member_t tcustom_data[] = {\n    { &hf_tcustom_data_id, 1, TRUE, DE_THRIFT_T_I64, TMFILL },\n    { &hf_tcustom_data_name, 2, TRUE, DE_THRIFT_T_BINARY, TMUTF8 },\n    { NULL, 3, TRUE, DE_THRIFT_T_GENERIC, TMFILL },\n    { NULL, 0, FALSE, DE_THRIFT_T_STOP, TMFILL }\n};\n\nand avoid the need to define the extremely complex \"resource\" struct.\n\nIn this case, the structured data would be dissected by the generic\ndissector while keeping the possibility for the user to filter on the\nresource id or name.\n",
+      "author_name": "Triton Circonflexe",
+      "author_email": "triton@kumal.info",
+      "authored_date": "2021-09-06T13:40:18.000+02:00",
+      "committer_name": "Triton Circonflexe",
+      "committer_email": "triton@kumal.info",
+      "committed_date": "2021-09-07T11:36:00.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/22768e218cd3d09a7a542cae95bce5f0d3ba1e7d"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 241337545,
+      "head_commit_sha": "22768e218cd3d09a7a542cae95bce5f0d3ba1e7d",
+      "base_commit_sha": "aae500d32b989192c380a56c8f90e13e8bfb81cb",
+      "start_commit_sha": "aae500d32b989192c380a56c8f90e13e8bfb81cb",
+      "created_at": "2021-09-07T09:36:40.318Z",
+      "merge_request_id": 115484405,
+      "state": "collected",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 241089750,
+      "head_commit_sha": "7d97ef4a7245e9bb6e5ff3f006a712728738c536",
+      "base_commit_sha": "fece6e0440665d0fdc7c6403a3f944935861ac99",
+      "start_commit_sha": "fece6e0440665d0fdc7c6403a3f944935861ac99",
+      "created_at": "2021-09-06T20:08:25.504Z",
+      "merge_request_id": 115484405,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 241089504,
+      "head_commit_sha": "e7fd28b7ae64a4f1c3610a369a8284eed528d27c",
+      "base_commit_sha": "f6e0589f89e6f59e957584b02b978d3c4484b42d",
+      "start_commit_sha": "fece6e0440665d0fdc7c6403a3f944935861ac99",
+      "created_at": "2021-09-06T20:07:14.394Z",
+      "merge_request_id": 115484405,
+      "state": "without_files",
+      "real_size": "2",
+      "patch_id_sha": null
+    },
+    {
+      "id": 240555291,
+      "head_commit_sha": "7c54fe5aba09d587082d093fea71e2038ac424d6",
+      "base_commit_sha": "197911dea1cdf91218ce6f5da426acf75e4eae3e",
+      "start_commit_sha": "197911dea1cdf91218ce6f5da426acf75e4eae3e",
+      "created_at": "2021-09-05T19:38:54.961Z",
+      "merge_request_id": 115484405,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 240542048,
+      "head_commit_sha": "99568bb8ca01f91e3c171af16a975ef254a930ce",
+      "base_commit_sha": "61e1e69218ad0c9c0c3f2d097d9bf8f8a4515251",
+      "start_commit_sha": "61e1e69218ad0c9c0c3f2d097d9bf8f8a4515251",
+      "created_at": "2021-09-05T16:39:08.066Z",
+      "merge_request_id": 115484405,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 240445611,
+      "head_commit_sha": "eb4226865faa277740a23889ec1377664660b041",
+      "base_commit_sha": "8ef6f04f5ac5f927d92e2f20bb79beeefe7c2e06",
+      "start_commit_sha": "8ef6f04f5ac5f927d92e2f20bb79beeefe7c2e06",
+      "created_at": "2021-09-04T18:14:14.941Z",
+      "merge_request_id": 115484405,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 240443729,
+      "head_commit_sha": "d466703d379640ec118f4b93f527965ba281a5a5",
+      "base_commit_sha": "8ef6f04f5ac5f927d92e2f20bb79beeefe7c2e06",
+      "start_commit_sha": "8ef6f04f5ac5f927d92e2f20bb79beeefe7c2e06",
+      "created_at": "2021-09-04T17:44:34.223Z",
+      "merge_request_id": 115484405,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

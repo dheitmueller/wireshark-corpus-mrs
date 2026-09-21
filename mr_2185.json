@@ -1,0 +1,143 @@
+{
+  "id": 89382358,
+  "iid": 2185,
+  "project_id": 7898047,
+  "title": "sharkd: Invalid request type should generate an error response",
+  "description": "If we send a request to sharkd in Console or Daemon Mode, sharkd\ndoes not respond with a JSON message.  In Console mode, although\nsharkd generates a log-type message it doesn't send a JSON response.\n\nsharkd should respond with:\n{\"err\":-32601, \"errmsg\":\"The method %s is not supported\"}\n\nCloses #17247",
+  "state": "closed",
+  "created_at": "2021-02-22T10:30:20.032Z",
+  "updated_at": "2021-03-08T22:33:07.587Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "issue17247",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7962216,
+    "username": "credible58",
+    "public_email": "",
+    "name": "Paul Offord",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/bd38ef935f0bdd6e4c9bb0f9b06cdeff47f03015a81db18e65c767eed6ca4440?s=80&d=identicon",
+    "web_url": "https://gitlab.com/credible58"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "d31ffc9d7799ee34158958da58c1f53bbdb92f48",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-02-22T10:30:20.032Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!2185",
+  "references": {
+    "short": "!2185",
+    "relative": "!2185",
+    "full": "wireshark/wireshark!2185"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/2185",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": true,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "f895014f6869f201b013c35a0e234cdd0137d170",
+    "head_sha": "d31ffc9d7799ee34158958da58c1f53bbdb92f48",
+    "start_sha": "f895014f6869f201b013c35a0e234cdd0137d170"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [],
+  "changes_data": [
+    {
+      "diff": "@@ -172,15 +172,51 @@ sharkd_json_array_close(void)\n }\n \n static void\n-sharkd_json_simple_reply(int err, const char *errmsg)\n+sharkd_json_response_close(void)\n {\n+\tjson_dumper_finish(&dumper);\n+\n+\t/*\n+\t * We do an explicit fflush after every line, because\n+\t * we want output to be written to the socket as soon\n+\t * as the line is complete.\n+\t *\n+\t * The stream is fully-buffered by default, so it's\n+\t * only flushed when the buffer fills or the FILE *\n+\t * is closed.  On UN*X, we could set it to be line\n+\t * buffered, but the MSVC standard I/O routines don't\n+\t * support line buffering - they only support *byte*\n+\t * buffering, doing a write for every byte written,\n+\t * which is too inefficient, and full buffering,\n+\t * which is what you get if you request line buffering.\n+\t */\n+\tfflush(stdout);\n+}\n+\n+static void\n+sharkd_json_error(int err, char* format, ...)\n+{\n+\tchar msgbuf[512];\n+\n+\tmemset(msgbuf, 0, sizeof(msgbuf));\n+\n+\tif (format)\n+\t{\n+\t\t// format the text message\n+\t\tva_list args;\n+\n+\t\tva_start(args, format);\n+\t\tg_vsnprintf(msgbuf, sizeof(msgbuf), format, args);\n+\t\tva_end(args);\n+\t}\n+\n+\t// now build the response\n \tjson_dumper_begin_object(&dumper);\n \tsharkd_json_value_anyf(\"err\", \"%d\", err);\n-\tif (errmsg)\n-\t\tsharkd_json_value_string(\"errmsg\", errmsg);\n+\tif (format)\n+\t\tsharkd_json_value_string(\"errmsg\", msgbuf);\n \n \tjson_dumper_end_object(&dumper);\n-\tjson_dumper_finish(&dumper);\n }\n \n static void\n@@ -551,7 +587,7 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)\n \n \tif (sharkd_cf_open(tok_file, WTAP_TYPE_AUTO, FALSE, &err) != CF_OK)\n \t{\n-\t\tsharkd_json_simple_reply(err, NULL);\n+\t\tsharkd_json_error(err, NULL);\n \t\treturn;\n \t}\n \n@@ -566,7 +602,7 @@ sharkd_session_process_load(const char *buf, const jsmntok_t *tokens, int count)\n \t}\n \tENDTRY;\n \n-\tsharkd_json_simple_reply(err, NULL);\n+\tsharkd_json_error(err, NULL);\n }\n \n /**\n@@ -3590,7 +3626,7 @@ sharkd_session_process_setcomment(char *buf, const jsmntok_t *tokens, int count)\n \n \tret = sharkd_set_user_comment(fdata, tok_comment);\n \n-\tsharkd_json_simple_reply(ret, NULL);\n+\tsharkd_json_error(ret, NULL);\n }\n \n /**\n@@ -3622,7 +3658,7 @@ sharkd_session_process_setconf(char *buf, const jsmntok_t *tokens, int count)\n \n \tret = prefs_set_pref(pref, &errmsg);\n \n-\tsharkd_json_simple_reply(ret, errmsg);\n+\tsharkd_json_error(ret, errmsg);\n \tg_free(errmsg);\n }\n \n@@ -4230,26 +4266,11 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)\n \t\telse if (!strcmp(tok_req, \"bye\"))\n \t\t\texit(0);\n \t\telse\n+\t\t{\n \t\t\tfprintf(stderr, \"::: req = %s\\n\", tok_req);\n-\n-\t\t/* reply for every command are 0+ lines of JSON reply (outputed above), finished by empty new line */\n-\t\tjson_dumper_finish(&dumper);\n-\n-\t\t/*\n-\t\t * We do an explicit fflush after every line, because\n-\t\t * we want output to be written to the socket as soon\n-\t\t * as the line is complete.\n-\t\t *\n-\t\t * The stream is fully-buffered by default, so it's\n-\t\t * only flushed when the buffer fills or the FILE *\n-\t\t * is closed.  On UN*X, we could set it to be line\n-\t\t * buffered, but the MSVC standard I/O routines don't\n-\t\t * support line buffering - they only support *byte*\n-\t\t * buffering, doing a write for every byte written,\n-\t\t * which is too inefficient, and full buffering,\n-\t\t * which is what you get if you request line buffering.\n-\t\t */\n-\t\tfflush(stdout);\n+\t\t\tsharkd_json_error(-32601, \"The method %s is not supported\", tok_req);\n+\t\t}\n+\t\tsharkd_json_response_close();\n \t}\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd_session.c",
+      "old_path": "sharkd_session.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "d31ffc9d7799ee34158958da58c1f53bbdb92f48",
+      "short_id": "d31ffc9d",
+      "created_at": "2021-02-22T08:47:07.000+00:00",
+      "parent_ids": [
+        "f895014f6869f201b013c35a0e234cdd0137d170"
+      ],
+      "title": "sharkd: Invalid request type should generate an error response",
+      "message": "sharkd: Invalid request type should generate an error response\n\nIf we send a request to sharkd in Console or Daemon Mode, sharkd\ndoes not respond with a JSON message.  In Console mode, although\nsharkd generates a log-type message it doesn't send a JSON response.\n\nsharkd should respond with:\n{\"err\":-32601, \"errmsg\":\"The method %s is not supported\"}\n\nCloses #17247\n",
+      "author_name": "Paul Offord",
+      "author_email": "paul.offord58@gmail.com",
+      "authored_date": "2021-02-22T08:47:07.000+00:00",
+      "committer_name": "Paul Offord",
+      "committer_email": "paul.offord58@gmail.com",
+      "committed_date": "2021-02-22T08:47:07.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/d31ffc9d7799ee34158958da58c1f53bbdb92f48"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 147299632,
+      "head_commit_sha": "d31ffc9d7799ee34158958da58c1f53bbdb92f48",
+      "base_commit_sha": "f895014f6869f201b013c35a0e234cdd0137d170",
+      "start_commit_sha": "f895014f6869f201b013c35a0e234cdd0137d170",
+      "created_at": "2021-02-22T10:30:20.867Z",
+      "merge_request_id": 89382358,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

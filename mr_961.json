@@ -1,0 +1,964 @@
+{
+  "id": 78496416,
+  "iid": 961,
+  "project_id": 7898047,
+  "title": "Initialise acl_data to avoid wild pointer dereference",
+  "description": "fix oss-fuzz issue 25007\n```\n==8==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000000 (pc 0x000000bd22dd bp 0x7ffd24f6fa10 sp 0x7ffd24f6f780 T0)\n==8==The signal is caused by a READ memory access.\n==8==Hint: address points to the zero page.\nSCARINESS: 10 (null-deref)\n    #0 0xbd22dc in dissect_btavdtp /src/wireshark/epan/dissectors/packet-btavdtp.c:1543:17\n    #1 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #2 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #3 0x6d7239 in dissector_try_uint_new /src/wireshark/epan/packet.c:1413:8\n    #4 0xc4b167 in dissect_btl2cap /src/wireshark/epan/dissectors/packet-btl2cap.c:2654:14\n    #5 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #6 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #7 0x6d410b in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #8 0x6d410b in call_dissector_with_data /src/wireshark/epan/packet.c:3246:8\n    #9 0xc5bae8 in dissect_btle /src/wireshark/epan/dissectors/packet-btle.c:1720:21\n    #10 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #11 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #12 0x6d410b in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #13 0x6d410b in call_dissector_with_data /src/wireshark/epan/packet.c:3246:8\n    #14 0xc60837 in dissect_btle_rf /src/wireshark/epan/dissectors/packet-btle_rf.c:284:27\n    #15 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #16 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #17 0x6d7239 in dissector_try_uint_new /src/wireshark/epan/packet.c:1413:8\n    #18 0xb63791 in dissect_bluetooth /src/wireshark/epan/dissectors/packet-bluetooth.c:3776:10\n    #19 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #20 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #21 0x6d7239 in dissector_try_uint_new /src/wireshark/epan/packet.c:1413:8\n    #22 0x17d7af8 in dissect_pcap_pktdata /src/wireshark/epan/dissectors/packet-pcap_pktdata.c:378:14\n    #23 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #24 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #25 0x6d410b in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #26 0x6d410b in call_dissector_with_data /src/wireshark/epan/packet.c:3246:8\n    #27 0x18f13c9 in dissect_rftap /src/wireshark/epan/dissectors/packet-rftap.c:321:9\n    #28 0x18f15a2 in dissect_rftap_heur /src/wireshark/epan/dissectors/packet-rftap.c:342:12\n    #29 0x6dd7ca in dissector_try_heuristic /src/wireshark/epan/packet.c:2827:9\n    #30 0x1d0364e in decode_udp_ports /src/wireshark/epan/dissectors/packet-udp.c:709:9\n    #31 0x1d08885 in dissect /src/wireshark/epan/dissectors/packet-udp.c:1261:5\n    #32 0x1d0565d in dissect_udp /src/wireshark/epan/dissectors/packet-udp.c:1267:3\n    #33 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #34 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #35 0x6e07d1 in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #36 0x6e07d1 in call_all_postdissectors /src/wireshark/epan/packet.c:3608:3\n    #37 0x104915b in dissect_frame /src/wireshark/epan/dissectors/packet-frame.c:901:5\n    #38 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #39 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #40 0x6d410b in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #41 0x6d410b in call_dissector_with_data /src/wireshark/epan/packet.c:3246:8\n    #42 0x6d38a4 in dissect_record /src/wireshark/epan/packet.c:594:3\n    #43 0x6c7093 in epan_dissect_run /src/wireshark/epan/epan.c:585:2\n    #44 0x5573d4 in LLVMFuzzerTestOneInput /src/wireshark/fuzz/fuzzshark.c:381:2\n    #45 0x45c2f1 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm/projects/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:556:15\n    #46 0x446f11 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm/projects/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:292:6\n    #47 0x44cbce in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm/projects/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:774:9\n    #48 0x476d42 in main /src/llvm/projects/compiler-rt/lib/fuzzer/FuzzerMain.cpp:19:10\n    #49 0x7f2db150682f in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x2082f)\n    #50 0x4202c8 in _start (/out/fuzzshark_ip_proto-udp+0x4202c8)\n```\n\nchannels_info->adapter_disconnect_in_frame and channels_info->hci_disconnect_in_frame was uninitialized, segfault occured when dereferencing.\n```\n(gdb) p channels_info->hci_disconnect_in_frame\n$2 = (guint32 *) 0xbebebebebebebebe\n(gdb) p channels_info->adapter_disconnect_in_frame\n$3 = (guint32 *) 0xbebebebebebebebe\n```",
+  "state": "merged",
+  "created_at": "2020-11-18T05:54:45.004Z",
+  "updated_at": "2020-11-19T13:07:18.950Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2020-11-19T13:07:19.058Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "fuzz",
+  "user_notes_count": 5,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6386157,
+    "username": "ltx2018",
+    "public_email": "lutianxiong@huawei.com",
+    "name": "lutianxiong",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a1094487b10f0e0342ae1fb4ccac2b8607af9fd018fefb597d13b6eb0f8beb0e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/ltx2018"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 22509548,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "65ac14b51a226903deb4c90779121385cb9eff30",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2020-11-18T05:54:45.004Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!961",
+  "references": {
+    "short": "!961",
+    "relative": "!961",
+    "full": "wireshark/wireshark!961"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/961",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2020-11-19T12:44:47.284Z",
+  "latest_build_finished_at": "2020-11-19T13:07:12.266Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 218527923,
+    "iid": 10896,
+    "project_id": 7898047,
+    "sha": "65ac14b51a226903deb4c90779121385cb9eff30",
+    "ref": "refs/merge-requests/961/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2020-11-19T12:44:43.962Z",
+    "updated_at": "2020-11-19T13:07:12.293Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/218527923"
+  },
+  "head_pipeline": {
+    "id": 218527923,
+    "iid": 10896,
+    "project_id": 7898047,
+    "sha": "65ac14b51a226903deb4c90779121385cb9eff30",
+    "ref": "refs/merge-requests/961/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2020-11-19T12:44:43.962Z",
+    "updated_at": "2020-11-19T13:07:12.293Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/218527923",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    },
+    "started_at": "2020-11-19T12:44:47.284Z",
+    "finished_at": "2020-11-19T13:07:12.266Z",
+    "committed_at": null,
+    "duration": 1344,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/218527923",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "7654bb260d08fdb7adeafce1877fa3c38f3465ae",
+    "head_sha": "65ac14b51a226903deb4c90779121385cb9eff30",
+    "start_sha": "7654bb260d08fdb7adeafce1877fa3c38f3465ae"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "ea94da2b3c65033a062c776a302fe0225508ce88",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 449750897,
+          "type": "DiscussionNote",
+          "body": "Please update the commit message to conform to our guidelines: https://gitlab.com/wireshark/wireshark/-/wikis/Development/SubmittingPatches#writing-a-good-commit-message",
+          "author": {
+            "id": 6621762,
+            "username": "graham.bloice",
+            "public_email": "",
+            "name": "Graham Bloice",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/8730bfac2267cb97ff1f8187d285f244745a03a783055c8fd6fcd679bfa71c6e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/graham.bloice"
+          },
+          "created_at": "2020-11-18T08:25:48.603Z",
+          "updated_at": "2020-11-18T12:06:42.752Z",
+          "system": false,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1789948913",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "resolved_at": "2020-11-18T17:37:06.610Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        },
+        {
+          "id": 449935516,
+          "type": "DiscussionNote",
+          "body": "Thanks for your comment.\nUpdated.",
+          "author": {
+            "id": 6386157,
+            "username": "ltx2018",
+            "public_email": "lutianxiong@huawei.com",
+            "name": "lutianxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a1094487b10f0e0342ae1fb4ccac2b8607af9fd018fefb597d13b6eb0f8beb0e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ltx2018"
+          },
+          "created_at": "2020-11-18T12:06:42.681Z",
+          "updated_at": "2020-11-18T12:06:42.681Z",
+          "system": false,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1789948913",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "resolved_at": "2020-11-18T17:37:06.610Z",
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5833018959e045808e8eaab3ff59dfc677972d0d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 449763030,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>910efa6f - btle: Initialise acl_data to avoid wild pointer dereference</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/961/diffs?diff_id=125281642&start_sha=01c02326fb894a30dbb9ca60c75d06cc8fd464ef)",
+          "author": {
+            "id": 6386157,
+            "username": "ltx2018",
+            "public_email": "lutianxiong@huawei.com",
+            "name": "lutianxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a1094487b10f0e0342ae1fb4ccac2b8607af9fd018fefb597d13b6eb0f8beb0e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ltx2018"
+          },
+          "created_at": "2020-11-18T08:44:17.189Z",
+          "updated_at": "2020-11-18T08:44:17.191Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "409c3e935400a471321c074706a32a9aaf3f5fd4",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 450236297,
+          "type": "DiffNote",
+          "body": "We might want to call wmem_new0 here instead and in packet-btl2cap.c, but either way this patch looks fine to me.",
+          "author": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1789948913",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "created_at": "2020-11-18T17:36:52.038Z",
+          "updated_at": "2020-11-18T17:36:52.038Z",
+          "system": false,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "7654bb260d08fdb7adeafce1877fa3c38f3465ae",
+            "start_sha": "7654bb260d08fdb7adeafce1877fa3c38f3465ae",
+            "head_sha": "65ac14b51a226903deb4c90779121385cb9eff30",
+            "old_path": "epan/dissectors/packet-btle.c",
+            "new_path": "epan/dissectors/packet-btle.c",
+            "position_type": "text",
+            "old_line": 1629,
+            "new_line": 1629,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1789948913",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "resolved_at": "2020-11-18T17:37:11.326Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6547f98d841669c1e03b75accde805e29852e5e9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450236470,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 860017,
+            "username": "geraldcombs",
+            "public_email": "",
+            "name": "Gerald Combs",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/860017/avatar.png?v=1789948913",
+            "web_url": "https://gitlab.com/geraldcombs"
+          },
+          "created_at": "2020-11-18T17:37:11.347Z",
+          "updated_at": "2020-11-18T17:37:11.352Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "61f83e4d0100bff347e119312d71fbd01ae6d052",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450562361,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-11-19T08:37:14.013Z",
+          "updated_at": "2020-11-19T08:37:14.014Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e6807372e18851523b8ecf79274a5813c5222a2e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450562558,
+          "type": null,
+          "body": "added 7 commits\n\n<ul><li>910efa6f...1d7bc367 - 6 commits from branch <code>wireshark:master</code></li><li>d1591298 - btle: Initialise acl_data to avoid wild pointer dereference</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/961/diffs?diff_id=125547785&start_sha=910efa6fb9e55f0cff1b43bfe856e0194cbe277e)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-11-19T08:37:19.780Z",
+          "updated_at": "2020-11-19T08:37:19.782Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "033a1581ff32b9e08af7a8a61679e028ae306edd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450562617,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for d1591298006322f614410174c779b41ebc789a63 succeeds",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-11-19T08:37:21.564Z",
+          "updated_at": "2020-11-19T08:37:21.566Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "76c1358979cce8a10371e1561e161046985ed880",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450569087,
+          "type": null,
+          "body": "aborted the automatic merge because target branch was updated",
+          "author": {
+            "id": 277876,
+            "username": "crondaemon",
+            "public_email": "",
+            "name": "Dario Lombardo",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/143ae7a6f9e11c9eed24a7fdb44bb40d442fd274ba01a2e3a4abe1596819bea2?s=80&d=identicon",
+            "web_url": "https://gitlab.com/crondaemon"
+          },
+          "created_at": "2020-11-19T08:42:20.840Z",
+          "updated_at": "2020-11-19T08:42:20.842Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3ebb86d443a7caf05b37e13a1bcf57070e450233",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450812430,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-11-19T11:56:36.040Z",
+          "updated_at": "2020-11-19T11:56:36.042Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "757e82519aa2e93167340e586ac5299b4dd3a7d0",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450818490,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>4b9dfc3a - 1 commit from branch <code>wireshark:master</code></li><li>130a1dff - btle: Initialise acl_data to avoid wild pointer dereference</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/961/diffs?diff_id=125608844&start_sha=d1591298006322f614410174c779b41ebc789a63)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-11-19T11:59:29.099Z",
+          "updated_at": "2020-11-19T11:59:29.100Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b7eff5519e167dcf0b80f3081975dc02afc69e2e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450818681,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-11-19T11:59:33.087Z",
+          "updated_at": "2020-11-19T11:59:33.089Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "02fc2bb937483e2a2383e5be302bcb0d1244ae37",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450847541,
+          "type": null,
+          "body": "My job would be easier if people didn't jump the queue and push directly... *sigh*",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-11-19T12:21:41.101Z",
+          "updated_at": "2020-11-19T12:21:41.101Z",
+          "system": false,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "faf63b2ac52cd765ab6c4adca304e3b603bdaae1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450847666,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>c09b33cf - 1 commit from branch <code>wireshark:master</code></li><li>67b4ca95 - btle: Initialise acl_data to avoid wild pointer dereference</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/961/diffs?diff_id=125615188&start_sha=130a1dff22b0ba7560079d0ee2a4851e5a70df34)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-11-19T12:21:48.823Z",
+          "updated_at": "2020-11-19T12:21:48.824Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "351212cbc3faaebbfcef8c153c9b5d9e35c8f85d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450847750,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-11-19T12:21:53.200Z",
+          "updated_at": "2020-11-19T12:21:53.202Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9286df10a3e734fb92d7439c5f19e9a2603b9bbe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450881269,
+          "type": null,
+          "body": "My job would be easier if people didn't jump the queue and push directly... *sigh*",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-11-19T12:44:35.423Z",
+          "updated_at": "2020-11-19T12:44:35.423Z",
+          "system": false,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "40dbdb88ee9e9d55d2d1e742a57fb8b08afa92a9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450881460,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>7654bb26 - 1 commit from branch <code>wireshark:master</code></li><li>65ac14b5 - btle: Initialise acl_data to avoid wild pointer dereference</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/961/diffs?diff_id=125621730&start_sha=67b4ca9530f89424b889f8c63a88d94f847e2456)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-11-19T12:44:44.370Z",
+          "updated_at": "2020-11-19T12:44:44.372Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e48981a51ee69632139884a93b0f299f20a689e7",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 450881554,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-11-19T12:44:47.996Z",
+          "updated_at": "2020-11-19T12:44:47.997Z",
+          "system": true,
+          "noteable_id": 78496416,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 961,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1634,6 +1634,8 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                     acl_data->remote_bd_addr_id = 0;\n                     acl_data->is_btle = TRUE;\n                     acl_data->is_btle_retransmit = retransmit;\n+                    acl_data->adapter_disconnect_in_frame = &max_disconnect_in_frame;\n+                    acl_data->disconnect_in_frame = &max_disconnect_in_frame;\n \n                     next_tvb = tvb_new_subset_length(tvb, offset, length);\n                     if (next_tvb) {\n@@ -1715,6 +1717,8 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                     acl_data->remote_bd_addr_id  = 0;\n                     acl_data->is_btle = TRUE;\n                     acl_data->is_btle_retransmit = retransmit;\n+                    acl_data->adapter_disconnect_in_frame = &max_disconnect_in_frame;\n+                    acl_data->disconnect_in_frame = &max_disconnect_in_frame;\n \n                     next_tvb = tvb_new_subset_length(tvb, offset, length);\n                     call_dissector_with_data(btl2cap_handle, next_tvb, pinfo, tree, acl_data);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-btle.c",
+      "old_path": "epan/dissectors/packet-btle.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "65ac14b51a226903deb4c90779121385cb9eff30",
+      "short_id": "65ac14b5",
+      "created_at": "2020-11-19T12:44:40.000+00:00",
+      "parent_ids": [
+        "7654bb260d08fdb7adeafce1877fa3c38f3465ae"
+      ],
+      "title": "btle: Initialise acl_data to avoid wild pointer dereference",
+      "message": "btle: Initialise acl_data to avoid wild pointer dereference\n\nClose oss-fuzz issue 25007.\n",
+      "author_name": "lutianxiong",
+      "author_email": "lutianxiong@huawei.com",
+      "authored_date": "2020-11-18T09:23:45.000+08:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2020-11-19T12:44:40.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/65ac14b51a226903deb4c90779121385cb9eff30"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 125621730,
+      "head_commit_sha": "65ac14b51a226903deb4c90779121385cb9eff30",
+      "base_commit_sha": "7654bb260d08fdb7adeafce1877fa3c38f3465ae",
+      "start_commit_sha": "7654bb260d08fdb7adeafce1877fa3c38f3465ae",
+      "created_at": "2020-11-19T12:44:42.472Z",
+      "merge_request_id": 78496416,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 125615188,
+      "head_commit_sha": "67b4ca9530f89424b889f8c63a88d94f847e2456",
+      "base_commit_sha": "c09b33cf1d5d920c6687b5104e33679a1546a5c4",
+      "start_commit_sha": "c09b33cf1d5d920c6687b5104e33679a1546a5c4",
+      "created_at": "2020-11-19T12:21:47.309Z",
+      "merge_request_id": 78496416,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 125608844,
+      "head_commit_sha": "130a1dff22b0ba7560079d0ee2a4851e5a70df34",
+      "base_commit_sha": "4b9dfc3a19e6ea397440d414e1d420e5cee1c719",
+      "start_commit_sha": "c09b33cf1d5d920c6687b5104e33679a1546a5c4",
+      "created_at": "2020-11-19T11:59:27.403Z",
+      "merge_request_id": 78496416,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 125547785,
+      "head_commit_sha": "d1591298006322f614410174c779b41ebc789a63",
+      "base_commit_sha": "1d7bc367e943464f912a67ad436fabddb1a61a37",
+      "start_commit_sha": "1d7bc367e943464f912a67ad436fabddb1a61a37",
+      "created_at": "2020-11-19T08:37:18.197Z",
+      "merge_request_id": 78496416,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 125281642,
+      "head_commit_sha": "910efa6fb9e55f0cff1b43bfe856e0194cbe277e",
+      "base_commit_sha": "8b520a437e5fc342febc3d34c92d6c6784b38cbf",
+      "start_commit_sha": "69e6a16ba448d832b3cd8e10281311df7f445556",
+      "created_at": "2020-11-18T08:44:15.781Z",
+      "merge_request_id": 78496416,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 125253973,
+      "head_commit_sha": "01c02326fb894a30dbb9ca60c75d06cc8fd464ef",
+      "base_commit_sha": "8b520a437e5fc342febc3d34c92d6c6784b38cbf",
+      "start_commit_sha": "8b520a437e5fc342febc3d34c92d6c6784b38cbf",
+      "created_at": "2020-11-18T05:54:45.776Z",
+      "merge_request_id": 78496416,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

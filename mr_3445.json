@@ -1,0 +1,143 @@
+{
+  "id": 105407852,
+  "iid": 3445,
+  "project_id": 7898047,
+  "title": "Delay SP_FILE until first packets present",
+  "description": "Fixes issue #17013 where a race condition between reporting SP_FILE and\nwriting the SHB from a pipe source in passthrough mode.  If the capture\nparent reads from the capture file before the SHB is written the read\naborts on the empty file.",
+  "state": "closed",
+  "created_at": "2021-06-23T00:35:33.901Z",
+  "updated_at": "2021-06-23T02:00:18.371Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "master",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6760709,
+    "username": "jkcko",
+    "public_email": "",
+    "name": "James Ko",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6760709/avatar.png?v=1789065133",
+    "web_url": "https://gitlab.com/jkcko"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 25512263,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "fd07d0d6f6242d0b01a9b2be6241455e33f3f412",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": null,
+  "prepared_at": "2021-06-23T00:35:33.901Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!3445",
+  "references": {
+    "short": "!3445",
+    "relative": "!3445",
+    "full": "wireshark/wireshark!3445"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/3445",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "b2c90bcbee5aa1a19ffc5a6df558e8e44d9c2ecd",
+    "head_sha": "fd07d0d6f6242d0b01a9b2be6241455e33f3f412",
+    "start_sha": "b2c90bcbee5aa1a19ffc5a6df558e8e44d9c2ecd"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [],
+  "changes_data": [
+    {
+      "diff": "@@ -126,6 +126,7 @@ static gint64 pcap_queue_byte_limit = 0;\n static gint64 pcap_queue_packet_limit = 0;\n \n static gboolean capture_child = FALSE; /* FALSE: standalone call, TRUE: this is an Wireshark capture child */\n+static const char *report_capture_filename = NULL; /* capture child file name */\n #ifdef _WIN32\n static gchar *sig_pipe_name = NULL;\n static HANDLE sig_pipe_handle = NULL;\n@@ -5607,6 +5608,11 @@ report_packet_count(unsigned int packet_count)\n     static unsigned int count = 0;\n \n     if (capture_child) {\n+        if (report_capture_filename) {\n+            ws_debug(\"File: %s\", report_capture_filename);\n+            pipe_write_block(2, SP_FILE, report_capture_filename);\n+            report_capture_filename = NULL;\n+        }\n         g_snprintf(count_str, sizeof(count_str), \"%u\", packet_count);\n         ws_debug(\"Packets: %s\", count_str);\n         pipe_write_block(2, SP_PACKET_COUNT, count_str);\n@@ -5622,8 +5628,8 @@ static void\n report_new_capture_file(const char *filename)\n {\n     if (capture_child) {\n-        ws_debug(\"File: %s\", filename);\n-        pipe_write_block(2, SP_FILE, filename);\n+        /* Save the filename to report new capture file only after first packets are ready */\n+        report_capture_filename = filename;\n     } else {\n #ifdef SIGINFO\n         /*\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "dumpcap.c",
+      "old_path": "dumpcap.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "fd07d0d6f6242d0b01a9b2be6241455e33f3f412",
+      "short_id": "fd07d0d6",
+      "created_at": "2021-06-22T17:12:51.000-07:00",
+      "parent_ids": [
+        "b2c90bcbee5aa1a19ffc5a6df558e8e44d9c2ecd"
+      ],
+      "title": "Delay SP_FILE until first packets present",
+      "message": "Delay SP_FILE until first packets present\n\nFixes issue #17013 where a race condition between reporting SP_FILE and\nwriting the SHB from a pipe source in passthrough mode.  If the capture\nparent reads from the capture file before the SHB is written the read\naborts on the empty file.\n",
+      "author_name": "James Ko",
+      "author_email": "jck@exegin.com",
+      "authored_date": "2021-06-22T17:12:51.000-07:00",
+      "committer_name": "James Ko",
+      "committer_email": "jck@exegin.com",
+      "committed_date": "2021-06-22T17:12:51.000-07:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/fd07d0d6f6242d0b01a9b2be6241455e33f3f412"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 204704684,
+      "head_commit_sha": "fd07d0d6f6242d0b01a9b2be6241455e33f3f412",
+      "base_commit_sha": "b2c90bcbee5aa1a19ffc5a6df558e8e44d9c2ecd",
+      "start_commit_sha": "b2c90bcbee5aa1a19ffc5a6df558e8e44d9c2ecd",
+      "created_at": "2021-06-23T00:35:34.969Z",
+      "merge_request_id": 105407852,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

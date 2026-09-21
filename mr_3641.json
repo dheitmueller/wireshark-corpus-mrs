@@ -1,0 +1,221 @@
+{
+  "id": 107875465,
+  "iid": 3641,
+  "project_id": 7898047,
+  "title": "oampdu: Process DPoE GetRequest messages for Link and User Port objects",
+  "description": "* Currently GetRequest messages processed only from ONU object itself\n   and parsed incorrectly when such a messages originated for Link\n   and User Port objects. This commit is fixing this parsing issue.\n\nSigned-off-by: Arkady Gilinsky <8351139-ark-g@users.noreply.gitlab.com>",
+  "state": "closed",
+  "created_at": "2021-07-12T14:03:57.285Z",
+  "updated_at": "2021-07-12T15:14:23.917Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "oampdu-getreq-fix",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 8351139,
+    "username": "ark-g",
+    "public_email": "",
+    "name": "Arkady Gilinsky",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/b46547af9691b4066e1c01a5d7899f831f7b8e8b6d81c696a5dd4a7c4808bce9?s=80&d=identicon",
+    "web_url": "https://gitlab.com/ark-g"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "20326bdd8e27dddf0451f44f0845c2e11039453e",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-07-12T14:03:57.285Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!3641",
+  "references": {
+    "short": "!3641",
+    "relative": "!3641",
+    "full": "wireshark/wireshark!3641"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/3641",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "86e2fda11e199b8d0e874147e60a1ba1f0ddb803",
+    "head_sha": "20326bdd8e27dddf0451f44f0845c2e11039453e",
+    "start_sha": "86e2fda11e199b8d0e874147e60a1ba1f0ddb803"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [],
+  "changes_data": [
+    {
+      "diff": "@@ -1669,6 +1669,8 @@ dissect_oampdu_vendor_specific(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr\n     proto_tree *oampdu_vendor_specific_tree;\n     proto_tree *dpoe_opcode_tree;\n     proto_item *dpoe_opcode_item;\n+    proto_item *dpoe_opcode_request_tree;\n+    proto_item *dpoe_opcode_request_item;\n     proto_item *dpoe_opcode_response;\n     proto_tree *dpoe_opcode_response_tree;\n     offset = OAMPDU_HEADER_SIZE;\n@@ -1693,14 +1695,24 @@ dissect_oampdu_vendor_specific(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr\n                     break;\n                 case DPOE_OPCODE_GET_REQUEST:\n                     leaf_branch = tvb_get_ntoh24(tvb, offset);\n+                    variable_length = 0;\n                     if (leaf_branch == DPOE_LB_ONU_OBJ || leaf_branch == DPOE_LB_LINK_OBJ || leaf_branch == DPOE_LB_USER_PORT_OBJ) {\n-                        proto_tree_add_item(dpoe_opcode_tree, hf_dpoe_variable_descriptor, tvb, offset, 3, ENC_BIG_ENDIAN);\n+                        dpoe_opcode_request_item = proto_tree_add_item(dpoe_opcode_tree, hf_dpoe_variable_descriptor, tvb, offset, 3, ENC_BIG_ENDIAN);\n                         offset += 3;\n                         variable_length = tvb_get_guint8(tvb, offset);\n                         offset += 1;\n-                        offset += variable_length;\n+                        if (variable_length == 1) {\n+                            /* Add User Port or Link instance */\n+                            dpoe_opcode_request_tree = proto_item_add_subtree(dpoe_opcode_request_item, ett_dpoe_opcode);\n+                            if (leaf_branch == DPOE_LB_USER_PORT_OBJ) {\n+                                proto_tree_add_item(dpoe_opcode_request_tree, hf_oam_dpoe_user_port_object, tvb, offset, 1, ENC_BIG_ENDIAN);\n+                            } else {\n+                                proto_tree_add_item(dpoe_opcode_request_tree, hf_oampdu_variable_value, tvb, offset, 1, ENC_BIG_ENDIAN);\n+                            }\n+                        }\n                     }\n                     next_byte = tvb_get_guint8(tvb, offset);\n+                    offset += variable_length;\n                     while (next_byte != 0x00) {\n                         proto_tree_add_item(dpoe_opcode_tree, hf_dpoe_variable_descriptor, tvb, offset, 3, ENC_BIG_ENDIAN);\n                         offset += 3;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-oampdu.c",
+      "old_path": "epan/dissectors/packet-oampdu.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "20326bdd8e27dddf0451f44f0845c2e11039453e",
+      "short_id": "20326bdd",
+      "created_at": "2021-07-12T15:38:19.000+03:00",
+      "parent_ids": [
+        "1d3f652a54b313364322def932db6ad5c431cf09",
+        "86e2fda11e199b8d0e874147e60a1ba1f0ddb803"
+      ],
+      "title": "wireshark(lmaster): Merge branch 'master' into lmaster",
+      "message": "wireshark(lmaster): Merge branch 'master' into lmaster\n",
+      "author_name": "Arkady Gilinsky",
+      "author_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "authored_date": "2021-07-12T15:38:19.000+03:00",
+      "committer_name": "Arkady Gilinsky",
+      "committer_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "committed_date": "2021-07-12T15:38:19.000+03:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/20326bdd8e27dddf0451f44f0845c2e11039453e"
+    },
+    {
+      "id": "1d3f652a54b313364322def932db6ad5c431cf09",
+      "short_id": "1d3f652a",
+      "created_at": "2021-07-12T11:08:56.000+03:00",
+      "parent_ids": [
+        "50eb5bdded03e607df0bed34ae974e9f3c3b9e46"
+      ],
+      "title": "oampdu: Fix DPoE get request parsing",
+      "message": "oampdu: Fix DPoE get request parsing\n\n * parse Port/Link/ONU instance\n\nSigned-off-by: Arkady Gilinsky <8351139-ark-g@users.noreply.gitlab.com>\n",
+      "author_name": "Arkady Gilinsky",
+      "author_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "authored_date": "2021-07-12T11:08:56.000+03:00",
+      "committer_name": "Arkady Gilinsky",
+      "committer_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "committed_date": "2021-07-12T11:08:56.000+03:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/1d3f652a54b313364322def932db6ad5c431cf09"
+    },
+    {
+      "id": "50eb5bdded03e607df0bed34ae974e9f3c3b9e46",
+      "short_id": "50eb5bdd",
+      "created_at": "2021-03-10T09:45:47.000+02:00",
+      "parent_ids": [
+        "0cb500e4643363abe1b49e31c01f6009ca78ceba",
+        "b185260efb60ebd065f2d9164bea617f0ec5a977"
+      ],
+      "title": "wireshark(wireshark): Merge branch 'master' into lmaster",
+      "message": "wireshark(wireshark): Merge branch 'master' into lmaster\n",
+      "author_name": "Arkady Gilinsky",
+      "author_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "authored_date": "2021-03-10T09:45:47.000+02:00",
+      "committer_name": "Arkady Gilinsky",
+      "committer_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "committed_date": "2021-03-10T09:45:47.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/50eb5bdded03e607df0bed34ae974e9f3c3b9e46"
+    },
+    {
+      "id": "0cb500e4643363abe1b49e31c01f6009ca78ceba",
+      "short_id": "0cb500e4",
+      "created_at": "2021-03-08T07:30:42.000+02:00",
+      "parent_ids": [
+        "e72559976fd195253f2ac6a82b3a442146db53ea"
+      ],
+      "title": "oampdu: Fix \"Queue Configuration\" message parsing",
+      "message": "oampdu: Fix \"Queue Configuration\" message parsing\n\nSigned-off-by: Arkady Gilinsky <8351139-ark-g@users.noreply.gitlab.com>\n",
+      "author_name": "Arkady Gilinsky",
+      "author_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "authored_date": "2021-03-08T07:29:58.000+02:00",
+      "committer_name": "Arkady Gilinsky",
+      "committer_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "committed_date": "2021-03-08T07:30:42.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/0cb500e4643363abe1b49e31c01f6009ca78ceba"
+    },
+    {
+      "id": "e72559976fd195253f2ac6a82b3a442146db53ea",
+      "short_id": "e7255997",
+      "created_at": "2021-03-08T07:27:17.000+02:00",
+      "parent_ids": [
+        "e240ec3d2dc47999dec436d6deaf10443489d915"
+      ],
+      "title": "oampdu: Process DPoE GetRequest messages for Link and User Port objects",
+      "message": "oampdu: Process DPoE GetRequest messages for Link and User Port objects\n\n * Currently GetRequest messages processed only from ONU object itself\n   and parsed incorrectly when such a messages originated for Link\n   and User Port objects. This commit is fixing this parsing issue.\n\nSigned-off-by: Arkady Gilinsky <8351139-ark-g@users.noreply.gitlab.com>\n",
+      "author_name": "Arkady Gilinsky",
+      "author_email": "arkady.gilinsky@harmonicinc.com",
+      "authored_date": "2021-03-08T07:16:20.000+02:00",
+      "committer_name": "Arkady Gilinsky",
+      "committer_email": "8351139-ark-g@users.noreply.gitlab.com",
+      "committed_date": "2021-03-08T07:27:17.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e72559976fd195253f2ac6a82b3a442146db53ea"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 213738534,
+      "head_commit_sha": "20326bdd8e27dddf0451f44f0845c2e11039453e",
+      "base_commit_sha": "86e2fda11e199b8d0e874147e60a1ba1f0ddb803",
+      "start_commit_sha": "86e2fda11e199b8d0e874147e60a1ba1f0ddb803",
+      "created_at": "2021-07-12T14:03:58.479Z",
+      "merge_request_id": 107875465,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,650 @@
+{
+  "id": 82994656,
+  "iid": 1478,
+  "project_id": 7898047,
+  "title": "Protobuf: fix bugs that failing to parse .proto files in complex syntax",
+  "description": "Some .proto files contain complex syntax that does not be described in protobuf official site\n(https://developers.google.com/protocol-buffers/docs/reference/proto3-spec).\n\n### 1. Update 'epan/protobuf_lang_parser.lemon' to:\n\n (1) Support complex option names format (EBNF):\n```\n    optionName = ( ident | \"(\" fullIdent \")\" ) { \".\" ( ident | \"(\" fullIdent \")\" ) }\n```\nfor example, *```option (complex_opt2).(grault) = 654;```*.\n\n (2) Make enum body support 'reserved' section (EBNF):\n```\n    enumBody = \"{\" { reserved | option | enumField | emptyStatement } \"}\"\n```\n\n (3) Allow the value of field or enumValue option to be \"{ ... }\" other than constant:\n```\n    enumValueOption = optionName  \"=\" ( constant | customOptionValue ) \";\"\n    fieldOption = optionName  \"=\" ( constant | customOptionValue ) \";\"\n```\n\n (4) Allow 'group' section missing 'label' (for example, in 'oneof' section).\n\n (5) Make 'oneof' section support 'option' and 'group' sections (BNF):\n```\n    oneof = \"oneof\" oneofName \"{\" { oneofField | option | group | emptyStatement } \"}\"\n```\n\n (6) Ignore unused 'extend' section.\n\n (7) Fix the bug of one string being splitted into multi-lines.\n\n### 2. Update 'epan/protobuf_lang_tree.c' to:\n\n (8) Fix the bug of parsing repeated option.\n\n### 3. Update 'test/suite_dissection.py' to add test case for parsing complex syntax .proto files:\n```\n  test/protobuf_lang_files/complex_proto_files/unittest_custom_options.proto\n  test/protobuf_lang_files/complex_proto_files/complex_syntax.proto\n```\nand dependency files:\n```\n  test/protobuf_lang_files/well_know_types/google/protobuf/any.proto\n  test/protobuf_lang_files/well_know_types/google/protobuf/descriptor.proto\n```\n\nYou can run command like:\n\n```batchfile\npytest --program-path .\\run\\Debug\\ -k \"grpc or protobuf\"\n```\n\nin build directory (in windows) to test these cases only.\n\n### More information\n\nThis commit fixed the issue mentioned in #17046. I have manually test the .proto files in *data-plane-api*, *protoc-gen-validate* and *udpa* mentioned in that issue. I don't add these .proto files as wireshark test case, because there are too many .proto files.",
+  "state": "merged",
+  "created_at": "2020-12-27T06:12:42.471Z",
+  "updated_at": "2021-11-23T14:42:15.904Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2020-12-27T11:48:06.273Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "protobuf-parsing-complex-syntax-proto_file",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7308371,
+    "username": "huangqiangxiong",
+    "public_email": "",
+    "name": "Huang Qiangxiong",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+    "web_url": "https://gitlab.com/huangqiangxiong"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 21839746,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "cd2d35c1d2b10fe2916469544cc2951a8979a4dc",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2020-12-27T06:12:42.471Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!1478",
+  "references": {
+    "short": "!1478",
+    "relative": "!1478",
+    "full": "wireshark/wireshark!1478"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/1478",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "7",
+  "latest_build_started_at": "2020-12-27T11:32:13.365Z",
+  "latest_build_finished_at": "2020-12-27T11:48:05.320Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 234764820,
+    "iid": 12362,
+    "project_id": 7898047,
+    "sha": "cd2d35c1d2b10fe2916469544cc2951a8979a4dc",
+    "ref": "refs/merge-requests/1478/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2020-12-27T11:32:12.276Z",
+    "updated_at": "2020-12-27T11:48:05.325Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/234764820"
+  },
+  "head_pipeline": {
+    "id": 234764820,
+    "iid": 12362,
+    "project_id": 7898047,
+    "sha": "cd2d35c1d2b10fe2916469544cc2951a8979a4dc",
+    "ref": "refs/merge-requests/1478/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2020-12-27T11:32:12.276Z",
+    "updated_at": "2020-12-27T11:48:05.325Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/234764820",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6792385,
+      "username": "AndersBroman",
+      "public_email": "",
+      "name": "AndersBroman",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+      "web_url": "https://gitlab.com/AndersBroman"
+    },
+    "started_at": "2020-12-27T11:32:13.365Z",
+    "finished_at": "2020-12-27T11:48:05.320Z",
+    "committed_at": null,
+    "duration": 951,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/234764820",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "5778b2403ea4fec9762f961a6ba4dbf33fd2ee05",
+    "head_sha": "cd2d35c1d2b10fe2916469544cc2951a8979a4dc",
+    "start_sha": "5778b2403ea4fec9762f961a6ba4dbf33fd2ee05"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "0d6adaed0aacb679d03c087b8d734d2b956e88f1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 474077623,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2020-12-27T06:14:55.657Z",
+          "updated_at": "2020-12-27T06:14:55.658Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5d79b47c6102b95593cc0da86454acfb486beb36",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 474078054,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2020-12-27T06:23:32.870Z",
+          "updated_at": "2020-12-27T06:23:32.872Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3f225b8819470b6f4c2f42463c8bfd53e284ca0a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 474078607,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2020-12-27T06:38:34.658Z",
+          "updated_at": "2020-12-27T06:38:34.660Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "68b7ce08f49778208e3b202f347c0b00000c6b29",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 474094512,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>9fdbbfc4...fe6b7743 - 2 commits from branch <code>wireshark:master</code></li><li>6b437bcc - Protobuf: fix bugs that parsing complex syntax .proto files</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1478/diffs?diff_id=133040400&start_sha=9fdbbfc476b6549d99a558e583f0649a0f5dbe8f)",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2020-12-27T09:13:01.059Z",
+          "updated_at": "2020-12-27T09:13:01.061Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "697c7786dc5ebb043ac290124b8d2cde90c224aa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 474112025,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-12-27T11:32:06.766Z",
+          "updated_at": "2020-12-27T11:32:06.768Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "114d7e7baa971900d9ffbe24b4d232221b311553",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 474112027,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>5778b240 - 1 commit from branch <code>wireshark:master</code></li><li>cd2d35c1 - Protobuf: fix bugs that parsing complex syntax .proto files</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1478/diffs?diff_id=133044698&start_sha=6b437bcc24ec0ac9b4d4c57adc4e447341759376)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-12-27T11:32:12.603Z",
+          "updated_at": "2020-12-27T11:32:12.604Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "696d4ae65d99ac1880d05127a8921952039120e4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 474112036,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for cd2d35c1d2b10fe2916469544cc2951a8979a4dc succeeds",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-12-27T11:32:20.829Z",
+          "updated_at": "2020-12-27T11:32:20.831Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cb779a04620f963603fc82079c652438626d8b7e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 474112061,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-12-27T11:32:34.188Z",
+          "updated_at": "2020-12-27T11:32:34.189Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ea878f9b28addbd824cc9404b1d06dcc01eca5f9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 741479300,
+          "type": null,
+          "body": "mentioned in issue #17744",
+          "author": {
+            "id": 7308371,
+            "username": "huangqiangxiong",
+            "public_email": "",
+            "name": "Huang Qiangxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/c2bf2741aa508a5655041b982730614ec30bfb908b83b47a8b3479a955123d80?s=80&d=identicon",
+            "web_url": "https://gitlab.com/huangqiangxiong"
+          },
+          "created_at": "2021-11-23T14:42:15.861Z",
+          "updated_at": "2021-11-23T14:42:15.863Z",
+          "system": true,
+          "noteable_id": 82994656,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1478,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -190,11 +190,17 @@ option ::= PT_OPTION optionName PT_ASSIGN constant PT_SEMICOLON.\n option ::= PT_OPTION optionName PT_ASSIGN customOptionValue PT_SEMICOLON.\n \n /* v2/v3: optionName = ( ident | \"(\" fullIdent \")\" ) { \".\" ident } */\n-optionName ::= exIdent.\n-optionName(A) ::= PT_LPAREN exIdent(B) PT_RPAREN.\n+/* Offical PBL bugfix: optionName = ( ident | \"(\" fullIdent \")\" ) { \".\" ( ident | \"(\" fullIdent \")\" ) } */\n+extIdentInParentheses(A) ::= PT_LPAREN exIdent(B) PT_RPAREN.\n     { A = B; A->v = pbl_store_string_token(state, g_strconcat(\"(\", B->v, \")\", NULL)); }\n-optionName(A) ::= PT_LPAREN exIdent(B) PT_RPAREN exIdent(C).  /* Note that the exIdent contains \".\" */\n-    { A = B; A->v = pbl_store_string_token(state, g_strconcat(\"(\", B->v, \")\", C->v, NULL)); }\n+optionName ::= exIdent.\n+optionName ::= extIdentInParentheses.\n+optionName(A) ::= optionName(B) exIdent(C). // Note that the exIdent contains \".\"\n+    { A = B; A->v = pbl_store_string_token(state, g_strconcat(B->v, C->v, NULL)); }\n+optionName(A) ::= optionName(B) PT_DOT extIdentInParentheses(C).\n+    { A = B; A->v = pbl_store_string_token(state, g_strconcat(B->v, \".\", C->v, NULL)); }\n+optionName(A) ::= optionName(B) extIdentInParentheses(C).\n+    { A = B; A->v = pbl_store_string_token(state, g_strconcat(B->v, \".\", C->v, NULL)); }\n \n /* Allow format which not defined in offical PBL specification like:\n     option (google.api.http) = { post: \"/v3alpha/kv/put\" body: \"*\" };\n@@ -203,9 +209,30 @@ optionName(A) ::= PT_LPAREN exIdent(B) PT_RPAREN exIdent(C).  /* Note that the e\n */\n customOptionValue ::= PT_LCURLY customOptionBody PT_RCURLY.\n \n+/* The formal EBNF of customOptionBody seems to be */\n+/*\n+customOptionBody ::= .\n+customOptionBody ::= customOptionBody optionField.\n+customOptionBody ::= customOptionBody PT_COMMA optionField.\n+customOptionBody ::= customOptionBody PT_SEMICOLON optionField.\n+\n+optionField ::= optionName PT_COLON constant.\n+optionField ::= optionName PT_COLON customOptionValue.\n+optionField ::= optionName customOptionValue.\n+optionField ::= optionName PT_COLON array.\n+\n+array ::= PT_LBRACKET arrayBody PT_RBRACKET.\n+arrayBodyConst ::= constant.\n+arrayBodyConst ::= arrayBody PT_COMMA constant.\n+arrayBodyCustom ::= customOptionValue.\n+arrayBodyCustom ::= arrayBody PT_COMMA customOptionValue.\n+arrayBody ::= arrayBodyConst.\n+arrayBody ::= arrayBodyCustom.\n+*/\n+/* but for handling unexpected situations, we still use following EBNF  */\n customOptionBody ::= .\n customOptionBody ::= customOptionBody exIdent.\n-customOptionBody ::= customOptionBody strLit.\n+customOptionBody ::= customOptionBody PT_STRLIT.\n customOptionBody ::= customOptionBody symbolsWithoutCurly.\n customOptionBody ::= customOptionBody intLit.\n customOptionBody ::= customOptionBody customOptionValue.\n@@ -275,7 +302,9 @@ enum(A) ::= PT_ENUM enumName(B) PT_LCURLY enumBody(C) PT_RCURLY.\n     { A = C; pbl_set_node_name(A, B->ln, B->v); }\n \n /* v2/v3: enumBody = \"{\" { option | enumField | emptyStatement } \"}\" */\n+/* Offical PBL bugfix: enumBody = \"{\" { reserved | option | enumField | emptyStatement } \"}\" */\n enumBody(A) ::= .  { A = pbl_create_node(state->file, CUR_LINENO, PBL_ENUM, NAME_TO_BE_SET); }\n+enumBody ::= enumBody reserved.\n enumBody ::= enumBody option.\n enumBody(A) ::= enumBody(B) enumField(C).  { A = B; pbl_add_child(A, C); }\n enumBody ::= enumBody emptyStatement.\n@@ -296,7 +325,9 @@ enumValueOptions ::= enumValueOption.\n enumValueOptions ::= enumValueOptions PT_COMMA enumValueOption.\n \n /* v2/v3: enumValueOption = optionName \"=\" constant */\n+/* Offical PBL bugfix: enumValueOption = optionName  \"=\" ( constant | customOptionValue ) \";\" */\n enumValueOption ::= optionName PT_ASSIGN constant.\n+enumValueOption ::= optionName PT_ASSIGN customOptionValue.\n \n /* v2: service = \"service\" serviceName \"{\" { option | rpc | stream | emptyStatement } \"}\" */\n /* v3: service = \"service\" serviceName \"{\" { option | rpc | emptyStatement } \"}\" */\n@@ -373,21 +404,30 @@ fieldOptions(A) ::= fieldOptions(B) PT_COMMA fieldOption(C).\n     { A = B; pbl_add_child(A, C); }\n \n /* v2/v3: fieldOption = optionName \"=\" constant */\n+/* Offical PBL bugfix: fieldOption = optionName  \"=\" ( constant | customOptionValue ) \";\" */\n fieldOption(A) ::= optionName(B) PT_ASSIGN constant(C).\n     { A = pbl_create_option_node(state->file, B->ln, B->v, C); }\n+fieldOption(A) ::= optionName(B) PT_ASSIGN customOptionValue.\n+    { A = pbl_create_option_node(state->file, B->ln, B->v, pbl_store_string_token(state, g_strdup(\"{ ... }\"))); }\n \n /* v2 only: group = label \"group\" groupName \"=\" fieldNumber messageBody */\n+/* Offical PBL bugfix: there is no label if the 'group' is a member of oneof body */\n+group(A) ::= PT_GROUP groupName(B) PT_ASSIGN fieldNumber PT_LCURLY messageBody(C) PT_RCURLY.\n+    { A = C; pbl_set_node_name(A, B->ln, B->v); }\n group(A) ::= label PT_GROUP groupName(B) PT_ASSIGN fieldNumber PT_LCURLY messageBody(C) PT_RCURLY.\n     { A = C; pbl_set_node_name(A, B->ln, B->v); }\n \n groupName ::= exIdent.\n \n /* v2/v3: oneof = \"oneof\" oneofName \"{\" { oneofField | emptyStatement } \"}\" */\n+/* Offical PBL bugfix: oneof = \"oneof\" oneofName \"{\" { oneofField | option | group | emptyStatement } \"}\" */\n oneof(A) ::= PT_ONEOF oneofName(B) PT_LCURLY oneofBody(C) PT_RCURLY.\n     { A = C; pbl_set_node_name(A, B->ln, B->v); }\n \n oneofBody(A) ::= .  { A = pbl_create_node(state->file, CUR_LINENO, PBL_ONEOF, NAME_TO_BE_SET); }\n oneofBody(A) ::= oneofBody(B) oneofField(C). { A = B; pbl_add_child(A, C); }\n+oneofBody ::= oneofBody option.\n+oneofBody ::= oneofBody group.\n oneofBody ::= oneofBody emptyStatement.\n \n /* v2/v3: oneofField = type fieldName \"=\" fieldNumber [ \"[\" fieldOptions \"]\" ] \";\" */\n@@ -436,11 +476,13 @@ Note that there is an error in BNF definition about reserved fieldName. It's str\n quoteFieldNames ::= strLit.\n quoteFieldNames ::= quoteFieldNames PT_COMMA strLit.\n \n-/* v2 only: extend = \"extend\" messageType \"{\" {field | group | emptyStatement} \"}\" */\n-extend(A) ::= PT_EXTEND(X) messageType(B) PT_LCURLY extendBody(C) PT_RCURLY.\n-    { A = C; pbl_set_node_name(A, X->ln, pbl_store_string_token(state, g_strconcat(B, \"Extend\", NULL))); }\n+/* v2/v3: extend = \"extend\" messageType \"{\" {field | group | emptyStatement} \"}\"\n+Note that creating custom options uses extensions, which are permitted only for custom options in proto3.\n+We don't use custom options while parsing packet, so we just ignore the 'extend'.\n+*/\n+extend(A) ::= PT_EXTEND messageType PT_LCURLY extendBody(B) PT_RCURLY.\n+    { A = NULL; pbl_free_node(B); }\n \n-/* v2 only */\n extendBody(A) ::= .  { A = pbl_create_node(state->file, CUR_LINENO, PBL_MESSAGE, NAME_TO_BE_SET); }\n extendBody(A) ::= extendBody(B) field(C). { A = B; pbl_add_child(A, C); }\n extendBody(A) ::= extendBody(B) group(C). { A = B; pbl_add_child(A, C); }\n@@ -481,6 +523,8 @@ constant(A) ::= PT_MINUS exIdent(B). { A = pbl_store_string_token(state, g_strco\n exIdent ::= PT_IDENT.\n \n strLit(A) ::= PT_STRLIT(B).  { A = pbl_store_string_token(state, g_strndup(B->v + 1, strlen(B->v) - 2)); }\n+/* support one string being splitted into multi-lines */\n+strLit(A) ::= strLit(B) PT_STRLIT(C). { A = pbl_store_string_token(state, g_strconcat(B, g_strndup(C->v + 1, strlen(C->v) - 2), NULL)); }\n \n %code {\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/protobuf_lang_parser.lemon",
+      "old_path": "epan/protobuf_lang_parser.lemon",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -1009,7 +1009,17 @@ pbl_add_child(pbl_node_t* parent, pbl_node_t* child)\n     }\n \n     node = (pbl_node_t*) g_hash_table_lookup(parent->children_by_name, child->name);\n-    if (node && child->file && parent->file\n+    if (node && node->nodetype == PBL_OPTION && child->nodetype == PBL_OPTION\n+        && ((pbl_option_descriptor_t*)node)->value && ((pbl_option_descriptor_t*)child)->value) {\n+        /* repeated option can be set many times like:\n+             string fieldWithComplexOption5 = 5 [(rules).repeated_int = 1, (rules).repeated_int = 2];\n+           we just merge the old value and new value in format /old_value \",\" new_value/.\n+        */\n+        gchar* oval = ((pbl_option_descriptor_t*)node)->value;\n+        gchar* nval = ((pbl_option_descriptor_t*)child)->value;\n+        ((pbl_option_descriptor_t*)child)->value = g_strconcat(oval, \",\", nval, NULL);\n+        g_free(nval);\n+    } else if (node && child->file && parent->file\n         && child->file->pool && child->file->pool->error_cb) {\n         child->file->pool->error_cb(\n             \"Protobuf: Warning: \\\"%s\\\" of [%s:%d] is already defined in file [%s:%d].\\n\",\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/protobuf_lang_tree.c",
+      "old_path": "epan/protobuf_lang_tree.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -0,0 +1,82 @@\n+// Test more complex syntax of *.proto files.\n+syntax = \"proto3\";\n+package wireshark.protobuf.test.complex.syntax;\n+import \"google/protobuf/descriptor.proto\";\n+\n+// equal to \"testing.multiline.strings\"\n+option java_package = \"testing.\"\n+                      'multiline.'\n+\"strings\";\n+\n+// user defined options for messages\n+extend google.protobuf.MessageOptions {\n+  bool disabled = 1071;\n+  bool ignored = 1072;\n+  TestMultiLinesOption mlinemsg = 1073;\n+}\n+\n+// user defined options for oneof types\n+extend google.protobuf.OneofOptions {\n+  bool required = 1071;\n+}\n+\n+// user defined options for fields\n+extend google.protobuf.FieldOptions {\n+  FieldRules rules = 1071;\n+}\n+// test extend google.protobuf.FieldOptions twice\n+extend google.protobuf.FieldOptions {\n+  string multilines = 1072;\n+}\n+\n+message FieldRules {\n+  oneof type {\n+    BoolRules     bool     = 13;\n+    StringRules   string   = 14;\n+  }\n+  repeated uint32 repeated_uint = 15;\n+}\n+\n+message StringRules {\n+  uint64 min_bytes = 2;\n+  BoolRules morebool = 3;\n+  string astr = 4;\n+}\n+\n+message BoolRules {\n+  bool const = 1;\n+  repeated bool repeated_bool = 2;\n+  repeated int32 repeated_int = 3;\n+}\n+\n+message TestMultiLinesOption {\n+  string mlines = 1;\n+}\n+\n+message ComplexDefinedMessage {\n+  option (mlinemsg).mlines = \"first line\"\n+  \"second line\";\n+\n+  // test complex field options\n+  string fieldWithComplexOption1 = 1 [(wireshark.protobuf.test.complex.syntax.rules).string = {min_bytes: 1}];\n+  string fieldWithComplexOption2 = 2 [(rules).string = {min_bytes: 2 astr: \"abc\" }];\n+  string fieldWithComplexOption3 = 3 [(rules).string.morebool = {const: true, repeated_bool: [false, true], repeated_int: [1, 2]}];\n+  string fieldWithComplexOption4 = 4 [(rules).string = {min_bytes: 1; morebool { const: true }}];\n+  string fieldWithComplexOption5 = 5 [(rules).repeated_uint = 1, (rules).repeated_uint = 2];\n+\n+  // test oneof custom option\n+  oneof oneofWithOption {\n+    option (wireshark.protobuf.test.complex.syntax.required) = true;\n+    int32 field1 = 11;\n+    string field2 = 12;\n+  }\n+\n+  // test multilines strings\n+  uint32 fieldWithMultilineStringOption = 20 [(wireshark.protobuf.test.complex.syntax.multilines) = \"first line\"\n+  'Second line' ];\n+}\n+\n+// add this message for testing whether this file was successfully parsed\n+message TestFileParsed {\n+  optional int32 last_field_for_wireshark_test = 1;\n+}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/protobuf_lang_files/complex_proto_files/complex_syntax.proto",
+      "old_path": "test/protobuf_lang_files/complex_proto_files/complex_syntax.proto",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -0,0 +1,395 @@\n+// This file is from https://github.com/protocolbuffers/protobuf/blob/3.14.x/src/google/protobuf/unittest_custom_options.proto\n+// To reduce the file size, some comments have been removed.\n+// Message 'TestFileParsed' is added at the end of file for testing whether this file was successfully parsed.\n+\n+syntax = \"proto2\";\n+\n+option cc_generic_services = true;\n+option java_generic_services = true;\n+option py_generic_services = true;\n+\n+option (file_opt1) = 9876543210;\n+\n+import \"google/protobuf/any.proto\";\n+import \"google/protobuf/descriptor.proto\";\n+\n+package protobuf_unittest;\n+\n+// Some simple test custom options of various types.\n+extend google.protobuf.FileOptions {\n+  optional uint64 file_opt1 = 7736974;\n+}\n+\n+extend google.protobuf.MessageOptions {\n+  optional int32 message_opt1 = 7739036;\n+}\n+\n+extend google.protobuf.FieldOptions {\n+  optional fixed64 field_opt1 = 7740936;\n+  optional int32 field_opt2 = 7753913 [default = 42];\n+}\n+\n+extend google.protobuf.OneofOptions {\n+  optional int32 oneof_opt1 = 7740111;\n+}\n+\n+extend google.protobuf.EnumOptions {\n+  optional sfixed32 enum_opt1 = 7753576;\n+}\n+\n+extend google.protobuf.EnumValueOptions {\n+  optional int32 enum_value_opt1 = 1560678;\n+}\n+\n+extend google.protobuf.ServiceOptions {\n+  optional sint64 service_opt1 = 7887650;\n+}\n+\n+enum MethodOpt1 {\n+  METHODOPT1_VAL1 = 1;\n+  METHODOPT1_VAL2 = 2;\n+}\n+\n+extend google.protobuf.MethodOptions {\n+  optional MethodOpt1 method_opt1 = 7890860;\n+}\n+\n+message TestMessageWithCustomOptions {\n+  option message_set_wire_format = false;\n+  option (message_opt1) = -56;\n+\n+  optional string field1 = 1 [ctype = CORD, (field_opt1) = 8765432109];\n+\n+  oneof AnOneof {\n+    option (oneof_opt1) = -99;\n+\n+    int32 oneof_field = 2;\n+  }\n+\n+  enum AnEnum {\n+    option (enum_opt1) = -789;\n+\n+    ANENUM_VAL1 = 1;\n+    ANENUM_VAL2 = 2 [(enum_value_opt1) = 123];\n+  }\n+}\n+\n+message CustomOptionFooRequest {}\n+\n+message CustomOptionFooResponse {}\n+\n+message CustomOptionFooClientMessage {}\n+\n+message CustomOptionFooServerMessage {}\n+\n+service TestServiceWithCustomOptions {\n+  option (service_opt1) = -9876543210;\n+\n+  rpc Foo(CustomOptionFooRequest) returns (CustomOptionFooResponse) {\n+    option (method_opt1) = METHODOPT1_VAL2;\n+  }\n+}\n+\n+message DummyMessageContainingEnum {\n+  enum TestEnumType {\n+    TEST_OPTION_ENUM_TYPE1 = 22;\n+    TEST_OPTION_ENUM_TYPE2 = -23;\n+  }\n+}\n+\n+message DummyMessageInvalidAsOptionType {}\n+\n+extend google.protobuf.MessageOptions {\n+  optional bool bool_opt = 7706090;\n+  optional int32 int32_opt = 7705709;\n+  optional int64 int64_opt = 7705542;\n+  optional uint32 uint32_opt = 7704880;\n+  optional uint64 uint64_opt = 7702367;\n+  optional sint32 sint32_opt = 7701568;\n+  optional sint64 sint64_opt = 7700863;\n+  optional fixed32 fixed32_opt = 7700307;\n+  optional fixed64 fixed64_opt = 7700194;\n+  optional sfixed32 sfixed32_opt = 7698645;\n+  optional sfixed64 sfixed64_opt = 7685475;\n+  optional float float_opt = 7675390;\n+  optional double double_opt = 7673293;\n+  optional string string_opt = 7673285;\n+  optional bytes bytes_opt = 7673238;\n+  optional DummyMessageContainingEnum.TestEnumType enum_opt = 7673233;\n+  optional DummyMessageInvalidAsOptionType message_type_opt = 7665967;\n+}\n+\n+message CustomOptionMinIntegerValues {\n+  option (bool_opt) = false;\n+  option (int32_opt) = -0x80000000;\n+  option (int64_opt) = -0x8000000000000000;\n+  option (uint32_opt) = 0;\n+  option (uint64_opt) = 0;\n+  option (sint32_opt) = -0x80000000;\n+  option (sint64_opt) = -0x8000000000000000;\n+  option (fixed32_opt) = 0;\n+  option (fixed64_opt) = 0;\n+  option (sfixed32_opt) = -0x80000000;\n+  option (sfixed64_opt) = -0x8000000000000000;\n+}\n+\n+message CustomOptionMaxIntegerValues {\n+  option (bool_opt) = true;\n+  option (int32_opt) = 0x7FFFFFFF;\n+  option (int64_opt) = 0x7FFFFFFFFFFFFFFF;\n+  option (uint32_opt) = 0xFFFFFFFF;\n+  option (uint64_opt) = 0xFFFFFFFFFFFFFFFF;\n+  option (sint32_opt) = 0x7FFFFFFF;\n+  option (sint64_opt) = 0x7FFFFFFFFFFFFFFF;\n+  option (fixed32_opt) = 0xFFFFFFFF;\n+  option (fixed64_opt) = 0xFFFFFFFFFFFFFFFF;\n+  option (sfixed32_opt) = 0x7FFFFFFF;\n+  option (sfixed64_opt) = 0x7FFFFFFFFFFFFFFF;\n+}\n+\n+message CustomOptionOtherValues {\n+  option (int32_opt) = -100;  // To test sign-extension.\n+  option (float_opt) = 12.3456789;\n+  option (double_opt) = 1.234567890123456789;\n+  option (string_opt) = \"Hello, \\\"World\\\"\";\n+  option (bytes_opt) = \"Hello\\0World\";\n+  option (enum_opt) = TEST_OPTION_ENUM_TYPE2;\n+}\n+\n+message SettingRealsFromPositiveInts {\n+  option (float_opt) = 12;\n+  option (double_opt) = 154;\n+}\n+\n+message SettingRealsFromNegativeInts {\n+  option (float_opt) = -12;\n+  option (double_opt) = -154;\n+}\n+\n+message ComplexOptionType1 {\n+  optional int32 foo = 1;\n+  optional int32 foo2 = 2;\n+  optional int32 foo3 = 3;\n+  repeated int32 foo4 = 4;\n+\n+  extensions 100 to max;\n+}\n+\n+message ComplexOptionType2 {\n+  optional ComplexOptionType1 bar = 1;\n+  optional int32 baz = 2;\n+\n+  message ComplexOptionType4 {\n+    optional int32 waldo = 1;\n+\n+    extend google.protobuf.MessageOptions {\n+      optional ComplexOptionType4 complex_opt4 = 7633546;\n+    }\n+  }\n+\n+  optional ComplexOptionType4 fred = 3;\n+  repeated ComplexOptionType4 barney = 4;\n+\n+  extensions 100 to max;\n+}\n+\n+message ComplexOptionType3 {\n+  optional int32 qux = 1;\n+\n+  optional group ComplexOptionType5 = 2 {\n+    optional int32 plugh = 3;\n+  }\n+}\n+\n+extend ComplexOptionType1 {\n+  optional int32 quux = 7663707;\n+  optional ComplexOptionType3 corge = 7663442;\n+}\n+\n+extend ComplexOptionType2 {\n+  optional int32 grault = 7650927;\n+  optional ComplexOptionType1 garply = 7649992;\n+}\n+\n+extend google.protobuf.MessageOptions {\n+  optional protobuf_unittest.ComplexOptionType1 complex_opt1 = 7646756;\n+  optional ComplexOptionType2 complex_opt2 = 7636949;\n+  optional ComplexOptionType3 complex_opt3 = 7636463;\n+  optional group ComplexOpt6 = 7595468 {\n+    optional int32 xyzzy = 7593951;\n+  }\n+}\n+\n+message VariousComplexOptions {\n+  option (.protobuf_unittest.complex_opt1).foo = 42;\n+  option (protobuf_unittest.complex_opt1).(.protobuf_unittest.quux) = 324;\n+  option (.protobuf_unittest.complex_opt1).(protobuf_unittest.corge).qux = 876;\n+  option (protobuf_unittest.complex_opt1).foo4 = 99;\n+  option (protobuf_unittest.complex_opt1).foo4 = 88;\n+  option (complex_opt2).baz = 987;\n+  option (complex_opt2).(grault) = 654;\n+  option (complex_opt2).bar.foo = 743;\n+  option (complex_opt2).bar.(quux) = 1999;\n+  option (complex_opt2).bar.(protobuf_unittest.corge).qux = 2008;\n+  option (complex_opt2).(garply).foo = 741;\n+  option (complex_opt2).(garply).(.protobuf_unittest.quux) = 1998;\n+  option (complex_opt2).(protobuf_unittest.garply).(corge).qux = 2121;\n+  option (ComplexOptionType2.ComplexOptionType4.complex_opt4).waldo = 1971;\n+  option (complex_opt2).fred.waldo = 321;\n+  option (complex_opt2).barney = {\n+    waldo: 101\n+  };\n+  option (complex_opt2).barney = {\n+    waldo: 212\n+  };\n+  option (protobuf_unittest.complex_opt3).qux = 9;\n+  option (complex_opt3).complexoptiontype5.plugh = 22;\n+  option (complexopt6).xyzzy = 24;\n+}\n+\n+message AggregateMessageSet {\n+  option message_set_wire_format = true;\n+\n+  extensions 4 to max;\n+}\n+\n+message AggregateMessageSetElement {\n+  extend AggregateMessageSet {\n+    optional AggregateMessageSetElement message_set_extension = 15447542;\n+  }\n+  optional string s = 1;\n+}\n+\n+message Aggregate {\n+  optional int32 i = 1;\n+  optional string s = 2;\n+\n+  optional Aggregate sub = 3;\n+\n+  optional google.protobuf.FileOptions file = 4;\n+  extend google.protobuf.FileOptions {\n+    optional Aggregate nested = 15476903;\n+  }\n+\n+  optional AggregateMessageSet mset = 5;\n+\n+  optional google.protobuf.Any any = 6;\n+}\n+\n+extend google.protobuf.FileOptions {\n+  optional Aggregate fileopt = 15478479;\n+}\n+extend google.protobuf.MessageOptions {\n+  optional Aggregate msgopt = 15480088;\n+}\n+extend google.protobuf.FieldOptions {\n+  optional Aggregate fieldopt = 15481374;\n+}\n+extend google.protobuf.EnumOptions {\n+  optional Aggregate enumopt = 15483218;\n+}\n+extend google.protobuf.EnumValueOptions {\n+  optional Aggregate enumvalopt = 15486921;\n+}\n+extend google.protobuf.ServiceOptions {\n+  optional Aggregate serviceopt = 15497145;\n+}\n+extend google.protobuf.MethodOptions {\n+  optional Aggregate methodopt = 15512713;\n+}\n+\n+option (fileopt) = {\n+  s: 'FileAnnotation'\n+  i: 100\n+\n+  sub { s: 'NestedFileAnnotation' }\n+\n+  file {\n+    [protobuf_unittest.fileopt] { s: 'FileExtensionAnnotation' }\n+  }\n+\n+  mset {\n+    [protobuf_unittest.AggregateMessageSetElement.message_set_extension] {\n+      s: 'EmbeddedMessageSetElement'\n+    }\n+  }\n+\n+  any {\n+    [type.googleapis.com/protobuf_unittest.AggregateMessageSetElement] {\n+      s: 'EmbeddedMessageSetElement'\n+    }\n+  }\n+};\n+\n+message AggregateMessage {\n+  option (msgopt) = {\n+    i: 101\n+    s: 'MessageAnnotation'\n+  };\n+\n+  optional int32 fieldname = 1 [(fieldopt) = { s: 'FieldAnnotation' }];\n+}\n+\n+service AggregateService {\n+  option (serviceopt) = {\n+    s: 'ServiceAnnotation'\n+  };\n+\n+  rpc Method(AggregateMessage) returns (AggregateMessage) {\n+    option (methodopt) = {\n+      s: 'MethodAnnotation'\n+    };\n+  }\n+}\n+\n+enum AggregateEnum {\n+  option (enumopt) = {\n+    s: 'EnumAnnotation'\n+  };\n+\n+  VALUE = 1 [(enumvalopt) = { s: 'EnumValueAnnotation' }];\n+}\n+\n+message NestedOptionType {\n+  message NestedMessage {\n+    option (message_opt1) = 1001;\n+\n+    optional int32 nested_field = 1 [(field_opt1) = 1002];\n+  }\n+  enum NestedEnum {\n+    option (enum_opt1) = 1003;\n+\n+    NESTED_ENUM_VALUE = 1 [(enum_value_opt1) = 1004];\n+  }\n+  extend google.protobuf.FileOptions {\n+    optional int32 nested_extension = 7912573 [(field_opt2) = 1005];\n+  }\n+}\n+\n+message OldOptionType {\n+  enum TestEnum { OLD_VALUE = 0; }\n+  required TestEnum value = 1;\n+}\n+\n+message NewOptionType {\n+  enum TestEnum {\n+    OLD_VALUE = 0;\n+    NEW_VALUE = 1;\n+  }\n+  required TestEnum value = 1;\n+}\n+\n+extend google.protobuf.MessageOptions {\n+  optional OldOptionType required_enum_opt = 106161807;\n+}\n+\n+message TestMessageWithRequiredEnumOption {\n+  option (required_enum_opt) = {\n+    value: OLD_VALUE\n+  };\n+}\n+\n+// add this message for testing whether this file was successfully parsed\n+message TestFileParsed {\n+  optional int32 last_field_for_wireshark_test = 1;\n+}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/protobuf_lang_files/complex_proto_files/unittest_custom_options.proto",
+      "old_path": "test/protobuf_lang_files/complex_proto_files/unittest_custom_options.proto",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -0,0 +1,22 @@\n+// This file is from https://github.com/protocolbuffers/protobuf/blob/3.14.x/src/google/protobuf/any.proto\n+// To reduce the file size, some comments have been removed.\n+\n+syntax = \"proto3\";\n+\n+package google.protobuf;\n+\n+option csharp_namespace = \"Google.Protobuf.WellKnownTypes\";\n+option go_package = \"google.golang.org/protobuf/types/known/anypb\";\n+option java_package = \"com.google.protobuf\";\n+option java_outer_classname = \"AnyProto\";\n+option java_multiple_files = true;\n+option objc_class_prefix = \"GPB\";\n+\n+message Any {\n+  // A URL/resource name that uniquely identifies the type of the serialized\n+  // protocol buffer message.\n+  string type_url = 1;\n+\n+  // Must be a valid serialized protocol buffer of the above specified type.\n+  bytes value = 2;\n+}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/protobuf_lang_files/well_know_types/google/protobuf/any.proto",
+      "old_path": "test/protobuf_lang_files/well_know_types/google/protobuf/any.proto",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -0,0 +1,282 @@\n+// This file is from https://github.com/protocolbuffers/protobuf/blob/3.14.x/src/google/protobuf/descriptor.proto\n+// To reduce the file size, some comments have been removed.\n+\n+syntax = \"proto2\";\n+\n+package google.protobuf;\n+\n+option go_package = \"google.golang.org/protobuf/types/descriptorpb\";\n+option java_package = \"com.google.protobuf\";\n+option java_outer_classname = \"DescriptorProtos\";\n+option csharp_namespace = \"Google.Protobuf.Reflection\";\n+option objc_class_prefix = \"GPB\";\n+option cc_enable_arenas = true;\n+\n+option optimize_for = SPEED;\n+\n+message FileDescriptorSet {\n+  repeated FileDescriptorProto file = 1;\n+}\n+\n+message FileDescriptorProto {\n+  optional string name = 1;\n+  optional string package = 2;\n+  repeated string dependency = 3;\n+  repeated int32 public_dependency = 10;\n+  repeated int32 weak_dependency = 11;\n+  repeated DescriptorProto message_type = 4;\n+  repeated EnumDescriptorProto enum_type = 5;\n+  repeated ServiceDescriptorProto service = 6;\n+  repeated FieldDescriptorProto extension = 7;\n+  optional FileOptions options = 8;\n+  optional SourceCodeInfo source_code_info = 9;\n+  optional string syntax = 12;\n+}\n+\n+message DescriptorProto {\n+  optional string name = 1;\n+  repeated FieldDescriptorProto field = 2;\n+  repeated FieldDescriptorProto extension = 6;\n+  repeated DescriptorProto nested_type = 3;\n+  repeated EnumDescriptorProto enum_type = 4;\n+\n+  message ExtensionRange {\n+    optional int32 start = 1;\n+    optional int32 end = 2;\n+    optional ExtensionRangeOptions options = 3;\n+  }\n+  repeated ExtensionRange extension_range = 5;\n+  repeated OneofDescriptorProto oneof_decl = 8;\n+  optional MessageOptions options = 7;\n+\n+  message ReservedRange {\n+    optional int32 start = 1;\n+    optional int32 end = 2;\n+  }\n+  repeated ReservedRange reserved_range = 9;\n+  repeated string reserved_name = 10;\n+}\n+\n+message ExtensionRangeOptions {\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+}\n+\n+message FieldDescriptorProto {\n+  enum Type {\n+    TYPE_DOUBLE = 1;\n+    TYPE_FLOAT = 2;\n+    TYPE_INT64 = 3;\n+    TYPE_UINT64 = 4;\n+    TYPE_INT32 = 5;\n+    TYPE_FIXED64 = 6;\n+    TYPE_FIXED32 = 7;\n+    TYPE_BOOL = 8;\n+    TYPE_STRING = 9;\n+    TYPE_GROUP = 10;\n+    TYPE_MESSAGE = 11;\n+    TYPE_BYTES = 12;\n+    TYPE_UINT32 = 13;\n+    TYPE_ENUM = 14;\n+    TYPE_SFIXED32 = 15;\n+    TYPE_SFIXED64 = 16;\n+    TYPE_SINT32 = 17;\n+    TYPE_SINT64 = 18;\n+  }\n+\n+  enum Label {\n+    LABEL_OPTIONAL = 1;\n+    LABEL_REQUIRED = 2;\n+    LABEL_REPEATED = 3;\n+  }\n+\n+  optional string name = 1;\n+  optional int32 number = 3;\n+  optional Label label = 4;\n+  optional Type type = 5;\n+  optional string type_name = 6;\n+  optional string extendee = 2;\n+  optional string default_value = 7;\n+  optional int32 oneof_index = 9;\n+  optional string json_name = 10;\n+  optional FieldOptions options = 8;\n+  optional bool proto3_optional = 17;\n+}\n+\n+message OneofDescriptorProto {\n+  optional string name = 1;\n+  optional OneofOptions options = 2;\n+}\n+\n+message EnumDescriptorProto {\n+  optional string name = 1;\n+  repeated EnumValueDescriptorProto value = 2;\n+  optional EnumOptions options = 3;\n+\n+  message EnumReservedRange {\n+    optional int32 start = 1;\n+    optional int32 end = 2;\n+  }\n+\n+  repeated EnumReservedRange reserved_range = 4;\n+  repeated string reserved_name = 5;\n+}\n+\n+message EnumValueDescriptorProto {\n+  optional string name = 1;\n+  optional int32 number = 2;\n+  optional EnumValueOptions options = 3;\n+}\n+\n+message ServiceDescriptorProto {\n+  optional string name = 1;\n+  repeated MethodDescriptorProto method = 2;\n+  optional ServiceOptions options = 3;\n+}\n+\n+message MethodDescriptorProto {\n+  optional string name = 1;\n+  optional string input_type = 2;\n+  optional string output_type = 3;\n+  optional MethodOptions options = 4;\n+  optional bool client_streaming = 5 [default = false];\n+  optional bool server_streaming = 6 [default = false];\n+}\n+\n+message FileOptions {\n+  optional string java_package = 1;\n+  optional string java_outer_classname = 8;\n+  optional bool java_multiple_files = 10 [default = false];\n+  optional bool java_generate_equals_and_hash = 20 [deprecated=true];\n+  optional bool java_string_check_utf8 = 27 [default = false];\n+  enum OptimizeMode {\n+    SPEED = 1;\n+    CODE_SIZE = 2;\n+    LITE_RUNTIME = 3;\n+  }\n+  optional OptimizeMode optimize_for = 9 [default = SPEED];\n+  optional string go_package = 11;\n+  optional bool cc_generic_services = 16 [default = false];\n+  optional bool java_generic_services = 17 [default = false];\n+  optional bool py_generic_services = 18 [default = false];\n+  optional bool php_generic_services = 42 [default = false];\n+  optional bool deprecated = 23 [default = false];\n+  optional bool cc_enable_arenas = 31 [default = true];\n+  optional string objc_class_prefix = 36;\n+  optional string csharp_namespace = 37;\n+  optional string swift_prefix = 39;\n+  optional string php_class_prefix = 40;\n+  optional string php_namespace = 41;\n+  optional string php_metadata_namespace = 44;\n+  optional string ruby_package = 45;\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+  reserved 38;\n+}\n+\n+message MessageOptions {\n+  optional bool message_set_wire_format = 1 [default = false];\n+  optional bool no_standard_descriptor_accessor = 2 [default = false];\n+  optional bool deprecated = 3 [default = false];\n+  optional bool map_entry = 7;\n+  reserved 8;\n+  reserved 9;\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+}\n+\n+message FieldOptions {\n+  optional CType ctype = 1 [default = STRING];\n+  enum CType {\n+    STRING = 0;\n+    CORD = 1;\n+    STRING_PIECE = 2;\n+  }\n+  optional bool packed = 2;\n+  optional JSType jstype = 6 [default = JS_NORMAL];\n+  enum JSType {\n+    JS_NORMAL = 0;\n+    JS_STRING = 1;\n+    JS_NUMBER = 2;\n+  }\n+  optional bool lazy = 5 [default = false];\n+  optional bool deprecated = 3 [default = false];\n+  optional bool weak = 10 [default = false];\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+\n+  reserved 4;\n+}\n+\n+message OneofOptions {\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+}\n+\n+message EnumOptions {\n+  optional bool allow_alias = 2;\n+  optional bool deprecated = 3 [default = false];\n+  reserved 5;\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+}\n+\n+message EnumValueOptions {\n+  optional bool deprecated = 1 [default = false];\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+}\n+\n+message ServiceOptions {\n+  optional bool deprecated = 33 [default = false];\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+}\n+\n+message MethodOptions {\n+  optional bool deprecated = 33 [default = false];\n+  enum IdempotencyLevel {\n+    IDEMPOTENCY_UNKNOWN = 0;\n+    NO_SIDE_EFFECTS = 1;\n+    IDEMPOTENT = 2;\n+  }\n+  optional IdempotencyLevel idempotency_level = 34\n+      [default = IDEMPOTENCY_UNKNOWN];\n+  repeated UninterpretedOption uninterpreted_option = 999;\n+  extensions 1000 to max;\n+}\n+\n+message UninterpretedOption {\n+  message NamePart {\n+    required string name_part = 1;\n+    required bool is_extension = 2;\n+  }\n+  repeated NamePart name = 2;\n+  optional string identifier_value = 3;\n+  optional uint64 positive_int_value = 4;\n+  optional int64 negative_int_value = 5;\n+  optional double double_value = 6;\n+  optional bytes string_value = 7;\n+  optional string aggregate_value = 8;\n+}\n+\n+message SourceCodeInfo {\n+  repeated Location location = 1;\n+  message Location {\n+    repeated int32 path = 1 [packed = true];\n+    repeated int32 span = 2 [packed = true];\n+    optional string leading_comments = 3;\n+    optional string trailing_comments = 4;\n+    repeated string leading_detached_comments = 6;\n+  }\n+}\n+\n+message GeneratedCodeInfo {\n+  repeated Annotation annotation = 1;\n+  message Annotation {\n+    repeated int32 path = 1 [packed = true];\n+    optional string source_file = 2;\n+    optional int32 begin = 3;\n+    optional int32 end = 4;\n+  }\n+}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/protobuf_lang_files/well_know_types/google/protobuf/descriptor.proto",
+      "old_path": "test/protobuf_lang_files/well_know_types/google/protobuf/descriptor.proto",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -225,6 +225,26 @@ class case_dissect_protobuf(subprocesstest.SubprocessTestCase):\n             ))\n         self.assertTrue(self.grepOutput('tutorial.AddressBook'))\n \n+    def test_protobuf_complex_syntax(self, cmd_tshark, features, dirs, capture_file):\n+        '''Test Protobuf parsing complex syntax .proto files'''\n+        well_know_types_dir = os.path.join(dirs.protobuf_lang_files_dir, 'well_know_types').replace('\\\\', '/')\n+        complex_proto_files_dir = os.path.join(dirs.protobuf_lang_files_dir, 'complex_proto_files').replace('\\\\', '/')\n+        self.assertRun((cmd_tshark,\n+                '-r', capture_file('protobuf_udp_addressbook_with_image_ts.pcapng'),\n+                '-o', 'uat:protobuf_search_paths: \"{}\",\"{}\"'.format(well_know_types_dir, 'FALSE'),\n+                '-o', 'uat:protobuf_search_paths: \"{}\",\"{}\"'.format(complex_proto_files_dir, 'TRUE'),\n+                '-o', 'protobuf.preload_protos: TRUE',\n+                '-o', 'protobuf.pbf_as_hf: TRUE',\n+                '-Y', 'pbf.wireshark.protobuf.test.complex.syntax.TestFileParsed.last_field_for_wireshark_test'\n+                      ' && pbf.protobuf_unittest.TestFileParsed.last_field_for_wireshark_test',\n+            ))\n+        # the output must be empty and not contain something like:\n+        #   tshark: \"pbf.xxx.TestFileParsed.last_field_for_wireshark_test\" is neither a field nor a protocol name.\n+        # or\n+        #   tshark: Protobuf: Error(s)\n+        self.assertFalse(self.grepOutput('.last_field_for_wireshark_test'))\n+        self.assertFalse(self.grepOutput('Protobuf: Error'))\n+\n @fixtures.mark_usefixtures('test_env')\n @fixtures.uses_fixtures\n class case_dissect_tcp(subprocesstest.SubprocessTestCase):\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "test/suite_dissection.py",
+      "old_path": "test/suite_dissection.py",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "cd2d35c1d2b10fe2916469544cc2951a8979a4dc",
+      "short_id": "cd2d35c1",
+      "created_at": "2020-12-27T11:32:10.000+00:00",
+      "parent_ids": [
+        "5778b2403ea4fec9762f961a6ba4dbf33fd2ee05"
+      ],
+      "title": "Protobuf: fix bugs that parsing complex syntax .proto files",
+      "message": "Protobuf: fix bugs that parsing complex syntax .proto files\n\nSome .proto files contain complex syntax that does not be described in protobuf official site\n(https://developers.google.com/protocol-buffers/docs/reference/proto3-spec).\n\n1. Update 'epan/protobuf_lang_parser.lemon' to:\n1) Support complex option names format (EBNF):\n    optionName = ( ident | \"(\" fullIdent \")\" ) { \".\" ( ident | \"(\" fullIdent \")\" ) }\nfor example, \"option (complex_opt2).(grault) = 654;\".\n2) Make enum body support 'reserved' section (EBNF):\n    enumBody = \"{\" { reserved | option | enumField | emptyStatement } \"}\"\n3) Allow the value of field or enumValue option to be \"{ ... }\" other than constant:\n    enumValueOption = optionName  \"=\" ( constant | customOptionValue ) \";\"\n    fieldOption = optionName  \"=\" ( constant | customOptionValue ) \";\"\n4) Allow 'group' section missing 'label' (for example, in 'oneof' section).\n5) Make 'oneof' section support 'option' and 'group' sections (BNF):\n    oneof = \"oneof\" oneofName \"{\" { oneofField | option | group | emptyStatement } \"}\"\n6) Ignore unused 'extend' section.\n7) Fix the bug of one string being splitted into multi-lines.\n\n2. Update 'epan/protobuf_lang_tree.c' to:\n8) Fix the bug of parsing repeated option.\n\n3. Update 'test/suite_dissection.py' to add test case for parsing complex syntax .proto files:\n  test/protobuf_lang_files/complex_proto_files/unittest_custom_options.proto\n  test/protobuf_lang_files/complex_proto_files/complex_syntax.proto\nand dependency files:\n  test/protobuf_lang_files/well_know_types/google/protobuf/any.proto\n  test/protobuf_lang_files/well_know_types/google/protobuf/descriptor.proto\n\nRefer to issue #17046\n",
+      "author_name": "Huang Qiangxiong",
+      "author_email": "qiangxiong.huang@qq.com",
+      "authored_date": "2020-12-27T13:57:17.000+08:00",
+      "committer_name": "AndersBroman",
+      "committer_email": "a.broman58@gmail.com",
+      "committed_date": "2020-12-27T11:32:10.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/cd2d35c1d2b10fe2916469544cc2951a8979a4dc"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 133044698,
+      "head_commit_sha": "cd2d35c1d2b10fe2916469544cc2951a8979a4dc",
+      "base_commit_sha": "5778b2403ea4fec9762f961a6ba4dbf33fd2ee05",
+      "start_commit_sha": "5778b2403ea4fec9762f961a6ba4dbf33fd2ee05",
+      "created_at": "2020-12-27T11:32:11.443Z",
+      "merge_request_id": 82994656,
+      "state": "collected",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 133040400,
+      "head_commit_sha": "6b437bcc24ec0ac9b4d4c57adc4e447341759376",
+      "base_commit_sha": "fe6b774358e49e08821204d031fd83c164e6e71c",
+      "start_commit_sha": "fe6b774358e49e08821204d031fd83c164e6e71c",
+      "created_at": "2020-12-27T09:13:00.071Z",
+      "merge_request_id": 82994656,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    },
+    {
+      "id": 133036715,
+      "head_commit_sha": "9fdbbfc476b6549d99a558e583f0649a0f5dbe8f",
+      "base_commit_sha": "2104b794795672b0f90e33f578ef8da9266bea21",
+      "start_commit_sha": "2104b794795672b0f90e33f578ef8da9266bea21",
+      "created_at": "2020-12-27T06:12:43.172Z",
+      "merge_request_id": 82994656,
+      "state": "without_files",
+      "real_size": "7",
+      "patch_id_sha": null
+    }
+  ]
+}

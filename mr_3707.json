@@ -1,0 +1,1505 @@
+{
+  "id": 108948821,
+  "iid": 3707,
+  "project_id": 7898047,
+  "title": "Add dissector for World of Warcraft World (WOWW) protocol",
+  "description": "Works on https://gitlab.com/wireshark/wireshark/-/issues/17481 and was discussed in https://gitlab.com/wireshark/wireshark/-/issues/11398.\n\n# This PR:\n\n* Fixes the WOW protocol (only one W) using ASCII encoding instead of UTF-8. [1](https://wowdev.wiki/CMD_AUTH_LOGON_CHALLENGE_Client), [2](https://wowdev.wiki/CMD_REALM_LIST_Server)\n* Adds the WOWW (World of Warcraft World) protocol on TCP port 8085 as a continuation of the WOW protocol. [1](https://wowdev.wiki/World_Packet), [2](https://wowdev.wiki/Login)\n\n## The WOWW Protocol\n\nThe protocol is used by Blizzard for communication between a game client and their \"world\" server for gameplay and has been used since the start of World of Warcraft (public release 2004). It is a continuation of the WOW protocol currently in Wireshark which is used for login.\n\nThe protocol defaults to TCP port 8085 [1](https://wowdev.wiki/World_Packet) [2](https://wowdev.wiki/Login) [3](https://www.ownedcore.com/forums/world-of-warcraft/world-of-warcraft-emulator-servers/wow-emu-questions-requests/747465-why-using-3724-8085-server-possibility-using-another-ports.html), and has only been used on that port as far as I know both officially and for emulation.\n\nThe protocol consists of messages between the client of server with [1](https://wowdev.wiki/World_Packet):\n\n* A 16 bit size field that contains the size of the data and the opcode field.\n* A 16 or 32 bit opcode field, that contains information 1 out of 1060 opcodes. The field size is 16 bits when the server sends to the client, and 32 bits when the client sends to the server. This will be important for session key deduction.\n* A variable sized data field, that depends on the opcode.\n\nThe header (size and opcode) fields are \"encrypted\" using a session key negotiated during the WOW protocol. The encryption works by XORing the unencrypted byte with a byte of the session key, and then adding (with overflowing) the previous encrypting value. Decryption is done by subtracting the last encrypted value and XORing with the session key.\n\n[More info on header encryption/decryption](https://gtker.com/implementation-guide-for-the-world-of-warcraft-flavor-of-srp6/#world-packet-header-encryption).\n\n## Session Key Deduction\n\nBecause the client opcode field is 32 bits but there are no opcodes greater than 1060 (0x424), the two most significant bytes will always be 0. This means that every message the client sends leaks two bytes of the session key. Depending on how many actions the client takes before logging in, this usually means that the session key can be fully deduced before the client makes their first character movement.\n\nThere are other techniques that could be used for deducing the session key (potentially in fewer messages), such as:\n* Complete knowledge of the size and opcode of the first encryted message always sent by the server.\n* Restricted possibility of sending opcodes outside of the character screen opcodes before logging into the server.\n* Knowledge that certain opcodes can only be sent by the server, and others only by the client.\n\nHowever these are not included now since they would add significant complexity and add minimal value since the full session key is very rapidly deduced anyway.\n\n## Notes about versions\n\nThis implementation is fully compatible with version 1.12.x.\n\n## Captures\n\n[wow-112-world-server-gzip.pcapng.gz](/uploads/aaba17d4b686eba4233b367c99ecc0df/wow-112-world-server-gzip.pcapng.gz)\n[wow-112-live.pcapng.gz](/uploads/6a5fec77e0a097223dfe2ed10ffbce22/wow-112-live.pcapng.gz)",
+  "state": "merged",
+  "created_at": "2021-07-19T16:12:20.997Z",
+  "updated_at": "2021-11-09T19:52:01.538Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2021-07-20T21:08:15.380Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "wow-improve",
+  "user_notes_count": 6,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 8833908,
+    "username": "gtker",
+    "public_email": "",
+    "name": "gtker",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+    "web_url": "https://gitlab.com/gtker"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 26436767,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "bb25eca4eb01ef84988314b247b9e7e3e7d12a0f",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-07-19T16:12:20.997Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!3707",
+  "references": {
+    "short": "!3707",
+    "relative": "!3707",
+    "full": "wireshark/wireshark!3707"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/3707",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2021-07-20T20:47:05.791Z",
+  "latest_build_finished_at": "2021-07-20T21:08:03.792Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 340227461,
+    "iid": 18979,
+    "project_id": 7898047,
+    "sha": "bb25eca4eb01ef84988314b247b9e7e3e7d12a0f",
+    "ref": "refs/merge-requests/3707/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-07-20T20:47:04.085Z",
+    "updated_at": "2021-07-20T21:08:03.800Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/340227461"
+  },
+  "head_pipeline": {
+    "id": 340227461,
+    "iid": 18979,
+    "project_id": 7898047,
+    "sha": "bb25eca4eb01ef84988314b247b9e7e3e7d12a0f",
+    "ref": "refs/merge-requests/3707/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-07-20T20:47:04.085Z",
+    "updated_at": "2021-07-20T21:08:03.800Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/340227461",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    },
+    "started_at": "2021-07-20T20:47:05.791Z",
+    "finished_at": "2021-07-20T21:08:03.792Z",
+    "committed_at": null,
+    "duration": 1257,
+    "queued_duration": 1,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/340227461",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "5e9ab5c5797b4044493f34f4fa68527e5c5e3884",
+    "head_sha": "bb25eca4eb01ef84988314b247b9e7e3e7d12a0f",
+    "start_sha": "5e9ab5c5797b4044493f34f4fa68527e5c5e3884"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "1210d030adf4d7f0deb3d45e92066fb55d7b491f",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 630441993,
+          "type": "DiffNote",
+          "body": "remove template comment ?",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2021-07-19T19:28:35.511Z",
+          "updated_at": "2021-07-19T19:28:35.511Z",
+          "system": false,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "d10505efa804a59b87792c9a1c45aa8c235601ea",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2110,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_2110",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2110
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_2110",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2110
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "resolved_at": "2021-07-19T19:47:49.319Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        },
+        {
+          "id": 630452155,
+          "type": "DiffNote",
+          "body": "changed this line in [version 2 of the diff](/wireshark/wireshark/-/merge_requests/3707/diffs?diff_id=217378996&start_sha=d10505efa804a59b87792c9a1c45aa8c235601ea#bdb3c34f9259049c29dea605c0215637ac36aa6e_2110_2104)",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-19T19:47:23.901Z",
+          "updated_at": "2021-07-19T19:47:23.901Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "d10505efa804a59b87792c9a1c45aa8c235601ea",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2110,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_2110",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2110
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_2110",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2110
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        },
+        {
+          "id": 630452354,
+          "type": "DiffNote",
+          "body": "Fixed. :)",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-19T19:47:48.473Z",
+          "updated_at": "2021-07-19T19:47:48.473Z",
+          "system": false,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "d10505efa804a59b87792c9a1c45aa8c235601ea",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 2110,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_2110",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2110
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_2110",
+                "type": "new",
+                "old_line": null,
+                "new_line": 2110
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "resolved_at": "2021-07-19T19:47:49.319Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7dcc9f2072509b68d833cf41c214b2fc168b4242",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 630452156,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>0ccd7469 - WOWW: Remove template comments</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/3707/diffs?diff_id=217378996&start_sha=d10505efa804a59b87792c9a1c45aa8c235601ea)",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-19T19:47:24.059Z",
+          "updated_at": "2021-07-19T19:47:24.061Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "68d62ee5f9006a3f0a0c15718f6e7a8402ec244a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 630452359,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-19T19:47:49.342Z",
+          "updated_at": "2021-07-19T19:47:49.347Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f5cabc87f0133a0b263791413b6f79cb1d12beab",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 631240408,
+          "type": "DiffNote",
+          "body": "can you rename index variable (to idx for example ?) there is a check for avoid to use this variable name (there is a old issue with macos..)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2021-07-20T13:49:54.856Z",
+          "updated_at": "2021-07-20T13:49:54.856Z",
+          "system": false,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "0ccd7469227d14763d8720cf6a7c7b315f3c5ace",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 91,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_91",
+                "type": "new",
+                "old_line": null,
+                "new_line": 91
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_91",
+                "type": "new",
+                "old_line": null,
+                "new_line": 91
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "resolved_at": "2021-07-20T14:04:42.449Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        },
+        {
+          "id": 631257078,
+          "type": "DiffNote",
+          "body": "changed this line in [version 3 of the diff](/wireshark/wireshark/-/merge_requests/3707/diffs?diff_id=217810069&start_sha=0ccd7469227d14763d8720cf6a7c7b315f3c5ace#bdb3c34f9259049c29dea605c0215637ac36aa6e_91_91)",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-20T14:04:30.257Z",
+          "updated_at": "2021-07-20T14:04:30.257Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "0ccd7469227d14763d8720cf6a7c7b315f3c5ace",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 91,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_91",
+                "type": "new",
+                "old_line": null,
+                "new_line": 91
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_91",
+                "type": "new",
+                "old_line": null,
+                "new_line": 91
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        },
+        {
+          "id": 631257278,
+          "type": "DiffNote",
+          "body": "Fixed. :)",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-20T14:04:41.449Z",
+          "updated_at": "2021-07-20T14:04:41.449Z",
+          "system": false,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "0ccd7469227d14763d8720cf6a7c7b315f3c5ace",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 91,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_91",
+                "type": "new",
+                "old_line": null,
+                "new_line": 91
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_91",
+                "type": "new",
+                "old_line": null,
+                "new_line": 91
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "resolved_at": "2021-07-20T14:04:42.449Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a0e92534599f404fb78904925314aaa269f08bc8",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 631240540,
+          "type": "DiffNote",
+          "body": "same here",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2021-07-20T13:50:03.155Z",
+          "updated_at": "2021-07-20T13:50:03.155Z",
+          "system": false,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "0ccd7469227d14763d8720cf6a7c7b315f3c5ace",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 115,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_115",
+                "type": "new",
+                "old_line": null,
+                "new_line": 115
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_115",
+                "type": "new",
+                "old_line": null,
+                "new_line": 115
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "resolved_at": "2021-07-20T14:04:49.723Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        },
+        {
+          "id": 631257079,
+          "type": "DiffNote",
+          "body": "changed this line in [version 3 of the diff](/wireshark/wireshark/-/merge_requests/3707/diffs?diff_id=217810069&start_sha=0ccd7469227d14763d8720cf6a7c7b315f3c5ace#bdb3c34f9259049c29dea605c0215637ac36aa6e_115_116)",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-20T14:04:30.427Z",
+          "updated_at": "2021-07-20T14:04:30.427Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "0ccd7469227d14763d8720cf6a7c7b315f3c5ace",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 115,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_115",
+                "type": "new",
+                "old_line": null,
+                "new_line": 115
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_115",
+                "type": "new",
+                "old_line": null,
+                "new_line": 115
+              }
+            }
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        },
+        {
+          "id": 631257388,
+          "type": "DiffNote",
+          "body": "Fixed. :)",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-20T14:04:48.763Z",
+          "updated_at": "2021-07-20T14:04:48.763Z",
+          "system": false,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+            "start_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+            "head_sha": "0ccd7469227d14763d8720cf6a7c7b315f3c5ace",
+            "old_path": "epan/dissectors/packet-woww.c",
+            "new_path": "epan/dissectors/packet-woww.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 115,
+            "line_range": {
+              "start": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_115",
+                "type": "new",
+                "old_line": null,
+                "new_line": 115
+              },
+              "end": {
+                "line_code": "bdb3c34f9259049c29dea605c0215637ac36aa6e_0_115",
+                "type": "new",
+                "old_line": null,
+                "new_line": 115
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "resolved_at": "2021-07-20T14:04:49.723Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "78319ddf8c94d52c43a4b320771e9186bd55a6b8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 631257053,
+          "type": null,
+          "body": "mentioned in commit gtker/wireshark@4c30d6a83161aa8b0b9196241df7115e9f7307ca",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-20T14:04:28.506Z",
+          "updated_at": "2021-07-20T14:04:28.508Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8de9da7a86b833077808d17d11b481e93b5f72db",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 631257082,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>4c30d6a8 - WOWW: Rename &#39;index&#39; variables to &#39;idx&#39;</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/3707/diffs?diff_id=217810069&start_sha=0ccd7469227d14763d8720cf6a7c7b315f3c5ace)",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-20T14:04:30.567Z",
+          "updated_at": "2021-07-20T14:04:30.569Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "faf9c1aac4f924dd37bb3ec1685caef9378e1fa6",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 631257400,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 8833908,
+            "username": "gtker",
+            "public_email": "",
+            "name": "gtker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/aa4c12e53ad3f19de87a734aecc1ae8300e79561705147e9ff0c56eb1393ee28?s=80&d=identicon",
+            "web_url": "https://gitlab.com/gtker"
+          },
+          "created_at": "2021-07-20T14:04:49.747Z",
+          "updated_at": "2021-07-20T14:04:49.753Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9a1e1c519d32910eb264e3a975e89d74a07eabc9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 631566181,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2021-07-20T20:46:13.715Z",
+          "updated_at": "2021-07-20T20:46:13.717Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4d1888c05a964baefb20056e6d31f3ded32fc5d4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 631566241,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2021-07-20T20:46:20.789Z",
+          "updated_at": "2021-07-20T20:46:20.792Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ac7d25081e4407d8f75a2301f3bfce5006b92b2a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 631566507,
+          "type": null,
+          "body": "mentioned in commit gtker/wireshark@bb25eca4eb01ef84988314b247b9e7e3e7d12a0f",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2021-07-20T20:47:00.978Z",
+          "updated_at": "2021-07-20T20:47:00.980Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3aec4156de4b5dc8c27a12bbb14668c1ac53d407",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 631566519,
+          "type": null,
+          "body": "added 16 commits\n\n<ul><li>4c30d6a8...5e9ab5c5 - 4 commits from branch <code>wireshark:master</code></li><li>894b1eec - WOW: Make username and realm names display as UTF-8</li><li>e1b37964 - WOWW: Add protocol</li><li>92e62a74 - WOWW: Add working decryption</li><li>9e767608 - WOWW: Make session key deduction work</li><li>57f32d97 - WOWW: Add all remaining opcodes for 1.12.x</li><li>e37f6599 - WOWW: Remove and move declarations</li><li>3f4ac553 - WOWW: Move header decryption into separate function</li><li>b9a62688 - WOWW: Add better support out of order parsing</li><li>cade0337 - WOWW: Update documentation</li><li>2c8d57db - WOWW: Make saved original values use struct</li><li>9161ba62 - WOWW: Remove template comments</li><li>bb25eca4 - WOWW: Rename &#39;index&#39; variables to &#39;idx&#39;</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/3707/diffs?diff_id=218022281&start_sha=4c30d6a83161aa8b0b9196241df7115e9f7307ca)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2021-07-20T20:47:02.694Z",
+          "updated_at": "2021-07-20T20:47:02.696Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9c7e55d53ee100d9d8ee69fca4fa0c6ddbad9fdd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 631566553,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2021-07-20T20:47:07.052Z",
+          "updated_at": "2021-07-20T20:47:07.054Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6750c78cc671632b8eb5baa7381ac9b0e8f4462d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 720109956,
+          "type": null,
+          "body": "mentioned in issue #17481",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2021-11-01T15:54:59.544Z",
+          "updated_at": "2021-11-01T15:54:59.546Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c1c72b7d9dfa35fdce66dd2c318f4bac2c53153d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 728477278,
+          "type": null,
+          "body": "mentioned in issue #17720",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2021-11-09T19:52:01.510Z",
+          "updated_at": "2021-11-09T19:52:01.511Z",
+          "system": true,
+          "noteable_id": 108948821,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3707,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1945,6 +1945,7 @@ set(DISSECTOR_SRC\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-wlccp.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-wol.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-wow.c\n+\t${CMAKE_CURRENT_SOURCE_DIR}/packet-woww.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-wps.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-wreth.c\n \t${CMAKE_CURRENT_SOURCE_DIR}/packet-wsmp.c\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/CMakeLists.txt",
+      "old_path": "epan/dissectors/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -347,7 +347,7 @@ parse_realm_list_server_to_client(tvbuff_t *tvb, proto_tree *wow_tree, guint32 o\n \tfor(ii = 0; ii < num_realms; ii++) {\n \t\trealm_name = tvb_get_stringz_enc(wmem_packet_scope(), tvb,\n \t\t\t\t\t\t offset + realm_name_offset,\n-\t\t\t\t\t\t &len, ENC_ASCII);\n+\t\t\t\t\t\t &len, ENC_UTF_8);\n \n \t\twow_realms_tree = proto_tree_add_subtree(wow_tree, tvb,\n \t\t\t\t\t\t\t offset, 0,\n@@ -371,7 +371,7 @@ parse_realm_list_server_to_client(tvbuff_t *tvb, proto_tree *wow_tree, guint32 o\n \t\toffset += len;\n \n \t\tstring = tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset,\n-\t\t\t\t\t     &len, ENC_ASCII);\n+\t\t\t\t\t     &len, ENC_UTF_8);\n \t\tproto_tree_add_string(wow_realms_tree, hf_wow_realm_socket, tvb, offset, len, string);\n \t\toffset += len;\n \n@@ -527,7 +527,7 @@ parse_logon_challenge_client_to_server(tvbuff_t *tvb, proto_tree *wow_tree, guin\n \tproto_tree_add_item(wow_tree,\n \t\t\thf_wow_srp_i, tvb,\n \t\t\toffset, srp_i_len,\n-\t\t\tENC_ASCII|ENC_NA);\n+\t\t\tENC_UTF_8|ENC_NA);\n }\n \n static void\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-wow.c",
+      "old_path": "epan/dissectors/packet-wow.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-woww.c",
+      "old_path": "epan/dissectors/packet-woww.c",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "bb25eca4eb01ef84988314b247b9e7e3e7d12a0f",
+      "short_id": "bb25eca4",
+      "created_at": "2021-07-20T20:46:58.000+00:00",
+      "parent_ids": [
+        "9161ba62eb40d7c7d5521f6f5c43c01cf5f7ac46"
+      ],
+      "title": "WOWW: Rename 'index' variables to 'idx'",
+      "message": "WOWW: Rename 'index' variables to 'idx'\n\nAs discussed on the PR:\nhttps://gitlab.com/wireshark/wireshark/-/merge_requests/3707#note_631240408\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-20T16:04:01.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:58.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/bb25eca4eb01ef84988314b247b9e7e3e7d12a0f"
+    },
+    {
+      "id": "9161ba62eb40d7c7d5521f6f5c43c01cf5f7ac46",
+      "short_id": "9161ba62",
+      "created_at": "2021-07-20T20:46:58.000+00:00",
+      "parent_ids": [
+        "2c8d57db61630ea5bbfe1bbf0d93ae212cb7acd6"
+      ],
+      "title": "WOWW: Remove template comments",
+      "message": "WOWW: Remove template comments\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-19T21:35:06.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:58.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9161ba62eb40d7c7d5521f6f5c43c01cf5f7ac46"
+    },
+    {
+      "id": "2c8d57db61630ea5bbfe1bbf0d93ae212cb7acd6",
+      "short_id": "2c8d57db",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "cade03373e3bacf7cfa09671f63b38a0b78bb629"
+      ],
+      "title": "WOWW: Make saved original values use struct",
+      "message": "WOWW: Make saved original values use struct\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-19T17:22:19.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/2c8d57db61630ea5bbfe1bbf0d93ae212cb7acd6"
+    },
+    {
+      "id": "cade03373e3bacf7cfa09671f63b38a0b78bb629",
+      "short_id": "cade0337",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "b9a62688197ce0a2316744e155fc236259df4c0e"
+      ],
+      "title": "WOWW: Update documentation",
+      "message": "WOWW: Update documentation\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-16T14:40:01.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/cade03373e3bacf7cfa09671f63b38a0b78bb629"
+    },
+    {
+      "id": "b9a62688197ce0a2316744e155fc236259df4c0e",
+      "short_id": "b9a62688",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "3f4ac5539b4c6305f7e86b0fcf1d128fd426a9fa"
+      ],
+      "title": "WOWW: Add better support out of order parsing",
+      "message": "WOWW: Add better support out of order parsing\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-16T13:59:16.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/b9a62688197ce0a2316744e155fc236259df4c0e"
+    },
+    {
+      "id": "3f4ac5539b4c6305f7e86b0fcf1d128fd426a9fa",
+      "short_id": "3f4ac553",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "e37f6599b0a8e33c64ba0c1ef81462bc92803bef"
+      ],
+      "title": "WOWW: Move header decryption into separate function",
+      "message": "WOWW: Move header decryption into separate function\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-16T13:29:58.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3f4ac5539b4c6305f7e86b0fcf1d128fd426a9fa"
+    },
+    {
+      "id": "e37f6599b0a8e33c64ba0c1ef81462bc92803bef",
+      "short_id": "e37f6599",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "57f32d974e503781b2f7a8cc1fc188a5b089a1ea"
+      ],
+      "title": "WOWW: Remove and move declarations",
+      "message": "WOWW: Remove and move declarations\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-15T23:28:38.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e37f6599b0a8e33c64ba0c1ef81462bc92803bef"
+    },
+    {
+      "id": "57f32d974e503781b2f7a8cc1fc188a5b089a1ea",
+      "short_id": "57f32d97",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "9e767608f756771fcea9003b36de7bc1a8f71884"
+      ],
+      "title": "WOWW: Add all remaining opcodes for 1.12.x",
+      "message": "WOWW: Add all remaining opcodes for 1.12.x\n\nFrom Mangos Zero:\nhttps://github.com/mangoszero/server/blob/e45aa74e0fa3a9677d90fc012b8161e1e9935742/src/game/Server/Opcodes.h#L53\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-15T22:48:59.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/57f32d974e503781b2f7a8cc1fc188a5b089a1ea"
+    },
+    {
+      "id": "9e767608f756771fcea9003b36de7bc1a8f71884",
+      "short_id": "9e767608",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "92e62a74fd293ed4980161b98d7fabf98afcc1d1"
+      ],
+      "title": "WOWW: Make session key deduction work",
+      "message": "WOWW: Make session key deduction work\n\nDetailed description in the comment at the top of the file.\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-15T21:53:02.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/9e767608f756771fcea9003b36de7bc1a8f71884"
+    },
+    {
+      "id": "92e62a74fd293ed4980161b98d7fabf98afcc1d1",
+      "short_id": "92e62a74",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "e1b3796419bbeb9ad76ae8645f73a7d7cb9c1f5d"
+      ],
+      "title": "WOWW: Add working decryption",
+      "message": "WOWW: Add working decryption\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-15T18:38:27.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/92e62a74fd293ed4980161b98d7fabf98afcc1d1"
+    },
+    {
+      "id": "e1b3796419bbeb9ad76ae8645f73a7d7cb9c1f5d",
+      "short_id": "e1b37964",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "894b1eec6a811eed8e916a80d5503f0d92987386"
+      ],
+      "title": "WOWW: Add protocol",
+      "message": "WOWW: Add protocol\n\nThe protocol is a continuation of the WOW protocol occuring between the\nworld server and the client (as opposed to the login server and the\nclient).\n\nThe first two opcodes are unencrypted and perform setup for the\nencryption.\nThe encryption was setup in the WOW protocol through SRP6.\nUsing the session key for encryption like this is not part of the SRP6\nprotocol.\nAll other opcodes are encrypted using the session key, which will need\nto be deduced first.\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-07-10T16:49:01.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e1b3796419bbeb9ad76ae8645f73a7d7cb9c1f5d"
+    },
+    {
+      "id": "894b1eec6a811eed8e916a80d5503f0d92987386",
+      "short_id": "894b1eec",
+      "created_at": "2021-07-20T20:46:57.000+00:00",
+      "parent_ids": [
+        "5e9ab5c5797b4044493f34f4fa68527e5c5e3884"
+      ],
+      "title": "WOW: Make username and realm names display as UTF-8",
+      "message": "WOW: Make username and realm names display as UTF-8\n\nBoth CHALLENGE and REALM_LIST are UTF-8 strings:\n\nhttps://wowdev.wiki/CMD_AUTH_LOGON_CHALLENGE_Client\n\nhttps://wowdev.wiki/CMD_REALM_LIST_Server\n",
+      "author_name": "Gtker",
+      "author_email": "wireshark@gtker.com",
+      "authored_date": "2021-06-09T19:49:57.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-07-20T20:46:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/894b1eec6a811eed8e916a80d5503f0d92987386"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 218022281,
+      "head_commit_sha": "bb25eca4eb01ef84988314b247b9e7e3e7d12a0f",
+      "base_commit_sha": "5e9ab5c5797b4044493f34f4fa68527e5c5e3884",
+      "start_commit_sha": "5e9ab5c5797b4044493f34f4fa68527e5c5e3884",
+      "created_at": "2021-07-20T20:47:01.886Z",
+      "merge_request_id": 108948821,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 217810069,
+      "head_commit_sha": "4c30d6a83161aa8b0b9196241df7115e9f7307ca",
+      "base_commit_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+      "start_commit_sha": "57fcadf5aff247836b06c31ce5b74b51e77d15bf",
+      "created_at": "2021-07-20T14:04:29.498Z",
+      "merge_request_id": 108948821,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 217378996,
+      "head_commit_sha": "0ccd7469227d14763d8720cf6a7c7b315f3c5ace",
+      "base_commit_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+      "start_commit_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+      "created_at": "2021-07-19T19:47:22.930Z",
+      "merge_request_id": 108948821,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    },
+    {
+      "id": 217293353,
+      "head_commit_sha": "d10505efa804a59b87792c9a1c45aa8c235601ea",
+      "base_commit_sha": "9d50e6e19959da9f1175ff5ca8f2af7a84b45e71",
+      "start_commit_sha": "c7ed8aa3ee25ecb4f4788b0f08fd37e3de2f3473",
+      "created_at": "2021-07-19T16:12:22.181Z",
+      "merge_request_id": 108948821,
+      "state": "without_files",
+      "real_size": "3",
+      "patch_id_sha": null
+    }
+  ]
+}

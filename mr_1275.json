@@ -1,0 +1,1374 @@
+{
+  "id": 81837568,
+  "iid": 1275,
+  "project_id": 7898047,
+  "title": "Refactor nettrace reader to allow opening larger files (#17009)",
+  "description": "The old behaviour of the 3GPP 32.423 nettrace reader is to read the entire file into memory at once; provide the XML tree as the first packet; and then parse individual `<msg>` elements into data for subsequent packets. It did this by writing to a temporary pcapng file and parsing that.\n\nThis change eliminates the fake first packet with the entire file contents, so the limit on the file size is effectively removed. Users wishing to see the original data can view the nettrace file in a text editor, or using the File Format view in Wireshark.\n\nIt also removes the intermediary pcapng file, and writes \"Exported PDU\" packets directly into wiretap's read buffer. The old functions `create_temp_pcapng_file()` and `write_packet_data()` had logic that has been relocated largely unchanged into the new function `nettrace_msg_to_packet()`.\n\nAlso includes some \"code smell\" fixes:\n\n* Removes some `#define`s that were copied from epan/exported_pdu.h, and uses them directly from that file\n* Removes some magic numbers that were explicitly from epan/exported_pdu.h, and uses macros from that file\n* Where a constant string was used in eg. a `strstr()` and the subsequent line had a magic constant for the length of that string, replace the string with a `static const guchar []` and use `sizeof()` on it to show where the length calculation comes from (this change should have no performance impact on modern optimizing compilers)\n* Use direct pointer math instead of indexing into a byte array when generating the exported-pdu data\n* Use `g_strstr_len()` and similar in place of `strstr()` to remove the need to insert string terminators into the data\n\nResolves #17009.\n\nPossible follow-up changes related to this MR:\n\n* The code to generate exported-pdu data largely duplicates what's in epan/exported_pdu.h; but see <https://www.wireshark.org/lists/wireshark-dev/202012/msg00017.html>\n* The code to parse a ISO 8601 date-time string into a `nstime_t` resembles code in `tvb_get_string_time()` (epan/tvbuff.c); perhaps code from both places could be rationalized into wsutil/nstime.c",
+  "state": "merged",
+  "created_at": "2020-12-15T15:21:59.047Z",
+  "updated_at": "2021-01-06T18:43:31.320Z",
+  "merged_by": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merge_user": {
+    "id": 6792385,
+    "username": "AndersBroman",
+    "public_email": "",
+    "name": "AndersBroman",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+    "web_url": "https://gitlab.com/AndersBroman"
+  },
+  "merged_at": "2021-01-04T15:20:29.081Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "nettrace-refactor",
+  "user_notes_count": 8,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "assignees": [
+    {
+      "id": 6020526,
+      "username": "boolean263",
+      "public_email": "",
+      "name": "David Perry",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+      "web_url": "https://gitlab.com/boolean263"
+    }
+  ],
+  "assignee": {
+    "id": 6020526,
+    "username": "boolean263",
+    "public_email": "",
+    "name": "David Perry",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+    "web_url": "https://gitlab.com/boolean263"
+  },
+  "reviewers": [],
+  "source_project_id": 20710065,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "1155df429e8a67400c000a09dc17ac330e2b0905",
+  "merge_commit_sha": null,
+  "squash_commit_sha": "718cff5264a514e5c666b6599c4be1b8810a0614",
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2020-12-15T15:21:59.047Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!1275",
+  "references": {
+    "short": "!1275",
+    "relative": "!1275",
+    "full": "wireshark/wireshark!1275"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/1275",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+    "head_sha": "1155df429e8a67400c000a09dc17ac330e2b0905",
+    "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "178e86e6adc7ffa9235e056fbacb79fcaf2df3c1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 473224274,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-12-23T22:24:46.053Z",
+          "updated_at": "2020-12-23T22:24:46.055Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "872bb25fa3e35c5dbf0205dd31eab917f16418d2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 473224319,
+          "type": null,
+          "body": "added 75 commits\n\n<ul><li>dd8352fc...a9ce232c - 71 commits from branch <code>wireshark:master</code></li><li>c24a1543 - Initial refactor of nettrace reader (#17009)</li><li>84302cec - Ensure proto/table names are zero padded</li><li>7c39d84c - Move file-reading code into its own routine</li><li>247aeaf2 - Final tidying before pushing for merge request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=132779644&start_sha=dd8352fc27113ac9b3feb247ec7be854f709fc69)",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-12-23T22:24:52.943Z",
+          "updated_at": "2020-12-23T22:24:52.945Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d21da2bd499c4c16fadff36e93a6916822db3235",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 473224643,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for 247aeaf2e1dd7a1e26ca16fc8de365970c9a5189 succeeds",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-12-23T22:25:06.377Z",
+          "updated_at": "2020-12-23T22:25:06.379Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fa1d714a40bbea827543c1301f5727bc188ab501",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 473225035,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2020-12-23T22:25:22.549Z",
+          "updated_at": "2020-12-23T22:25:22.551Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c69ce0ef811087c98cd7a142a40d7e0674654d45",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 473231956,
+          "type": null,
+          "body": "assigned to @boolean263 and unassigned @ws-gitlab-utility",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-12-23T22:41:26.409Z",
+          "updated_at": "2020-12-23T22:41:26.411Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "62231610812f1137b18f823932b867cf3e4c2eaf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 473231959,
+          "type": null,
+          "body": "I couldn't merge this branch: CI failed!",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2020-12-23T22:41:26.961Z",
+          "updated_at": "2020-12-23T22:41:26.961Z",
+          "system": false,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0154e049d532a090563e8b54b2e10c79ef6910d8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 473258956,
+          "type": null,
+          "body": "Errors:\n\n```\nC:\\builds\\wireshark\\wireshark\\wiretap\\nettrace_3gpp_32_423.c(693,36): warning C4244: '=': conversion from '__int64' to 'guint', possible loss of data\nC:\\builds\\wireshark\\wireshark\\wiretap\\nettrace_3gpp_32_423.c(707,57): warning C4244: 'function': conversion from 'gsize' to 'guint', possible loss of data\nC:\\builds\\wireshark\\wireshark\\wiretap\\nettrace_3gpp_32_423.c(739,45): warning C4244: '=': conversion from '__int64' to 'guint', possible loss of data\nC:\\builds\\wireshark\\wireshark\\wiretap\\nettrace_3gpp_32_423.c(931,82): warning C4244: 'function': conversion from '__int64' to 'guint', possible loss of data\n```",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-12-23T23:33:21.118Z",
+          "updated_at": "2020-12-23T23:33:21.118Z",
+          "system": false,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9a66fa54670dbc50438515733d4cbe394fd6da01",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 473277181,
+          "type": null,
+          "body": "aborted the automatic merge because target branch was updated",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-12-24T01:22:57.192Z",
+          "updated_at": "2020-12-24T01:22:57.193Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6082c74c4a33dc5f2bddffe1ad7a1bf1b417c93b",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 473277259,
+          "type": "DiffNote",
+          "body": "You need to cast `msg_start - buf_start` to `guint` to prevent a warning.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-12-24T01:23:37.890Z",
+          "updated_at": "2020-12-24T01:23:37.890Z",
+          "system": false,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "6030f32a27374e8f6673edf92f005e757d0d3788",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 693,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2021-01-04T13:16:58.166Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        },
+        {
+          "id": 477550032,
+          "type": "DiffNote",
+          "body": "changed this line in [version 5 of the diff](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=133955497&start_sha=6030f32a27374e8f6673edf92f005e757d0d3788#80e1e4d6ae8c02cf16fe097d240a5e39d6974bd3_693_693)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T14:19:55.250Z",
+          "updated_at": "2021-01-04T14:19:55.250Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "6030f32a27374e8f6673edf92f005e757d0d3788",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 693,
+            "line_range": null
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fd8891e3c2197f77cfb7ec5f190c5fb5cd35bd8d",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 473277439,
+          "type": "DiffNote",
+          "body": "You'll need to cast `msg_len` to `guint` in this call to prevent a warning.  (Presumably it will never be larger than 2^31-1.)",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-12-24T01:24:55.964Z",
+          "updated_at": "2020-12-24T01:24:55.964Z",
+          "system": false,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "62a4207fde60ae35ea830a44643a2e9268509411",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 707,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2021-01-04T13:18:03.164Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        },
+        {
+          "id": 477492069,
+          "type": "DiffNote",
+          "body": "changed this line in [version 4 of the diff](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=133941261&start_sha=62a4207fde60ae35ea830a44643a2e9268509411#80e1e4d6ae8c02cf16fe097d240a5e39d6974bd3_707_707)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T13:16:34.684Z",
+          "updated_at": "2021-01-04T13:16:34.684Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "62a4207fde60ae35ea830a44643a2e9268509411",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 707,
+            "line_range": null
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        },
+        {
+          "id": 477493615,
+          "type": "DiffNote",
+          "body": "I presume so as well, but the original ticket is caused by assuming a size limit that turned out to be false, so I also added some insulation code just in case.",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T13:18:03.011Z",
+          "updated_at": "2021-01-04T13:18:03.011Z",
+          "system": false,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "62a4207fde60ae35ea830a44643a2e9268509411",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 707,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2021-01-04T13:18:03.164Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b69ac007e840005215406cc6b86eaf7f179a1133",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 473278416,
+          "type": "DiffNote",
+          "body": "You'll need to cast `msg_end - file_info->buffer->data` to `guint` to avoid a warning.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-12-24T01:27:37.883Z",
+          "updated_at": "2020-12-24T01:27:37.883Z",
+          "system": false,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "62a4207fde60ae35ea830a44643a2e9268509411",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 739,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2021-01-04T13:18:07.475Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        },
+        {
+          "id": 477492072,
+          "type": "DiffNote",
+          "body": "changed this line in [version 4 of the diff](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=133941261&start_sha=62a4207fde60ae35ea830a44643a2e9268509411#80e1e4d6ae8c02cf16fe097d240a5e39d6974bd3_739_743)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T13:16:34.816Z",
+          "updated_at": "2021-01-04T13:16:34.816Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "62a4207fde60ae35ea830a44643a2e9268509411",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 739,
+            "line_range": null
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4ce3f0a91218a8decdb3af6da942e736b992219e",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 473278492,
+          "type": "DiffNote",
+          "body": "You'll need to cast `msg_end - file_info->buffer->data` to `guint` to a avoid a warning.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-12-24T01:28:24.278Z",
+          "updated_at": "2020-12-24T01:28:24.278Z",
+          "system": false,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "62a4207fde60ae35ea830a44643a2e9268509411",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 739,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2021-01-04T13:18:13.494Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        },
+        {
+          "id": 477492076,
+          "type": "DiffNote",
+          "body": "changed this line in [version 4 of the diff](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=133941261&start_sha=62a4207fde60ae35ea830a44643a2e9268509411#80e1e4d6ae8c02cf16fe097d240a5e39d6974bd3_739_743)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T13:16:34.953Z",
+          "updated_at": "2021-01-04T13:16:34.953Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "62a4207fde60ae35ea830a44643a2e9268509411",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 739,
+            "line_range": null
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0bf816212aed3d85f1b99010c54f52e72e1e6204",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 473278564,
+          "type": "DiffNote",
+          "body": "You'll need to cast `bytes_read-(curr_pos-magic_buf)` to `guint` to avoid a warning.",
+          "author": {
+            "id": 5636682,
+            "username": "guyharris",
+            "public_email": "",
+            "name": "Guy Harris",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/1b7c243a9b1d6587a9a9067e5d83aba1e87212df7c4eeae3690f791ecbe4675a?s=80&d=identicon",
+            "web_url": "https://gitlab.com/guyharris"
+          },
+          "created_at": "2020-12-24T01:29:03.971Z",
+          "updated_at": "2020-12-24T01:29:03.971Z",
+          "system": false,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "6030f32a27374e8f6673edf92f005e757d0d3788",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 935,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "resolved_at": "2021-01-04T13:18:17.136Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        },
+        {
+          "id": 477550034,
+          "type": "DiffNote",
+          "body": "changed this line in [version 5 of the diff](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=133955497&start_sha=6030f32a27374e8f6673edf92f005e757d0d3788#80e1e4d6ae8c02cf16fe097d240a5e39d6974bd3_935_935)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T14:19:55.436Z",
+          "updated_at": "2021-01-04T14:19:55.436Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "start_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+            "head_sha": "6030f32a27374e8f6673edf92f005e757d0d3788",
+            "old_path": "wiretap/nettrace_3gpp_32_423.c",
+            "new_path": "wiretap/nettrace_3gpp_32_423.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 935,
+            "line_range": null
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c438e98988b2d921c5db48726e46aa1abc6c558b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 477487371,
+          "type": null,
+          "body": "added 97 commits\n\n<ul><li>247aeaf2...84eeeabd - 93 commits from branch <code>wireshark:master</code></li><li>8ab3a9c3 - Initial refactor of nettrace reader (#17009)</li><li>08f568ab - Ensure proto/table names are zero padded</li><li>262222f8 - Move file-reading code into its own routine</li><li>62a4207f - Final tidying before pushing for merge request</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=133940128&start_sha=247aeaf2e1dd7a1e26ca16fc8de365970c9a5189)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T13:12:32.190Z",
+          "updated_at": "2021-01-04T13:12:32.192Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3d1eba37d654c6dbc09ad53ab8c1378e60561f18",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 477492085,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>6030f32a - Add casts to prevent compiler warnings</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=133941261&start_sha=62a4207fde60ae35ea830a44643a2e9268509411)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T13:16:35.800Z",
+          "updated_at": "2021-01-04T13:16:35.801Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f03b4de844419dc3cccd0b0ad34acaea110d0e04",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 477493989,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T13:18:17.155Z",
+          "updated_at": "2021-01-04T13:18:17.160Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3c92e300a993a59e79c8dc00d4e922f1cf9d3f68",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 477550044,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>1155df42 - Add some more casts I missed</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/1275/diffs?diff_id=133955497&start_sha=6030f32a27374e8f6673edf92f005e757d0d3788)",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-04T14:19:56.365Z",
+          "updated_at": "2021-01-04T14:19:56.367Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "ab7a2bbbcac9d6271a744e121dc83df4efa0466a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 477610755,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-01-04T15:20:21.139Z",
+          "updated_at": "2021-01-04T15:20:21.142Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "283cb6ddc78df88d41eb2fd0d6d342dd330a9675",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 479750086,
+          "type": null,
+          "body": "mentioned in merge request !1618",
+          "author": {
+            "id": 6020526,
+            "username": "boolean263",
+            "public_email": "",
+            "name": "David Perry",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6020526/avatar.png?v=1789979504",
+            "web_url": "https://gitlab.com/boolean263"
+          },
+          "created_at": "2021-01-06T18:43:31.294Z",
+          "updated_at": "2021-01-06T18:43:31.296Z",
+          "system": true,
+          "noteable_id": 81837568,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1275,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -25,6 +25,7 @@\n #include \"file_wrappers.h\"\n #include \"pcap-encap.h\"\n \n+#include <epan/exported_pdu.h>\n #include <wsutil/buffer.h>\n #include \"wsutil/tempfile.h\"\n #include \"wsutil/os_version_info.h\"\n@@ -35,607 +36,584 @@\n #include \"pcapng.h\"\n #include \"nettrace_3gpp_32_423.h\"\n \n-/*\n-* Impose a not-too-large limit on the maximum file size, to avoid eating\n-* up 99% of the (address space, swap partition, disk space for swap/page\n-* files); if we were to return smaller chunks and let the dissector do\n-* reassembly, it would *still* have to allocate a buffer the size of\n-* the file, so it's not as if we'd never try to allocate a buffer the\n-* size of the file. Laeve space for the exported PDU tag 12 bytes.\n-*/\n-#define MAX_FILE_SIZE\t(G_MAXINT-12)\n+/* String constants sought in the XML data.\n+ * Written as strings instead of lists of chars for readability.\n+ * Use the CLEN() macro to get the length of the constant without counting\n+ * the null byte at the end.\n+ */\n+#define CLEN(x) (sizeof(x)-1)\n+static const guchar c_xml_magic[] = \"<?xml\";\n+static const guchar c_file_header[] = \"<fileHeader\";\n+static const guchar c_file_format_version[] = \"fileFormatVersion=\\\"\";\n+static const guchar c_threegpp_doc_no[] = \"32.423\";\n+static const guchar c_begin_time[] = \"<traceCollec beginTime=\\\"\";\n+static const guchar c_s_msg[] = \"<msg\";\n+static const guchar c_e_msg[] = \"</msg>\";\n+static const guchar c_s_rawmsg[] = \"<rawMsg\";\n+static const guchar c_change_time[] = \"changeTime=\\\"\";\n+static const guchar c_proto_name[] = \"name=\\\"\";\n+static const guchar c_address[] = \"ddress\"; /* omit the 'a' to cater for \"Address\" */\n+static const guchar c_s_initiator[] = \"<initiator\";\n+static const guchar c_e_initiator[] = \"</initiator>\";\n+static const guchar c_s_target[] = \"<target\";\n+static const guchar c_e_target[] = \"</target>\";\n+static const guchar c_protocol[] = \"protocol=\\\"\";\n+\n+/* These are protocol names we may put in the exported-pdu data based on\n+ * what's in the XML. They're defined here as constants so we can use\n+ * sizeof()/CLEN() on them and slightly reduce our use of magic constants\n+ * for their size. (Modern compilers should make this no slower than that.)\n+ */\n+static const guchar c_sai_req[] = \"gsm_map.v3.arg.opcode\";\n+static const guchar c_sai_rsp[] = \"gsm_map.v3.res.opcode\";\n+static const guchar c_nas_eps[] = \"nas-eps_plain\";\n \n-static const guint8 xml_magic[] = { '<', '?', 'x', 'm', 'l' };\n-static const guint8 Threegpp_doc_no[] = { '3', '2', '.', '4', '2', '3' };\n+#define RINGBUFFER_START_SIZE G_MAXINT\n+#define RINGBUFFER_CHUNK_SIZE 1024\n+\n+#define MAX_NAME_LEN 64\n+#define MAX_PROTO_LEN 16\n+#define MAX_DTBL_LEN 32\n+\n+/* We expect to find all the info we need to tell if this file is ours\n+ * within this many bytes. Must include the beginTime attribute.\n+ */\n+#define MAGIC_BUF_SIZE 1024\n \n typedef struct nettrace_3gpp_32_423_file_info {\n-\tchar *tmpname;\n-\twtap *wth_tmp_file;\n+\tGByteArray *buffer;\t\t// holds current chunk of file\n+\tgint64 start_offset;\t\t// where in the file the start of the buffer points\n+\tnstime_t start_time;\t\t// from <traceCollec beginTime=\"\"> attribute\n } nettrace_3gpp_32_423_file_info_t;\n \n-/* From epan/exported_pdu.h\n-   Port types are no longer used for conversation/endpoints so\n-   many of the enumerated values have been eliminated\n-   Since export PDU functionality is serializing them,\n-   keep the old values around for conversion */\n-#define OLD_PT_NONE         0\n-#define OLD_PT_SCTP         1\n-#define OLD_PT_TCP          2\n-#define OLD_PT_UDP          3\n-#define OLD_PT_DCCP         4\n-#define OLD_PT_IPX          5\n-#define OLD_PT_NCP          6\n-#define OLD_PT_EXCHG        7\n-#define OLD_PT_DDP          8\n-#define OLD_PT_SBCCS        9\n-#define OLD_PT_IDP          10\n-#define OLD_PT_TIPC         11\n-#define OLD_PT_USB          12\n-#define OLD_PT_I2C          13\n-#define OLD_PT_IBQP         14\n-#define OLD_PT_BLUETOOTH    15\n-#define OLD_PT_TDMOP        16\n-\n \n typedef struct exported_pdu_info {\n-\tguint32 precense_flags;\n-\t/*const char* proto_name;*/\n+\tguint32 presence_flags;\n \tguint8 src_ip[16];\n \tguint32 ptype; /* Based on epan/address.h port_type valid for both src and dst*/\n \tguint32 src_port;\n \tguint8 dst_ip[16];\n \tguint32 dst_port;\n \tchar* proto_col_str;\n-}exported_pdu_info_t ;\n-\n-/* From epan/epxported_pdu.h*/\n-#define EXP_PDU_TAG_END_OF_OPT         0 /**< End-of-options Tag. */\n-/* 1 - 9 reserved */\n-#define EXP_PDU_TAG_OPTIONS_LENGTH    10 /**< Total length of the options excluding this TLV */\n-#define EXP_PDU_TAG_PROTO_NAME        12 /**< The value part should be an ASCII non NULL terminated string\n-* of the registered dissector used by Wireshark e.g \"sip\"\n-* Will be used to call the next dissector.\n-*/\n-#define EXP_PDU_TAG_DISSECTOR_TABLE_NAME 14 /**< The value part should be an ASCII non NULL terminated string\n-* containing the dissector table name given\n-* during registration, e.g \"gsm_map.v3.arg.opcode\"\n-* Will be used to call the next dissector.\n-*/\n-\n-#define EXP_PDU_TAG_IPV4_SRC        20\n-#define EXP_PDU_TAG_IPV4_DST        21\n-#define EXP_PDU_TAG_IPV6_SRC        22\n-#define EXP_PDU_TAG_IPV6_DST        23\n-#define EXP_PDU_TAG_SRC_PORT        25\n-#define EXP_PDU_TAG_PORT_TYPE       24  /**< value part is port_type enum from epan/address.h */\n-#define EXP_PDU_TAG_DST_PORT        26\n-#define EXP_PDU_TAG_SS7_OPC         28\n-#define EXP_PDU_TAG_SS7_DPC         29\n-\n-#define EXP_PDU_TAG_ORIG_FNO        30\n-\n-#define EXP_PDU_TAG_DVBCI_EVT       31\n-\n-#define EXP_PDU_TAG_DISSECTOR_TABLE_NAME_NUM_VAL 32 /**< value part is the numeric value to be used calling the dissector table\n-*  given with tag EXP_PDU_TAG_DISSECTOR_TABLE_NAME, must follow emediatly after the table tag.\n-*/\n-\n-#define EXP_PDU_TAG_COL_PROT_TEXT   33 /**< Text string to put in COL_PROTOCOL, one use case is in conjunction with dissector tables where \n-*   COL_PROTOCOL might not be filled in.\n-*/\n+} exported_pdu_info_t;\n+\n+/* flags for exported_pdu_info.presence_flags */\n+#define EXP_PDU_TAG_IP_SRC_BIT\t\t0x001\n+#define EXP_PDU_TAG_IP_DST_BIT\t\t0x002\n+#define EXP_PDU_TAG_SRC_PORT_BIT\t0x004\n+#define EXP_PDU_TAG_DST_PORT_BIT\t0x008\n+#define EXP_PDU_TAG_ORIG_FNO_BIT\t0x010\n+#define EXP_PDU_TAG_SS7_OPC_BIT\t\t0x020\n+#define EXP_PDU_TAG_SS7_DPC_BIT\t\t0x040\n+#define EXP_PDU_TAG_IP6_SRC_BIT\t\t0x080\n+#define EXP_PDU_TAG_IP6_DST_BIT\t\t0x100\n+#define EXP_PDU_TAG_DVBCI_EVT_BIT\t0x0100\n+#define EXP_PDU_TAG_COL_PROT_BIT\t0x0200\n+\n+\n+/* Parse a string IPv4 or IPv6 address into bytes for exported_pdu_info.\n+ * Also parses the port pairs and transport layer type.\n+ */\n+static char*\n+nettrace_parse_address(char* curr_pos, char* next_pos, gboolean is_src_addr, exported_pdu_info_t *exported_pdu_info)\n+{\n+\tguint port;\n+\tchar transp_str[5];\n+\tint scan_found;\n+\tchar str[3];\n+\tchar* end_pos, *skip_pos;\n+\tchar ip_addr_str[WS_INET6_ADDRSTRLEN];\n+\tint str_len;\n+\tws_in6_addr ip6_addr;\n+\tguint32 ip4_addr;\n+\tgchar tempchar;\n \n-#define EXP_PDU_TAG_IP_SRC_BIT          0x001\n-#define EXP_PDU_TAG_IP_DST_BIT          0x002\n-#define EXP_PDU_TAG_SRC_PORT_BIT        0x004\n-#define EXP_PDU_TAG_DST_PORT_BIT        0x008\n-#define EXP_PDU_TAG_ORIG_FNO_BIT        0x010\n-#define EXP_PDU_TAG_SS7_OPC_BIT         0x020\n-#define EXP_PDU_TAG_SS7_DPC_BIT         0x040\n-#define EXP_PDU_TAG_IP6_SRC_BIT         0x080\n-#define EXP_PDU_TAG_IP6_DST_BIT         0x100\n+\t/* curr_pos pointing to first char after address */\n \n-/* 2nd byte of optional tags bitmap */\n-#define EXP_PDU_TAG_DVBCI_EVT_BIT       0x0100\n-#define EXP_PDU_TAG_COL_PROT_BIT        0x0200\n+\t/* Excample from one trace, unsure if it's generic...\n+\t * {address == 192.168.73.1, port == 5062, transport == Udp}\n+\t * {address == [2001:1b70:8294:210a::78], port...\n+\t * {address == 2001:1B70:8294:210A::90, port...\n+\t *  Address=198.142.204.199,Port=2123\n+\t */\n+\t/* Skip whitespace and equalsigns) */\n+\tfor (skip_pos = curr_pos; skip_pos < next_pos &&\n+\t\t((tempchar = *skip_pos) == ' ' ||\n+\t\t\ttempchar == '\\t' || tempchar == '\\r' || tempchar == '\\n' || tempchar == '=');\n+\t\tskip_pos++);\n \n-#define EXP_PDU_TAG_IPV4_SRC_LEN        4\n-#define EXP_PDU_TAG_IPV4_DST_LEN        4\n-#define EXP_PDU_TAG_PORT_TYPE_LEN       4\n-#define EXP_PDU_TAG_SRC_PORT_LEN        4\n-#define EXP_PDU_TAG_DST_PORT_LEN        4\n+\tcurr_pos = skip_pos;\n \n-#define EXP_PDU_TAG_IPV4_LEN            4\n-#define EXP_PDU_TAG_IPV6_LEN            16\n+\tg_strlcpy(str, curr_pos, 3);\n+\t/* If we find \"\" here we have no IP address */\n+\tif (strcmp(str, \"\\\"\\\"\") == 0) {\n+\t\treturn next_pos;\n+\t}\n+\tstr[1] = 0;\n+\tif (strcmp(str, \"[\") == 0) {\n+\t\t/* Should we check for a digit here?*/\n+\t\tend_pos = strstr(curr_pos, \"]\");\n \n+\t}else {\n+\t\t/* Should we check for a digit here?*/\n+\t\tend_pos = strstr(curr_pos, \",\");\n+\t}\n+\tif (!end_pos) {\n+\t\treturn next_pos;\n+\t}\n \n-static gboolean\n-nettrace_read(wtap *wth, wtap_rec *rec, Buffer *buf, int *err, gchar **err_info, gint64 *data_offset)\n-{\n-\tnettrace_3gpp_32_423_file_info_t *file_info = (nettrace_3gpp_32_423_file_info_t *)wth->priv;\n+\tstr_len = (int)(end_pos - curr_pos)+1;\n+\tif (str_len > WS_INET6_ADDRSTRLEN) {\n+\t\treturn next_pos;\n+\t}\n+\tg_strlcpy(ip_addr_str, curr_pos, str_len);\n+\tcurr_pos = end_pos;\n+\tif (ws_inet_pton6(ip_addr_str, &ip6_addr)) {\n+\t\tif (is_src_addr) {\n+\t\t\texported_pdu_info->presence_flags |= EXP_PDU_TAG_IP6_SRC_BIT;\n+\t\t\tmemcpy(exported_pdu_info->src_ip, ip6_addr.bytes, EXP_PDU_TAG_IPV6_LEN);\n+\t\t}\n+\t\telse {\n+\t\t\texported_pdu_info->presence_flags |= EXP_PDU_TAG_IP6_DST_BIT;\n+\t\t\tmemcpy(exported_pdu_info->dst_ip, ip6_addr.bytes, EXP_PDU_TAG_IPV6_LEN);\n+\t\t}\n+\t}\n+\telse if (ws_inet_pton4(ip_addr_str, &ip4_addr)) {\n+\t\tif (is_src_addr) {\n+\t\t\texported_pdu_info->presence_flags |= EXP_PDU_TAG_IP_SRC_BIT;\n+\t\t\tmemcpy(exported_pdu_info->src_ip, &ip4_addr, EXP_PDU_TAG_IPV4_LEN);\n+\t\t}\n+\t\telse {\n+\t\t\texported_pdu_info->presence_flags |= EXP_PDU_TAG_IP_DST_BIT;\n+\t\t\tmemcpy(exported_pdu_info->dst_ip, &ip4_addr, EXP_PDU_TAG_IPV4_LEN);\n+\t\t}\n+\t}\n \n-\t/* we read the created pcapng file instead */\n-\treturn wtap_read(file_info->wth_tmp_file, rec, buf, err, err_info, data_offset);\n+\tcurr_pos++;\n+\tscan_found = sscanf(curr_pos, \", %*s %*s %5u, %*s %*s %4s\", &port, transp_str);\n+\tif (scan_found == 2) {\n+\t\t/* Only add port_type once */\n+\t\tif (exported_pdu_info->ptype == OLD_PT_NONE) {\n+\t\t\tif (g_ascii_strncasecmp(transp_str, \"udp\", 3) == 0) {\n+\t\t\t\texported_pdu_info->ptype = OLD_PT_UDP;\n+\t\t\t}\n+\t\t\telse if (g_ascii_strncasecmp(transp_str, \"tcp\", 3) == 0) {\n+\t\t\t\texported_pdu_info->ptype = OLD_PT_TCP;\n+\t\t\t}\n+\t\t\telse if (g_ascii_strncasecmp(transp_str, \"sctp\", 4) == 0) {\n+\t\t\t\texported_pdu_info->ptype = OLD_PT_SCTP;\n+\t\t\t}\n+\t\t}\n+\t\tif (is_src_addr) {\n+\t\t\texported_pdu_info->presence_flags |= EXP_PDU_TAG_SRC_PORT_BIT;\n+\t\t\texported_pdu_info->src_port = port;\n+\t\t}\n+\t\telse {\n+\t\t\texported_pdu_info->presence_flags |= EXP_PDU_TAG_DST_PORT_BIT;\n+\t\t\texported_pdu_info->dst_port = port;\n+\t\t}\n+\t}\n+\treturn next_pos;\n }\n \n-static gboolean\n-nettrace_seek_read(wtap *wth, gint64 seek_off, wtap_rec *rec, Buffer *buf, int *err, gchar **err_info)\n-{\n-\tnettrace_3gpp_32_423_file_info_t *file_info = (nettrace_3gpp_32_423_file_info_t *)wth->priv;\n-\n-\t/* we read the created pcapng file instead */\n-\treturn wtap_seek_read(file_info->wth_tmp_file, seek_off, rec, buf, err, err_info);\n-}\n \n-/* classic wtap: close capture file */\n-static void\n-nettrace_close(wtap *wth)\n+/* Parse a <msg ...><rawMsg ...>XXXX</rawMsg></msg> into packet data. */\n+static gboolean\n+nettrace_msg_to_packet(nettrace_3gpp_32_423_file_info_t *file_info, wtap_rec *rec, Buffer *buf, guint8 *input, gsize len, int *err, gchar **err_info)\n {\n-\tnettrace_3gpp_32_423_file_info_t *file_info = (nettrace_3gpp_32_423_file_info_t *)wth->priv;\n+/* Convenience macro. haystack must be >= input! */\n+#define STRNSTR(haystack, needle) g_strstr_len(haystack, (len - ((guint8*)(haystack) - (guint8*)input)), needle)\n \n-\twtap_close(file_info->wth_tmp_file);\n+\tgboolean status = TRUE;\n+\tchar *curr_pos, *next_msg_pos, *next_pos, *prev_pos;\n+\texported_pdu_info_t  exported_pdu_info = {0};\n \n-\t/* delete the temp file */\n-\tws_unlink(file_info->tmpname);\n-\tg_free(file_info->tmpname);\n-}\n+\tchar* raw_msg_pos;\n+\tchar* start_msg_tag_cont;\n+\tchar name_str[MAX_NAME_LEN+1];\n+\tchar proto_name_str[MAX_PROTO_LEN+1];\n+\tchar dissector_table_str[MAX_DTBL_LEN+1];\n+\tint dissector_table_val = 0;\n \n-/* This attribute specification contains a timestamp that refers to the start of the\n-* first trace data that is stored in this file.\n-*\n-* It is a complete timestamp including day, time and delta UTC hour. E.g.\n-* \"2001-09-11T09:30:47-05:00\".\n-*/\n+\tint name_str_len = 0;\n+\tint tag_str_len = 0;\n+\tint proto_str_len, dissector_table_str_len, raw_data_len, pkt_data_len,  exp_pdu_tags_len, i, j;\n+\tguint8 *packet_buf;\n+\tgint val1, val2;\n+\tgboolean port_type_defined = FALSE;\n+\tgboolean use_proto_table = FALSE;\n \n-#define isleap(y) (((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))\n+\t/* We should always and only be called with a <msg....</msg> payload */\n+\tif (0 != strncmp(input, c_s_msg, CLEN(c_s_msg))) {\n+\t\t*err = WTAP_ERR_BAD_FILE;\n+\t\t*err_info = g_strdup_printf(\"Did not start with \\\"%s\\\"\", c_s_msg);\n+\t\treturn FALSE;\n+\t}\n+\tprev_pos = curr_pos = input + CLEN(c_s_msg);\n \n-static char*\n-nettrace_parse_begin_time(char *curr_pos, wtap_rec *rec)\n-{\n-\t/* Time vars*/\n-\tguint year, month, day, hour, minute, second, frac;\n-\tint UTCdiffh, UTCdiffm = 0;\n-\tint time_length = 0;\n-\tint scan_found;\n-\tstatic const guint days_in_month[12] = {\n-\t    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31\n-\t};\n-\tstruct tm tm;\n-\tchar *prev_pos, *next_pos;\n-\tint length;\n+\trec->rec_type = REC_TYPE_PACKET;\n+\trec->presence_flags = 0; /* start out assuming no special features */\n+\trec->ts.secs = 0;\n+\trec->ts.nsecs = 0;\n \n-\tprev_pos = curr_pos;\n-\tnext_pos = strstr(curr_pos, \"\\\"/>\");\n-\tlength = (int)(next_pos - prev_pos);\n+\t/* Clear for each iteration */\n+\texported_pdu_info.presence_flags = 0;\n+\texported_pdu_info.ptype = OLD_PT_NONE;\n \n-\tif (length < 2) {\n-\t\treturn next_pos + 3;\n+\tprev_pos = curr_pos = curr_pos + 4;\n+\t/* Look for the end of the tag first */\n+\tnext_msg_pos = STRNSTR(curr_pos, \">\");\n+\tif (!next_msg_pos) {\n+\t\t/* Something's wrong, bail out */\n+\t\t*err = WTAP_ERR_BAD_FILE;\n+\t\t*err_info = g_strdup(\"Did not find end of tag \\\">\\\"\");\n+\t\tstatus = FALSE;\n+\t\tgoto end;\n+\t}\n+\t/* Check if its a tag close \"/>\" */\n+\tif (*(next_msg_pos - 1) == '/') {\n+\t\t/* There is no rawmsg here. Should have been caught before we got called */\n+\t\t*err = WTAP_ERR_INTERNAL;\n+\t\t*err_info = g_strdup(\"Had \\\"<msg />\\\" with no \\\"<rawMsg>\\\"\");\n+\t\tstatus = FALSE;\n+\t\tgoto end;\n+\t}\n+\tstart_msg_tag_cont = curr_pos = prev_pos;\n+\tnext_msg_pos = STRNSTR(curr_pos, c_e_msg);\n+\tif (!next_msg_pos) {\n+\t\t/* Something's wrong, bail out */\n+\t\t*err = WTAP_ERR_BAD_FILE;\n+\t\t*err_info = g_strdup_printf(\"Did not find \\\"%s\\\"\", c_e_msg);\n+\t\tstatus = FALSE;\n+\t\tgoto end;\n \t}\n+\tnext_msg_pos += CLEN(c_e_msg);\n \n-\trec->presence_flags = 0; /* mark time as invalid, until successful converted */\n-\trec->ts.secs = 0;\n-\trec->ts.nsecs = 0;\n+\t/* Check if we have a time stamp \"changeTime\"\n+\t * expressed in number of seconds and milliseconds (nbsec.ms).\n+\t * Only needed if we have a \"beginTime\" for this file.\n+\t */\n+\tif (!nstime_is_unset(&(file_info->start_time))) {\n+\t\tint scan_found;\n+\t\tguint second = 0, ms = 0;\n \n-\t/* Scan for this format: 2001-09-11T09:30:47 Then we will parse any fractions and UTC offset */\n-\tscan_found = sscanf(curr_pos, \"%4u-%2u-%2uT%2u:%2u:%2u%n\",\n-\t\t&year, &month, &day, &hour, &minute, &second, &time_length);\n-\tif (scan_found == 6 && time_length == 19) {\n-\t\t/* Fill in the fields and return it in a time_t */\n-\t\ttm.tm_year = year - 1900;\n-\t\tif (month < 1 || month > 12) {\n-\t\t\t/* g_warning(\"Failed to parse time, month is %u\", month); */\n-\t\t\treturn curr_pos;\n-\t\t}\n-\t\ttm.tm_mon = month - 1; /* Zero count*/\n-\t\tif (day > ((month == 2 && isleap(year)) ? 29 : days_in_month[month - 1])) {\n-\t\t\t/* g_warning(\"Failed to parse time, %u-%02u-%2u is not a valid day\", year, month, day); */\n-\t\t\treturn curr_pos;\n-\t\t}\n-\t\ttm.tm_mday = day;\n-\t\tif (hour > 23) {\n-\t\t\t/* g_warning(\"Failed to parse time, hour is %u\", hour); */\n-\t\t\treturn curr_pos;\n-\t\t}\n-\t\ttm.tm_hour = hour;\n-\t\tif (minute > 59) {\n-\t\t\t/* g_warning(\"Failed to parse time, minute is %u\", minute); */\n-\t\t\treturn curr_pos;\n-\t\t}\n-\t\ttm.tm_min = minute;\n-\t\tif (second > 60) {\n-\t\t\t/*\n-\t\t\t * Yes, 60, for leap seconds - POSIX's and Windows'\n-\t\t\t * refusal to believe in them nonwithstanding.\n-\t\t\t */\n-\t\t\t/* g_warning(\"Failed to parse time, second is %u\", second); */\n-\t\t\treturn curr_pos;\n-\t\t}\n-\t\ttm.tm_sec = second;\n-\t\ttm.tm_isdst = -1;    /* daylight saving time info not known */\n+\t\tcurr_pos = STRNSTR(start_msg_tag_cont, c_change_time);\n+\t\t/* Check if we have the tag or if we passed the end of the current message */\n+\t\tif (curr_pos != NULL) {\n+\t\t\tcurr_pos += CLEN(c_change_time);\n+\t\t\tscan_found = sscanf(curr_pos, \"%u.%u\", &second, &ms);\n \n-\t\t/* Move curr_pos to end of parsed object and get that character 2019-01-10T10:14:56 */\n-\t\tcurr_pos += time_length;\n-\t\tif (*curr_pos == '.' || *curr_pos == ',') {\n-\t\t\t/* We have fractions */\n-\t\t\tcurr_pos++;\n-\t\t\tif (1 == sscanf(curr_pos, \"%u%n\", &frac, &time_length)) {\n-\t\t\t\tif ((frac >= 1000000000) || (frac == 0)) {\n-\t\t\t\t\trec->ts.nsecs = 0;\n-\t\t\t\t} else {\n-\t\t\t\t\tswitch (time_length) { /* including leading zeros */\n-\t\t\t\t\tcase 1: rec->ts.nsecs = frac * 100000000; break;\n-\t\t\t\t\tcase 2: rec->ts.nsecs = frac * 10000000; break;\n-\t\t\t\t\tcase 3: rec->ts.nsecs = frac * 1000000; break;\n-\t\t\t\t\tcase 4: rec->ts.nsecs = frac * 100000; break;\n-\t\t\t\t\tcase 5: rec->ts.nsecs = frac * 10000; break;\n-\t\t\t\t\tcase 6: rec->ts.nsecs = frac * 1000; break;\n-\t\t\t\t\tcase 7: rec->ts.nsecs = frac * 100; break;\n-\t\t\t\t\tcase 8: rec->ts.nsecs = frac * 10; break;\n-\t\t\t\t\tdefault: rec->ts.nsecs = frac;\n-\t\t\t\t\t}\n+\t\t\tif (scan_found == 2) {\n+\t\t\t\tguint start_ms = file_info->start_time.nsecs / 1000000;\n+\t\t\t\tguint elapsed_ms = start_ms + ms;\n+\t\t\t\tif (elapsed_ms > 1000) {\n+\t\t\t\t\telapsed_ms -= 1000;\n+\t\t\t\t\tsecond++;\n \t\t\t\t}\n-\t\t\t\tcurr_pos += time_length;\n+\t\t\t\trec->presence_flags |= WTAP_HAS_TS;\n+\t\t\t\trec->ts.secs = file_info->start_time.secs + second;\n+\t\t\t\trec->ts.nsecs = file_info->start_time.nsecs + (elapsed_ms * 1000000);\n \t\t\t}\n \t\t}\n+\t}\n \n-\t\tif (*curr_pos == '-' || *curr_pos == '+' || *curr_pos == 'Z') {\n-\t\t\t/* We have UTC offset */\n-\t\t\tif (1 <= sscanf(curr_pos, \"%3d:%2d\", &UTCdiffh, &UTCdiffm)) {\n-\t\t\t\t/* adjust for timezone */\n-\t\t\t\ttm.tm_hour -= UTCdiffh;\n-\t\t\t\ttm.tm_min  -= UTCdiffh < 0 ? -UTCdiffm: UTCdiffm;\n-\t\t\t} /* else 'Z' for Zero time */\n-\t\t\t/* convert to UTC time */\n-#ifdef _WIN32\n-\t\t\trec->ts.secs = _mkgmtime(&tm);\n-#else\n-\t\t\trec->ts.secs = timegm(&tm);\n-#endif\n-\t\t} else {\n-\t\t\t/* no UTC offset means localtime in ISO 8601 */\n-\t\t\trec->ts.secs = mktime(&tm);\n+\t/* See if we have a \"name\" */\n+\tcurr_pos = STRNSTR(start_msg_tag_cont, c_proto_name);\n+\tif (curr_pos != NULL) {\n+\t\t/* extract the name */\n+\t\tcurr_pos += CLEN(c_proto_name);\n+\t\tnext_pos = STRNSTR(curr_pos, \"\\\"\");\n+\t\tname_str_len = (int)(next_pos - curr_pos);\n+\t\tif (name_str_len > MAX_NAME_LEN) {\n+\t\t\t*err = WTAP_ERR_BAD_FILE;\n+\t\t\t*err_info = g_strdup_printf(\"name_str_len > %d\", MAX_NAME_LEN);\n+\t\t\tgoto end;\n \t\t}\n \n-\t\t/* Mark time parsed successfully */\n-\t\trec->presence_flags = WTAP_HAS_TS;\n-\t/* } else {\n-\t\tg_warning(\"Failed to parse time, only %u fields\", scan_found); */\n+\t\tg_strlcpy(name_str, curr_pos, (gsize)name_str_len + 1);\n+\t\tascii_strdown_inplace(name_str);\n+\n+\t}\n+\t/* Check if we have \"<initiator>\"\n+\t *  It might contain an address\n+\t */\n+\tcurr_pos = STRNSTR(start_msg_tag_cont, c_s_initiator);\n+\t/* Check if we have the tag or if we passed the end of the current message */\n+\tif (curr_pos != NULL) {\n+\t\tcurr_pos += CLEN(c_s_initiator);\n+\t\tnext_pos = STRNSTR(curr_pos, c_e_initiator);\n+\t\t/* Find address */\n+\t\tcurr_pos = STRNSTR(curr_pos, c_address);\n+\t\tif (curr_pos != NULL) {\n+\t\t\tcurr_pos += CLEN(c_address);\n+\t\t\tnettrace_parse_address(curr_pos, next_pos, TRUE/* SRC */, &exported_pdu_info);\n+\t\t}\n \t}\n \n-\treturn curr_pos;\n-}\n-/* Parsing something like\n- * <rawMsg\n- *   protocol=\"Diameter\"\n- *   version=\"1\">\n- *    [truncated]010001244000012C01000...\n- * </rawMsg>\n- */\n-static wtap_open_return_val\n-write_packet_data(wtap_dumper *wdh, wtap_rec *rec, int *err, gchar **err_info, char *file_buf, nstime_t packet_time, exported_pdu_info_t *exported_pdu_info, char name_str[64])\n-{\n-\tchar *curr_pos, *next_pos;\n-\tchar proto_name_str[16];\n-\tchar dissector_table_str[32];\n-\tint dissector_table_val=0;\n-\tint tag_str_len = 0;\n-\tint proto_str_len, dissector_table_str_len, raw_data_len, pkt_data_len,  exp_pdu_tags_len, i, j;\n-\tguint8 *packet_buf;\n-\tgint val1, val2;\n-\tgboolean port_type_defined = FALSE;\n-\tgboolean use_proto_table = FALSE;\n+\t/* Check if we have \"<target>\"\n+\t *  It might contain an address\n+\t */\n+\tcurr_pos = STRNSTR(start_msg_tag_cont, c_s_target);\n+\t/* Check if we have the tag or if we passed the end of the current message */\n+\tif (curr_pos != NULL) {\n+\t\tcurr_pos += CLEN(c_s_target);\n+\t\tcurr_pos = curr_pos + 7;\n+\t\tnext_pos = STRNSTR(curr_pos, c_e_target);\n+\t\t/* Find address */\n+\t\tcurr_pos = STRNSTR(curr_pos, c_address);\n+\t\tif (curr_pos != NULL) {\n+\t\t\tcurr_pos += CLEN(c_address);\n+\t\t\t/* curr_pos set below */\n+\t\t\tnettrace_parse_address(curr_pos, next_pos, FALSE/* DST */, &exported_pdu_info);\n+\t\t}\n+\t}\n \n-\tmemset(proto_name_str, 0, sizeof(proto_name_str));\n-\t/* Extract the protocol name */\n-\tcurr_pos = strstr(file_buf, \"protocol=\\\"\");\n-\tif (!curr_pos){\n-\t\treturn WTAP_OPEN_ERROR;\n+\t/* Do we have a raw message in the <msg> </msg> section? */\n+\traw_msg_pos = STRNSTR(start_msg_tag_cont, c_s_rawmsg);\n+\tif (raw_msg_pos == NULL) {\n+\t\t*err = WTAP_ERR_BAD_FILE;\n+\t\t*err_info = g_strdup_printf(\"Did not find \\\"%s\\\"\", c_s_rawmsg);\n+\t\tstatus = FALSE;\n+\t\tgoto end;\n+\t}\n+\tcurr_pos = STRNSTR(raw_msg_pos, c_protocol);\n+\tif (curr_pos == NULL) {\n+\t\t*err = WTAP_ERR_BAD_FILE;\n+\t\t*err_info = g_strdup_printf(\"Did not find \\\"%s\\\"\", c_protocol);\n+\t\tstatus = FALSE;\n+\t\tgoto end;\n \t}\n-\tcurr_pos = curr_pos + 10;\n-\tnext_pos = strstr(curr_pos, \"\\\"\");\n+\tcurr_pos += CLEN(c_protocol);\n+\tnext_pos = STRNSTR(curr_pos, \"\\\"\");\n \tproto_str_len = (int)(next_pos - curr_pos);\n-\tif (proto_str_len > 15){\n-\t\treturn WTAP_OPEN_ERROR;\n+\tif (proto_str_len > MAX_PROTO_LEN){\n+\t\tstatus = FALSE;\n+\t\tgoto end;\n \t}\n-\n \tg_strlcpy(proto_name_str, curr_pos, (gsize)proto_str_len+1);\n \tascii_strdown_inplace(proto_name_str);\n \n \t/* Do string matching and replace with Wiresharks protocol name */\n-\tif (strcmp(proto_name_str, \"gtpv2-c\") == 0){\n+\tif (strcmp(proto_name_str, \"gtpv2-c\") == 0) {\n \t\t/* Change to gtpv2 */\n \t\tproto_name_str[5] = '\\0';\n \t\tproto_str_len = 5;\n \t}\n-\t/* XXX Do we need to check for function=\"S1\" */\n-\tif (strcmp(proto_name_str, \"nas\") == 0){\n+\t/* XXX Do we need to check for function=\"S1\"? */\n+\tif (strcmp(proto_name_str, \"nas\") == 0) {\n \t\t/* Change to nas-eps_plain */\n-\t\tg_strlcpy(proto_name_str, \"nas-eps_plain\", 14);\n-\t\tproto_str_len = 13;\n+\t\tg_strlcpy(proto_name_str, c_nas_eps, sizeof(c_nas_eps));\n+\t\tproto_str_len = CLEN(c_nas_eps);\n \t}\n \tif (strcmp(proto_name_str, \"map\") == 0) {\n-\t\t/* For /GSM) map, it looks like the message data is stored like SendAuthenticationInfoArg\n+\t\t/* For GSM map, it looks like the message data is stored like SendAuthenticationInfoArg\n \t\t * use the GSM MAP dissector table to dissect the content.\n \t\t */\n-\t\texported_pdu_info->proto_col_str = g_strdup(\"GSM MAP\");\n+\t\texported_pdu_info.proto_col_str = g_strdup(\"GSM MAP\");\n \n \t\tif (strcmp(name_str, \"sai_request\") == 0) {\n \t\t\tuse_proto_table = TRUE;\n-\t\t\tg_strlcpy(dissector_table_str, \"gsm_map.v3.arg.opcode\", 22);\n-\t\t\tdissector_table_str_len = 21;\n+\t\t\tg_strlcpy(dissector_table_str, c_sai_req, sizeof(c_sai_req));\n+\t\t\tdissector_table_str_len = CLEN(c_sai_req);\n \t\t\tdissector_table_val = 56;\n-\t\t\texported_pdu_info->precense_flags = exported_pdu_info->precense_flags + EXP_PDU_TAG_COL_PROT_BIT;\n+\t\t\texported_pdu_info.presence_flags |= EXP_PDU_TAG_COL_PROT_BIT;\n \t\t}\n \t\telse if (strcmp(name_str, \"sai_response\") == 0) {\n \t\t\tuse_proto_table = TRUE;\n-\t\t\tg_strlcpy(dissector_table_str, \"gsm_map.v3.res.opcode\", 22);\n-\t\t\tdissector_table_str_len = 21;\n+\t\t\tg_strlcpy(dissector_table_str, c_sai_rsp, sizeof(c_sai_rsp));\n+\t\t\tdissector_table_str_len = CLEN(c_sai_rsp);\n \t\t\tdissector_table_val = 56;\n-\t\t\texported_pdu_info->precense_flags = exported_pdu_info->precense_flags + EXP_PDU_TAG_COL_PROT_BIT;\n+\t\t\texported_pdu_info.presence_flags |= EXP_PDU_TAG_COL_PROT_BIT;\n \t\t} else {\n-\t\t\tg_free(exported_pdu_info->proto_col_str);\n-\t\t\texported_pdu_info->proto_col_str = NULL;\n+\t\t\tg_free(exported_pdu_info.proto_col_str);\n+\t\t\texported_pdu_info.proto_col_str = NULL;\n \t\t}\n \t}\n-\t/* Find the start of the raw data*/\n-\tcurr_pos = strstr(next_pos, \">\") + 1;\n-\tnext_pos = strstr(curr_pos, \"<\");\n-\n+\t/* Find the start of the raw data */\n+\tcurr_pos = STRNSTR(next_pos, \">\") + 1;\n+\tnext_pos = STRNSTR(curr_pos, \"<\");\n \traw_data_len = (int)(next_pos - curr_pos);\n \n-\t/* Calculate the space needed for exp pdu tags*/\n+\t/* Calculate the space needed for exp pdu tags */\n \tif (use_proto_table == FALSE) {\n \t\ttag_str_len = (proto_str_len + 3) & 0xfffffffc;\n \t\texp_pdu_tags_len = tag_str_len + 4;\n \t} else {\n \t\ttag_str_len = (dissector_table_str_len + 3) & 0xfffffffc;\n \t\texp_pdu_tags_len = tag_str_len + 4;\n-\t\t/* Add EXP_PDU_TAG_DISSECTOR_TABLE_NAME_NUM_VAL + length*/\n-\t\texp_pdu_tags_len = exp_pdu_tags_len + 4 + 4;\n+\t\t/* Add EXP_PDU_TAG_DISSECTOR_TABLE_NAME_NUM_VAL + length */\n+\t\texp_pdu_tags_len += 4 + 4;\n \t}\n \n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_COL_PROT_BIT) == EXP_PDU_TAG_COL_PROT_BIT) {\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_COL_PROT_BIT) {\n \t\t/* The assert prevents static code analyzers to raise warnings */\n-\t\tg_assert(exported_pdu_info->proto_col_str);\n-\t\texp_pdu_tags_len += 4 + (int)strlen(exported_pdu_info->proto_col_str);\n+\t\tg_assert(exported_pdu_info.proto_col_str);\n+\t\texp_pdu_tags_len += 4 + (int)strlen(exported_pdu_info.proto_col_str);\n \t}\n \n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_IP_SRC_BIT) == EXP_PDU_TAG_IP_SRC_BIT) {\n-\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_IPV4_SRC_LEN;\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_IP_SRC_BIT) {\n+\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_IPV4_LEN;\n \t}\n \n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_IP6_SRC_BIT) == EXP_PDU_TAG_IP6_SRC_BIT) {\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_IP6_SRC_BIT) {\n \t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_IPV6_LEN;\n \t}\n \n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_SRC_PORT_BIT) == EXP_PDU_TAG_SRC_PORT_BIT) {\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_SRC_PORT_BIT) {\n \t\tif (!port_type_defined) {\n \t\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_PORT_TYPE_LEN;\n \t\t\tport_type_defined = TRUE;\n \t\t}\n-\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_SRC_PORT_LEN;\n+\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_PORT_LEN;\n \t}\n \n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_IP_DST_BIT) == EXP_PDU_TAG_IP_DST_BIT) {\n-\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_IPV4_DST_LEN;\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_IP_DST_BIT) {\n+\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_IPV4_LEN;\n \t}\n \n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_IP6_DST_BIT) == EXP_PDU_TAG_IP6_DST_BIT) {\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_IP6_DST_BIT) {\n \t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_IPV6_LEN;\n \t}\n \n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_DST_PORT_BIT) == EXP_PDU_TAG_DST_PORT_BIT) {\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_DST_PORT_BIT) {\n \t\tif (!port_type_defined) {\n \t\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_PORT_TYPE_LEN;\n+\t\t\tport_type_defined = TRUE;\n \t\t}\n-\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_SRC_PORT_LEN;\n+\t\texp_pdu_tags_len += 4 + EXP_PDU_TAG_PORT_LEN;\n \t}\n-\n-\tport_type_defined = FALSE;\n+\texp_pdu_tags_len += 4; /* account for opt_endofopt */\n \n \t/* Allocate the packet buf */\n \tpkt_data_len = raw_data_len / 2;\n-\tpacket_buf = (guint8 *)g_malloc0((gsize)pkt_data_len + (gsize)exp_pdu_tags_len + (gsize)4);\n+\tws_buffer_assure_space(buf, (gsize)pkt_data_len + (gsize)exp_pdu_tags_len);\n+\tws_buffer_increase_length(buf, (gsize)pkt_data_len + (gsize)exp_pdu_tags_len);\n+\tpacket_buf = ws_buffer_start_ptr(buf);\n \n \t/* Fill packet buff */\n \tif (use_proto_table == FALSE) {\n-\t\tpacket_buf[0] = 0;\n-\t\tpacket_buf[1] = 12; /* EXP_PDU_TAG_PROTO_NAME */\n-\t\tpacket_buf[2] = 0;\n-\t\tpacket_buf[3] = tag_str_len;\n-\t\tmemcpy(&packet_buf[4], proto_name_str, proto_str_len);\n-\t\ti = 4 + tag_str_len;\n-\t}else{\n-\t\tpacket_buf[0] = 0;\n-\t\tpacket_buf[1] = 14; /* EXP_PDU_TAG_DISSECTOR_TABLE_NAME */\n-\t\tpacket_buf[2] = 0;\n-\t\tpacket_buf[3] = tag_str_len;\n-\t\tmemcpy(&packet_buf[4], dissector_table_str, dissector_table_str_len);\n-\t\ti = 4 + tag_str_len;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_DISSECTOR_TABLE_NAME_NUM_VAL;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = 4; /* tag length */;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = dissector_table_val;\n-\t\ti++;\n-\t}\n-\n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_COL_PROT_BIT) == EXP_PDU_TAG_COL_PROT_BIT) {\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_COL_PROT_TEXT;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = (guint8)strlen(exported_pdu_info->proto_col_str);\n-\t\ti++;\n-\t\tfor (j = 0; j < (int)strlen(exported_pdu_info->proto_col_str); i++, j++) {\n-\t\t\tpacket_buf[i] = exported_pdu_info->proto_col_str[j];\n-\t\t}\n-\t\tg_free(exported_pdu_info->proto_col_str);\n-\t}\n-\n-\n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_IP_SRC_BIT) == EXP_PDU_TAG_IP_SRC_BIT) {\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_IPV4_SRC;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_IPV4_SRC_LEN; /* tag length */;\n-\t\ti++;\n-\t\tmemcpy(packet_buf+i, exported_pdu_info->src_ip, EXP_PDU_TAG_IPV4_SRC_LEN);\n-\t\ti += EXP_PDU_TAG_IPV4_SRC_LEN;\n-\t}\n-\n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_IP6_SRC_BIT) == EXP_PDU_TAG_IP6_SRC_BIT) {\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_IPV6_SRC;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_IPV6_LEN; /* tag length */;\n-\t\ti++;\n-\t\tmemcpy(packet_buf+i, exported_pdu_info->src_ip, EXP_PDU_TAG_IPV6_LEN);\n-\t\ti += EXP_PDU_TAG_IPV6_LEN;\n-\t}\n-\n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_SRC_PORT_BIT) == EXP_PDU_TAG_SRC_PORT_BIT) {\n-\t\tif (!port_type_defined) {\n-\t\t\tport_type_defined = TRUE;\n-\t\t\tpacket_buf[i] = 0;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = EXP_PDU_TAG_PORT_TYPE;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = 0;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = EXP_PDU_TAG_PORT_TYPE_LEN; /* tag length */;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = (exported_pdu_info->ptype & 0xff000000) >> 24;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = (exported_pdu_info->ptype & 0x00ff0000) >> 16;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = (exported_pdu_info->ptype & 0x0000ff00) >> 8;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = (exported_pdu_info->ptype & 0x000000ff);\n-\t\t\ti++;\n-\t\t}\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_SRC_PORT;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_SRC_PORT_LEN; /* tag length */;\n-\t\ti++;\n-\t\tpacket_buf[i] = (exported_pdu_info->src_port & 0xff000000) >> 24;\n-\t\ti++;\n-\t\tpacket_buf[i] = (exported_pdu_info->src_port & 0x00ff0000) >> 16;\n-\t\ti++;\n-\t\tpacket_buf[i] = (exported_pdu_info->src_port & 0x0000ff00) >> 8;\n-\t\ti++;\n-\t\tpacket_buf[i] = (exported_pdu_info->src_port & 0x000000ff);\n-\t\ti++;\n-\t}\n-\n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_IP_DST_BIT) == EXP_PDU_TAG_IP_DST_BIT) {\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_IPV4_DST;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_IPV4_DST_LEN; /* tag length */;\n-\t\ti++;\n-\t\tmemcpy(packet_buf + i, exported_pdu_info->dst_ip, EXP_PDU_TAG_IPV4_DST_LEN);\n-\t\ti += EXP_PDU_TAG_IPV4_DST_LEN;\n-\t}\n-\n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_IP6_DST_BIT) == EXP_PDU_TAG_IP6_DST_BIT) {\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_IPV6_DST;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_IPV6_LEN; /* tag length */;\n-\t\ti++;\n-\t\tmemcpy(packet_buf + i, exported_pdu_info->dst_ip, EXP_PDU_TAG_IPV6_LEN);\n-\t\ti += EXP_PDU_TAG_IPV6_LEN;\n-\t}\n-\n-\tif ((exported_pdu_info->precense_flags & EXP_PDU_TAG_DST_PORT_BIT) == EXP_PDU_TAG_DST_PORT_BIT) {\n-\t\tif (!port_type_defined) {\n-\t\t\tpacket_buf[i] = 0;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = EXP_PDU_TAG_PORT_TYPE;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = 0;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = EXP_PDU_TAG_PORT_TYPE_LEN; /* tag length */;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = (exported_pdu_info->ptype & 0xff000000) >> 24;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = (exported_pdu_info->ptype & 0x00ff0000) >> 16;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = (exported_pdu_info->ptype & 0x0000ff00) >> 8;\n-\t\t\ti++;\n-\t\t\tpacket_buf[i] = (exported_pdu_info->ptype & 0x000000ff);\n-\t\t\ti++;\n-\t\t}\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_DST_PORT;\n-\t\ti++;\n-\t\tpacket_buf[i] = 0;\n-\t\ti++;\n-\t\tpacket_buf[i] = EXP_PDU_TAG_DST_PORT_LEN; /* tag length */;\n-\t\ti++;\n-\t\tpacket_buf[i] = (exported_pdu_info->src_port & 0xff000000) >> 24;\n-\t\ti++;\n-\t\tpacket_buf[i] = (exported_pdu_info->src_port & 0x00ff0000) >> 16;\n-\t\ti++;\n-\t\tpacket_buf[i] = (exported_pdu_info->src_port & 0x0000ff00) >> 8;\n-\t\ti++;\n-\t\tpacket_buf[i] = (exported_pdu_info->src_port & 0x000000ff);\n-\t\ti++;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_PROTO_NAME;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = tag_str_len;\n+\t\tmemset(packet_buf, 0, tag_str_len);\n+\t\tmemcpy(packet_buf, proto_name_str, proto_str_len);\n+\t\tpacket_buf += tag_str_len;\n+\t}\n+\telse {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_DISSECTOR_TABLE_NAME;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = tag_str_len;\n+\t\tmemset(packet_buf, 0, tag_str_len);\n+\t\tmemcpy(packet_buf, dissector_table_str, dissector_table_str_len);\n+\t\tpacket_buf += tag_str_len;\n+\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_DISSECTOR_TABLE_NAME_NUM_VAL;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = 4; /* option length */\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = dissector_table_val;\n+\t}\n+\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_COL_PROT_BIT) {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_COL_PROT_TEXT;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = (guint8)strlen(exported_pdu_info.proto_col_str);\n+\t\tfor (j = 0; j < (int)strlen(exported_pdu_info.proto_col_str); j++) {\n+\t\t\t*packet_buf++ = exported_pdu_info.proto_col_str[j];\n+\t\t}\n+\t\tg_free(exported_pdu_info.proto_col_str);\n+\t\texported_pdu_info.proto_col_str = NULL;\n+\t}\n+\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_IP_SRC_BIT) {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_IPV4_SRC;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_IPV4_LEN;\n+\t\tmemcpy(packet_buf, exported_pdu_info.src_ip, EXP_PDU_TAG_IPV4_LEN);\n+\t\tpacket_buf += EXP_PDU_TAG_IPV4_LEN;\n+\t}\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_IP_DST_BIT) {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_IPV4_DST;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_IPV4_LEN;\n+\t\tmemcpy(packet_buf, exported_pdu_info.dst_ip, EXP_PDU_TAG_IPV4_LEN);\n+\t\tpacket_buf += EXP_PDU_TAG_IPV4_LEN;\n+\t}\n+\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_IP6_SRC_BIT) {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_IPV6_SRC;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_IPV6_LEN;\n+\t\tmemcpy(packet_buf, exported_pdu_info.src_ip, EXP_PDU_TAG_IPV6_LEN);\n+\t\tpacket_buf += EXP_PDU_TAG_IPV6_LEN;\n+\t}\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_IP6_DST_BIT) {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_IPV6_DST;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_IPV6_LEN;\n+\t\tmemcpy(packet_buf, exported_pdu_info.dst_ip, EXP_PDU_TAG_IPV6_LEN);\n+\t\tpacket_buf += EXP_PDU_TAG_IPV6_LEN;\n+\t}\n+\n+\tif (exported_pdu_info.presence_flags & (EXP_PDU_TAG_SRC_PORT_BIT | EXP_PDU_TAG_DST_PORT_BIT)) {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_PORT_TYPE;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_PORT_TYPE_LEN;\n+\t\t*packet_buf++ = (exported_pdu_info.ptype & 0xff000000) >> 24;\n+\t\t*packet_buf++ = (exported_pdu_info.ptype & 0x00ff0000) >> 16;\n+\t\t*packet_buf++ = (exported_pdu_info.ptype & 0x0000ff00) >> 8;\n+\t\t*packet_buf++ = (exported_pdu_info.ptype & 0x000000ff);\n+\t}\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_SRC_PORT_BIT) {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_SRC_PORT;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_PORT_LEN;\n+\t\t*packet_buf++ = (exported_pdu_info.src_port & 0xff000000) >> 24;\n+\t\t*packet_buf++ = (exported_pdu_info.src_port & 0x00ff0000) >> 16;\n+\t\t*packet_buf++ = (exported_pdu_info.src_port & 0x0000ff00) >> 8;\n+\t\t*packet_buf++ = (exported_pdu_info.src_port & 0x000000ff);\n+\t}\n+\tif (exported_pdu_info.presence_flags & EXP_PDU_TAG_DST_PORT_BIT) {\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_DST_PORT;\n+\t\t*packet_buf++ = 0;\n+\t\t*packet_buf++ = EXP_PDU_TAG_PORT_LEN;\n+\t\t*packet_buf++ = (exported_pdu_info.dst_port & 0xff000000) >> 24;\n+\t\t*packet_buf++ = (exported_pdu_info.dst_port & 0x00ff0000) >> 16;\n+\t\t*packet_buf++ = (exported_pdu_info.dst_port & 0x0000ff00) >> 8;\n+\t\t*packet_buf++ = (exported_pdu_info.dst_port & 0x000000ff);\n \t}\n \n \t/* Add end of options */\n-\tpacket_buf[i] = 0;\n-\ti++;\n-\tpacket_buf[i] = 0;\n-\ti++;\n-\tpacket_buf[i] = 0;\n-\ti++;\n-\tpacket_buf[i] = 0;\n-\ti++;\n-\texp_pdu_tags_len = exp_pdu_tags_len + 4;\n+\t*packet_buf++ = 0;\n+\t*packet_buf++ = 0;\n+\t*packet_buf++ = 0;\n+\t*packet_buf++ = 0;\n \n \t/* Convert the hex raw msg data to binary and write to the packet buf*/\n-\tfor (; i < (pkt_data_len + exp_pdu_tags_len); i++){\n+\tfor (i = 0; i < pkt_data_len; i++) {\n \t\tgchar chr1, chr2;\n \n-\t\tchr1 = *curr_pos;\n+\t\tchr1 = *curr_pos++;\n+\t\tchr2 = *curr_pos++;\n \t\tval1 = g_ascii_xdigit_value(chr1);\n-\t\tcurr_pos++;\n-\t\tchr2 = *curr_pos;\n \t\tval2 = g_ascii_xdigit_value(chr2);\n-\t\tif ((val1 != -1) && (val2 != -1)){\n-\t\t\tpacket_buf[i] = ((guint8)val1 * 16) + val2;\n+\t\tif ((val1 != -1) && (val2 != -1)) {\n+\t\t\t*packet_buf++ = ((guint8)val1 * 16) + val2;\n \t\t}\n-\t\telse{\n+\t\telse {\n \t\t\t/* Something wrong, bail out */\n \t\t\t*err_info = g_strdup_printf(\"Could not parse hex data,bufzize %u index %u %c%c\",\n \t\t\t\t(pkt_data_len + exp_pdu_tags_len),\n@@ -643,505 +621,280 @@ write_packet_data(wtap_dumper *wdh, wtap_rec *rec, int *err, gchar **err_info, c\n \t\t\t\tchr1,\n \t\t\t\tchr2);\n \t\t\t*err = WTAP_ERR_BAD_FILE;\n-\t\t\tg_free(packet_buf);\n-\t\t\treturn WTAP_OPEN_ERROR;\n+\t\t\tstatus = FALSE;\n+\t\t\tgoto end;\n \t\t}\n-\t\tcurr_pos++;\n-\t}\n-\t/* Construct the phdr */\n-\tmemset(rec, 0, sizeof *rec);\n-\trec->rec_type = REC_TYPE_PACKET;\n-\tif (packet_time.secs == 0) {\n-\t\trec->presence_flags = 0; /* yes, we have no bananas^Wtime stamp */\n-\t\trec->ts.secs = 0;\n-\t\trec->ts.nsecs = 0;\n-\t} else {\n-\t\trec->presence_flags = WTAP_HAS_TS;\n-\t\trec->ts.secs = packet_time.secs;\n-\t\trec->ts.nsecs = packet_time.nsecs;\n \t}\n \n \trec->rec_header.packet_header.caplen = pkt_data_len + exp_pdu_tags_len;\n \trec->rec_header.packet_header.len = pkt_data_len + exp_pdu_tags_len;\n \n-\tif (!wtap_dump(wdh, rec, packet_buf, err, err_info)) {\n-\t\tswitch (*err) {\n+end:\n+\treturn status;\n+#undef STRNSTR\n+}\n \n-\t\tcase WTAP_ERR_UNWRITABLE_REC_DATA:\n+/* Read from fh and store into buffer, until buffer contains needle.\n+ * Returns location of needle once found, or NULL if it's never found\n+ * (due to either EOF or read error).\n+ */\n+static guint8 *\n+read_until(GByteArray *buffer, const guchar *needle, FILE_T fh, int *err, gchar **err_info)\n+{\n+\tguint8 read_buffer[RINGBUFFER_CHUNK_SIZE];\n+\tguint8 *found_it;\n+\tgint bytes_read = 0;\n+\n+\twhile (NULL == (found_it = g_strstr_len(buffer->data, buffer->len, needle))) {\n+\t\tbytes_read = file_read(read_buffer, RINGBUFFER_CHUNK_SIZE, fh);\n+\t\tif (bytes_read < 0) {\n+\t\t\t*err = file_error(fh, err_info);\n \t\t\tbreak;\n-\n-\t\tdefault:\n+\t\t}\n+\t\tif (bytes_read == 0) {\n \t\t\tbreak;\n \t\t}\n-\t\tg_free(packet_buf);\n-\t\treturn WTAP_OPEN_ERROR;\n+\t\tg_byte_array_append(buffer, read_buffer, bytes_read);\n \t}\n-\n-\tg_free(packet_buf);\n-\treturn WTAP_OPEN_MINE;\n+\treturn found_it;\n }\n \n-static char*\n-nettrace_parse_address(char* curr_pos, char* next_pos, gboolean is_src_addr/*SRC */, exported_pdu_info_t  *exported_pdu_info)\n+/* Find a complete packet, parse and return it to wiretap.\n+ * Set as the subtype_read function in the file_open function below.\n+ */\n+static gboolean\n+nettrace_read(wtap *wth, wtap_rec *rec, Buffer *buf, int *err, gchar **err_info, gint64 *data_offset)\n {\n-\tguint port;\n-\tchar transp_str[5];\n-\tint scan_found;\n-\tchar str[3];\n-\tchar* end_pos, *skip_pos;\n-\tchar ip_addr_str[WS_INET6_ADDRSTRLEN];\n-\tint str_len;\n-\tws_in6_addr ip6_addr;\n-\tguint32 ip4_addr;\n-\tgchar tempchar;\n-\n-\t/* curr_pos pointing to first char after address */\n+\tnettrace_3gpp_32_423_file_info_t *file_info = (nettrace_3gpp_32_423_file_info_t *)wth->priv;\n+\tguint8 *buf_start;\n+\tguint8 *msg_start, *msg_end;\n+\tguint msg_offset = 0;\n+\tgsize msg_len = 0;\n+\tgboolean status = FALSE;\n+\n+\t/* Make sure we have a start and end of message in our buffer -- end first */\n+\tmsg_end = read_until(file_info->buffer, c_e_msg, wth->fh, err, err_info);\n+\tif (msg_end == NULL) {\n+\t\tgoto end;\n+\t}\n \n-\t/* Excample from one trace, unsure if it's generic...\n-\t * {address == 192.168.73.1, port == 5062, transport == Udp}\n-\t * {address == [2001:1b70:8294:210a::78], port...\n-\t * {address == 2001:1B70:8294:210A::90, port...\n-\t *  Address=198.142.204.199,Port=2123\n+\tbuf_start = file_info->buffer->data;\n+\t/* Now search backwards for the message start\n+\t * (doing it this way should skip over any empty \"<msg ... />\" tags we have)\n \t */\n-\t/* Skip whitespace and equalsigns)*/\n-\tfor (skip_pos = curr_pos; skip_pos < next_pos &&\n-\t\t((tempchar = *skip_pos) == ' ' ||\n-\t\t\ttempchar == '\\t' || tempchar == '\\r' || tempchar == '\\n' || tempchar == '=');\n-\t\tskip_pos++);\n+\tmsg_start = g_strrstr_len(buf_start, (guint)(msg_end - buf_start), c_s_msg);\n+\tif (msg_start == NULL || msg_start > msg_end) {\n+\t\t*err_info = g_strdup_printf(\"Found \\\"%s\\\" without matching \\\"%s\\\"\", c_e_msg, c_s_msg);\n+\t\t*err = WTAP_ERR_BAD_FILE;\n+\t\tgoto end;\n+\t}\n \n-\tcurr_pos = skip_pos;\n+\t/* We know we have a message, what's its offset from the buffer start? */\n+\tmsg_offset = (guint)(msg_start - buf_start);\n+\tmsg_end += CLEN(c_e_msg);\n+\tmsg_len = (guint)(msg_end - msg_start);\n \n-\tg_strlcpy(str, curr_pos, 3);\n-\t/* If we find \"\" here we have no IP address*/\n-\tif (strcmp(str, \"\\\"\\\"\") == 0) {\n-\t\treturn next_pos;\n-\t}\n-\tstr[1] = 0;\n-\tif (strcmp(str, \"[\") == 0) {\n-\t\t/* Should we check for a digit here?*/\n-\t\tend_pos = strstr(curr_pos, \"]\");\n+\t/* Tell Wireshark to put us at the start of the \"<msg\" for seek_read later */\n+\t*data_offset = file_info->start_offset + msg_offset;\n \n-\t}else {\n-\t\t/* Should we check for a digit here?*/\n-\t\tend_pos = strstr(curr_pos, \",\");\n-\t}\n-\tif (!end_pos) {\n-\t\treturn next_pos;\n-\t}\n+\t/* pass all of <msg....</msg> to nettrace_msg_to_packet() */\n+\tstatus = nettrace_msg_to_packet(file_info, rec, buf, msg_start, msg_len, err, err_info);\n \n-\tstr_len = (int)(end_pos - curr_pos)+1;\n-\tif (str_len > WS_INET6_ADDRSTRLEN) {\n-\t\treturn next_pos;\n-\t}\n-\tg_strlcpy(ip_addr_str, curr_pos, str_len);\n-\tcurr_pos = end_pos;\n-\tif (ws_inet_pton6(ip_addr_str, &ip6_addr)) {\n-\t\tif (is_src_addr) {\n-\t\t\texported_pdu_info->precense_flags = exported_pdu_info->precense_flags + EXP_PDU_TAG_IP6_SRC_BIT;\n-\t\t\tmemcpy(exported_pdu_info->src_ip, ip6_addr.bytes, EXP_PDU_TAG_IPV6_LEN);\n-\t\t}\n-\t\telse {\n-\t\t\texported_pdu_info->precense_flags = exported_pdu_info->precense_flags + EXP_PDU_TAG_IP6_DST_BIT;\n-\t\t\tmemcpy(exported_pdu_info->dst_ip, ip6_addr.bytes, EXP_PDU_TAG_IPV6_LEN);\n-\t\t}\n-\t}\n-\telse if (ws_inet_pton4(ip_addr_str, &ip4_addr)) {\n-\t\tif (is_src_addr) {\n-\t\t\texported_pdu_info->precense_flags = exported_pdu_info->precense_flags + EXP_PDU_TAG_IP_SRC_BIT;\n-\t\t\tmemcpy(exported_pdu_info->src_ip, &ip4_addr, EXP_PDU_TAG_IPV4_LEN);\n-\t\t}\n-\t\telse {\n-\t\t\texported_pdu_info->precense_flags = exported_pdu_info->precense_flags + EXP_PDU_TAG_IP_DST_BIT;\n-\t\t\tmemcpy(exported_pdu_info->dst_ip, &ip4_addr, EXP_PDU_TAG_IPV4_LEN);\n-\t\t}\n+\t/* Finally, shift our buffer to the end of this message to get ready for the next one.\n+\t * Re-use msg_len to get the length of the data we're done with.\n+\t */\n+\tmsg_len = msg_end - file_info->buffer->data;\n+\twhile (G_UNLIKELY(msg_len > G_MAXUINT)) {\n+\t\tg_byte_array_remove_range(file_info->buffer, 0, G_MAXUINT);\n+\t\tmsg_len -= G_MAXUINT;\n \t}\n+\tg_byte_array_remove_range(file_info->buffer, 0, (guint)msg_len);\n+\tfile_info->start_offset += msg_len;\n \n-\tcurr_pos++;\n-\tscan_found = sscanf(curr_pos, \", %*s %*s %5u, %*s %*s %4s\", &port, transp_str);\n-\tif (scan_found == 2) {\n-\t\t/* Only add port_type once */\n-\t\tif (exported_pdu_info->ptype == OLD_PT_NONE) {\n-\t\t\tif (g_ascii_strncasecmp(transp_str, \"udp\", 3) == 0)  exported_pdu_info->ptype = OLD_PT_UDP;\n-\t\t\telse if (g_ascii_strncasecmp(transp_str, \"tcp\", 3) == 0)  exported_pdu_info->ptype = OLD_PT_TCP;\n-\t\t\telse if (g_ascii_strncasecmp(transp_str, \"sctp\", 4) == 0)  exported_pdu_info->ptype = OLD_PT_SCTP;\n-\t\t}\n-\t\tif (is_src_addr) {\n-\t\t\texported_pdu_info->precense_flags = exported_pdu_info->precense_flags + EXP_PDU_TAG_SRC_PORT_BIT;\n-\t\t\texported_pdu_info->src_port = port;\n-\t\t}\n-\t\telse {\n-\t\t\texported_pdu_info->precense_flags = exported_pdu_info->precense_flags + EXP_PDU_TAG_DST_PORT_BIT;\n-\t\t\texported_pdu_info->dst_port = port;\n-\t\t}\n+end:\n+\tif (status == FALSE) {\n+\t\t/* There's no more to read. Empty out the buffer */\n+\t\tg_byte_array_set_size(file_info->buffer, 0);\n \t}\n-\treturn next_pos;\n+\n+\treturn status;\n }\n \n-/*\n- * Opens an .xml file with Trace data formatted according to 3GPP TS 32.423 and converts it to\n- * an \"Exported PDU type file with the entire xml file as the first \"packet\" appending the\n- * raw messages as subsequent packages to be dissected by wireshark.\n+/* Seek to the complete packet at the offset, parse and return it to wiretap.\n+ * Set as the subtype_seek_read function in the file_open function below.\n  */\n-static wtap_open_return_val\n-create_temp_pcapng_file(wtap *wth, int *err, gchar **err_info, nettrace_3gpp_32_423_file_info_t *file_info)\n+static gboolean\n+nettrace_seek_read(wtap *wth, gint64 seek_off, wtap_rec *rec, Buffer *buf, int *err, gchar **err_info)\n {\n-\tint import_file_fd;\n-\twtap_dumper* wdh_exp_pdu;\n-\twtap_open_return_val result = WTAP_OPEN_MINE;\n-\n-\t/* pcapng defs */\n-\tGArray                      *shb_hdrs;\n-\twtap_block_t                 shb_hdr;\n-\twtapng_iface_descriptions_t *idb_inf = NULL;\n-\twtap_block_t                 int_data;\n-\twtapng_if_descr_mandatory_t *int_data_mand;\n-\tGString                     *os_info_str;\n-\tgint64 file_size;\n-\tint packet_size;\n-\tchar *packet_buf = NULL;\n-\twtap_rec rec;\n-\tnstime_t start_time, packet_time;\n-\tint scan_found;\n-\tunsigned int second, ms;\n-\tgboolean do_random = FALSE;\n-\tchar *curr_pos, *next_msg_pos, *next_pos, *prev_pos;\n-\tint name_str_len;\n-\tchar name_str[64];\n-\tgsize opt_len;\n-\tgchar *opt_str;\n-\t/* Info to build exported_pdu tags*/\n-\texported_pdu_info_t  exported_pdu_info = {0};\n-\n-\timport_file_fd = create_tempfile(&(file_info->tmpname), \"Wireshark_PDU_\", NULL, NULL);\n-\tif (import_file_fd < 0)\n-\t\treturn WTAP_OPEN_ERROR;\n-\n-\t/* Now open a file and dump to it */\n-\t/* Create data for SHB  */\n-\tshb_hdrs = g_array_new(FALSE, FALSE, sizeof(wtap_block_t));\n-\tos_info_str = g_string_new(\"\");\n-\tget_os_version_info(os_info_str);\n-\n-\tshb_hdr = wtap_block_create(WTAP_BLOCK_NG_SECTION);\n-\t/* options */\n-\twtap_block_add_string_option(shb_hdr, OPT_COMMENT, \"File converted to Exported PDU format during opening\",\n-\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tstrlen(\"File converted to Exported PDU format during opening\"));\n-\t/*\n-\t* UTF-8 string containing the name of the operating system used to create\n-\t* this section.\n-\t*/\n-\topt_len = os_info_str->len;\n-\topt_str = g_string_free(os_info_str, FALSE);\n-\tif (opt_str) {\n-\t\twtap_block_add_string_option(shb_hdr, OPT_SHB_OS, opt_str, opt_len);\n-\t\tg_free(opt_str);\n-\t}\n-\n-\t/*\n-\t* UTF-8 string containing the name of the application used to create\n-\t* this section. Avoid the precise version (get_appname_and_version) to\n-\t* avoid wiretap rebuilds when only the version changes.\n-\t*/\n-\twtap_block_add_string_option_format(shb_hdr, OPT_SHB_USERAPPL, \"Wireshark %s\", VERSION);\n-\n-\t/* Add header to the array */\n-\tg_array_append_val(shb_hdrs, shb_hdr);\n-\n-\n-\t/* Create fake IDB info */\n-\tidb_inf = g_new(wtapng_iface_descriptions_t, 1);\n-\tidb_inf->interface_data = g_array_new(FALSE, FALSE, sizeof(wtap_block_t));\n-\n-\t/* create the fake interface data */\n-\tint_data = wtap_block_create(WTAP_BLOCK_IF_DESCR);\n-\tint_data_mand = (wtapng_if_descr_mandatory_t*)wtap_block_get_mandatory_data(int_data);\n-\tint_data_mand->wtap_encap = WTAP_ENCAP_WIRESHARK_UPPER_PDU;\n-\tint_data_mand->time_units_per_second = 1000000; /* default microsecond resolution */\n-\tint_data_mand->snap_len = WTAP_MAX_PACKET_SIZE_STANDARD;\n-\twtap_block_add_string_option(int_data, OPT_IDB_NAME, \"Fake IF\", strlen(\"Fake IF\"));\n-\tint_data_mand->num_stat_entries = 0;          /* Number of ISB:s */\n-\tint_data_mand->interface_statistics = NULL;\n-\n-\tg_array_append_val(idb_inf->interface_data, int_data);\n-\n-\tconst wtap_dump_params params = {\n-\t\t.encap = WTAP_ENCAP_WIRESHARK_UPPER_PDU,\n-\t\t.snaplen = WTAP_MAX_PACKET_SIZE_STANDARD,\n-\t\t.shb_hdrs = shb_hdrs,\n-\t\t.idb_inf = idb_inf,\n-\t};\n-\twdh_exp_pdu = wtap_dump_fdopen(import_file_fd, WTAP_FILE_TYPE_SUBTYPE_PCAPNG,\n-\t\t\t\t       WTAP_UNCOMPRESSED, &params,\n-\t\t\t\t       err, err_info);\n-\tif (wdh_exp_pdu == NULL) {\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n-\t}\n+\tnettrace_3gpp_32_423_file_info_t *file_info = (nettrace_3gpp_32_423_file_info_t *)wth->priv;\n+\tgboolean status = FALSE;\n+\tguint8 *msg_end;\n+\tguint msg_len = 0;\n \n-\t/* OK we've opend a new pcapng file and written the headers, time to do the packets, strt by finding the file size */\n+\t/* We stored the offset of the \"<msg\" for this packet */\n+\tif (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)\n+\t\treturn FALSE;\n \n-\tif ((file_size = wtap_file_size(wth, err)) == -1) {\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n-\t}\n-\n-\tif (file_size > MAX_FILE_SIZE) {\n-\t\t/*\n-\t\t* Don't blow up trying to allocate space for an\n-\t\t* immensely-large file.\n-\t\t*/\n-\t\t*err = WTAP_ERR_BAD_FILE;\n-\t\t*err_info = g_strdup_printf(\"mime_file: File has %\" G_GINT64_MODIFIER \"d-byte packet, bigger than maximum of %u\",\n-\t\t\tfile_size, MAX_FILE_SIZE);\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n+\tmsg_end = read_until(file_info->buffer, c_e_msg, wth->random_fh, err, err_info);\n+\tif (msg_end == NULL) {\n+\t\treturn FALSE;\n \t}\n-\tpacket_size = (int)file_size;\n-\t/* Allocate the packet buffer\n-\t* (the whole file + Exported PDU tag \"protocol\" and\n-\t* the string \"xml\" + 1 filler to end on 4 byte boundary for the tag\n-\t* + End of options 4 bytes\n-\t*/\n-\t/* XXX add the length of exported bdu tag(s) here */\n-\tpacket_buf = (char *)g_malloc((gsize)packet_size + (gsize)12 + (gsize)1);\n-\n-\tpacket_buf[0] = 0;\n-\tpacket_buf[1] = EXP_PDU_TAG_PROTO_NAME;\n-\tpacket_buf[2] = 0;\n-\tpacket_buf[3] = 4;\n-\tpacket_buf[4] = 'x';\n-\tpacket_buf[5] = 'm';\n-\tpacket_buf[6] = 'l';\n-\tpacket_buf[7] = 0;\n-\t/* End of options */\n-\tpacket_buf[8] = 0;\n-\tpacket_buf[9] = 0;\n-\tpacket_buf[10] = 0;\n-\tpacket_buf[11] = 0;\n-\n-\tif (!wtap_read_bytes(wth->fh, packet_buf + 12, packet_size, err, err_info)){\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n-\t}\n-\n-\t/* Null-terminate buffer; we'll be processing it as a string. */\n-\tpacket_buf[packet_size + 12] = '\\0';\n+\tmsg_end += CLEN(c_e_msg);\n+\tmsg_len = (guint)(msg_end - file_info->buffer->data);\n \n-\t/* Create the record header */\n-\tmemset(&rec, 0, sizeof rec);\n+\tstatus = nettrace_msg_to_packet(file_info, rec, buf, file_info->buffer->data, msg_len, err, err_info);\n+\tg_byte_array_set_size(file_info->buffer, 0);\n+\treturn status;\n+}\n \n-\t/* Read the file header of the input file, currently we only need the beginTime*/\n+/* Clean up any memory we allocated for dealing with this file.\n+ * Set as the subtype_close function in the file_open function below.\n+ * (wiretap frees wth->priv itself)\n+ */\n+static void\n+nettrace_close(wtap *wth)\n+{\n+\tnettrace_3gpp_32_423_file_info_t *file_info = (nettrace_3gpp_32_423_file_info_t *)wth->priv;\n \n-\t/* Advance *packet_buf to point at the raw file data */\n-\tcurr_pos = packet_buf + 12;\n-\t/* Find the file header */\n-\tcurr_pos = strstr(curr_pos, \"<fileHeader\");\n-\tif (!curr_pos) {\n-\t\t*err = WTAP_ERR_BAD_FILE;\n-\t\t*err_info = g_strdup(\"Could not parse \\\"<fileHeader\\\"\");\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n+\tif (file_info != NULL && file_info->buffer != NULL) {\n+\t\tg_byte_array_free(file_info->buffer, TRUE);\n+\t\tfile_info->buffer = NULL;\n \t}\n-\tcurr_pos = curr_pos + 11;\n+}\n \n-\t/* Find start time */\n-\tcurr_pos = strstr(curr_pos, \"<traceCollec beginTime=\\\"\");\n-\tif (!curr_pos) {\n-\t\t*err = WTAP_ERR_BAD_FILE;\n-\t\t*err_info = g_strdup(\"Could not parse \\\"<traceCollec beginTime=\\\"\");\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n-\t}\n-\tcurr_pos = curr_pos + 24;\n+/* This attribute specification contains a timestamp that refers to the start of the\n+* first trace data that is stored in this file.\n+*\n+* It is a complete timestamp including day, time and delta UTC hour. E.g.\n+* \"2001-09-11T09:30:47-05:00\".\n+*/\n \n-\tcurr_pos = nettrace_parse_begin_time(curr_pos, &rec);\n+#define isleap(y) (((y) % 4) == 0 && (((y) % 100) != 0 || ((y) % 400) == 0))\n \n-\tstart_time.secs = packet_time.secs = rec.ts.secs;\n-\tstart_time.nsecs = packet_time.nsecs = rec.ts.nsecs;\n+static char*\n+nettrace_parse_begin_time(char *curr_pos, size_t n, nstime_t *ts)\n+{\n+\t/* Time vars */\n+\tguint year, month, day, hour, minute, second, frac;\n+\tint UTCdiffh, UTCdiffm = 0;\n+\tint time_length = 0;\n+\tint scan_found;\n+\tstatic const guint days_in_month[12] = {\n+\t    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31\n+\t};\n+\tstruct tm tm;\n+\tchar *end_pos;\n+\tint length;\n \n-\t/* set rest of the record hdr data */\n-\trec.rec_type = REC_TYPE_PACKET;\n+\tnstime_set_unset(ts); /* mark time as invalid, until successful converted */\n \n-\trec.rec_header.packet_header.caplen = packet_size + 12;\n-\trec.rec_header.packet_header.len = packet_size + 12;\n+\tend_pos = g_strstr_len(curr_pos, n, \"\\\"/>\");\n+\tlength = (int)(end_pos - curr_pos);\n \n-\t/* XXX: report errors! */\n-\tif (!wtap_dump(wdh_exp_pdu, &rec, packet_buf, err, err_info)) {\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n+\tif (length < 2) {\n+\t\treturn end_pos + 3;\n \t}\n \n-\t/* Lets add the raw messages as packets after the main \"packet\" with the whole file */\n-\twhile ((curr_pos = strstr(curr_pos, \"<msg\")) != NULL){\n-\t\twtap_open_return_val temp_val;\n-\t\tchar str[3];\n-\t\tchar *raw_msg_pos;\n-\t\tchar* start_msg_tag_cont;\n-\n-\t\t/* Clear for each iteration */\n-\t\texported_pdu_info.precense_flags = 0;\n-\t\texported_pdu_info.ptype = OLD_PT_NONE;\n-\n-\t\tprev_pos = curr_pos = curr_pos + 4;\n-\t\t/* Look for the end of the tag first */\n-\t\tnext_msg_pos = strstr(curr_pos, \">\");\n-\t\tif (!next_msg_pos) {\n-\t\t\t/* Somethings wrong, bail out */\n-\t\t\t*err = WTAP_ERR_BAD_FILE;\n-\t\t\t*err_info = g_strdup(\"Did not find end of tag \\\">\\\"\");\n-\t\t\tresult = WTAP_OPEN_ERROR;\n-\t\t\tgoto end;\n-\t\t}\n-\t\t/* Check if its a tag close \"/>\" */\n-\t\tg_strlcpy(str, next_msg_pos - 1 , 3);\n-\t\tnext_msg_pos = next_msg_pos - 1;\n-\t\tif (strcmp(str, \"/>\") == 0) {\n-\t\t\t/* There is no rawmsg here skip to nex msg */\n-\t\t\tcurr_pos = next_msg_pos + 2;\n-\t\t\tcontinue;\n-\t\t}\n-\t\tstart_msg_tag_cont = curr_pos = prev_pos;\n-\t\tnext_msg_pos = strstr(curr_pos, \"</msg>\");\n-\t\tif (!next_msg_pos){\n-\t\t\t/* Somethings wrong, bail out */\n-\t\t\t*err = WTAP_ERR_BAD_FILE;\n-\t\t\t*err_info = g_strdup(\"Did not find \\\"</msg>\\\"\");\n-\t\t\tresult = WTAP_OPEN_ERROR;\n-\t\t\tgoto end;\n+\t/* Scan for this format: 2001-09-11T09:30:47 Then we will parse any fractions and UTC offset */\n+\tscan_found = sscanf(curr_pos, \"%4u-%2u-%2uT%2u:%2u:%2u%n\",\n+\t\t&year, &month, &day, &hour, &minute, &second, &time_length);\n+\tif (scan_found == 6 && time_length == 19) {\n+\t\t/* Fill in the fields and return it in a time_t */\n+\t\ttm.tm_year = year - 1900;\n+\t\tif (month < 1 || month > 12) {\n+\t\t\t/* g_warning(\"Failed to parse time, month is %u\", month); */\n+\t\t\treturn curr_pos;\n \t\t}\n-\t\tnext_msg_pos = next_msg_pos + 6;\n-\n-\t\t/* Do we have a raw message in the <msg> <\\msg> section?*/\n-\t\traw_msg_pos = strstr(start_msg_tag_cont, \"<rawMsg\");\n-\t\tif ((!raw_msg_pos) || (raw_msg_pos > next_msg_pos)) {\n-\t\t\tcurr_pos = next_msg_pos;\n-\t\t\tcontinue;\n+\t\ttm.tm_mon = month - 1; /* Zero count*/\n+\t\tif (day > ((month == 2 && isleap(year)) ? 29 : days_in_month[month - 1])) {\n+\t\t\t/* g_warning(\"Failed to parse time, %u-%02u-%2u is not a valid day\", year, month, day); */\n+\t\t\treturn curr_pos;\n \t\t}\n-\n-\n-\t\t/* Check if we have a time stamp \"changeTime\"\n-\t\t * expressed in number of seconds and milliseconds (nbsec.ms).\n-\t\t */\n-\t\tms = 0;\n-\t\tcurr_pos = strstr(start_msg_tag_cont, \"changeTime\");\n-\t\t/* Check if we have the tag or if we passed the end of the current message */\n-\t\tif ((curr_pos) && (curr_pos < next_msg_pos)) {\n-\t\t\tcurr_pos = curr_pos + 12;\n-\t\t\tscan_found = sscanf(curr_pos, \"%u.%u\", &second, &ms);\n-\n-\t\t\tif ((scan_found == 2) && (start_time.secs != 0)) {\n-\t\t\t\tguint start_ms = start_time.nsecs / 1000000;\n-\t\t\t\tguint elapsed_ms = start_ms + ms;\n-\t\t\t\tif (elapsed_ms > 1000) {\n-\t\t\t\t\telapsed_ms -= 1000;\n-\t\t\t\t\tsecond++;\n-\t\t\t\t}\n-\t\t\t\tpacket_time.secs = start_time.secs + second;\n-\t\t\t\tpacket_time.nsecs = start_time.nsecs + (elapsed_ms * 1000000);\n-\t\t\t}\n+\t\ttm.tm_mday = day;\n+\t\tif (hour > 23) {\n+\t\t\t/* g_warning(\"Failed to parse time, hour is %u\", hour); */\n+\t\t\treturn curr_pos;\n \t\t}\n-\n-\t\t/* See if we have a \"name\" */\n-\t\tcurr_pos = strstr(start_msg_tag_cont, \"name=\");\n-\t\tif ((curr_pos) && (curr_pos < next_msg_pos)) {\n-\t\t\t/* extract the name */\n-\t\t\tcurr_pos = curr_pos + 6;\n-\t\t\tnext_pos = strstr(curr_pos, \"\\\"\");\n-\t\t\tname_str_len = (int)(next_pos - curr_pos);\n-\t\t\tif (name_str_len > 63) {\n-\t\t\t\t*err = WTAP_ERR_BAD_FILE;\n-\t\t\t\t*err_info = g_strdup(\"name_str_len > 63\");\n-\t\t\t\treturn WTAP_OPEN_ERROR;\n-\t\t\t}\n-\n-\t\t\tg_strlcpy(name_str, curr_pos, (gsize)name_str_len + 1);\n-\t\t\tascii_strdown_inplace(name_str);\n-\n+\t\ttm.tm_hour = hour;\n+\t\tif (minute > 59) {\n+\t\t\t/* g_warning(\"Failed to parse time, minute is %u\", minute); */\n+\t\t\treturn curr_pos;\n \t\t}\n-\t\t/* Check if we have \"<initiator>\"\n-\t\t*  It might contain an address\n-\t\t*/\n-\t\tcurr_pos = strstr(start_msg_tag_cont, \"<initiator\");\n-\t\t/* Check if we have the tag or if we passed the end of the current message */\n-\t\tif ((curr_pos) && (curr_pos < next_msg_pos)) {\n-\t\t\tcurr_pos = curr_pos + 10;\n-\t\t\tnext_pos = strstr(curr_pos, \"</initiator>\");\n-\t\t\t/* Find address (omit the a to cater for A */\n-\t\t\tcurr_pos = strstr(curr_pos, \"ddress\");\n-\t\t\tif ((curr_pos) && (curr_pos < next_pos)) {\n-\t\t\t\tcurr_pos += 6;\n-\t\t\t\tnettrace_parse_address(curr_pos, next_pos, TRUE/*SRC */, &exported_pdu_info);\n-\t\t\t}\n+\t\ttm.tm_min = minute;\n+\t\tif (second > 60) {\n+\t\t\t/*\n+\t\t\t * Yes, 60, for leap seconds - POSIX's and Windows'\n+\t\t\t * refusal to believe in them nonwithstanding.\n+\t\t\t */\n+\t\t\t/* g_warning(\"Failed to parse time, second is %u\", second); */\n+\t\t\treturn curr_pos;\n \t\t}\n+\t\ttm.tm_sec = second;\n+\t\ttm.tm_isdst = -1;    /* daylight saving time info not known */\n \n-\t\t/* Check if we have \"<target>\"\n-\t\t*  It might contain an address\n-\t\t*/\n-\t\tcurr_pos = strstr(start_msg_tag_cont, \"<target\");\n-\t\t/* Check if we have the tag or if we passed the end of the current message */\n-\t\tif ((curr_pos) && (curr_pos < next_msg_pos)) {\n-\t\t\tcurr_pos = curr_pos + 7;\n-\t\t\tnext_pos = strstr(curr_pos, \"</target>\");\n-\t\t\t/* Find address(omit the a to cater for A */\n-\t\t\tcurr_pos = strstr(curr_pos, \"ddress\");\n-\t\t\tif ((curr_pos) && (curr_pos < next_pos)) {\n-\t\t\t\tcurr_pos += 7;\n-\t\t\t\t/* curr_pos set below */\n-\t\t\t\tnettrace_parse_address(curr_pos, next_pos, FALSE/*DST */, &exported_pdu_info);\n+\t\t/* Move curr_pos to end of parsed object and get that character 2019-01-10T10:14:56 */\n+\t\tcurr_pos += time_length;\n+\t\tif (*curr_pos == '.' || *curr_pos == ',') {\n+\t\t\t/* We have fractions */\n+\t\t\tcurr_pos++;\n+\t\t\tif (1 == sscanf(curr_pos, \"%u%n\", &frac, &time_length)) {\n+\t\t\t\tif ((frac >= 1000000000) || (frac == 0)) {\n+\t\t\t\t\tts->nsecs = 0;\n+\t\t\t\t} else {\n+\t\t\t\t\tswitch (time_length) { /* including leading zeros */\n+\t\t\t\t\tcase 1: ts->nsecs = frac * 100000000; break;\n+\t\t\t\t\tcase 2: ts->nsecs = frac * 10000000; break;\n+\t\t\t\t\tcase 3: ts->nsecs = frac * 1000000; break;\n+\t\t\t\t\tcase 4: ts->nsecs = frac * 100000; break;\n+\t\t\t\t\tcase 5: ts->nsecs = frac * 10000; break;\n+\t\t\t\t\tcase 6: ts->nsecs = frac * 1000; break;\n+\t\t\t\t\tcase 7: ts->nsecs = frac * 100; break;\n+\t\t\t\t\tcase 8: ts->nsecs = frac * 10; break;\n+\t\t\t\t\tdefault: ts->nsecs = frac;\n+\t\t\t\t\t}\n+\t\t\t\t}\n+\t\t\t\tcurr_pos += time_length;\n \t\t\t}\n \t\t}\n \n-\t\t/* Do we have a raw msg?) */\n-\t\tcurr_pos = raw_msg_pos;\n-\t\tcurr_pos = curr_pos + 7;\n-\t\t/* Add the raw msg*/\n-\t\ttemp_val = write_packet_data(wdh_exp_pdu, &rec, err, err_info, curr_pos, packet_time, &exported_pdu_info, name_str);\n-\t\tif (temp_val != WTAP_OPEN_MINE){\n-\t\t\tresult = temp_val;\n-\t\t\tgoto end;\n+\t\tif (*curr_pos == '-' || *curr_pos == '+' || *curr_pos == 'Z') {\n+\t\t\t/* We have UTC offset */\n+\t\t\tif (1 <= sscanf(curr_pos, \"%3d:%2d\", &UTCdiffh, &UTCdiffm)) {\n+\t\t\t\t/* adjust for timezone */\n+\t\t\t\ttm.tm_hour -= UTCdiffh;\n+\t\t\t\ttm.tm_min  -= UTCdiffh < 0 ? -UTCdiffm: UTCdiffm;\n+\t\t\t} /* else 'Z' for Zero time */\n+\t\t\t/* convert to UTC time */\n+#ifdef _WIN32\n+\t\t\tts->secs = _mkgmtime(&tm);\n+#else\n+\t\t\tts->secs = timegm(&tm);\n+#endif\n+\t\t} else {\n+\t\t\t/* no UTC offset means localtime in ISO 8601 */\n+\t\t\tts->secs = mktime(&tm);\n \t\t}\n-\t\tcurr_pos = next_msg_pos;\n-\t}\n-\n-\t/* Close the written file*/\n-\tif (!wtap_dump_close(wdh_exp_pdu, err, err_info)){\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n-\t}\n-\n-\t/* Now open the file for reading */\n-\n-\t/* Find out if random read was requested */\n-\tif (wth->random_fh){\n-\t\tdo_random = TRUE;\n-\t}\n-\tfile_info->wth_tmp_file =\n-\t\twtap_open_offline(file_info->tmpname, WTAP_TYPE_AUTO, err, err_info, do_random);\n-\n-\tif (!file_info->wth_tmp_file){\n-\t\tresult = WTAP_OPEN_ERROR;\n-\t\tgoto end;\n+\t/* } else {\n+\t\tg_warning(\"Failed to parse time, only %u fields\", scan_found); */\n \t}\n \n-end:\n-\tg_free(packet_buf);\n-\twtap_block_array_free(shb_hdrs);\n-\twtap_free_idb_info(idb_inf);\n-\n-\treturn result;\n+\treturn curr_pos;\n }\n \n+/* Test the current file to see if it's one we can read.\n+ * Set in file_access.c as the function to be called for this file type.\n+ */\n wtap_open_return_val\n nettrace_3gpp_32_423_file_open(wtap *wth, int *err, gchar **err_info)\n {\n-\tchar magic_buf[512+1]; /* increase buffer size when needed */\n+\tchar magic_buf[MAGIC_BUF_SIZE+1];\n \tint bytes_read;\n \tchar *curr_pos;\n \tnettrace_3gpp_32_423_file_info_t *file_info;\n-\twtap_open_return_val temp_val;\n-\n+\tgint64 start_offset;\n \n-\tbytes_read = file_read(magic_buf, 512, wth->fh);\n+\tstart_offset = file_tell(wth->fh); // Most likely 0 but doesn't hurt to check\n+\tbytes_read = file_read(magic_buf, MAGIC_BUF_SIZE, wth->fh);\n \n \tif (bytes_read < 0) {\n \t\t*err = file_error(wth->fh, err_info);\n@@ -1151,53 +904,46 @@ nettrace_3gpp_32_423_file_open(wtap *wth, int *err, gchar **err_info)\n \t\treturn WTAP_OPEN_NOT_MINE;\n \t}\n \n-\tif (memcmp(magic_buf, xml_magic, sizeof(xml_magic)) != 0){\n+\tif (memcmp(magic_buf, c_xml_magic, CLEN(c_xml_magic)) != 0){\n \t\treturn WTAP_OPEN_NOT_MINE;\n \t}\n \n-\t/* Null-terminate buffer; we'll be processing it as a string. */\n-\tmagic_buf[512] = '\\0';\n-\n-\t/* File header should contain something like fileFormatVersion=\"32.423 V8.1.0\" */\n-\tcurr_pos = strstr(magic_buf, \"fileFormatVersion\");\n-\n-\tif (!curr_pos){\n+\tcurr_pos = g_strstr_len(magic_buf, bytes_read, c_file_header);\n+\tif (!curr_pos) {\n \t\treturn WTAP_OPEN_NOT_MINE;\n \t}\n-\tcurr_pos += 19;\n-\tif (memcmp(curr_pos, Threegpp_doc_no, sizeof(Threegpp_doc_no)) != 0){\n+\tcurr_pos = g_strstr_len(curr_pos, bytes_read-(curr_pos-magic_buf), c_file_format_version);\n+\tif (!curr_pos) {\n \t\treturn WTAP_OPEN_NOT_MINE;\n \t}\n-\n-\tif (file_seek(wth->fh, 0, SEEK_SET, err) == -1)\n-\t\treturn WTAP_OPEN_ERROR;\n-\n-\t/* Ok it's our file, open a temp file and do the conversion */\n-\tfile_info = g_new0(nettrace_3gpp_32_423_file_info_t, 1);\n-\ttemp_val = create_temp_pcapng_file(wth, err, err_info, file_info);\n-\n-\tif (temp_val != WTAP_OPEN_MINE){\n-\t\treturn temp_val;\n+\tcurr_pos += CLEN(c_file_format_version);\n+\tif (memcmp(curr_pos, c_threegpp_doc_no, CLEN(c_threegpp_doc_no)) != 0){\n+\t\treturn WTAP_OPEN_NOT_MINE;\n \t}\n+\t/* Next we expect something like <traceCollec beginTime=\"...\"/> */\n+\tcurr_pos = g_strstr_len(curr_pos, bytes_read-(curr_pos-magic_buf), c_begin_time);\n+\tif (!curr_pos) {\n+\t\treturn WTAP_OPEN_NOT_MINE;\n+\t}\n+\tcurr_pos += CLEN(c_begin_time);\n \n-\tif (file_seek(wth->fh, 0, SEEK_SET, err) == -1)\n-\t\treturn WTAP_OPEN_ERROR;\n-\n-\t/* Copy data from the temp file wth */\n-\twtap_block_copy(g_array_index(wth->shb_hdrs, wtap_block_t, 0), g_array_index(file_info->wth_tmp_file->shb_hdrs, wtap_block_t, 0));\n+\t/* Ok it's our file. From here we'll need to free memory */\n+\tfile_info = g_new0(nettrace_3gpp_32_423_file_info_t, 1);\n+\tcurr_pos = nettrace_parse_begin_time(curr_pos, (guint)(bytes_read - (curr_pos - magic_buf)), &file_info->start_time);\n+\tfile_info->start_offset = start_offset + (curr_pos - magic_buf);\n+\tfile_info->buffer = g_byte_array_sized_new(RINGBUFFER_START_SIZE);\n+\tg_byte_array_append(file_info->buffer, curr_pos, (guint)(bytes_read - (curr_pos - magic_buf)));\n \n \twth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_NETTRACE_3GPP_32_423;\n-\twth->file_encap = file_info->wth_tmp_file->file_encap;\n-\twth->file_tsprec = file_info->wth_tmp_file->file_tsprec;\n+\twth->file_encap = WTAP_ENCAP_WIRESHARK_UPPER_PDU;\n+\twth->file_tsprec = WTAP_TSPREC_MSEC;\n \twth->subtype_read = nettrace_read;\n \twth->subtype_seek_read = nettrace_seek_read;\n \twth->subtype_close = nettrace_close;\n \twth->snapshot_length = 0;\n-\n \twth->priv = (void*)file_info;\n \n \treturn WTAP_OPEN_MINE;\n-\n }\n \n /*\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "wiretap/nettrace_3gpp_32_423.c",
+      "old_path": "wiretap/nettrace_3gpp_32_423.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "1155df429e8a67400c000a09dc17ac330e2b0905",
+      "short_id": "1155df42",
+      "created_at": "2021-01-04T09:19:36.000-05:00",
+      "parent_ids": [
+        "6030f32a27374e8f6673edf92f005e757d0d3788"
+      ],
+      "title": "Add some more casts I missed",
+      "message": "Add some more casts I missed\n",
+      "author_name": "David Perry",
+      "author_email": "boolean263@protonmail.com",
+      "authored_date": "2021-01-04T09:19:36.000-05:00",
+      "committer_name": "David Perry",
+      "committer_email": "boolean263@protonmail.com",
+      "committed_date": "2021-01-04T09:19:36.000-05:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/1155df429e8a67400c000a09dc17ac330e2b0905"
+    },
+    {
+      "id": "6030f32a27374e8f6673edf92f005e757d0d3788",
+      "short_id": "6030f32a",
+      "created_at": "2021-01-04T08:15:14.000-05:00",
+      "parent_ids": [
+        "62a4207fde60ae35ea830a44643a2e9268509411"
+      ],
+      "title": "Add casts to prevent compiler warnings",
+      "message": "Add casts to prevent compiler warnings\n\nMy changes passed pointer math or g_size to functions that expected\nguint parameters. This should hopefully address the resulting warnings\non some compilers.\n",
+      "author_name": "David Perry",
+      "author_email": "boolean263@protonmail.com",
+      "authored_date": "2021-01-04T08:15:14.000-05:00",
+      "committer_name": "David Perry",
+      "committer_email": "boolean263@protonmail.com",
+      "committed_date": "2021-01-04T08:15:14.000-05:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/6030f32a27374e8f6673edf92f005e757d0d3788"
+    },
+    {
+      "id": "62a4207fde60ae35ea830a44643a2e9268509411",
+      "short_id": "62a4207f",
+      "created_at": "2021-01-04T13:12:29.000+00:00",
+      "parent_ids": [
+        "262222f8c344d98bfa210eec446e8ce6a85da808"
+      ],
+      "title": "Final tidying before pushing for merge request",
+      "message": "Final tidying before pushing for merge request\n\n* Give const char strings a `c_` prefix\n* Touch up some spacing and punctuation\n* Add some comments\n* Make formatting a bit more consistent\n",
+      "author_name": "David Perry",
+      "author_email": "boolean263@protonmail.com",
+      "authored_date": "2020-12-15T09:59:53.000-05:00",
+      "committer_name": "David Perry",
+      "committer_email": "boolean263@protonmail.com",
+      "committed_date": "2021-01-04T13:12:29.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/62a4207fde60ae35ea830a44643a2e9268509411"
+    },
+    {
+      "id": "262222f8c344d98bfa210eec446e8ce6a85da808",
+      "short_id": "262222f8",
+      "created_at": "2021-01-04T13:12:29.000+00:00",
+      "parent_ids": [
+        "08f568abd5895c0680af70b622542492be7d91ae"
+      ],
+      "title": "Move file-reading code into its own routine",
+      "message": "Move file-reading code into its own routine\n\nThe new routine is tentatively called `read_until()` and always reads\nits data into the given GByteArray. Called from `nettrace_read()` and\n`nettrace_seek_read()` and simplifies both.\n",
+      "author_name": "David Perry",
+      "author_email": "boolean263@protonmail.com",
+      "authored_date": "2020-12-03T22:47:02.000-05:00",
+      "committer_name": "David Perry",
+      "committer_email": "boolean263@protonmail.com",
+      "committed_date": "2021-01-04T13:12:29.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/262222f8c344d98bfa210eec446e8ce6a85da808"
+    },
+    {
+      "id": "08f568abd5895c0680af70b622542492be7d91ae",
+      "short_id": "08f568ab",
+      "created_at": "2021-01-04T13:12:29.000+00:00",
+      "parent_ids": [
+        "8ab3a9c3f4b5529aeb002f53062af642064ef23d"
+      ],
+      "title": "Ensure proto/table names are zero padded",
+      "message": "Ensure proto/table names are zero padded\n",
+      "author_name": "David Perry",
+      "author_email": "boolean263@protonmail.com",
+      "authored_date": "2020-12-03T22:39:16.000-05:00",
+      "committer_name": "David Perry",
+      "committer_email": "boolean263@protonmail.com",
+      "committed_date": "2021-01-04T13:12:29.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/08f568abd5895c0680af70b622542492be7d91ae"
+    },
+    {
+      "id": "8ab3a9c3f4b5529aeb002f53062af642064ef23d",
+      "short_id": "8ab3a9c3",
+      "created_at": "2021-01-04T13:12:29.000+00:00",
+      "parent_ids": [
+        "84eeeabde98025971c4fd9c0eccbf516856123e3"
+      ],
+      "title": "Initial refactor of nettrace reader (#17009)",
+      "message": "Initial refactor of nettrace reader (#17009)\n\nOld behaviour is to read the entire file into memory at once; provide\nthe XML tree as the first packet; and then individual `<msg>` elements\nas subsequent packets. It did this by writing to a temporary pcapng\nfile.\n\nThis change causes the XML file to only be read a chunk at a time (and\nbe read directly, not through an intermediate pcapng). This means much\nlarger files can be loaded, at the cost of no longer showing the raw XML\nas the first packet. This is not a loss because the file can be loaded\nin MIME Files Format (or a text editor) to see the XML.\n\nMuch of the logic from the old functions `create_temp_pcapng_file()` and\n`write_packet_data()` has been relocated into the new function\n`nettrace_msg_to_packet()`, and is used to directly generate packet data\nfor wiretap instead of writing it to a temporary file.\n\nAlso includes some initial \"code smell\" fixes:\n\n- Removed some duplicate `#define`s from epan/exported_pdu.h\n- Replaces some magic numbers with macros from epan/exported_pdu.h\n- Replaces other magic numbers with the CLEN() macro to make it easier\n  to see (and debug) where sizes/offsets come from\n- Use `g_strstr_len()` instead of `strstr()` to remove the need to\n  insert string terminators\n- Uses direct pointer math instead of indexing into a byte array\n\nThis compiles and runs, and seems to produce the same results as the old\nreader (except for the XML packet). Consider it a proof of concept; it\nneeds further revision before being review-ready.\n",
+      "author_name": "David Perry",
+      "author_email": "boolean263@protonmail.com",
+      "authored_date": "2020-12-03T21:11:29.000-05:00",
+      "committer_name": "David Perry",
+      "committer_email": "boolean263@protonmail.com",
+      "committed_date": "2021-01-04T13:12:29.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/8ab3a9c3f4b5529aeb002f53062af642064ef23d"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 133955497,
+      "head_commit_sha": "1155df429e8a67400c000a09dc17ac330e2b0905",
+      "base_commit_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+      "start_commit_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+      "created_at": "2021-01-04T14:19:54.610Z",
+      "merge_request_id": 81837568,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 133941261,
+      "head_commit_sha": "6030f32a27374e8f6673edf92f005e757d0d3788",
+      "base_commit_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+      "start_commit_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+      "created_at": "2021-01-04T13:16:33.935Z",
+      "merge_request_id": 81837568,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 133940128,
+      "head_commit_sha": "62a4207fde60ae35ea830a44643a2e9268509411",
+      "base_commit_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+      "start_commit_sha": "84eeeabde98025971c4fd9c0eccbf516856123e3",
+      "created_at": "2021-01-04T13:12:30.370Z",
+      "merge_request_id": 81837568,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 132779644,
+      "head_commit_sha": "247aeaf2e1dd7a1e26ca16fc8de365970c9a5189",
+      "base_commit_sha": "a9ce232c3769eabbce828429c7753c6f4d3f5a30",
+      "start_commit_sha": "a9ce232c3769eabbce828429c7753c6f4d3f5a30",
+      "created_at": "2020-12-23T22:24:51.598Z",
+      "merge_request_id": 81837568,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 131054064,
+      "head_commit_sha": "dd8352fc27113ac9b3feb247ec7be854f709fc69",
+      "base_commit_sha": "0fdbe0839d823cb722d8dd6a4fbccce09adfe124",
+      "start_commit_sha": "5dff85e84be1ce60a5726a23bd59005e8e387799",
+      "created_at": "2020-12-15T15:21:59.726Z",
+      "merge_request_id": 81837568,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

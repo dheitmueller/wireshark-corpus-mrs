@@ -1,0 +1,298 @@
+{
+  "id": 78388205,
+  "iid": 953,
+  "project_id": 7898047,
+  "title": "Initialise disconnect_in_frame to avoid wild pointer dereference",
+  "description": "fix oss-fuzz issue 25007.\n```\n==8==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000000 (pc 0x000000bd22dd bp 0x7ffd24f6fa10 sp 0x7ffd24f6f780 T0)\n==8==The signal is caused by a READ memory access.\n==8==Hint: address points to the zero page.\nSCARINESS: 10 (null-deref)\n    #0 0xbd22dc in dissect_btavdtp /src/wireshark/epan/dissectors/packet-btavdtp.c:1543:17\n    #1 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #2 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #3 0x6d7239 in dissector_try_uint_new /src/wireshark/epan/packet.c:1413:8\n    #4 0xc4b167 in dissect_btl2cap /src/wireshark/epan/dissectors/packet-btl2cap.c:2654:14\n    #5 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #6 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #7 0x6d410b in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #8 0x6d410b in call_dissector_with_data /src/wireshark/epan/packet.c:3246:8\n    #9 0xc5bae8 in dissect_btle /src/wireshark/epan/dissectors/packet-btle.c:1720:21\n    #10 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #11 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #12 0x6d410b in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #13 0x6d410b in call_dissector_with_data /src/wireshark/epan/packet.c:3246:8\n    #14 0xc60837 in dissect_btle_rf /src/wireshark/epan/dissectors/packet-btle_rf.c:284:27\n    #15 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #16 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #17 0x6d7239 in dissector_try_uint_new /src/wireshark/epan/packet.c:1413:8\n    #18 0xb63791 in dissect_bluetooth /src/wireshark/epan/dissectors/packet-bluetooth.c:3776:10\n    #19 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #20 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #21 0x6d7239 in dissector_try_uint_new /src/wireshark/epan/packet.c:1413:8\n    #22 0x17d7af8 in dissect_pcap_pktdata /src/wireshark/epan/dissectors/packet-pcap_pktdata.c:378:14\n    #23 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #24 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #25 0x6d410b in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #26 0x6d410b in call_dissector_with_data /src/wireshark/epan/packet.c:3246:8\n    #27 0x18f13c9 in dissect_rftap /src/wireshark/epan/dissectors/packet-rftap.c:321:9\n    #28 0x18f15a2 in dissect_rftap_heur /src/wireshark/epan/dissectors/packet-rftap.c:342:12\n    #29 0x6dd7ca in dissector_try_heuristic /src/wireshark/epan/packet.c:2827:9\n    #30 0x1d0364e in decode_udp_ports /src/wireshark/epan/dissectors/packet-udp.c:709:9\n    #31 0x1d08885 in dissect /src/wireshark/epan/dissectors/packet-udp.c:1261:5\n    #32 0x1d0565d in dissect_udp /src/wireshark/epan/dissectors/packet-udp.c:1267:3\n    #33 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #34 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #35 0x6e07d1 in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #36 0x6e07d1 in call_all_postdissectors /src/wireshark/epan/packet.c:3608:3\n    #37 0x104915b in dissect_frame /src/wireshark/epan/dissectors/packet-frame.c:901:5\n    #38 0x6d77a2 in call_dissector_through_handle /src/wireshark/epan/packet.c:720:9\n    #39 0x6d77a2 in call_dissector_work /src/wireshark/epan/packet.c:813:9\n    #40 0x6d410b in call_dissector_only /src/wireshark/epan/packet.c:3233:8\n    #41 0x6d410b in call_dissector_with_data /src/wireshark/epan/packet.c:3246:8\n    #42 0x6d38a4 in dissect_record /src/wireshark/epan/packet.c:594:3\n    #43 0x6c7093 in epan_dissect_run /src/wireshark/epan/epan.c:585:2\n    #44 0x5573d4 in LLVMFuzzerTestOneInput /src/wireshark/fuzz/fuzzshark.c:381:2\n    #45 0x45c2f1 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm/projects/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:556:15\n    #46 0x446f11 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm/projects/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:292:6\n    #47 0x44cbce in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) /src/llvm/projects/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:774:9\n    #48 0x476d42 in main /src/llvm/projects/compiler-rt/lib/fuzzer/FuzzerMain.cpp:19:10\n    #49 0x7f2db150682f in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x2082f)\n    #50 0x4202c8 in _start (/out/fuzzshark_ip_proto-udp+0x4202c8)\n```\n\nchannels_info->adapter_disconnect_in_frame and channels_info->hci_disconnect_in_frame was uninitialized, segfault occured when dereferencing.\n```\n(gdb) p channels_info->hci_disconnect_in_frame\n$2 = (guint32 *) 0xbebebebebebebebe\n(gdb) p channels_info->adapter_disconnect_in_frame\n$3 = (guint32 *) 0xbebebebebebebebe\n```",
+  "state": "closed",
+  "created_at": "2020-11-17T13:27:45.306Z",
+  "updated_at": "2020-11-17T14:06:41.625Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 6386157,
+    "username": "ltx2018",
+    "public_email": "lutianxiong@huawei.com",
+    "name": "lutianxiong",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a1094487b10f0e0342ae1fb4ccac2b8607af9fd018fefb597d13b6eb0f8beb0e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/ltx2018"
+  },
+  "closed_at": "2020-11-17T14:06:41.654Z",
+  "target_branch": "master",
+  "source_branch": "master",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6386157,
+    "username": "ltx2018",
+    "public_email": "lutianxiong@huawei.com",
+    "name": "lutianxiong",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a1094487b10f0e0342ae1fb4ccac2b8607af9fd018fefb597d13b6eb0f8beb0e?s=80&d=identicon",
+    "web_url": "https://gitlab.com/ltx2018"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 22509548,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "be782a8798d331a334f77e7a7f7e7783ff99bef7",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": null,
+  "prepared_at": "2020-11-17T13:27:45.306Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!953",
+  "references": {
+    "short": "!953",
+    "relative": "!953",
+    "full": "wireshark/wireshark!953"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/953",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2020-11-17T13:27:50.480Z",
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 217266170,
+    "iid": 2,
+    "project_id": 22509548,
+    "sha": "be782a8798d331a334f77e7a7f7e7783ff99bef7",
+    "ref": "master",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2020-11-17T13:27:47.095Z",
+    "updated_at": "2020-11-17T14:07:39.706Z",
+    "web_url": "https://gitlab.com/ltx2018/wireshark/-/pipelines/217266170"
+  },
+  "head_pipeline": {
+    "id": 217266170,
+    "iid": 2,
+    "project_id": 22509548,
+    "sha": "be782a8798d331a334f77e7a7f7e7783ff99bef7",
+    "ref": "master",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2020-11-17T13:27:47.095Z",
+    "updated_at": "2020-11-17T14:07:39.706Z",
+    "web_url": "https://gitlab.com/ltx2018/wireshark/-/pipelines/217266170",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6386157,
+      "username": "ltx2018",
+      "public_email": "lutianxiong@huawei.com",
+      "name": "lutianxiong",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/a1094487b10f0e0342ae1fb4ccac2b8607af9fd018fefb597d13b6eb0f8beb0e?s=80&d=identicon",
+      "web_url": "https://gitlab.com/ltx2018"
+    },
+    "started_at": "2020-11-17T13:27:50.480Z",
+    "finished_at": "2020-11-17T14:07:39.698Z",
+    "committed_at": null,
+    "duration": 2389,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_failed",
+      "text": "Failed",
+      "label": "failed",
+      "group": "failed",
+      "tooltip": "failed",
+      "has_details": true,
+      "details_path": "/ltx2018/wireshark/-/pipelines/217266170",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_failed-41304d7f7e3828808b0c26771f0309e55296819a9beea3ea9fbf6689d9857c12.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "5380aaad62c97d6c698115c9db73e44946d9f8b3",
+    "head_sha": "be782a8798d331a334f77e7a7f7e7783ff99bef7",
+    "start_sha": "76c8e4c9211e0f6320fb96167d7e6d62eb18a82b"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "972aae40f3b81b31b1f0d98906f10c02da69276a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 449160714,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6386157,
+            "username": "ltx2018",
+            "public_email": "lutianxiong@huawei.com",
+            "name": "lutianxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a1094487b10f0e0342ae1fb4ccac2b8607af9fd018fefb597d13b6eb0f8beb0e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ltx2018"
+          },
+          "created_at": "2020-11-17T13:28:51.256Z",
+          "updated_at": "2020-11-17T13:28:51.258Z",
+          "system": true,
+          "noteable_id": 78388205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 953,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0d57c67f0208952b484aecfbb274a1eb8aa62cd5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 449162063,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6386157,
+            "username": "ltx2018",
+            "public_email": "lutianxiong@huawei.com",
+            "name": "lutianxiong",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a1094487b10f0e0342ae1fb4ccac2b8607af9fd018fefb597d13b6eb0f8beb0e?s=80&d=identicon",
+            "web_url": "https://gitlab.com/ltx2018"
+          },
+          "created_at": "2020-11-17T13:30:36.507Z",
+          "updated_at": "2020-11-17T13:30:36.509Z",
+          "system": true,
+          "noteable_id": 78388205,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 953,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1634,6 +1634,8 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                     acl_data->remote_bd_addr_id = 0;\n                     acl_data->is_btle = TRUE;\n                     acl_data->is_btle_retransmit = retransmit;\n+\t\t    acl_data->adapter_disconnect_in_frame = &max_disconnect_in_frame;\n+\t\t    acl_data->disconnect_in_frame = &max_disconnect_in_frame;\n \n                     next_tvb = tvb_new_subset_length(tvb, offset, length);\n                     if (next_tvb) {\n@@ -1715,6 +1717,8 @@ dissect_btle(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)\n                     acl_data->remote_bd_addr_id  = 0;\n                     acl_data->is_btle = TRUE;\n                     acl_data->is_btle_retransmit = retransmit;\n+\t\t    acl_data->adapter_disconnect_in_frame = &max_disconnect_in_frame;\n+\t\t    acl_data->disconnect_in_frame = &max_disconnect_in_frame;\n \n                     next_tvb = tvb_new_subset_length(tvb, offset, length);\n                     call_dissector_with_data(btl2cap_handle, next_tvb, pinfo, tree, acl_data);\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-btle.c",
+      "old_path": "epan/dissectors/packet-btle.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "be782a8798d331a334f77e7a7f7e7783ff99bef7",
+      "short_id": "be782a87",
+      "created_at": "2020-11-17T20:02:33.000+08:00",
+      "parent_ids": [
+        "5380aaad62c97d6c698115c9db73e44946d9f8b3"
+      ],
+      "title": "Initialise disconnect_in_frame to avoid wild pointer dereference",
+      "message": "Initialise disconnect_in_frame to avoid wild pointer dereference\n",
+      "author_name": "lutianxiong",
+      "author_email": "lutianxiong@huawei.com",
+      "authored_date": "2020-11-17T20:02:33.000+08:00",
+      "committer_name": "lutianxiong",
+      "committer_email": "lutianxiong@huawei.com",
+      "committed_date": "2020-11-17T20:02:33.000+08:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/be782a8798d331a334f77e7a7f7e7783ff99bef7"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 125088664,
+      "head_commit_sha": "be782a8798d331a334f77e7a7f7e7783ff99bef7",
+      "base_commit_sha": "5380aaad62c97d6c698115c9db73e44946d9f8b3",
+      "start_commit_sha": "76c8e4c9211e0f6320fb96167d7e6d62eb18a82b",
+      "created_at": "2020-11-17T13:47:11.345Z",
+      "merge_request_id": 78388205,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 125087543,
+      "head_commit_sha": "be782a8798d331a334f77e7a7f7e7783ff99bef7",
+      "base_commit_sha": "5380aaad62c97d6c698115c9db73e44946d9f8b3",
+      "start_commit_sha": "76c8e4c9211e0f6320fb96167d7e6d62eb18a82b",
+      "created_at": "2020-11-17T13:43:48.069Z",
+      "merge_request_id": 78388205,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 125083262,
+      "head_commit_sha": "be782a8798d331a334f77e7a7f7e7783ff99bef7",
+      "base_commit_sha": "5380aaad62c97d6c698115c9db73e44946d9f8b3",
+      "start_commit_sha": "76c8e4c9211e0f6320fb96167d7e6d62eb18a82b",
+      "created_at": "2020-11-17T13:27:45.943Z",
+      "merge_request_id": 78388205,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

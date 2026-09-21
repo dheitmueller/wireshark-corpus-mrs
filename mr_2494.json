@@ -1,0 +1,866 @@
+{
+  "id": 93031043,
+  "iid": 2494,
+  "project_id": 7898047,
+  "title": "[WIP] Reassembler: use a double linked list to save fragments",
+  "description": "This draft is a first attempt to address the poor performances of\nreassembler code described in #17311.\nMajor changes:\n1) The fragments list is transformed in a double linked list, so that\n   we can iterate it starting from the tail\n2) we keep track of the \"contiguous len\" value (i.e the amount of\n   contiguous data that's available) when we insert a new fragment into\n   the list.\n\nIn this draft there is some debug code (disabled) that will be deleted in the final version.\n\nAbout this implementation:\n\nPro:  it is much faster than the current one. The reference pcap used in #17311 is now opened in ony ~4s (against ~2m40s)\n\nCons:\n* we consume more memory since `struct _fragment_item` is now 24 bytes larger (on x86_64)\n* the double linked list implementation is a bit clumsy, because:\n    \n    * we use the same structure for `fragment_head` and `fragment_item` both, AND\n    \n    * all the lookup functions return a `fragment_head` element and we need to access the tail from it\n\nEven if I tested this patch with lot of traces and `pytest` doesn't report any errors, the reassembler API is quite complex with a lot of corner cases so it is likely that I missed something...\nNonetheless, the goal of this draft is simply asking: _is that the right direction?_",
+  "state": "closed",
+  "created_at": "2021-03-22T19:23:33.333Z",
+  "updated_at": "2022-12-03T14:58:28.248Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 6496125,
+    "username": "desowin",
+    "public_email": "",
+    "name": "Tomasz Moń",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+    "web_url": "https://gitlab.com/desowin"
+  },
+  "closed_at": "2022-12-03T14:58:28.274Z",
+  "target_branch": "master",
+  "source_branch": "reassembler",
+  "user_notes_count": 14,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6875072,
+    "username": "IvanNardi",
+    "public_email": "",
+    "name": "Ivan Nardi",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/d4707801b74ca8478d56b09acecfa8671e536be3815713358ed72bab52474738?s=80&d=identicon",
+    "web_url": "https://gitlab.com/IvanNardi"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 20828506,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-03-22T19:23:33.333Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!2494",
+  "references": {
+    "short": "!2494",
+    "relative": "!2494",
+    "full": "wireshark/wireshark!2494"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/2494",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": true,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "3",
+  "latest_build_started_at": "2021-03-22T19:23:38.574Z",
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 274592783,
+    "iid": 227,
+    "project_id": 20828506,
+    "sha": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+    "ref": "reassembler",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2021-03-22T19:23:35.351Z",
+    "updated_at": "2021-03-22T20:30:15.127Z",
+    "web_url": "https://gitlab.com/IvanNardi/wireshark/-/pipelines/274592783"
+  },
+  "head_pipeline": {
+    "id": 274592783,
+    "iid": 227,
+    "project_id": 20828506,
+    "sha": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+    "ref": "reassembler",
+    "status": "failed",
+    "source": "merge_request_event",
+    "created_at": "2021-03-22T19:23:35.351Z",
+    "updated_at": "2021-03-22T20:30:15.127Z",
+    "web_url": "https://gitlab.com/IvanNardi/wireshark/-/pipelines/274592783",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6875072,
+      "username": "IvanNardi",
+      "public_email": "",
+      "name": "Ivan Nardi",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/d4707801b74ca8478d56b09acecfa8671e536be3815713358ed72bab52474738?s=80&d=identicon",
+      "web_url": "https://gitlab.com/IvanNardi"
+    },
+    "started_at": "2021-03-22T19:23:38.574Z",
+    "finished_at": "2021-03-22T20:30:15.119Z",
+    "committed_at": null,
+    "duration": 3997,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_failed",
+      "text": "Failed",
+      "label": "failed",
+      "group": "failed",
+      "tooltip": "failed",
+      "has_details": true,
+      "details_path": "/IvanNardi/wireshark/-/pipelines/274592783",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_failed-41304d7f7e3828808b0c26771f0309e55296819a9beea3ea9fbf6689d9857c12.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+    "head_sha": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+    "start_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "0d4a88ce9a2658e4af35095d8abd11c0d9befc6f",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 535151053,
+          "type": "DiscussionNote",
+          "body": "Rather than using a double linked list (or together with the use of a double linked list if it is useful but it increases the memory usage), I think a major perf improvement could be achieved by keeping a pointer to the next hole so that you can quickly jump from hole to hole and find if the new segment must be inserted, and where. This should greatly improve the speed.\nNote that I did not look at the patch itself (no spare time) so this is may be what you are doing already but this kind of strategy gave me huge gains in the past so I thought it was worth sharing the idea.",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2021-03-22T19:33:23.226Z",
+          "updated_at": "2021-03-22T19:58:46.660Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        },
+        {
+          "id": 535163728,
+          "type": "DiscussionNote",
+          "body": "Thanks @pquantin for your suggestion! I'll wait for more comments and then I'll give it a try.",
+          "author": {
+            "id": 6875072,
+            "username": "IvanNardi",
+            "public_email": "",
+            "name": "Ivan Nardi",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/d4707801b74ca8478d56b09acecfa8671e536be3815713358ed72bab52474738?s=80&d=identicon",
+            "web_url": "https://gitlab.com/IvanNardi"
+          },
+          "created_at": "2021-03-22T19:58:46.600Z",
+          "updated_at": "2021-03-22T19:58:46.600Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f60d09f8b6ebe8a805a7163d2f21ac7a3d1bb39f",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 537046169,
+          "type": null,
+          "body": "> In this draft there is some debug code (disabled) that will be deleted in the final version.\n\nThe debug code should make it into reassemble_test.c. This sort of checks must be put into automated testcase, as otherwise it will get broken sooner or later and then someone will spend a lot of time trying to figure out when it broke.",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2021-03-24T19:13:00.146Z",
+          "updated_at": "2021-03-24T19:13:41.483Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "db4123397ff4fd379f30755b66a7f67bd14b43bd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1169797925,
+          "type": null,
+          "body": "I think you could get rid of the `tail` parameter and have the fragment_head use `prev` for the tail, and then not increase the memory usage. Similarly, I think that, since `len` doesn't apply to fragment_heads and `datalen` doesn't apply to `fragment_item`, they could be combined if looked at carefully. Then you wouldn't be increasing the memory usage.\n\nEven better would be finally making `fragment_item` and `fragment_head` different structures, because there are several members that aren't used in fragment_items at all and that would save a lot of memory on net.\n\nHow about just starting with doubly-linked list for now and handling the contiguous length in a different MR, if necessary?",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-11-12T13:06:32.956Z",
+          "updated_at": "2022-11-12T13:06:32.956Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e5c3b1deb7b764fdc89f19a657ec500fb888c99c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1169798023,
+          "type": null,
+          "body": "mentioned in issue #18625",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-11-12T13:07:13.637Z",
+          "updated_at": "2022-11-12T13:07:13.638Z",
+          "system": true,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "9f4c6a7e5db8f8726f635044d27b7501e864b1b4",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1169798083,
+          "type": null,
+          "body": "If you're interested in picking it back up; if not, I might take a look.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-11-12T13:07:31.179Z",
+          "updated_at": "2022-11-12T13:07:31.179Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "20fa8c0fd8f741dbef60369e03e8ff664a620c47",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1169803678,
+          "type": null,
+          "body": "Thanks for your interested in this MR.\\\nI honestly don't remember very well the details of what I was doing then :smile: \\\nAnyway, just to be sure I understood it correctly: even if we remove `tail` pointer and we don't use `datalen`, we end up increasing the size of `fragment_item` of 8 bytes, because of `prev`. Is it right? (a good improvements respect the 24 bytes of the initial version, anyway)\n\nPlease, give me few days to catch up with this code and all the changes done in the reassembly code in the last year. I am going to update you next week, if that is fine with you",
+          "author": {
+            "id": 6875072,
+            "username": "IvanNardi",
+            "public_email": "",
+            "name": "Ivan Nardi",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/d4707801b74ca8478d56b09acecfa8671e536be3815713358ed72bab52474738?s=80&d=identicon",
+            "web_url": "https://gitlab.com/IvanNardi"
+          },
+          "created_at": "2022-11-12T13:49:39.551Z",
+          "updated_at": "2022-11-12T13:49:39.551Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5843abc7e79472847b7f75c430e18d5794e2beea",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1169819002,
+          "type": null,
+          "body": "Yes, that's right. On the other hand, if we do the long awaited work to separate `fragment_head` and `fragment_item` into two different structs, we can save more than that from each `fragment_item`, because they don't need `reassembled_in`, `reas_in_layer_num`, `error`, `fragment_nr_offset`, and several other fields.",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-11-12T15:37:51.667Z",
+          "updated_at": "2022-11-12T15:37:51.667Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2d9917f6dde0c0f783f72c1340462ba200e803bf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1170194140,
+          "type": null,
+          "body": "I think after !8836 you could rename the `next` field in `fragment_head` to `head`, perhaps, if that's clearer. That change also gives some room to explore things like storing a pointer (and the offset / frag number?) of the first gap in `fragment_head`, since it won't increase the size of the normal `fragment_item`s",
+          "author": {
+            "id": 6764551,
+            "username": "johnthacker",
+            "public_email": "",
+            "name": "John Thacker",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/99c30adacedf45514aaf711ba8a44f56322ebb53e9b550b7e3c9cd83bd6a1408?s=80&d=identicon",
+            "web_url": "https://gitlab.com/johnthacker"
+          },
+          "created_at": "2022-11-14T02:00:02.083Z",
+          "updated_at": "2022-11-14T02:00:02.083Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2b4971a6d65a53cb353c0eb61ee0e78be2ed866a",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 1170735949,
+          "type": "DiscussionNote",
+          "body": "@johnthacker, just to be sure: storing \"first gap\" info in `fragment_head` should be done in *addition* to the double-linked list stuff?",
+          "author": {
+            "id": 6875072,
+            "username": "IvanNardi",
+            "public_email": "",
+            "name": "Ivan Nardi",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/d4707801b74ca8478d56b09acecfa8671e536be3815713358ed72bab52474738?s=80&d=identicon",
+            "web_url": "https://gitlab.com/IvanNardi"
+          },
+          "created_at": "2022-11-14T11:56:16.093Z",
+          "updated_at": "2022-11-27T10:00:19.256Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        },
+        {
+          "id": 1186879420,
+          "type": "DiscussionNote",
+          "body": "I have implemented the \"first gap\" in !8937. The list is still singly linked but the speedup is significant for USBLL captures.",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2022-11-27T10:00:19.207Z",
+          "updated_at": "2022-11-27T10:00:19.207Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bed331c41c2659206665e6006b3102440f409455",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 1170797191,
+          "type": "DiffNote",
+          "body": "Does this essentially change the best case scenario from \"reverse order in capture\" to \"sorted in capture\", but otherwise does not modify the complexity?",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2022-11-14T12:41:38.704Z",
+          "updated_at": "2022-11-14T12:41:38.704Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+            "start_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+            "head_sha": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+            "old_path": "epan/reassemble.c",
+            "new_path": "epan/reassemble.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1013,
+            "line_range": {
+              "start": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_948_1013",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1013
+              },
+              "end": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_948_1013",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1013
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        },
+        {
+          "id": 1170816527,
+          "type": "DiffNote",
+          "body": "Yes, from a \"algorithmic\" POV the complexity doesn't change.\nBut, in my experience at least, (most of the) fragments are usually in order, so the difference is quite noticeable in practice.\nOtherwise, we need to change the data structured used from a list to something else",
+          "author": {
+            "id": 6875072,
+            "username": "IvanNardi",
+            "public_email": "",
+            "name": "Ivan Nardi",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/d4707801b74ca8478d56b09acecfa8671e536be3815713358ed72bab52474738?s=80&d=identicon",
+            "web_url": "https://gitlab.com/IvanNardi"
+          },
+          "created_at": "2022-11-14T12:54:43.311Z",
+          "updated_at": "2022-11-14T12:54:43.311Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+            "start_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+            "head_sha": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+            "old_path": "epan/reassemble.c",
+            "new_path": "epan/reassemble.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1013,
+            "line_range": {
+              "start": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_948_1013",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1013
+              },
+              "end": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_948_1013",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1013
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        },
+        {
+          "id": 1170827464,
+          "type": "DiffNote",
+          "body": "For USBLL captures the fragments are always in order, so the loop will always end on first iteration (instead of current always doing the full traversal).",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2022-11-14T13:02:44.757Z",
+          "updated_at": "2022-11-14T13:02:44.757Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": null,
+          "position": {
+            "base_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+            "start_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+            "head_sha": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+            "old_path": "epan/reassemble.c",
+            "new_path": "epan/reassemble.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1013,
+            "line_range": {
+              "start": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_948_1013",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1013
+              },
+              "end": {
+                "line_code": "ef8c1b660fbd49cf872125917b67c6a19be2f617_948_1013",
+                "type": "new",
+                "old_line": null,
+                "new_line": 1013
+              }
+            }
+          },
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "bed43a395f500fe8447b106de69d4879db13682e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1186879168,
+          "type": null,
+          "body": "mentioned in merge request !8937",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2022-11-27T09:58:25.879Z",
+          "updated_at": "2022-11-27T09:58:25.881Z",
+          "system": true,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "267f3565b7fbd29f30f1c4bf1a66e9892f8c26f9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1195200125,
+          "type": null,
+          "body": "Using the doubly linked list seems unnecessary because just storing the first gap (implemented in !8937) results in massive performance improvements.",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2022-12-03T14:58:27.657Z",
+          "updated_at": "2022-12-03T14:58:27.657Z",
+          "system": false,
+          "noteable_id": 93031043,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2494,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -3194,12 +3194,16 @@ missing_segments(packet_info *pinfo, struct tcp_multisegment_pdu *msp, guint32 s\n \n     /* Find length of contiguous fragments. */\n     guint32 max = 0;\n+#ifdef FRAGS_DEBUG_CONTIGUOUS_LEN\n     for (fragment_item *frag = fd_head; frag; frag = frag->next) {\n         guint32 frag_end = frag->offset + frag->len;\n         if (frag->offset <= max && max < frag_end) {\n             max = frag_end;\n         }\n     }\n+    g_assert(max == fd_head->contiguous_len);\n+#endif\n+    max = fd_head->contiguous_len;\n     return max < frag_offset;\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-tcp.c",
+      "old_path": "epan/dissectors/packet-tcp.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -19,6 +19,69 @@\n \n #include <wsutil/str_util.h>\n \n+\n+\n+#ifdef FRAGS_DEBUG_SANITY_CHECK\n+static void\n+sanity_check_frag_list(const fragment_head *fd_head)\n+{\n+\tconst fragment_item *fd_i;\n+\tguint32 contiguous_len = 0;\n+\n+\tif (!fd_head)\n+\t\treturn;\n+\tg_assert(fd_head->prev == NULL);\n+\tfor(fd_i = fd_head; fd_i->next; fd_i = fd_i->next) {\n+\t\tif (fd_i->next)\n+\t\t\tg_assert(fd_i->next->prev == fd_i);\n+\t}\n+\tg_assert(fd_head->tail == fd_i);\n+\tfor(; fd_i->prev; fd_i = fd_i->prev) {\n+\t\tif (fd_i->prev)\n+\t\t\tg_assert(fd_i->prev->next == fd_i);\n+\t}\n+\tg_assert(fd_i == fd_head);\n+\n+\tfor (fd_i = fd_head->next; fd_i; fd_i = fd_i->next) {\n+\t\tguint32 frag_end = fd_i->offset + fd_i->len;\n+\t\tif (fd_i->offset <= contiguous_len && contiguous_len < frag_end) {\n+\t\t\tcontiguous_len = frag_end;\n+\t\t}\n+\t}\n+\tg_assert(fd_head->contiguous_len == contiguous_len);\n+}\n+#else\n+static void\n+sanity_check_frag_list(__attribute__((unused)) const fragment_head *fd_head)\n+{\n+}\n+#endif\n+\n+#ifdef FRAGS_DEBUG_PRINT_LIST\n+\n+#include <stdio.h>\n+\n+static void\n+print_frag_list(const fragment_head *fd_head)\n+{\n+\tconst fragment_item *fd_i;\n+\n+\tprintf(\"Frags list: start\\n\");\n+\tprintf(\"Head: contiguous_len %d\\n\", fd_head->contiguous_len);\n+\tfor(fd_i = fd_head->next; fd_i; fd_i = fd_i->next) {\n+\t\tprintf(\" off %d end %d (len %d)\\n\", fd_i->offset, fd_i->offset + fd_i->len, fd_i->len);\n+\t}\n+\tprintf(\"Frags list: end\\n\");\n+}\n+#else\n+static void\n+print_frag_list(__attribute__((unused)) const fragment_head *fd_head)\n+{\n+}\n+#endif\n+\n+\n+\n /*\n  * Functions for reassembly tables where the endpoint addresses, and a\n  * fragment ID, are used as the key.\n@@ -352,6 +415,7 @@ static fragment_head *new_head(const guint32 flags)\n \tfd_head=g_slice_new0(fragment_head);\n \n \tfd_head->flags=flags;\n+\tfd_head->tail=fd_head;\n \treturn fd_head;\n }\n \n@@ -942,30 +1006,70 @@ LINK_FRAG(fragment_head *fd_head,fragment_item *fd)\n {\n \tfragment_item *fd_i;\n \n-\t/* add fragment to list, keep list sorted */\n-\tfor(fd_i= fd_head; fd_i->next;fd_i=fd_i->next) {\n-\t\tif (fd->offset < fd_i->next->offset )\n+\tprint_frag_list(fd_head);\n+\n+\t/* It adds a fragment to the list, traversing it from the tail.\n+\t   The list must be kept sorted */\n+\tfor(fd_i = fd_head->tail; fd_i != fd_head; fd_i = fd_i->prev) {\n+\t\tif (fd->offset >= fd_i->offset )\n \t\t\tbreak;\n \t}\n-\tfd->next=fd_i->next;\n-\tfd_i->next=fd;\n+\tfd->next = fd_i->next;\n+\tif (fd_i->next)\n+\t\tfd_i->next->prev = fd;\n+\tfd_i->next = fd;\n+\tfd->prev = fd_i;\n+\n+\tif (fd->next == NULL)\n+\t\tfd_head->tail = fd;\n+\n+\tfor (fd_i = fd; fd_i &&\n+\t\t\tfd_i->offset <= fd_head->contiguous_len;\n+\t\t\tfd_i = fd_i->next) {\n+\t\tif (fd_i->offset <= fd_head->contiguous_len &&\n+\t\t    fd_i->offset + fd_i->len >= fd_head->contiguous_len)\n+\t\t\tfd_head->contiguous_len = fd_i->offset + fd_i->len;\n+\t}\n+\n+\tprint_frag_list(fd_head);\n+\tsanity_check_frag_list(fd_head);\n }\n \n static void\n MERGE_FRAG(fragment_head *fd_head, fragment_item *fd)\n {\n \tfragment_item *fd_i, *tmp;\n+\tguint32 max = 0;\n \n \tif (fd == NULL) return;\n \n+\tprint_frag_list(fd_head);\n+\n \tfor(fd_i = fd_head; fd_i->next; fd_i=fd_i->next) {\n \t\tif (fd->offset < fd_i->next->offset) {\n \t\t\ttmp = fd_i->next;\n \t\t\tfd_i->next = fd;\n+\t\t\tfd->prev = fd_i;\n+\t\t\tif (fd->next == NULL)\n+\t\t\t\tfd_head->tail = fd;\n \t\t\tfd = tmp;\n \t\t}\n \t}\n \tfd_i->next = fd;\n+\tfd->prev = fd_i;\n+\tif (fd->next == NULL)\n+                fd_head->tail = fd;\n+\n+\t/* TODO: something more efficient? */\n+\tfor(fd_i= fd_head->next; fd_i; fd_i = fd_i->next) {\n+\t\tif (fd_i->offset <= max && max < fd_i->offset + fd_i->len) {\n+\t\t\tmax = fd_i->offset + fd_i->len;\n+\t\t}\n+\t}\n+\tfd_head->contiguous_len = max;\n+\n+\tprint_frag_list(fd_head);\n+\tsanity_check_frag_list(fd_head);\n }\n \n /*\n@@ -1003,6 +1107,8 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,\n \t/* create new fd describing this fragment */\n \tfd = g_slice_new(fragment_item);\n \tfd->next = NULL;\n+\tfd->prev = NULL;\n+\tfd->tail = NULL;\n \tfd->flags = 0;\n \tfd->frame = pinfo->num;\n \tfd->offset = frag_offset;\n@@ -1168,6 +1274,7 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,\n \t * previous fragment, i.e. fragments that have a gap between\n \t * them and the previous fragment.)\n \t */\n+#ifdef FRAGS_DEBUG_CONTIGUOUS_LEN\n \tmax = 0;\n \tfor (fd_i=fd_head->next;fd_i;fd_i=fd_i->next) {\n \t\tif ( ((fd_i->offset)<=max) &&\n@@ -1175,6 +1282,9 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,\n \t\t\tmax = fd_i->offset+fd_i->len;\n \t\t}\n \t}\n+\tassert(max == fd_head->contiguous_len);\n+#endif\n+\tmax = fd_head->contiguous_len;\n \n \tif (max < (fd_head->datalen)) {\n \t\t/*\n@@ -1746,10 +1856,13 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,\n \t/* create new fd describing this fragment */\n \tfd = g_slice_new(fragment_item);\n \tfd->next = NULL;\n+\tfd->prev = NULL;\n+\tfd->tail = NULL;\n \tfd->flags = 0;\n \tfd->frame = pinfo->num;\n \tfd->offset = frag_number_work;\n \tfd->len  = frag_data_len;\n+\tfd->contiguous_len = 0;\n \tfd->tvb_data = NULL;\n \tfd->error = NULL;\n \n@@ -2206,6 +2319,9 @@ fragment_add_seq_single_move(reassembly_table *table, const packet_info *pinfo,\n \t\tfd = new_fh->next;\n \t\tif (fd && fd->offset != 0) {\n \t\t\tprev_fd->next = fd;\n+\t\t\tfd->prev = prev_fd;\n+\t\t\tif (fd->next == NULL)\n+\t\t\t\tfh->tail = fd;\n \t\t\tfor (; fd; fd=fd->next) {\n \t\t\t\tfd->offset += offset;\n \t\t\t\tif (fh->frame < fd->frame) {\n@@ -2220,6 +2336,7 @@ fragment_add_seq_single_move(reassembly_table *table, const packet_info *pinfo,\n \t\t\t}\n \t\t\t/* Now remove and delete */\n \t\t\tnew_fh->next = NULL;\n+\t\t\tnew_fh->tail = new_fh;\n \t\t\told_tvb_data = fragment_delete(table, pinfo, id+offset, data);\n \t\t\tif (old_tvb_data)\n \t\t\t\ttvb_free(old_tvb_data);\n@@ -2284,6 +2401,7 @@ fragment_add_seq_single_work(reassembly_table *table, tvbuff_t *tvb,\n \t\t\t\t\t}\n \t\t\t\t}\n \t\t\t\tprev_fd->next = NULL;\n+\t\t\t\tnew_fh->tail = prev_fd;\n \t\t\t\tbreak;\n \t\t\t}\n \t\t}\n@@ -2497,18 +2615,8 @@ fragment_start_seq_check(reassembly_table *table, const packet_info *pinfo,\n \n \tif (fd_head == NULL) {\n \t\t/* Create list-head. */\n-\t\tfd_head = g_slice_new(fragment_head);\n-\t\tfd_head->next = NULL;\n-\t\tfd_head->frame = 0;\n-\t\tfd_head->offset = 0;\n-\t\tfd_head->len = 0;\n-\t\tfd_head->fragment_nr_offset = 0;\n+\t\tfd_head = new_head(FD_BLOCKSEQUENCE|FD_DATALEN_SET);\n \t\tfd_head->datalen = tot_len;\n-\t\tfd_head->reassembled_in = 0;\n-\t\tfd_head->reas_in_layer_num = 0;\n-\t\tfd_head->flags = FD_BLOCKSEQUENCE|FD_DATALEN_SET;\n-\t\tfd_head->tvb_data = NULL;\n-\t\tfd_head->error = NULL;\n \n \t\tinsert_fd_head(table, fd_head, pinfo, id, data);\n \t}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/reassemble.c",
+      "old_path": "epan/reassemble.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -49,8 +49,16 @@\n  */\n #define FD_DATALEN_SET\t\t0x0400\n \n+\n+/* #define FRAGS_DEBUG_CONTIGUOUS_LEN */\n+/* #define FRAGS_DEBUG_SANITY_CHECK */\n+/* #define FRAGS_DEBUG_PRINT_LIST */\n+\n+\n typedef struct _fragment_item {\n \tstruct _fragment_item *next;\n+\tstruct _fragment_item *prev;\n+\tstruct _fragment_item *tail;    /* This apply only to reassembly heads */\n \tguint32 frame;\t\t\t/* XXX - does this apply to reassembly heads? */\n \tguint32\toffset;\t\t\t/* XXX - does this apply to reassembly heads? */\n \tguint32\tlen;\t\t\t/* XXX - does this apply to reassembly heads? */\n@@ -73,6 +81,7 @@ typedef struct _fragment_item {\n \tguint32 flags;\t\t\t/**< XXX - do some of these apply only to reassembly\n \t\t\t\t\t * heads and others only to fragments within\n \t\t\t\t\t * a reassembly? */\n+\tguint32 contiguous_len;\t\t/* Amount of contiguous data that's available */\n \ttvbuff_t *tvb_data;\n \t/**\n \t * Null if the reassembly had no error; non-null if it had\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/reassemble.h",
+      "old_path": "epan/reassemble.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+      "short_id": "e7141b62",
+      "created_at": "2021-03-22T20:20:01.000+01:00",
+      "parent_ids": [
+        "146578889e18da2f7b5d5dd680c5038bc87e2453"
+      ],
+      "title": "[WIP] Reassembler: use a double linked list to save fragments",
+      "message": "[WIP] Reassembler: use a double linked list to save fragments\n\nThis draft is a first attempt to address the poor performances of\nreassembler code described in #17311.\nMajor changes:\n1) The fragments list is transformed in a double linked list, so that\n   we can iterate it starting from the tail\n2) we keep track of the \"contiguous len\" value (i.e the amount of\n   contiguous data that's available) when we insert a new fragment into\n   the list.\n",
+      "author_name": "Nardi Ivan",
+      "author_email": "nardi.ivan@gmail.com",
+      "authored_date": "2020-06-07T15:15:33.000+02:00",
+      "committer_name": "Nardi Ivan",
+      "committer_email": "nardi.ivan@gmail.com",
+      "committed_date": "2021-03-22T20:20:01.000+01:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/e7141b626c3ec1a4da07764fc6d0385ad230e8ec"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 160949657,
+      "head_commit_sha": "e7141b626c3ec1a4da07764fc6d0385ad230e8ec",
+      "base_commit_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+      "start_commit_sha": "146578889e18da2f7b5d5dd680c5038bc87e2453",
+      "created_at": "2021-03-22T19:23:34.135Z",
+      "merge_request_id": 93031043,
+      "state": "collected",
+      "real_size": "3",
+      "patch_id_sha": null
+    }
+  ]
+}

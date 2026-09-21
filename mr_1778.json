@@ -1,0 +1,179 @@
+{
+  "id": 85820829,
+  "iid": 1778,
+  "project_id": 7898047,
+  "title": "f5ethtrailer: Some trailers are not detected",
+  "description": "This corrects 2 issues with the detection heuristic for f5ethtrailers\ncausing trailers to be missed.\n\nFixes #17171\nFixes #17172\n\n(cherry picked from commit b297afee3e13d8843e462845480800bebacf6ae6)",
+  "state": "merged",
+  "created_at": "2021-01-22T16:26:56.504Z",
+  "updated_at": "2021-01-23T07:30:18.440Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "release-3.4",
+  "source_branch": "backport-gb297afee3e",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7011141,
+    "username": "kryojenik",
+    "public_email": "",
+    "name": "Jason Cohen",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/eb2936cc56fea5a67534afad6b16414dd4337a7d7e75857d9dcf3e0e4bfc80bd?s=80&d=identicon",
+    "web_url": "https://gitlab.com/kryojenik"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "c8bc83cb9e7e083360bfd3148db70bed6a33d1a4",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-01-22T16:26:56.504Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!1778",
+  "references": {
+    "short": "!1778",
+    "relative": "!1778",
+    "full": "wireshark/wireshark!1778"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/1778",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "227ed8cced57755022060a6789129828c8004a6c",
+    "head_sha": "c8bc83cb9e7e083360bfd3148db70bed6a33d1a4",
+    "start_sha": "227ed8cced57755022060a6789129828c8004a6c"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "650116945695cf1bb76141b1989af2734e660de1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 492331281,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-01-23T07:30:14.461Z",
+          "updated_at": "2021-01-23T07:30:14.464Z",
+          "system": true,
+          "noteable_id": 85820829,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 1778,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -2858,39 +2858,46 @@ dissect_f5ethtrailer(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *\n     }\n \n     trailer_length = tvb_reported_length_remaining(tvb, offset);\n-    if (trailer_length < F5_DPT_V1_HDR_MAGIC_LEN + F5_DPT_V1_HDR_LEN) {\n-        /* New format trailers at least have a magic, trailer length, version\n-           for 8 bytes.  Old format trailers are at least that long. */\n+    if (trailer_length < F5_LOWV1_LENMIN) {\n+        /* There must be at least enough bytes for a legacy low ver1 trailer.  New format\n+           trailers will be longer */\n         return 0;\n     }\n \n     while (found == NONE) {\n         /* Check if this is a new format trailer. */\n-        if (tvb_get_ntohl(tvb, offset) == F5_DPT_V1_HDR_MAGIC) {\n-            if (tvb_get_ntohs(tvb, offset + F5_DPT_V1_HDR_LENGTH_OFF) > trailer_length) {\n-                /* we have the right magic, but the length doesn't match up.\n-                assume we're not an f5ethtrailer, or it is corrupt.\n-                Either way, don't try and dissect. */\n-                return 0;\n+        if (trailer_length - offset >= F5_DPT_V1_HDR_MAGIC_LEN + F5_DPT_V1_HDR_LEN) {\n+            if (tvb_get_ntohl(tvb, offset) == F5_DPT_V1_HDR_MAGIC) {\n+                if (tvb_get_ntohs(tvb, offset + F5_DPT_V1_HDR_LENGTH_OFF) > trailer_length) {\n+                    /* we have the right magic, but the length doesn't match up.\n+                    assume we're not an f5ethtrailer, or it is corrupt.\n+                    Either way, don't try and dissect. */\n+                    return 0;\n+                }\n+                /* Looks like a new format trailer  */\n+                found = NEW_FORMAT;\n+                goto found_trailer;\n             }\n-            /* Looks like a new format trailer  */\n-            found = NEW_FORMAT;\n-            break;\n-        }\n-        /* It's possible to have the trailer added after the FCS has already been added.\n-           Let's move in 4 bytes and check there.  If so, display the Original FCS.\n-\n-           Only add this check for new format trailers.  Old format trailers are all but extinct\n-           and likely wouldn't have been added after FCS anyway.  The walk trailer prefernce could\n-           find it anyway, and that seems reasonable enough for old format. */\n-        if (tvb_get_ntohl(tvb, offset + 4) == F5_DPT_V1_HDR_MAGIC) {\n-            if (tvb_get_ntohs(tvb, offset + 4 + F5_DPT_V1_HDR_LENGTH_OFF) > trailer_length) {\n-                return 0;\n+            /* It's possible to have the trailer added after the FCS has already been added.\n+            Let's move in 4 bytes and check there.  However, it is also possible for the FCS\n+            to start with a sequence of zeros that would have been already been skipped.  If so,\n+            we need to back up.  If there is an FCS display the Original.\n+\n+            Only add this check for new format trailers.  Old format trailers are becoming less\n+            common and likely wouldn't have been added after FCS anyway.\n+            If needed, the walk trailer prefernce would find the old format trailer after an FCS.\n+            This seems reasonable enough for old format trailers. */\n+            for (guint i = 0; i <= offset && i <= 4; i++) {\n+                if (tvb_get_ntohl(tvb, offset + 4 - i) == F5_DPT_V1_HDR_MAGIC) {\n+                    if (tvb_get_ntohs(tvb, offset + 4 - i + F5_DPT_V1_HDR_LENGTH_OFF) > trailer_length) {\n+                        return 0;\n+                    }\n+                    found = NEW_FORMAT;\n+                    has_fcs = TRUE;\n+                    offset += 4 - i;\n+                    goto found_trailer;\n+                }\n             }\n-            found = NEW_FORMAT;\n-            has_fcs = TRUE;\n-            offset += 4;\n-            break;\n         }\n \n         /* Not new format? Are we old format? */\n@@ -2906,15 +2913,17 @@ dissect_f5ethtrailer(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *\n             tlv_ver <= F5TRAILER_VER_MAX) {\n             /* Found at least one old format TLV */\n             found = OLD_FORMAT;\n-            break;\n+            goto found_trailer;\n         }\n-        if (!pref_walk_trailer || tvb_reported_length_remaining(tvb, offset) <= F5_DPT_V1_HDR_MAGIC_LEN + F5_DPT_V1_HDR_LEN)\n+        if (!pref_walk_trailer || tvb_reported_length_remaining(tvb, offset) <= F5_LOWV1_LENMIN)\n             /* Didn't find an f5ethtrailer, and we're not going to keep looking. */\n             return 0;\n \n         offset++;\n     }\n \n+found_trailer:\n+;\n     /* Good to go, start dissection */\n     f5eth_tap_data_t *tdata;\n     proto_item *trailer_item = NULL;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-f5ethtrailer.c",
+      "old_path": "epan/dissectors/packet-f5ethtrailer.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "c8bc83cb9e7e083360bfd3148db70bed6a33d1a4",
+      "short_id": "c8bc83cb",
+      "created_at": "2021-01-22T08:58:34.000-06:00",
+      "parent_ids": [
+        "227ed8cced57755022060a6789129828c8004a6c"
+      ],
+      "title": "f5ethtrailer: Some trailers are not detected",
+      "message": "f5ethtrailer: Some trailers are not detected\n\nThis corrects 2 issues with the detection heuristic for f5ethtrailers\ncausing trailers to be missed.\n\nFixes #17171\nFixes #17172\n\n(cherry picked from commit b297afee3e13d8843e462845480800bebacf6ae6)\n",
+      "author_name": "Jason Cohen",
+      "author_email": "j.cohen@f5.com",
+      "authored_date": "2021-01-21T16:37:41.000-06:00",
+      "committer_name": "Jason Cohen",
+      "committer_email": "j.cohen@f5.com",
+      "committed_date": "2021-01-22T08:58:34.000-06:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c8bc83cb9e7e083360bfd3148db70bed6a33d1a4"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 137971171,
+      "head_commit_sha": "c8bc83cb9e7e083360bfd3148db70bed6a33d1a4",
+      "base_commit_sha": "227ed8cced57755022060a6789129828c8004a6c",
+      "start_commit_sha": "227ed8cced57755022060a6789129828c8004a6c",
+      "created_at": "2021-01-22T16:26:57.251Z",
+      "merge_request_id": 85820829,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

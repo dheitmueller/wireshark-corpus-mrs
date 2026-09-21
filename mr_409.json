@@ -1,0 +1,2824 @@
+{
+  "id": 72100297,
+  "iid": 409,
+  "project_id": 7898047,
+  "title": "Draft: HTTP3: enable dissection of headers via nghttp3",
+  "description": "HTTP3: enable dissection of headers via nghttp3\n\nThis PR adds basic dissection of HTTP3 headers. It uses nghttp3 for QPACK\ninflation. Each HTTP3 connection has a pair of `nghttp3_qpack_decoder`\ninstances, which inflate the HEADERS frames sent by the client and the server.\n\nEach decoder receives contents of the corresponding QPACK encoder stream.\n\nWhen dissecting HEADERS frames, the dissector uses the appropriate decoder\nto inflate the compressed header fields.\n\nThe dissector have been developed on OSX machine, and I have not tested it\non Linux or Windows.\n\nTo keep the pull request small and focused, many desired features are left\nout of this pull request, and will be addressed in separate PRs later.\nThese include:\n\n1. Occasionally the HEADERS frames are head-of-line blocked by the QPACK\n   encoder stream. This happens when decoding of the headers depends on\n   a QPACK instruction which the dissector have not seen yet.\n\n2. Contents of the QPACK streams (both the encoder and decoder) are not\n   properly dissected - the dissector doesn't show the invidual QPACK\n   instructions.\n\n3. This PR does not add dissection of other frame types (e.g SETTINGS).\n\n4. Unlike the more mature HTTP2 dissector, this PR does not provide\n   deduplication of repeating HTTP headers. Because of that, the memory\n   usage is fairly high.\n\nThis PR includes design notes in `doc/http3.md`\n\nNote: this PR is a re-submit of https://code.wireshark.org/review/#/c/38227/\n\nThe following comments are addressed:\n\n- https://code.wireshark.org/review/#/c/38227/1/CMakeLists.txt@587\n- https://code.wireshark.org/review/#/c/38227/1/CMakeLists.txt@608\n- https://code.wireshark.org/review/#/c/38227/1/CMakeLists.txt@1654\n- https://code.wireshark.org/review/#/c/38227/1/CMakeOptions.txt@97\n- https://code.wireshark.org/review/#/c/38227/1/cmake/modules/FindNGHTTP3.cmake@25\n- https://code.wireshark.org/review/#/c/38227/1/doc/http3.md@173\n- https://code.wireshark.org/review/#/c/38227/1/epan/dissectors/packet-http3.c@157\n- https://code.wireshark.org/review/#/c/38227/1/epan/dissectors/packet-http3.c@593\n- https://code.wireshark.org/review/#/c/38227/1/tools/macos-setup-brew.sh@23\n\n\nThe best way to pull the `nghttp3` dependency remains an open question. Discussion at https://code.wireshark.org/review/#/c/38227/ mentioned two alternatives:\n   a. Pull the commit tag instead of the release in `macos-setup.sh`\n   b. Include a snapshot of nghttp3 in the Wireshark tree. \n\nI would like to get more feedback on which way is preferred.\n\nP.S. There is an overlap between the HTTP/2 and HTTP/3 dissectors. Once the HTTP/3 dissector becomes more mature, it may be worthwhile to extract the shared dissection functionality from the HTTP/2 and HTTP/3 dissectors. At the moment, the HTTP/3 implementation is still nascent, hence I chose to keep the two implementations separate.",
+  "state": "closed",
+  "created_at": "2020-09-25T03:41:59.938Z",
+  "updated_at": "2024-06-26T18:13:42.812Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": {
+    "id": 279822,
+    "username": "alagoutte",
+    "public_email": "",
+    "name": "Alexis La Goutte",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+    "web_url": "https://gitlab.com/alagoutte"
+  },
+  "closed_at": "2023-01-02T07:57:56.325Z",
+  "target_branch": "master",
+  "source_branch": "http3_qpack",
+  "user_notes_count": 25,
+  "upvotes": 1,
+  "downvotes": 0,
+  "author": {
+    "id": 6764911,
+    "username": "oesh",
+    "public_email": "",
+    "name": "Omer Shapira",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+    "web_url": "https://gitlab.com/oesh"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": 21350697,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": true,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": true,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2020-09-25T03:41:59.938Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!409",
+  "references": {
+    "short": "!409",
+    "relative": "!409",
+    "full": "wireshark/wireshark!409"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/409",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": true,
+  "squash_on_merge": true,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": true,
+  "blocking_discussions_resolved": false,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "8",
+  "latest_build_started_at": "2020-12-21T18:11:49.607Z",
+  "latest_build_finished_at": "2020-12-21T19:00:30.865Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 232962392,
+    "iid": 29,
+    "project_id": 21350697,
+    "sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+    "ref": "http3_qpack",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2020-12-21T18:11:45.455Z",
+    "updated_at": "2020-12-21T19:00:30.874Z",
+    "web_url": "https://gitlab.com/oesh/wireshark/-/pipelines/232962392"
+  },
+  "head_pipeline": {
+    "id": 232962392,
+    "iid": 29,
+    "project_id": 21350697,
+    "sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+    "ref": "http3_qpack",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2020-12-21T18:11:45.455Z",
+    "updated_at": "2020-12-21T19:00:30.874Z",
+    "web_url": "https://gitlab.com/oesh/wireshark/-/pipelines/232962392",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6764911,
+      "username": "oesh",
+      "public_email": "",
+      "name": "Omer Shapira",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+      "web_url": "https://gitlab.com/oesh"
+    },
+    "started_at": "2020-12-21T18:11:49.607Z",
+    "finished_at": "2020-12-21T19:00:30.865Z",
+    "committed_at": null,
+    "duration": 2921,
+    "queued_duration": 4,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/oesh/wireshark/-/pipelines/232962392",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+    "head_sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+    "start_sha": "e2593e20227e2482268f1e69e66537d8de4a6712"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "6c7f62db8beb67d40c61ce67fa37e86f608ca444",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 418478279,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-25T03:46:09.216Z",
+          "updated_at": "2020-09-25T03:46:09.218Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "797ddecb94813ca74e1f281c76140af7d31774c8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 418479210,
+          "type": null,
+          "body": "changed title from **H{-ttp3 qpack-}** to **H{+TTP3: Implements dissection of HTTP/3 HEADERS streams, using nghttp3 library.+}**",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-25T03:48:28.406Z",
+          "updated_at": "2020-09-25T03:48:28.407Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a8950ce230ca3fb5440cc234e20a5d93ebb9f6cd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 418479211,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-25T03:48:28.429Z",
+          "updated_at": "2020-09-25T03:48:28.430Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d02fdc521d7be34ef02f9f35b5ed30ccf144854e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 418479308,
+          "type": null,
+          "body": "changed title from **HTTP3: Implements dissection of H{-TTP/3 HEADERS streams, using nghttp3 library-}.** to **HTTP3: Implements dissection of H{+EADERS streams, using nghttp3 library for QPACK decoding+}.**",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-25T03:48:59.616Z",
+          "updated_at": "2020-09-25T03:48:59.617Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b8d32f55414c1a91b26e60f9f25ed864546aac5c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 418544156,
+          "type": null,
+          "body": "changed title from **HTTP3: {-Implements dissection of HEADERS streams, using nghttp3 library for QPACK decoding.-}** to **HTTP3: {+enable dissection of headers via nghttp3+}**",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-25T07:23:24.946Z",
+          "updated_at": "2020-09-25T07:23:24.947Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "b7bf93cf69926890183a7abc4c59b7370453a0ad",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 418544158,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-25T07:23:24.970Z",
+          "updated_at": "2020-09-25T07:23:24.972Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4f66fd02af4f5cdcaeebda192d5c607bdb371401",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 418834212,
+          "type": null,
+          "body": "I have yet to review the new version, but to comment on the nghttp3 dep question, I'd be fine with a commit in setup-brew.sh instead of a git submodule. That'll be used for the official macos builds.",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2020-09-25T14:33:09.536Z",
+          "updated_at": "2020-09-25T14:33:09.536Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6155de526b9a036e08dcfef421d760f71d0f8102",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 418862347,
+          "type": null,
+          "body": "According to @alagoutte it seems like nghttp3 is not widely available yet. I'm fine providing a pre compiled library for Windows also but if it lets Linux users with the task to compile and install the library by themselves, maybe we should vendor it (at least at the begining). Note that I have not checked its size: if its huge then I'm less inclined to package it.",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2020-09-25T15:10:20.626Z",
+          "updated_at": "2020-09-25T15:10:20.626Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "c30ebfa643d741f569dcb558f139d151b7f67045",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 419035808,
+          "type": null,
+          "body": "@pquantin `nghttp3` distribution takes 8.5 MB on my drive, after running `make clean`.\n\n`  ➜  ~/git/nghttp3 ☠  du -sh .\n8.5M\t.\n`\n\n@Lekensteyn @pquantin To make sure I understand correctly: does \"vendoring\" means a. adding a git submodule, or b. checking in a snapshot of the library?",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-25T23:34:31.430Z",
+          "updated_at": "2020-09-25T23:34:31.430Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "64b86b019f4fa634280f2efce5f18efb070f5b66",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 419102606,
+          "type": null,
+          "body": "For me it meant checking a snapshot of the library to avoid using submodules.\nWhen I download the nghttp3 source code and check the size of the lib folder, I get 662.3 Kbytes so I'm not sue how you got 8.5M (did you exclud the .git folder)?",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2020-09-26T08:48:34.212Z",
+          "updated_at": "2020-09-26T08:48:34.212Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "589b1d1e789a291e09c8c41915c2c78e4bf2a1d1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 419118840,
+          "type": null,
+          "body": "I took a closer look, and a lot of space was used by the output of `autoconf`, such `autom4te.cache`, as well as the `.git` folder. I did a fresh `git clone` and checked the size. After excluding the `.git` folder, I get 1.1 MB for the entire `nghttp3` folder, breaking down into:\n\n```\n  ➜  ~/git/nghttp3_fresh ☠  du -I .git -h .\n 12K\t./cmake\n184K\t./tests\n 56K\t./examples\n 64K\t./lib/includes/nghttp3\n 72K\t./lib/includes\n804K\t./lib\n 24K\t./m4\n1.1M\t.\n```",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-26T11:33:22.822Z",
+          "updated_at": "2020-09-26T11:33:40.738Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "cbee7f911b0feb2a20e62a3b2661b09525edffcf",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 419308891,
+          "type": null,
+          "body": "Previously the nghttp2 soures were checked into the tree, but to avoid \"bundling\" (something that Fedora and some other Linux distros dislike) it was dropped from the tree. I would try to avoid bundling the nghttp3 code with the Wireshark sources since it is likely going to cause noisy static code analyzer warnings that we should not care too much about.\n\nMaking it an optional dependency and let the Linux users without nghttp3 suffer sounds reasonable to me :) If needed, Linux distributions can built it themselves. It should be relatively straightforward for Flatpak builds for example. I am an Arch user and have a nghttp3 build somewhere and can surely use that for my development builds.",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2020-09-27T22:02:19.103Z",
+          "updated_at": "2020-09-27T22:02:19.103Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "89c342d7217ba992d509335fd772d1afb481699b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 419392128,
+          "type": null,
+          "body": "Fine by me, I'm gonna prepare a Windows library latter this week.",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2020-09-28T05:19:05.370Z",
+          "updated_at": "2020-09-28T05:19:05.370Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6fefbceb6fe6ea390f23148f1194f54022899fd9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 420021923,
+          "type": null,
+          "body": "It seems that the consensus is to extend the `setup_macos.sh` script, so that it will use the stable hash of the library. \n\nI will do that soon.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-09-28T23:40:50.373Z",
+          "updated_at": "2020-09-28T23:40:50.373Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "83ea220e0f946600832613ef0fd94fdb821e9ef5",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 423958444,
+          "type": null,
+          "body": "added 144 commits\n\n<ul><li>0a893ada...fd85f6e9 - 71 commits from branch <code>wireshark:master</code></li><li>b9fed5ba - extract_asn1_from_spec.pl : fix export of S1AP</li><li>07af9a20 - SDAP: Show presence in configuration, and summary in root.</li><li>18f3b97e - README.developer: Fix some quotation marks around function names</li><li>830ac29e - Fix some more doc folder spelling errors.</li><li>be357822 - SMB2: label decompressed data as such and mark as generated</li><li>f399bfc8 - SMB2: stick the compress header items under the header tree</li><li>987558cf - SMB2: handle chained compression</li><li>3365244d - SMB2: add new pattern_v1 decompression support</li><li>6b560280 - SMB2: add tests for chained compression and pattern_v1</li><li>d18b9fcf - Fix issues discovered by common python linters</li><li>e3a896f9 - Qt: Reset the packet diagram between captures.</li><li>2a472b1f - Qt: Fix the packet diagram start offset arithmetic.</li><li>86dd5f6e - Windows: upgrade Npcap to 1.00</li><li>97e6c991 - [Automatic update for 2020-09-27]</li><li>57684755 - Fix some wrong filter names.</li><li>11e6ead8 - Add /*build*/ to .gitignore</li><li>fdb3b8c6 - Release notes: Add an item about Npcap 1.00.</li><li>22098a92 - check_typed_item_calls.py:  add --consecutive flag</li><li>5473fac2 - Add Metaswitch vendor-specific AVPs for Diameter</li><li>f7d9f4ea - QUIC: update to draft-31</li><li>ea030fa4 - extract_asn1_from_spec.pl: add version into exported asn file</li><li>fb3480de - Fix some more wrong filter names.</li><li>566a69e5 - Qt: Make sure the packet diagram always has a field value.</li><li>bbc84353 - Add some more string encodings.</li><li>8e2a3310 - quic: fix reassembly issue for smb2 (and other protocols)</li><li>9f416ec5 - IEEE 802.11:  Use common filter string for action_code</li><li>bb109237 - Qt: Handle palette changes in the packet diagram.</li><li>cf0bbab4 - Remove leftover cruft from previous comment.</li><li>ea751d57 - SMB2: add reasonable upper limit to pattern_v1 repetition</li><li>b8193fe2 - RTCP: Add dissection of Application mccp TS 24.380</li><li>27d49973 - smb2: Fix Dead Store</li><li>b915c7b9 - mbim: Fix Dead Store</li><li>e15ff103 - gtp: Fix Dead Store</li><li>8171b227 - dcerpc: Fix Dead Store</li><li>5f283bad - lithionics: Fix Dead Store</li><li>e92a2efb - GTPv1: Highlight only the value part of &quot;TEID Control Plane&quot;</li><li>df7f4e57 - Docs: Note that you can group filter buttons.</li><li>18adf10f - Tools: Handle leading &quot;#&quot;s in gen-bugnote.</li><li>7529549d - github: fix macOS build.</li><li>df35d52c - http: don&#39;t try to dissect zero-length bodies</li><li>24a73856 - Qt: Use … instead of UTF8_HORIZONTAL_ELLIPSIS in translated strings.</li><li>5e5bd831 - EAP: Fix Dead Store</li><li>33acf23d - Build: 3.3.1.</li><li>b4e30353 - Version: 3.3.1 → 3.3.2.</li><li>f6d8c960 - TECMP: Adding CAS flag for FlexRay</li><li>5ea6ad3b - QUIC: fix dissection of Short Header packets with Grease QUIC bit</li><li>74487b68 - Qt: point to Lua wiki page now on Gitlab</li><li>d432deb4 - LBMSRS: Break out of a loop.</li><li>c6fa704e - Clean up URLs.</li><li>a482164e - FBZERO: Make sure our offset advances.</li><li>a2fd7324 - Nettrace: Fix calculation of changetime</li><li>018b4891 - Nettrace: Fix fix to calculation of changetime</li><li>b3c8e817 - Update URLs pointing to the bug database.</li><li>d1f3b7c4 - ICMP: Fix dissection of Interface Information Object</li><li>1a024b89 - RTP: opus playback</li><li>803adc08 - Fix more filter field strings.</li><li>a872cee1 - Last batch of filter field string fixes.</li><li>cd6aaebc - fbzero: do more detailed tag value offset checks.</li><li>c027223b - Fix a Coverity complaint.</li><li>1b811e9a - TLS: remove support for deprecated QUIC key format</li><li>c823c978 - Windows: fix WiX installer</li><li>a096d016 - g_mallocate all strings returned from topic_action_url().</li><li>ec2c90c4 - Add some comments noting changes that should probably be made.</li><li>333c2c29 - [Automatic update for 2020-10-04]</li><li>fb957541 - S1AP: upgrade dissector to v16.3.0</li><li>d108bef6 - Only parse CRangeCategSpec record for CATEGORIZE_UNIQUE type</li><li>d5f8ec22 - NGAP: upgrade dissector to v16.3.0</li><li>07ec81a5 - E1AP: upgrade dissector to v16.3.0</li><li>b28addc0 - XnAP: upgrade dissector to v16.3.0</li><li>a69d659a - X2AP: upgrade dissector to v16.3.0</li><li>7151b7c1 - XnAP: fix the dissection of some NR and E-UTRA cell identity fields</li><li>02bed647 - added build to .gitignore</li><li>9e82b9eb - Merge branch &#39;master&#39; of gitlab.com:wireshark/wireshark into http3_qpack</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116248341&start_sha=0a893ada6160c923229b10b4f265aa750eb3b47d)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-05T20:11:52.022Z",
+          "updated_at": "2020-10-05T20:11:52.023Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a9c01e111b9f0f100979fb5f19e1bf17b7d5dfcd",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 423971029,
+          "type": null,
+          "body": "added 8 commits\n\n<ul><li>d690b3ce - HTTP3: WIP initial support for QPACK</li><li>a1f16be0 - HTTP3: keeping the provisional version of nghttp3 commented out</li><li>7dc5df8a - HTTP3: WIP initial support for QPACK</li><li>e611748d - extract_asn1_from_spec.pl : fix export of S1AP</li><li>dbe18819 - SMB2: handle chained compression</li><li>e8f164f1 - SMB2: add new pattern_v1 decompression support</li><li>009b69b3 - added build to .gitignore</li><li>b9d2f758 - Merge branch &#39;http3_qpack&#39; of gitlab.com:oesh/wireshark into http3_qpack</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116251508&start_sha=9e82b9eb2e794ea187c58d53a5fd302362062b6c)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-05T20:37:09.957Z",
+          "updated_at": "2020-10-05T20:37:09.958Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "86e5ff4c9b0edc688711dd4ffcef29889f1ca329",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424007695,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>e8c5e589 - HTTP3: WIP initial support for QPACK</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116259480&start_sha=b9d2f7584e7866640be10fc323d8a5dca188f500)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-05T21:49:34.678Z",
+          "updated_at": "2020-10-05T21:49:34.680Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "02cc9c7bb31240a1f9346f70e026ac93057536a1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424045553,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>92c3f6a8 - HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh</li><li>e4fffc5c - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116273745&start_sha=e8c5e5890611ebde73fd6b4bdffb7d92e122d20e)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-05T23:25:00.810Z",
+          "updated_at": "2020-10-05T23:25:00.812Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4e0162d95123376235813d815cbb47f737c52d32",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424047272,
+          "type": null,
+          "body": "Folks, I have rebased to master and restructured the commits a bit. \n\nThere are two commits now:\n- https://gitlab.com/wireshark/wireshark/-/merge_requests/409/diffs?commit_id=92c3f6a813b32e4502dfac3eca1e3a67aa114469, which:\n  - Adds `libnghttp3` as dependency\n  - Extends `tools/setup-macos.sh` so that it can pull and build `libnghttp3` from archived `draft-28.zip`.\n- https://gitlab.com/wireshark/wireshark/-/merge_requests/409/diffs?commit_id=e4fffc5c9833fb3fb29c2a3ef7cdd40ce6e6673e, which:\n  -  Modifes `epan/dissectors/packet-http3.c`\n  -  Documents the design in `doc/http3.md`",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-05T23:32:43.257Z",
+          "updated_at": "2020-10-05T23:32:43.257Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "456dd91d592d0a48345919c1724c48019cffc01d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424369359,
+          "type": null,
+          "body": "added 3 commits\n\n<ul><li>557a64d9 - 1 commit from branch <code>wireshark:master</code></li><li>4ca7cdd5 - HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh</li><li>ce98975f - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116392683&start_sha=e4fffc5c9833fb3fb29c2a3ef7cdd40ce6e6673e)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2020-10-06T10:54:14.479Z",
+          "updated_at": "2020-10-06T10:54:14.481Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "be9b38dd886a95a94fd3df2e913c4dea1682237d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424563477,
+          "type": null,
+          "body": "added 4 commits\n\n<ul><li>ce98975f...0abf89ce - 2 commits from branch <code>wireshark:master</code></li><li>740de742 - HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh</li><li>bf562863 - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116449006&start_sha=ce98975feb8d03a4cf0fa0e49c3759d158f5110f)",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2020-10-06T13:57:50.517Z",
+          "updated_at": "2020-10-06T13:57:50.518Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "50cc71e10f550a2b8517b61efc38f749590013ba",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 424651192,
+          "type": "DiffNote",
+          "body": "Let's quote this just in case: `rm \"$FNAME\"` and use `read -r FNAME` to avoid interpreting special characters.\nLikewise for `dirname \"$F\"` below.",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2020-10-06T15:11:23.302Z",
+          "updated_at": "2020-10-06T15:11:23.302Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "740de7424e9593b043226c509f9acc0cccd182b0",
+          "position": {
+            "base_sha": "0abf89ce4f534cc782808246c0b50509d333d245",
+            "start_sha": "0abf89ce4f534cc782808246c0b50509d333d245",
+            "head_sha": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+            "old_path": "tools/macos-setup.sh",
+            "new_path": "tools/macos-setup.sh",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1622,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2020-10-08T18:39:03.916Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        },
+        {
+          "id": 424742033,
+          "type": "DiffNote",
+          "body": "Addressed the comments",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:26:21.415Z",
+          "updated_at": "2020-10-06T17:26:21.415Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "740de7424e9593b043226c509f9acc0cccd182b0",
+          "position": {
+            "base_sha": "0abf89ce4f534cc782808246c0b50509d333d245",
+            "start_sha": "0abf89ce4f534cc782808246c0b50509d333d245",
+            "head_sha": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+            "old_path": "tools/macos-setup.sh",
+            "new_path": "tools/macos-setup.sh",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1622,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2020-10-08T18:39:03.916Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        },
+        {
+          "id": 424742714,
+          "type": "DiffNote",
+          "body": "changed this line in [version 8 of the diff](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116506818&start_sha=bf562863ca91a5872c56d2d8f33310468ae250cf#b4d2bf02fe9f125e48ccbf4f38116adbd9d2e56a_1622_1621)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:27:58.602Z",
+          "updated_at": "2020-10-06T17:27:58.602Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "740de7424e9593b043226c509f9acc0cccd182b0",
+          "position": {
+            "base_sha": "0abf89ce4f534cc782808246c0b50509d333d245",
+            "start_sha": "0abf89ce4f534cc782808246c0b50509d333d245",
+            "head_sha": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+            "old_path": "tools/macos-setup.sh",
+            "new_path": "tools/macos-setup.sh",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1622,
+            "line_range": null
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "1399d6a1ba61ea043e3ad8f35d369e24e7d4a79a",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 424651198,
+          "type": "DiffNote",
+          "body": "A lot of the `void *` return values such as from `wmem_new0` needs to be cast accordingly. These are usually caught due to the `-Wc++-compat` C compiler option which is enabled by default for GCC if I am not mistaken?",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2020-10-06T15:11:23.646Z",
+          "updated_at": "2020-10-06T15:11:23.646Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+          "position": {
+            "base_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "start_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "head_sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 251,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2020-10-08T18:39:07.635Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        },
+        {
+          "id": 424664665,
+          "type": "DiffNote",
+          "body": "This is the case for wmem_alloc(), not wmem_new() (which is a define for ((type*)wmem_alloc((allocator), sizeof(type)))). So not explicit cast is required here.",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2020-10-06T15:28:06.800Z",
+          "updated_at": "2020-10-06T15:28:06.800Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+          "position": {
+            "base_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "start_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "head_sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 251,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2020-10-08T18:39:07.635Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        },
+        {
+          "id": 424676364,
+          "type": "DiffNote",
+          "body": "Ah oops, I meant to comment on `wmem_realloc` below which probably needs a typecast.",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2020-10-06T15:41:19.997Z",
+          "updated_at": "2020-10-06T15:41:19.997Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+          "position": {
+            "base_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "start_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "head_sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 251,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2020-10-08T18:39:07.635Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        },
+        {
+          "id": 424696868,
+          "type": "DiffNote",
+          "body": "yes this one does :)",
+          "author": {
+            "id": 6722527,
+            "username": "pquantin",
+            "public_email": "",
+            "name": "Pascal Quantin",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/9bf49edc6acae0eca821eb90309381794fb4fbea4f3fb7c2378428862ddbb430?s=80&d=identicon",
+            "web_url": "https://gitlab.com/pquantin"
+          },
+          "created_at": "2020-10-06T16:01:08.002Z",
+          "updated_at": "2020-10-06T16:01:08.002Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+          "position": {
+            "base_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "start_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "head_sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 251,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2020-10-08T18:39:07.635Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        },
+        {
+          "id": 424741923,
+          "type": "DiffNote",
+          "body": "I added a typecast to the `wmem_realloc`",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:26:04.547Z",
+          "updated_at": "2020-10-06T17:26:04.547Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+          "position": {
+            "base_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "start_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+            "head_sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+            "old_path": "epan/dissectors/packet-http3.c",
+            "new_path": "epan/dissectors/packet-http3.c",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 251,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2020-10-08T18:39:07.635Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fafaca80d3c5a091068022b2fd75dca475b20bf8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424742698,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@fd2e8cba7327177cce9bbb9fdec096a9f0b56f36",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:27:57.337Z",
+          "updated_at": "2020-10-06T17:27:57.339Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d12cad96b96a79e55683aae0cd002f5a3855c95e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424742699,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@c496428a70956400f6be3b9d285c4dfc75c3af8a",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:27:57.346Z",
+          "updated_at": "2020-10-06T17:27:57.348Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "70d3fe7e74987cf3baf35bda9c06f0a3ed94cc9b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424742723,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>c496428a - HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh</li><li>fd2e8cba - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116506818&start_sha=bf562863ca91a5872c56d2d8f33310468ae250cf)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:27:59.732Z",
+          "updated_at": "2020-10-06T17:27:59.733Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5d6140a873ed79d420c8063d63eeeca411842427",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424742920,
+          "type": null,
+          "body": "Addressed the above comments",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:28:27.166Z",
+          "updated_at": "2020-10-06T17:28:27.166Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "aff82bd1fbb4f2c3ca4777df252728ade70f9056",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": true,
+      "notes": [
+        {
+          "id": 424743489,
+          "type": "DiffNote",
+          "body": "this looks like a bug...",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:29:47.820Z",
+          "updated_at": "2020-10-06T17:29:47.820Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "c496428a70956400f6be3b9d285c4dfc75c3af8a",
+          "position": {
+            "base_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+            "start_sha": "fbdf48e024ae7876739f0c97fed83307f20727fb",
+            "head_sha": "fd2e8cba7327177cce9bbb9fdec096a9f0b56f36",
+            "old_path": "tools/macos-setup.sh",
+            "new_path": "tools/macos-setup.sh",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1645,
+            "line_range": null
+          },
+          "resolvable": true,
+          "resolved": true,
+          "resolved_by": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "resolved_at": "2020-10-08T18:39:23.916Z",
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        },
+        {
+          "id": 424744072,
+          "type": "DiffNote",
+          "body": "changed this line in [version 9 of the diff](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116507685&start_sha=fd2e8cba7327177cce9bbb9fdec096a9f0b56f36#b4d2bf02fe9f125e48ccbf4f38116adbd9d2e56a_1645_1645)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:31:09.269Z",
+          "updated_at": "2020-10-06T17:31:09.269Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "commit_id": "c496428a70956400f6be3b9d285c4dfc75c3af8a",
+          "position": {
+            "base_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+            "start_sha": "fbdf48e024ae7876739f0c97fed83307f20727fb",
+            "head_sha": "fd2e8cba7327177cce9bbb9fdec096a9f0b56f36",
+            "old_path": "tools/macos-setup.sh",
+            "new_path": "tools/macos-setup.sh",
+            "position_type": "text",
+            "old_line": null,
+            "new_line": 1645,
+            "line_range": null
+          },
+          "resolvable": false,
+          "suggestions": [],
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "26253d53c6d81453bc9c7216ebd8131e1846b53e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424744065,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@cdb9654e1afc4a04a7e39d7165baaeb5aa7d84de",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:31:08.045Z",
+          "updated_at": "2020-10-06T17:31:08.048Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8281ef0a71684e7a53be828f63cf4d0e31cc3250",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424744068,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@69bab9ab63ff56ecde40d25e05869527a1fa98e9",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:31:08.049Z",
+          "updated_at": "2020-10-06T17:31:08.051Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "461946f5f70410308441656ceb6ea6e0447f7c14",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 424744075,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>cdb9654e - HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh</li><li>69bab9ab - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=116507685&start_sha=fd2e8cba7327177cce9bbb9fdec096a9f0b56f36)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-06T17:31:09.935Z",
+          "updated_at": "2020-10-06T17:31:09.936Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f83324eac26cf63e8441033057a9dcf5999aae4c",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 426454877,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@4df8b0e2e2974f944b5acb47f321cd3d644ae790",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-08T18:09:09.129Z",
+          "updated_at": "2020-10-08T18:09:09.132Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "277266445c49621b81f1bd94321ba1b1516032b1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 426454891,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>4df8b0e2 - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=117049948&start_sha=69bab9ab63ff56ecde40d25e05869527a1fa98e9)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-08T18:09:11.379Z",
+          "updated_at": "2020-10-08T18:09:11.381Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "954c46ae0f8e40c043dd4fc387e898fd9b671de8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 426455633,
+          "type": null,
+          "body": "Update: I have modified the `uninstall` function so that both the files and the empty folders are removed using the `select | while read -r NAME ; do rm \"$NAME\" ; done` pattern.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-08T18:10:53.823Z",
+          "updated_at": "2020-10-08T18:10:53.823Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "06776439f0a799d3b4fa82067d2470a63241ade9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 426469647,
+          "type": null,
+          "body": "resolved all threads",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2020-10-08T18:39:23.936Z",
+          "updated_at": "2020-10-08T18:39:23.940Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7695ec3dd82eb3bfd612b34f390099ca8c7ab7fa",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 427541578,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>8a33183a - nghttp3: update to latest master for further fixes, build libs only</li><li>1dd8bcfb - http3: fix some -Wc++-compat warnings</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=117365513&start_sha=4df8b0e2e2974f944b5acb47f321cd3d644ae790)",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2020-10-10T12:05:16.950Z",
+          "updated_at": "2020-10-10T12:05:16.952Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "7838e77a327190b561c8ee08bd282f0f7f8212c7",
+      "individual_note": false,
+      "resolvable": true,
+      "resolved": false,
+      "notes": [
+        {
+          "id": 427543548,
+          "type": "DiscussionNote",
+          "body": "I pushed two more fixes, please have a look and squash them with the next rebase.\n\nI have tested this on Arch Linux using the latest nghttp3 git master, GCC 10.2.0 and Clang 10.0.1 with ASAN enabled. No memory leaks or other memory safety issues were detected in my test sample. Build config:\n```\ncd /path/to/nghttp3\nprefix=/tmp/nghttp3-gcc; cmake -GNinja -S . -B \"$prefix\" -DCMAKE_INSTALL_PREFIX=\"$prefix/prefix\" \\\n    -DENABLE_LIB_ONLY=1 -DENABLE_ASAN=1 && ninja -C \"$prefix\" install\nprefix=/tmp/nghttp3-clang; cmake -GNinja -S . -B \"$prefix\" -DCMAKE_INSTALL_PREFIX=\"$prefix/prefix\" \\\n    -DENABLE_LIB_ONLY=1 -DENABLE_ASAN=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ && \\\n    ninja -C \"$prefix\" install\n\n# replace /tmp/ws-review with the path to this MR branch\nmkdir /tmp/wsbuild-gcc && cd /tmp/wsbuild-gcc\nPKG_CONFIG_PATH=/tmp/nghttp3-gcc/prefix/lib/pkgconfig cmake -GNinja -DCMAKE_BUILD_TYPE=Debug \\\n    -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DDISABLE_WERROR=1 -DENABLE_ASAN=1 -DENABLE_UBSAN=1 \\\n    /tmp/ws-review && time ninja\n\nmkdir /tmp/wsbuild-clang && cd /tmp/wsbuild-clang\nPKG_CONFIG_PATH=/tmp/nghttp3-clang/prefix/lib/pkgconfig cmake -GNinja -DCMAKE_BUILD_TYPE=Debug \\\n    -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DDISABLE_WERROR=1 -DENABLE_ASAN=1 -DENABLE_UBSAN=1 \\\n    /tmp/ws-review -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ && time ninja tshark\n```\n\nWith test sample [ngtcp2-29-dsb.pcapng](https://gitlab.com/wireshark/wireshark/uploads/5b2eae27412ff182405ed37e687f6917/ngtcp2-29-dsb.pcapng) from #13881, I do get the following expert info from Frame 11 (have not investigated it further yet):\n```\n$ tshark -r ngtcp2-29-dsb.pcapng -zexpert -Ohttp3 -Yhttp3\n...\nQPACK decoder has encountered a fatal error -402: ERR_QPACK_DECOMPRESSION_FAILED.\nA possible reason is that the capture file does not contain the beginning of the QPACK stream.\n\n$ tshark -r ngtcp2-29-dsb.pcapng -zexpert -Ohttp3 -Yhttp3 -2\n...\nFailed to process QPACK encoder stream. Parts of the QPACK stream may be missing.\nInstruction count shows the value prior to the procesing attempt.\nnghttp3 err=ERR_QPACK_FATAL dir=0 nread=-111 size=37 icnt=2\n```\n\nSome example output from the current patch:\n```\nHypertext Transfer Protocol Version 3\n    Type: HEADERS (0x0000000000000001)\n    Length: 10\n    [Header Length: 122]\n    [Header Count: 4]\n    Header\n        Name Length: 7\n        Name: :status\n        Value Length: 3\n        Value: 404\n    Header\n        Name Length: 6\n        Name: server\n        Value Length: 21\n        Value: nghttp3/ngtcp2 server\n```\n\nI suggest to append the header name and value to the `Header` tree item such that it does not have to be expanded. In HTTP/2 the HEADERS dissection looks like:\n```\nHyperText Transfer Protocol 2\n    Stream: HEADERS, Stream ID: 13, Length 199, GET /en-US/firefox/52.0.1/firstrun/\n        Length: 199\n        Type: HEADERS (1)\n         ...\n        Header Block Fragment: 82059760b52dc373129ac2ca7f2c3625c0b85894d621365b531f418cf1e3c2f49fd9a8a0…\n        [Header Length: 389]\n        [Header Count: 9]\n        Header: :method: GET\n            Name Length: 7\n            Name: :method\n            Value Length: 3\n            Value: GET\n            ...\n        ...\n        Header: user-agent: Mozilla/5.0 (X11; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0\n```",
+          "author": {
+            "id": 2415432,
+            "username": "Lekensteyn",
+            "public_email": "",
+            "name": "Peter Wu",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/efcf30db53f30b15e7c905ef37bd4dc44d87573bd92baf97cd707115d3fcd0c0?s=80&d=identicon",
+            "web_url": "https://gitlab.com/Lekensteyn"
+          },
+          "created_at": "2020-10-10T12:24:51.349Z",
+          "updated_at": "2020-10-10T12:24:51.349Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": true,
+          "resolved": false,
+          "resolved_by": null,
+          "resolved_at": null,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "004ce133a69e70e392c2c193caa1cea0a01b4cd3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429197365,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@1e312faa1b751be9b2fd931cc740c91d99a55928",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:05:11.569Z",
+          "updated_at": "2020-10-14T00:05:11.571Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "acf550618efe71798bb018defe4eeead0a3318df",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429197366,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@6377045e4b1ce93d3188fd01cb55f72095d7b7af",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:05:11.576Z",
+          "updated_at": "2020-10-14T00:05:11.579Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "5c147b88ef6522dc6fa2fa6b693dba41a65099d3",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429197378,
+          "type": null,
+          "body": "added 56 commits\n\n<ul><li>1dd8bcfb...63714518 - 52 commits from branch <code>wireshark:master</code></li><li>1e312faa - HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh</li><li>6377045e - HTTP3: Using nghttp3 to decode HTTP3 headers</li><li>e1a81316 - nghttp3: update to latest master for further fixes, build libs only</li><li>c0a18f63 - http3: fix some -Wc++-compat warnings</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=117974623&start_sha=1dd8bcfb412327e61073aab3c9cb588a86ec12a0)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:05:16.632Z",
+          "updated_at": "2020-10-14T00:05:16.634Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "092ddb876dfc8cfc535a64bacc27f416603e5e27",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429198087,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@ac8a7be76c131dcd49eee69d83a3c9b9ae04dbaa",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:09:54.742Z",
+          "updated_at": "2020-10-14T00:09:54.744Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d6fb12131b70dcbc8eeabd0386d4975a824b1e4d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429198088,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@230abf02b870955622515c96a39c02443abdd213",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:09:54.781Z",
+          "updated_at": "2020-10-14T00:09:54.784Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f1b61f7b8517914150f0174a7284233ecfbb8376",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429198093,
+          "type": null,
+          "body": "added 2 commits\n\n<ul><li>ac8a7be7 - HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh</li><li>230abf02 - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=117974893&start_sha=c0a18f63f06544155703bf587b48bc3a5e26c203)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:09:56.715Z",
+          "updated_at": "2020-10-14T00:09:56.719Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6d9e42f122215e20cc8b660277244ef42e50b82e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429198689,
+          "type": null,
+          "body": "1. I have squashed the two fixes by @Lekensteyn.\n\n2. Going to update the presentation of the header name / values.\n3. Then will proceed to investigate the `ERR_QPACK_DECOMPRESSION_FAILED` error.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:13:38.927Z",
+          "updated_at": "2020-10-14T00:13:38.927Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e8d128912b894bae05482645478751a4bec5f231",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429203038,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@0e770d20988654e183e07caafbdd3600779703d4",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:40:54.840Z",
+          "updated_at": "2020-10-14T00:40:54.842Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a58975766ccdfa03bb968ccacbd9f41818db936a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429203043,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>0e770d20 - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=117976567&start_sha=230abf02b870955622515c96a39c02443abdd213)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:40:56.916Z",
+          "updated_at": "2020-10-14T00:40:56.917Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "090dfaf394abdb8e1047b681a350533e73081e69",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429203185,
+          "type": null,
+          "body": "Appending the name and the value of the header to the `Header` tree item:\n\n```\nQUIC IETF\nHypertext Transfer Protocol Version 3\nHypertext Transfer Protocol Version 3\n    QPACK encoder\n        [QPACK encoder instruction count: 2]\nHypertext Transfer Protocol Version 3\n    Type: HEADERS (0x0000000000000001)\n    Length: 10\n    [Header Length: 122]\n    [Header Count: 4]\n    Header: :status: 404\n        Name Length: 7\n        Name: :status\n        Value Length: 3\n        Value: 404\n    Header: server: nghttp3/ngtcp2 server\n        Name Length: 6\n        Name: server\n        Value Length: 21\n        Value: nghttp3/ngtcp2 server\n\n```",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T00:41:51.073Z",
+          "updated_at": "2020-10-14T00:41:51.073Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "129bd5660d5c44beffd1deec060d1de807ddc34a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 429223689,
+          "type": null,
+          "body": "I looked into the `DECOMPRESSION_ERROR` messages. I have not found what is going on yet. \n\nMy first idea was that decoding of the headers is blocked by QPACK lagging behind, and effectively causing a head-of-line blocking. When such condition emerges, the required QPACK insert count will be higher than the available insert count.\n\nThis isn't the case. At the time of the error, the available insert count == 2, and the required insert count == 1.\n\nI will continue looking into this tomorrow.",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-10-14T02:43:20.019Z",
+          "updated_at": "2020-10-14T02:43:20.019Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "05e313e9c55a6e615f263c300b48636be2667a19",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 471680864,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@f9d8f22e70c3b969064a46b19517923a4f4d1db1",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-12-21T18:11:43.444Z",
+          "updated_at": "2020-12-21T18:11:43.446Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "fbfc58a79aa971bc331d7092bc3e423707206140",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 471680865,
+          "type": null,
+          "body": "mentioned in commit oesh/wireshark@97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-12-21T18:11:43.502Z",
+          "updated_at": "2020-12-21T18:11:43.504Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "6e5f3ad5dc163a92b7faa4e6cd663c14c1be7a9d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 471680881,
+          "type": null,
+          "body": "added 523 commits\n\n<ul><li>0e770d20...e2593e20 - 521 commits from branch <code>wireshark:master</code></li><li>f9d8f22e - HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh</li><li>97b18c47 - HTTP3: Using nghttp3 to decode HTTP3 headers</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/409/diffs?diff_id=132283630&start_sha=0e770d20988654e183e07caafbdd3600779703d4)",
+          "author": {
+            "id": 6764911,
+            "username": "oesh",
+            "public_email": "",
+            "name": "Omer Shapira",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/59463e71533781a915de6da9f33a87cad20b8b84161f20737ddd030da4b0a749?s=80&d=identicon",
+            "web_url": "https://gitlab.com/oesh"
+          },
+          "created_at": "2020-12-21T18:11:45.786Z",
+          "updated_at": "2020-12-21T18:11:45.787Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "8b51bebf7f6833c82a5e142948a127c121003a2a",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 472660146,
+          "type": null,
+          "body": "marked this merge request as **draft**",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2020-12-23T04:37:23.734Z",
+          "updated_at": "2020-12-23T04:37:23.736Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "24b58f9a631e0f48f41f27a94647f31c6a97cbfb",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 600950505,
+          "type": null,
+          "body": "Hi @oesh \n\nAny news ?",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2021-06-14T18:32:55.406Z",
+          "updated_at": "2021-06-14T18:32:55.406Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "304cf769c8ca9f2161120298228f337c3e906fe1",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1036463832,
+          "type": null,
+          "body": "mentioned in merge request !7500",
+          "author": {
+            "id": 6875072,
+            "username": "IvanNardi",
+            "public_email": "",
+            "name": "Ivan Nardi",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/d4707801b74ca8478d56b09acecfa8671e536be3815713358ed72bab52474738?s=80&d=identicon",
+            "web_url": "https://gitlab.com/IvanNardi"
+          },
+          "created_at": "2022-07-24T07:34:46.512Z",
+          "updated_at": "2022-07-24T07:34:46.514Z",
+          "system": true,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "4ee6b90f3f7b6c278ae81ea0d67c8211d47ff990",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 1225032896,
+          "type": null,
+          "body": "See !7500",
+          "author": {
+            "id": 279822,
+            "username": "alagoutte",
+            "public_email": "",
+            "name": "Alexis La Goutte",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/a15cba6417f4d1723eb56add7099bcfd8df373dc520577958b33c37915ef231b?s=80&d=identicon",
+            "web_url": "https://gitlab.com/alagoutte"
+          },
+          "created_at": "2023-01-02T07:57:55.787Z",
+          "updated_at": "2023-01-02T07:57:55.787Z",
+          "system": false,
+          "noteable_id": 72100297,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 409,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -1158,6 +1158,9 @@ ws_find_package(ZSTD ENABLE_ZSTD HAVE_ZSTD \"1.0.0\")\n # Enhanced HTTP/2 dissection\n ws_find_package(NGHTTP2 ENABLE_NGHTTP2 HAVE_NGHTTP2)\n \n+# Enhanced HTTP/3 dissection\n+ws_find_package(NGHTTP3 ENABLE_NGHTTP3 HAVE_NGHTTP3)\n+\n # Embedded Lua interpreter\n ws_find_package(LUA ENABLE_LUA HAVE_LUA \"5.1\")\n \n@@ -1664,6 +1667,11 @@ set_package_properties(NGHTTP2 PROPERTIES\n \tURL \"https://nghttp2.org\"\n \tPURPOSE \"Header decompression in HTTP2\"\n )\n+set_package_properties(NGHTTP3 PROPERTIES\n+    DESCRIPTION \"HTTP/3 library written in C\"\n+    URL \"https://github.com/ngtcp2/nghttp3\"\n+    PURPOSE \"Header decompression in HTTP3\"\n+)\n set_package_properties(CARES PROPERTIES\n \tDESCRIPTION \"Library for asynchronous DNS requests\"\n \tURL \"https://c-ares.haxx.se/\"\n@@ -3080,6 +3088,9 @@ if(RPMBUILD_EXECUTABLE)\n \tif (NGHTTP2_FOUND)\n \t\tlist(APPEND _rpmbuild_with_args --with nghttp2)\n \tendif()\n+\tif (NGHTTP3_FOUND)\n+\t\tlist(APPEND _rpmbuild_with_args --with nghttp3)\n+\tendif()\n \tif (SYSTEMD_FOUND)\n \t\tlist(APPEND _rpmbuild_with_args --with sdjournal)\n \tendif()\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "CMakeLists.txt",
+      "old_path": "CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -82,6 +82,7 @@ option(ENABLE_BROTLI     \"Build with brotli compression support\" ON)\n option(ENABLE_SNAPPY     \"Build with Snappy compression support\" ON)\n option(ENABLE_ZSTD       \"Build with Facebook zstd compression support\" ON)\n option(ENABLE_NGHTTP2    \"Build with HTTP/2 header decompression support\" ON)\n+option(ENABLE_NGHTTP3    \"Build with HTTP/3 header decompression support\" ON)\n option(ENABLE_LUA        \"Build with Lua dissector support\" ON)\n option(ENABLE_SMI        \"Build with libsmi snmp support\" ON)\n option(ENABLE_GNUTLS     \"Build with RSA decryption support\" ON)\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "CMakeOptions.txt",
+      "old_path": "CMakeOptions.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -0,0 +1,37 @@\n+# Find the system's Nghttp3 includes and library\n+#\n+#  NGHTTP3_INCLUDE_DIRS - where to find nghttp3.h\n+#  NGHTTP3_LIBRARIES    - List of libraries when using nghttp2\n+#  NGHTTP3_FOUND        - True if nghttp2 found\n+\n+# TODO: add WIN32 support\n+\n+find_package(PkgConfig)\n+pkg_search_module(NGHTTP3 libnghttp3)\n+\n+find_path( NGHTTP3_INCLUDE_DIR\n+  NAMES nghttp3/nghttp3.h\n+  HINTS\n+    \"${NGHTTP3_INCLUDEDIR}\"\n+    \"${NGHTTP3_HINTS}/include\"\n+)\n+\n+find_library( NGHTTP3_LIBRARY\n+  NAMES nghttp3\n+  HINTS\n+    \"${NGHTTP3_LIBDIR}\"\n+    \"${NGHTTP3_HINTS}/lib\"\n+)\n+\n+include( FindPackageHandleStandardArgs )\n+find_package_handle_standard_args( NGHTTP3 DEFAULT_MSG NGHTTP3_LIBRARY NGHTTP3_INCLUDE_DIR )\n+\n+if( NGHTTP3_FOUND )\n+    set( NGHTTP3_INCLUDE_DIRS ${NGHTTP3_INCLUDE_DIR} )\n+    set( NGHTTP3_LIBRARIES ${NGHTTP3_LIBRARY} )\n+else()\n+    set( NGHTTP3_INCLUDE_DIRS )\n+    set( NGHTTP3_LIBRARIES )\n+endif()\n+\n+mark_as_advanced( NGHTTP3_LIBRARIES NGHTTP3_INCLUDE_DIRS )\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "cmake/modules/FindNGHTTP3.cmake",
+      "old_path": "cmake/modules/FindNGHTTP3.cmake",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -103,6 +103,9 @@\n /* Define to use nghttp2 */\n #cmakedefine HAVE_NGHTTP2 1\n \n+/* Define to use nghttp3 */\n+#cmakedefine HAVE_NGHTTP3 1\n+\n /* Define to use the libcap library */\n #cmakedefine HAVE_LIBCAP 1\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "cmakeconfig.h.in",
+      "old_path": "cmakeconfig.h.in",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -0,0 +1,177 @@\n+# Design notes on the HTTP3 dissector for wireshark\n+\n+\n+## Supported features\n+\n+The HTTP3 dissector is a work in progress.\n+\n+At the moment, the following aspects of HTTP3 are supported:\n+\n+- Stream types\n+- Frame types\n+- HTTP header fields\n+- QPACK insert count\n+\n+The future plans include adding support to:\n+\n+- Dissecting the SETTNIGS frames\n+- Dissecting the QPACK encoder and decoder streams\n+\n+\n+## Dissecting HTTP3 header fields\n+\n+HTTP3 headers are compressed with [QPACK](https://datatracker.ietf.org/doc/draft-ietf-quic-qpack/).\n+Because of that, the dissector needs a way to interpret the QPACK encoding\n+streams, and to maintain the dynamic compression tables.\n+\n+Currently, the dissector relies on the QPACK compression implementation from\n+`nghttp3`, which is a popular open source implementation of HTTP3.\n+\n+## Managing the dissector state\n+\n+\n+### Connection-level state\n+\n+`nghttp3`'s QPACK implementation requires a separate dissector instance per\n+QPACK encoder stream.\n+\n+The dissector uses `http3_session_info`, which is associated with conversation\n+info pointer.\n+\n+NOTE: this implementation assumes that different QUIC connections will have\n+different 5-tuples. Different DCIDs that share the same 5-tuple are not\n+supported.\n+\n+### Stream-level state\n+\n+`nghttp3`'s QPACK implementation requires a keeping a separate context per every request stream.\n+\n+The dissector keeps this state in `http3_stream_info`, which is associated with\n+every stream (via `quic_stream_get_proto_data`).\n+\n+\n+### PDU-level state\n+\n+Finally, the header fields must be stored for reapeting access once decoding\n+finishes.\n+\n+The dissector keeps the decoded headers in a `http3_headers_data_t`, which\n+keeps the count of decoded header fields, the combined length of the fields\n+after the decoding, and an array of the header fields.\n+\n+Similarly to the HTTP2 dissector, once the fields are decoded, they are stored in a flat buffer:\n+\n+```\n+name_length (uint32)\n+name (string)\n+value_length (uint32)\n+value\n+```\n+\n+This allows using the standard Wireshark methods for parsing fields when\n+constructing the decoded header field.\n+\n+NOTE: at the moment, header fields are not de-duped across multiple HEADERS\n+frames. This limitation will be addressed later.\n+\n+\n+```\n++-----------------+\n+|Packet Info      |\n++-----------------+\n+         |                       +-------------------+\n+         |                       |http3_session_info |\n+         |                       |------------------ |\n+         +---conversation------->|QPACK decoders     |\n+         |                       |                   |\n+         |                       +-------------------+\n+         |\n+         |                       +--------------------+\n+         |                       |http3_stream_info   |\n+         |                       |-----------------   |\n+         +---stream_proto_data-->|Stream context for  |\n+         |                       |the QPACK decoder.  |\n+         |                       |                    |\n+         |                       +--------------------+\n+         |                       +-------------------+\n+         |                       |http3_header_data  |\n+         |                       |-----------------  |\n+         +---proto_data--------->|Decompressed header|\n+                                 |fields.            |\n+                                 +-------------------+\n+```\n+\n+Open questions:\n+1. Large files can have a lot of sessions/conversations, can use a lot of\n+   memory. Maybe worth adding a setting to disable the QPACK decoding.\n+2. Support for PCAPs that contain multiple DCIDs with same 5-tuples.\n+   [Peter Wu]: this should be possible by somehow accessing the QUIC\n+               conversation that the HTTP/3 session is layered upon.\n+3. De-duplicate repeating header fields.\n+\n+\n+## Using nghttp3 to decode HEADERS frames\n+\n+### Updating QPACK states\n+\n+When dissecting QPACK encoder stream, the dissector passes the payload to the\n+corresponding `nghttp3_qpack_decoder` instance.\n+\n+On a successful update, the dissector appends the current insert count to the\n+protocol tree.\n+\n+On failure, the dissector emits expert info advise.\n+\n+### Decompressing HTTP3 headers\n+\n+When dissecting HEADERS frames, the dissector attempts to decode data using the\n+corresponding `nghttp3_qpack_decoder` and `nghttp3_qpack_stram_context`\n+instances.\n+\n+The `nghttp3_qpack_decoder` informs the dissector on the decoding status via a flag word.\n+\n+If the decoder successfully inflates a header field, as indicated by `EMIT`\n+flag bit, the output from the decoder is converted into `http3_header_field`\n+and added to `http3_header_data` that corresponds to the PDU.\n+\n+Occasionally, the dissector can become blocked on the QPACK stream. This\n+happens when decoding of the headers field depends on a QPACK update that has\n+not been seen yet. The dissector indicates such condition via the\n+`http3.header.qpack.blocked` flag.\n+\n+In addition, sometimes the decoder does can not proceed with decoding. This can\n+happen, for example, when the start of the QPACK encoder stream is not present\n+in the capture file.  The dissector indicates such condition via the\n+`http3.header.qpack.fatal` flag.\n+\n+\n+In addition to the flags, the dissector emits appropriate expert info when the\n+decoding is not possible.\n+\n+### Fields to expose\n+\n+- `http3.stream_type`\n+- `http3.frame_type`\n+- `http3.frame_length`\n+- `http3.frame_payload`\n+- `http3.push_id`\n+- `http3.header` - flag.\n+- `http3.header.count` - number of fields in the HEADERS frame.\n+- `http3.header.length` - the length of the fields after inflation.\n+- `http3.header.name` - header field's name, after inflation.\n+- `http3.header.name.length` - length of the header fields's name, after inflation.\n+- `http3.header.value` - header field's value, after inflation.\n+- `http3.header.value.length` - length of the header fields's value, after inflation.\n+- `http3.header.qpack.blocked` - inflation of header fields is blocked on QPACK.\n+- `http3.header.qpack.fatal` - inflation of header fields is not possible.\n+- `http3.qpack.enc` - flag.\n+- `http3.qpack.enc.icnt` - the instruction count after processing the QPACK encoder payload.\n+\n+\n+## Open questions:\n+1. Where to store the header data that could not be decoded due to QPACK\n+   insertion count?  Initially, just indicate that it is blocked and append the\n+   hex data to the headers dissection tree.\n+2. What happens if after the decoding has finished successfully, the HEADERS\n+   frame contains more data? This is more relevant to the protocol developers\n+   and not to the users. Probably should have an Expert info.\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "doc/http3.md",
+      "old_path": "doc/http3.md",
+      "a_mode": "0",
+      "b_mode": "100644",
+      "new_file": true,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -24,6 +24,7 @@ include_directories(\n \t\t${LUA_INCLUDE_DIRS}\n \t\t${LZ4_INCLUDE_DIRS}\n \t\t${NGHTTP2_INCLUDE_DIRS}\n+\t\t${NGHTTP3_INCLUDE_DIRS}\n \t\t${SMI_INCLUDE_DIRS}\n \t\t${SNAPPY_INCLUDE_DIRS}\n \t\t${ZLIB_INCLUDE_DIRS}\n@@ -353,6 +354,7 @@ target_link_libraries(epan\n \t\t${LZ4_LIBRARIES}\n \t\t${M_LIBRARIES}\n \t\t${NGHTTP2_LIBRARIES}\n+\t\t${NGHTTP3_LIBRARIES}\n \t\t${SMI_LIBRARIES}\n \t\t${SNAPPY_LIBRARIES}\n \t\t${WIN_PSAPI_LIBRARY}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/CMakeLists.txt",
+      "old_path": "epan/CMakeLists.txt",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "",
+      "collapsed": true,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-http3.c",
+      "old_path": "epan/dissectors/packet-http3.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -174,6 +174,8 @@ LIBSSH_VERSION=0.9.0\n # mmdbresolve\n MAXMINDDB_VERSION=1.4.3\n NGHTTP2_VERSION=1.39.2\n+# git master, commit 73eed4768e7b7c3842b5221ff564a8b47f5cdb6f\n+NGHTTP3_VERSION=73eed4768e7b\n SPANDSP_VERSION=0.0.6\n SPEEXDSP_VERSION=1.2.0\n if [ \"$SPANDSP_VERSION\" ]; then\n@@ -1789,6 +1791,57 @@ uninstall_nghttp2() {\n     fi\n }\n \n+install_nghttp3() {\n+    if [ \"$NGHTTP3_VERSION\" -a ! -f nghttp3-$NGHTTP3_VERSION-done ] ; then\n+        echo \"Downloading, building, and installing nghttp3:\"\n+        [ -f nghttp3-$NGHTTP3_VERSION.zip ] || curl -L -o nghttp3-$NGHTTP3_VERSION.zip https://github.com/ngtcp2/nghttp3/archive/$NGHTTP3_VERSION.zip || exit 1\n+        $no_build && echo \"Skipping installation\" && return\n+        unzip nghttp3-$NGHTTP3_VERSION.zip || exit 1\n+        cd nghttp3-$NGHTTP3_VERSION\n+        mkdir build_dir\n+        cd build_dir\n+        MACOSX_DEPLOYMENT_TARGET=$min_osx_target SDKROOT=\"$SDKPATH\" cmake ../ -DENABLE_LIB_ONLY=1 || exit 1\n+        make $MAKE_BUILD_OPTS || exit 1\n+        $DO_MAKE_INSTALL || exit 1\n+        cd ../..\n+        touch nghttp3-$NGHTTP3_VERSION-done\n+    fi\n+}\n+\n+uninstall_nghttp3() {\n+    if [ ! -z \"$installed_nghttp3_version\" ] ; then\n+        echo \"Uninstalling nghttp3:\"\n+        cd nghttp3-$installed_nghttp3_version\n+        # nghttp3 does not provide `make uninstall`\n+        # but it leaves `install_manifest.txt` file\n+        # with the paths of installed files.\n+        cd build_dir\n+        [ -f install_manifest.txt ] || exit 1\n+        cat install_manifest.txt | while read -r FNAME ; do\n+            rm \"$FNAME\"\n+        done\n+        # One caveat is that the directories\n+        # $install_location/share/doc/nghttp3 and\n+        # $install_location/include/nghttp3\n+        # must be removed separately.\n+        egrep '/(doc|include)/nghttp3' install_manifest.txt | while read -r F ; do dirname \"$F\" ; done | sort -u | while read -r DIRNAME ; do\n+            rm -rf \"$DIRNAME\"\n+        done\n+        cd ../..\n+        rm nghttp3-$installed_nghttp3_version-done\n+\n+        if [ \"$#\" -eq 1 -a \"$1\" = \"-r\" ] ; then\n+            #\n+            # Get rid of the previously downloaded and unpacked version.\n+            #\n+            rm -rf nghttp3-$installed_nghttp3_version\n+            rm -rf nghttp3-$installed_nghttp3_version.zip\n+        fi\n+\n+        installed_nghttp3_version=\"\"\n+    fi\n+}\n+\n install_libtiff() {\n     if [ \"$LIBTIFF_VERSION\" -a ! -f tiff-$LIBTIFF_VERSION-done ] ; then\n         echo \"Downloading, building, and installing libtiff:\"\n@@ -2291,6 +2344,17 @@ install_all() {\n         uninstall_nghttp2 -r\n     fi\n \n+    if [ ! -z \"$installed_nghttp3_version\" -a \\\n+              \"$installed_nghttp3_version\" != \"$NGHTTP3_VERSION\" ] ; then\n+        echo \"Installed nghttp3 version is $installed_nghttp3_version\"\n+        if [ -z \"$NGHTTP3_VERSION\" ] ; then\n+            echo \"nghttp3 is not requested\"\n+        else\n+            echo \"Requested nghttp3 version is $NGHTTP3_VERSION\"\n+        fi\n+        uninstall_nghttp3 -r\n+    fi\n+\n     if [ ! -z \"$installed_libssh_version\" -a \\\n               \"$installed_libssh_version\" != \"$LIBSSH_VERSION\" ] ; then\n         echo \"Installed libssh version is $installed_libssh_version\"\n@@ -2764,6 +2828,8 @@ install_all() {\n \n     install_nghttp2\n \n+    install_nghttp3\n+\n     install_libtiff\n \n     install_spandsp\n@@ -2821,6 +2887,8 @@ uninstall_all() {\n \n         uninstall_nghttp2\n \n+        uninstall_nghttp3\n+\n         uninstall_libssh\n \n         uninstall_c_ares\n@@ -3022,6 +3090,7 @@ then\n     installed_cares_version=`ls c-ares-*-done 2>/dev/null | sed 's/c-ares-\\(.*\\)-done/\\1/'`\n     installed_libssh_version=`ls libssh-*-done 2>/dev/null | sed 's/libssh-\\(.*\\)-done/\\1/'`\n     installed_nghttp2_version=`ls nghttp2-*-done 2>/dev/null | sed 's/nghttp2-\\(.*\\)-done/\\1/'`\n+    installed_nghttp3_version=`ls nghttp3-*-done 2>/dev/null | sed 's/nghttp3-\\(.*\\)-done/\\1/'`\n     installed_libtiff_version=`ls tiff-*-done 2>/dev/null | sed 's/tiff-\\(.*\\)-done/\\1/'`\n     installed_spandsp_version=`ls spandsp-*-done 2>/dev/null | sed 's/spandsp-\\(.*\\)-done/\\1/'`\n     installed_speexdsp_version=`ls speexdsp-*-done 2>/dev/null | sed 's/speexdsp-\\(.*\\)-done/\\1/'`\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "tools/macos-setup.sh",
+      "old_path": "tools/macos-setup.sh",
+      "a_mode": "100755",
+      "b_mode": "100755",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+      "short_id": "97b18c47",
+      "created_at": "2020-12-21T18:11:42.000+00:00",
+      "parent_ids": [
+        "f9d8f22e70c3b969064a46b19517923a4f4d1db1"
+      ],
+      "title": "HTTP3: Using nghttp3 to decode HTTP3 headers",
+      "message": "HTTP3: Using nghttp3 to decode HTTP3 headers\n\nAddressed comments:\n\nhttps://gitlab.com/wireshark/wireshark/-/merge_requests/409#note_424651198\n\nnghttp3: update to latest master for further fixes, build libs only\n\nBuild library only without sample applications. Use latest master which\nhas additional fixes:\n\n    $ git log --abbrev=12 --oneline upstream/draft-28..upstream/master ':lib/nghttp3_qpack*'\n    73eed4768e7b s/Without Name Reference/With Literal Name/\n    c07e19fef3d2 Remove redundant stream object lookup\n    d9a6eaefed49 Fix Insert Without Name Reference encoding\n    5a3d225c477d Reduce qpack map size\n    c83b1fe8e75e Pre-compute hash of known headers which is not in stable table\n    6c926bb01b4c Only store known header fields to dynamic table for now\n\nhttp3: fix some -Wc++-compat warnings\n\nAddresses GCC 10.2.0 warnings:\n\n    epan/dissectors/packet-http3.c: In function ‘decode_http3_header_data’:\n    epan/dissectors/packet-http3.c:298:38: warning: request for implicit conversion from ‘void *’ to ‘http3_header_data *’ {aka ‘struct _http3_header_data *’} not permitted in C++ [-Wc++-compat]\n      298 |     http3_header_data *header_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_http3, 0);\n          |                                      ^~~~~~~~~~~~~~~~\n    epan/dissectors/packet-http3.c:311:25: warning: request for implicit conversion from ‘void *’ to ‘guint8 *’ {aka ‘unsigned char *’} not permitted in C++ [-Wc++-compat]\n      311 |         guint8 *pdata = tvb_memdup(wmem_file_scope(), tvb, offset, length);\n          |                         ^~~~~~~~~~\n    epan/dissectors/packet-http3.c: In function ‘dissect_http3_headers’:\n    epan/dissectors/packet-http3.c:400:43: warning: request for implicit conversion from ‘void *’ to ‘http3_header_field *’ {aka ‘struct _http3_header_field *’} not permitted in C++ [-Wc++-compat]\n      400 |             http3_header_field *dec_hdr = wmem_array_index(header_data->headers, i);\n          |                                           ^~~~~~~~~~~~~~~~\n    epan/dissectors/packet-http3.c:417:43: warning: request for implicit conversion from ‘void *’ to ‘http3_header_field *’ {aka ‘struct _http3_header_field *’} not permitted in C++ [-Wc++-compat]\n      417 |             http3_header_field *dec_hdr = wmem_array_index(header_data->headers, i);\n          |                                           ^~~~~~~~~~~~~~~~\n    epan/dissectors/packet-http3.c: In function ‘dissect_http3_qpack_enc’:\n    epan/dissectors/packet-http3.c:539:24: warning: request for implicit conversion from ‘void *’ to ‘const uint8_t *’ {aka ‘const unsigned char *’} not permitted in C++ [-Wc++-compat]\n      539 |         if ((qpack_buf = tvb_memdup(wmem_packet_scope(), tvb, offset, remaining)) != NULL) {\n          |                        ^\n\nPrints the HTTP header name/value pairs in the packet tree:\n\nQUIC IETF\nHypertext Transfer Protocol Version 3\nHypertext Transfer Protocol Version 3\n    QPACK encoder\n        [QPACK encoder instruction count: 2]\nHypertext Transfer Protocol Version 3\n    Type: HEADERS (0x0000000000000001)\n    Length: 10\n    [Header Length: 122]\n    [Header Count: 4]\n    Header: :status: 404\n        Name Length: 7\n        Name: :status\n        Value Length: 3\n        Value: 404\n    Header: server: nghttp3/ngtcp2 server\n        Name Length: 6\n        Name: server\n        Value Length: 21\n        Value: nghttp3/ngtcp2 server\n",
+      "author_name": "Omer Shapira",
+      "author_email": "omer.shapira@gmail.com",
+      "authored_date": "2020-10-05T16:24:45.000-07:00",
+      "committer_name": "Omer Shapira",
+      "committer_email": "omer.shapira@gmail.com",
+      "committed_date": "2020-12-21T18:11:42.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3"
+    },
+    {
+      "id": "f9d8f22e70c3b969064a46b19517923a4f4d1db1",
+      "short_id": "f9d8f22e",
+      "created_at": "2020-12-21T18:11:42.000+00:00",
+      "parent_ids": [
+        "e2593e20227e2482268f1e69e66537d8de4a6712"
+      ],
+      "title": "HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh",
+      "message": "HTTP3: adding libnghttp3 dependency to CMake and to tools/macos-setup.sh\n\nAddressed comments:\n\nhttps://gitlab.com/wireshark/wireshark/-/merge_requests/409#note_424651192\nhttps://gitlab.com/wireshark/wireshark/-/merge_requests/409#note_424743489\n",
+      "author_name": "Omer Shapira",
+      "author_email": "omer.shapira@gmail.com",
+      "authored_date": "2020-10-05T16:23:46.000-07:00",
+      "committer_name": "Omer Shapira",
+      "committer_email": "omer.shapira@gmail.com",
+      "committed_date": "2020-12-21T18:11:42.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/f9d8f22e70c3b969064a46b19517923a4f4d1db1"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 132283630,
+      "head_commit_sha": "97b18c4760bbeb4a2ba3e87545350b4fed0ae2f3",
+      "base_commit_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+      "start_commit_sha": "e2593e20227e2482268f1e69e66537d8de4a6712",
+      "created_at": "2020-12-21T18:11:44.298Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 117976567,
+      "head_commit_sha": "0e770d20988654e183e07caafbdd3600779703d4",
+      "base_commit_sha": "63714518dfd89daac881e5c6a95169906dbed3b7",
+      "start_commit_sha": "63714518dfd89daac881e5c6a95169906dbed3b7",
+      "created_at": "2020-10-14T00:40:55.529Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 117974893,
+      "head_commit_sha": "230abf02b870955622515c96a39c02443abdd213",
+      "base_commit_sha": "63714518dfd89daac881e5c6a95169906dbed3b7",
+      "start_commit_sha": "63714518dfd89daac881e5c6a95169906dbed3b7",
+      "created_at": "2020-10-14T00:09:55.270Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 117974623,
+      "head_commit_sha": "c0a18f63f06544155703bf587b48bc3a5e26c203",
+      "base_commit_sha": "63714518dfd89daac881e5c6a95169906dbed3b7",
+      "start_commit_sha": "63714518dfd89daac881e5c6a95169906dbed3b7",
+      "created_at": "2020-10-14T00:05:12.079Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 117365513,
+      "head_commit_sha": "1dd8bcfb412327e61073aab3c9cb588a86ec12a0",
+      "base_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "start_commit_sha": "0ca5484aed5191dc468be7b4df579b7c78050409",
+      "created_at": "2020-10-10T12:05:13.753Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 117049948,
+      "head_commit_sha": "4df8b0e2e2974f944b5acb47f321cd3d644ae790",
+      "base_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "start_commit_sha": "21c3bdff06205ec5710341bee90e77bd60fde8e9",
+      "created_at": "2020-10-08T18:09:09.539Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 116507685,
+      "head_commit_sha": "69bab9ab63ff56ecde40d25e05869527a1fa98e9",
+      "base_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "start_commit_sha": "fbdf48e024ae7876739f0c97fed83307f20727fb",
+      "created_at": "2020-10-06T17:31:08.415Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 116506818,
+      "head_commit_sha": "fd2e8cba7327177cce9bbb9fdec096a9f0b56f36",
+      "base_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "start_commit_sha": "fbdf48e024ae7876739f0c97fed83307f20727fb",
+      "created_at": "2020-10-06T17:27:57.770Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 116449006,
+      "head_commit_sha": "bf562863ca91a5872c56d2d8f33310468ae250cf",
+      "base_commit_sha": "0abf89ce4f534cc782808246c0b50509d333d245",
+      "start_commit_sha": "0abf89ce4f534cc782808246c0b50509d333d245",
+      "created_at": "2020-10-06T13:57:49.353Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 116392683,
+      "head_commit_sha": "ce98975feb8d03a4cf0fa0e49c3759d158f5110f",
+      "base_commit_sha": "557a64d9a98dd6ade175c292f5354b0a97d2ef55",
+      "start_commit_sha": "557a64d9a98dd6ade175c292f5354b0a97d2ef55",
+      "created_at": "2020-10-06T10:54:12.688Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 116273745,
+      "head_commit_sha": "e4fffc5c9833fb3fb29c2a3ef7cdd40ce6e6673e",
+      "base_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "start_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "created_at": "2020-10-05T23:24:59.659Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    },
+    {
+      "id": 116259480,
+      "head_commit_sha": "e8c5e5890611ebde73fd6b4bdffb7d92e122d20e",
+      "base_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "start_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "created_at": "2020-10-05T21:49:33.781Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "11",
+      "patch_id_sha": null
+    },
+    {
+      "id": 116251508,
+      "head_commit_sha": "b9d2f7584e7866640be10fc323d8a5dca188f500",
+      "base_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "start_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "created_at": "2020-10-05T20:37:08.805Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "10",
+      "patch_id_sha": null
+    },
+    {
+      "id": 116248341,
+      "head_commit_sha": "9e82b9eb2e794ea187c58d53a5fd302362062b6c",
+      "base_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "start_commit_sha": "fd85f6e9fca8797a5c3f7fd11da34aedafd19646",
+      "created_at": "2020-10-05T20:11:50.875Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "9",
+      "patch_id_sha": null
+    },
+    {
+      "id": 114249034,
+      "head_commit_sha": "0a893ada6160c923229b10b4f265aa750eb3b47d",
+      "base_commit_sha": "572c1ae5a36b35f13773b32cc127a6d538c1aae1",
+      "start_commit_sha": "572c1ae5a36b35f13773b32cc127a6d538c1aae1",
+      "created_at": "2020-09-25T03:42:00.567Z",
+      "merge_request_id": 72100297,
+      "state": "collected",
+      "real_size": "8",
+      "patch_id_sha": null
+    }
+  ]
+}

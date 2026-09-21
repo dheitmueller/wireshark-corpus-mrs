@@ -1,0 +1,209 @@
+{
+  "id": 69517021,
+  "iid": 97,
+  "project_id": 7898047,
+  "title": "Draft: EPL: fixed size detection  multiple r/w SDOs",
+  "description": "the size of the last segment of multiple r/w ASNDs was dissected with a mismatching size",
+  "state": "closed",
+  "created_at": "2020-09-02T12:02:05.783Z",
+  "updated_at": "2020-09-07T09:32:37.282Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "epl_multiRW_lastSegSize",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6726480,
+    "username": "christian.krump",
+    "public_email": "",
+    "name": "Christian Krump",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/3c3770f36f6e12374811ecd9d21417250256004bcc89598debdfe977b6c0c981?s=80&d=identicon",
+    "web_url": "https://gitlab.com/christian.krump"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": true,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": true,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "cannot_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "916334e2a6d8cbd27bacbdf46717ea0259d23c65",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2020-09-02T12:02:05.783Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!97",
+  "references": {
+    "short": "!97",
+    "relative": "!97",
+    "full": "wireshark/wireshark!97"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/97",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": true,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "d24674c4ae2a847c94d507d468d854250407207b",
+    "head_sha": "916334e2a6d8cbd27bacbdf46717ea0259d23c65",
+    "start_sha": "de115f6cd53c3de4dffe33132b645bc25523eae3"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "efe429804c169f21a442d64a48081017c59eef9b",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 408400560,
+          "type": null,
+          "body": "added 1 commit\n\n<ul><li>916334e2 - EPL: fixed size detection  multiple r/w SDOs</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/97/diffs?diff_id=110586098&start_sha=92c92badb6cd091b0d4aa63f3f3ebfd189f1fd5f)",
+          "author": {
+            "id": 6726480,
+            "username": "christian.krump",
+            "public_email": "",
+            "name": "Christian Krump",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/3c3770f36f6e12374811ecd9d21417250256004bcc89598debdfe977b6c0c981?s=80&d=identicon",
+            "web_url": "https://gitlab.com/christian.krump"
+          },
+          "created_at": "2020-09-07T09:28:37.072Z",
+          "updated_at": "2020-09-07T09:28:37.074Z",
+          "system": true,
+          "noteable_id": 69517021,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 97,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -47,6 +47,7 @@\n  *                       - usage of segment size during sdo (write by index) payload decoding process\n  *                       - set mapping-sections of sdo objects one level lower\n  *                       - dissect some additional (cable redundancy specific) flags\n+ *                       - fixed size detection of last segment in multiple read/write ASNDs\n  *\n  * A dissector for:\n  * Wireshark - Network traffic analyzer\n@@ -4348,6 +4349,7 @@ dissect_epl_sdo_command_write_multiple_by_index(struct epl_convo *convo, proto_t\n \tproto_tree *psf_od_tree;\n \tstruct object *obj = NULL;\n \tconst struct subobject *subobj = NULL;\n+\tguint16 segment_restsize = segment_size;\n \n \n \t/* Offset is calculated simply by only applying EPL payload offset, not packet offset.\n@@ -4378,45 +4380,38 @@ dissect_epl_sdo_command_write_multiple_by_index(struct epl_convo *convo, proto_t\n \t\t\t/* the data is aligned in 4-byte increments, therfore maximum padding is 3 */\n \t\t\tpadding = tvb_get_guint8 ( tvb, offset + 7 ) & 0x03;\n \n-\t\t\tdatalength = offsetincrement - ( offset - EPL_SOA_EPLV_OFFSET );\n \t\t\t/* An offset increment of zero usually indicates, that we are at the end\n \t\t\t * of the payload. But we cannot ignore the end, because packages are\n \t\t\t * stacked up until the last byte */\n-\t\t\tif ( offsetincrement == 0 )\n-\t\t\t\tdatalength = remlength - EPL_SOA_EPLV_OFFSET;\n-\n-\t\t\t/* Possible guint overflow */\n-\t\t\tif ( ( datalength + EPL_SOA_EPLV_OFFSET ) > remlength )\n-\t\t\t\tbreak;\n-\n-\t\t\t/* Last frame detected */\n-\t\t\tif ( offsetincrement == 0 )\n+\t\t\tif (offsetincrement == 0)\n \t\t\t{\n-\t\t\t\tdatalength = remlength;\n-\n-\t\t\t\t/* guarding size against remaining length */\n-\t\t\t\tif ( remlength < EPL_SOA_EPLV_OFFSET )\n-\t\t\t\t\tbreak;\n-\n-\t\t\t\tsize = remlength - EPL_SOA_EPLV_OFFSET - padding;\n+\t\t\t\tdatalength = segment_restsize;\n \t\t\t\tlastentry = TRUE;\n \t\t\t}\n \t\t\telse\n \t\t\t{\n-\t\t\t\t/* Each entry has a header size of 8, based on the following calculation:\n-\t\t\t\t *   - 4 byte for byte position of next data set\n-\t\t\t\t *   - 2 byte for index\n-\t\t\t\t *   - 1 byte for subindex\n-\t\t\t\t *   - 1 byte for reserved and padding */\n-\n-\t\t\t\t/* Guarding against readout of padding. Probability is nearly zero, as\n-\t\t\t\t * padding was checked above, but to be sure, this remains here */\n-\t\t\t\tif ( (guint32)( padding + 8 ) >= datalength )\n-\t\t\t\t\tbreak;\n-\n-\t\t\t\t/* size of data is datalength - ( entry header size and padding ) */\n-\t\t\t\tsize = datalength - 8 - padding;\n+\t\t\t\tdatalength = offsetincrement - (offset - EPL_SOA_EPLV_OFFSET);\n \t\t\t}\n+\t\t\t/* decrease restsize */\n+\t\t\tsegment_restsize -= datalength;\n+\n+\t\t\t/* Possible guint overflow */\n+\t\t\tif ( datalength > remlength )\n+\t\t\t\tbreak;\n+\n+\t\t\t/* Each entry has a header size of 8, based on the following calculation:\n+\t\t\t*   - 4 byte for byte position of next data set\n+\t\t\t*   - 2 byte for index\n+\t\t\t*   - 1 byte for subindex\n+\t\t\t*   - 1 byte for reserved and padding */\n+\n+\t\t\t/* Guarding against readout of padding. Probability is nearly zero, as\n+\t\t\t * padding was checked above, but to be sure, this remains here */\n+\t\t\tif ((guint32)(padding + 8) >= datalength)\n+\t\t\t\tbreak;\n+\n+\t\t\t/* size of data is datalength - ( entry header size and padding ) */\n+\t\t\tsize = datalength - 8 - padding;\n \n \t\t\tdataoffset = offset + 4;\n \n@@ -4689,6 +4684,7 @@ dissect_epl_sdo_command_read_multiple_by_index(struct epl_convo *convo, proto_tr\n \tstruct object *obj = NULL;\n \tconst struct subobject *subobj = NULL;\n \tconst char *name;\n+\tguint16 segment_restsize = segment_size;\n \n \t/* Offset is calculated simply by only applying EPL payload offset, not packet offset.\n \t* The packet offset is 16, as this is the number of bytes trailing the SDO payload.\n@@ -4720,45 +4716,38 @@ dissect_epl_sdo_command_read_multiple_by_index(struct epl_convo *convo, proto_tr\n \t\t\tif ((tvb_get_guint8 ( tvb, offset + 7 ) & 0x80) == 0x80)\n \t\t\t\tis_abort = TRUE;\n \n-\t\t\tdatalength = offsetincrement - ( offset - EPL_SOA_EPLV_OFFSET );\n-\t\t\t/* An offset increment of zero usually indicates, that we are at the end\n-\t\t\t * of the payload. But we cannot ignore the end, because packages are\n-\t\t\t * stacked up until the last byte */\n-\t\t\tif ( offsetincrement == 0 )\n-\t\t\t\tdatalength = remlength - EPL_SOA_EPLV_OFFSET;\n-\n-\t\t\t/* Possible guint overflow */\n-\t\t\tif ( ( datalength + EPL_SOA_EPLV_OFFSET ) > remlength )\n-\t\t\t\tbreak;\n-\n-\t\t\t/* Last frame detected */\n-\t\t\tif ( offsetincrement == 0 )\n+\t\t\t /* An offset increment of zero usually indicates, that we are at the end\n+\t\t\t  * of the payload. But we cannot ignore the end, because packages are\n+\t\t\t  * stacked up until the last byte */\n+\t\t\tif (offsetincrement == 0)\n \t\t\t{\n-\t\t\t\tdatalength = remlength;\n-\n-\t\t\t\t/* guarding size against remaining length */\n-\t\t\t\tif ( remlength < EPL_SOA_EPLV_OFFSET )\n-\t\t\t\t\tbreak;\n-\n-\t\t\t\tsize = remlength - EPL_SOA_EPLV_OFFSET - padding;\n+\t\t\t\tdatalength = segment_restsize;\n \t\t\t\tlastentry = TRUE;\n \t\t\t}\n \t\t\telse\n \t\t\t{\n-\t\t\t\t/* Each entry has a header size of 8, based on the following calculation:\n-\t\t\t\t *   - 4 byte for byte position of next data set\n-\t\t\t\t *   - 2 byte for index\n-\t\t\t\t *   - 1 byte for subindex\n-\t\t\t\t *   - 1 byte for reserved and padding */\n-\n-\t\t\t\t/* Guarding against readout of padding. Probability is nearly zero, as\n-\t\t\t\t * padding was checked above, but to be sure, this remains here */\n-\t\t\t\tif ( (guint32)( padding + 8 ) >= datalength )\n-\t\t\t\t\tbreak;\n-\n-\t\t\t\t/* size of data is datalength - ( entry header size and padding ) */\n-\t\t\t\tsize = datalength - 8 - padding;\n+\t\t\t\tdatalength = offsetincrement - (offset - EPL_SOA_EPLV_OFFSET);\n \t\t\t}\n+\t\t\t/* decrease restsize */\n+\t\t\tsegment_restsize -= datalength;\n+\n+\t\t\t/* Possible guint overflow */\n+\t\t\tif (datalength > remlength)\n+\t\t\t\tbreak;\n+\n+\t\t\t/* Each entry has a header size of 8, based on the following calculation:\n+\t\t\t*   - 4 byte for byte position of next data set\n+\t\t\t*   - 2 byte for index\n+\t\t\t*   - 1 byte for subindex\n+\t\t\t*   - 1 byte for reserved and padding */\n+\n+\t\t\t/* Guarding against readout of padding. Probability is nearly zero, as\n+\t\t\t * padding was checked above, but to be sure, this remains here */\n+\t\t\tif ((guint32)(padding + 8) >= datalength)\n+\t\t\t\tbreak;\n+\n+\t\t\t/* size of data is datalength - ( entry header size and padding ) */\n+\t\t\tsize = datalength - 8 - padding;\n \n \t\t\tdataoffset = offset + 4;\n \n@@ -5059,7 +5048,7 @@ dissect_epl_sdo_command_read_multiple_by_index(struct epl_convo *convo, proto_tr\n static gint\n dissect_epl_sdo_command_read_by_index(struct epl_convo *convo, proto_tree *epl_tree, tvbuff_t *tvb, packet_info *pinfo, gint offset, guint8 segmented, gboolean response, guint16 segment_size)\n {\n-\tgint size, payload_length;\n+\tgint size, payload_length, rem_size = 0;\n \tguint16 idx = 0x00;\n \tguint8 subindex = 0x00;\n \tguint32 fragmentId, frame;\n@@ -5213,7 +5202,17 @@ dissect_epl_sdo_command_read_by_index(struct epl_convo *convo, proto_tree *epl_t\n \n \t\t}\n \n-\t\toffset = dissect_epl_payload(epl_tree, tvb, pinfo, offset, size, type, EPL_ASND);\n+\t\t/* determine remaining SDO payload size (depends on segment size of current command) */\n+\t\tif (size > (segment_size - 4))\n+\t\t{\n+\t\t\trem_size = (segment_size - 4);\n+\t\t}\n+\t\telse\n+\t\t{\n+\t\t\trem_size = size;\n+\t\t}\n+\n+\t\toffset = dissect_epl_payload(epl_tree, tvb, pinfo, offset, rem_size, type, EPL_ASND);\n \t}\n \n \treturn offset;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-epl.c",
+      "old_path": "epan/dissectors/packet-epl.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "916334e2a6d8cbd27bacbdf46717ea0259d23c65",
+      "short_id": "916334e2",
+      "created_at": "2020-09-07T11:28:29.000+02:00",
+      "parent_ids": [
+        "92c92badb6cd091b0d4aa63f3f3ebfd189f1fd5f"
+      ],
+      "title": "EPL: fixed size detection  multiple r/w SDOs",
+      "message": "EPL: fixed size detection  multiple r/w SDOs\n\nthe size of the last segment of multiple r/w ASNDs was dissected with a mismatching size\n",
+      "author_name": "Christian Krump",
+      "author_email": "christian.krump@br-automation.com",
+      "authored_date": "2020-09-02T12:41:44.000+02:00",
+      "committer_name": "Christian Krump",
+      "committer_email": "christian.krump@br-automation.com",
+      "committed_date": "2020-09-07T11:28:29.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/916334e2a6d8cbd27bacbdf46717ea0259d23c65"
+    },
+    {
+      "id": "92c92badb6cd091b0d4aa63f3f3ebfd189f1fd5f",
+      "short_id": "92c92bad",
+      "created_at": "2020-09-02T13:44:36.000+02:00",
+      "parent_ids": [
+        "d24674c4ae2a847c94d507d468d854250407207b"
+      ],
+      "title": "EPL: fixed size detection  multiple r/w SDOs",
+      "message": "EPL: fixed size detection  multiple r/w SDOs\n\nthe size of the last segment of multiple r/w ASNDs was dissected with a mismatching size\n",
+      "author_name": "Christian Krump",
+      "author_email": "christian.krump@br-automation.com",
+      "authored_date": "2020-09-02T12:41:44.000+02:00",
+      "committer_name": "Christian Krump",
+      "committer_email": "christian.krump@br-automation.com",
+      "committed_date": "2020-09-02T13:44:36.000+02:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/92c92badb6cd091b0d4aa63f3f3ebfd189f1fd5f"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 110586098,
+      "head_commit_sha": "916334e2a6d8cbd27bacbdf46717ea0259d23c65",
+      "base_commit_sha": "d24674c4ae2a847c94d507d468d854250407207b",
+      "start_commit_sha": "de115f6cd53c3de4dffe33132b645bc25523eae3",
+      "created_at": "2020-09-07T09:28:35.382Z",
+      "merge_request_id": 69517021,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 109732237,
+      "head_commit_sha": "92c92badb6cd091b0d4aa63f3f3ebfd189f1fd5f",
+      "base_commit_sha": "d24674c4ae2a847c94d507d468d854250407207b",
+      "start_commit_sha": "83050495a7e6606b111239989de23da05780c72d",
+      "created_at": "2020-09-02T12:02:06.253Z",
+      "merge_request_id": 69517021,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

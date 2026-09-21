@@ -1,0 +1,182 @@
+{
+  "id": 87647513,
+  "iid": 1977,
+  "project_id": 7898047,
+  "title": "sharkd: Add configuration profile and other options",
+  "description": "This change adds code to allow the selection of a configuration\nprofile during sharkd start by adding a -C command line option.\nA new -a option has been added to specify the api service\nendpoint e.g. tcp:127.0.0.1:4446\n\nThe change also adds version display (-v) and help display (-h) options.\n\nThese additions have been made in a way to ensure that the original\ncommand line options still work correctly to maintain backward\ncompatibility.\n\nThe new options have been added using the getopt_long(...) function\nthat is used by tshark to simplify the addition of further command\nline options.\n\nCloses #17222",
+  "state": "closed",
+  "created_at": "2021-02-07T14:58:30.122Z",
+  "updated_at": "2021-02-07T15:39:51.320Z",
+  "merged_by": null,
+  "merge_user": null,
+  "merged_at": null,
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "master",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 7962216,
+    "username": "credible58",
+    "public_email": "",
+    "name": "Paul Offord",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/bd38ef935f0bdd6e4c9bb0f9b06cdeff47f03015a81db18e65c767eed6ca4440?s=80&d=identicon",
+    "web_url": "https://gitlab.com/credible58"
+  },
+  "assignees": [],
+  "assignee": null,
+  "reviewers": [],
+  "source_project_id": null,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "6fae825da0eb3bc534a330c0dbb1b1fc40786813",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": null,
+  "prepared_at": "2021-02-07T14:58:30.122Z",
+  "allow_collaboration": false,
+  "allow_maintainer_to_push": false,
+  "reference": "!1977",
+  "references": {
+    "short": "!1977",
+    "relative": "!1977",
+    "full": "wireshark/wireshark!1977"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/1977",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "4",
+  "latest_build_started_at": null,
+  "latest_build_finished_at": null,
+  "first_deployed_to_production_at": null,
+  "pipeline": null,
+  "head_pipeline": null,
+  "diff_refs": {
+    "base_sha": "85de5ed784dc340ce8497bc055e3c8b78a2e7926",
+    "head_sha": "6fae825da0eb3bc534a330c0dbb1b1fc40786813",
+    "start_sha": "f93f7d80b3706f3685151388ad930751f55881a8"
+  },
+  "merge_error": "Rebase failed. Please rebase locally",
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [],
+  "changes_data": [
+    {
+      "diff": "@@ -187,7 +187,7 @@ main(int argc, char *argv[])\n   uat_clear(uat_get_table_by_name(\"MaxMind Database Paths\"));\n #endif\n \n-  ret = sharkd_loop();\n+  ret = sharkd_loop(argc, argv);\n clean_exit:\n   col_cleanup(&cfile.cinfo);\n   free_filter_lists();\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd.c",
+      "old_path": "sharkd.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -20,6 +20,11 @@\n #define SHARKD_DISSECT_FLAG_PROTO_TREE 0x04u\n #define SHARKD_DISSECT_FLAG_COLOR      0x08u\n \n+#define SHARKD_MODE_CLASSIC_CONSOLE    1\n+#define SHARKD_MODE_CLASSIC_DAEMON     2\n+#define SHARKD_MODE_GOLD_CONSOLE       3\n+#define SHARKD_MODE_GOLD_DAEMON        4\n+\n typedef void (*sharkd_dissect_func_t)(epan_dissect_t *edt, proto_tree *tree, struct epan_column_info *cinfo, const GSList *data_src, void *data);\n \n /* sharkd.c */\n@@ -36,10 +41,10 @@ const char *sharkd_version(void);\n \n /* sharkd_daemon.c */\n int sharkd_init(int argc, char **argv);\n-int sharkd_loop(void);\n+int sharkd_loop(int argc, char* argv[]);\n \n /* sharkd_session.c */\n-int sharkd_session_main(void);\n+int sharkd_session_main(int mode_setting);\n \n #endif /* __SHARKD_H */\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd.h",
+      "old_path": "sharkd.h",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -32,6 +32,7 @@\n #include <wsutil/socket.h>\n #include <wsutil/inet_addr.h>\n #include <wsutil/please_report_bug.h>\n+#include <wsutil/wsgetopt.h>\n \n #ifndef _WIN32\n #include <sys/un.h>\n@@ -39,6 +40,7 @@\n #endif\n \n #include <wsutil/strtoi.h>\n+#include <version_info.h>\n \n #include \"sharkd.h\"\n \n@@ -50,7 +52,7 @@\n # define SHARKD_UNIX_SUPPORT\n #endif\n \n-static int _use_stdinout = 0;\n+static int mode = 0;\n static socket_handle_t _server_fd = INVALID_SOCKET;\n \n static socket_handle_t\n@@ -157,47 +159,186 @@ socket_init(char *path)\n \treturn fd;\n }\n \n+static void\n+print_usage(FILE* output)\n+{\n+\tfprintf(output, \"\\n\");\n+\tfprintf(output, \"Usage: sharkd [<classic_options>|<gold_options>]\\n\");\n+\n+\tfprintf(output, \"\\n\");\n+\tfprintf(output, \"Classic (classic_options):\\n\");\n+\tfprintf(output, \"  [-|<socket>]\\n\");\n+\tfprintf(output, \"\\n\");\n+\tfprintf(output, \"  <socket> examples:\\n\");\n+#ifdef SHARKD_UNIX_SUPPORT\n+\tfprintf(output, \"  - unix:/tmp/sharkd.sock - listen on unix file /tmp/sharkd.sock\\n\");\n+#endif\n+#ifdef SHARKD_TCP_SUPPORT\n+\tfprintf(output, \"  - tcp:127.0.0.1:4446 - listen on TCP port 4446\\n\");\n+#endif\n+\n+\tfprintf(output, \"\\n\");\n+\tfprintf(output, \"Gold (gold_options):\\n\");\n+\tfprintf(output, \"  -a <socket>, --api <socket>\\n\");\n+\tfprintf(output, \"                           listen on this socket\\n\");\n+\tfprintf(output, \"  -h, --help               show this help information\\n\");\n+\tfprintf(output, \"  -v, --version            show version information\\n\");\n+\tfprintf(output, \"  -C <config profile>, --config-profile <config profile>\\n\");\n+\tfprintf(output, \"                           start with specified configuration profile\\n\");\n+\n+\tfprintf(output, \"\\n\");\n+\tfprintf(output, \"  Examples:\\n\");\n+\tfprintf(output, \"    sharkd -C myprofile\\n\");\n+\tfprintf(output, \"    sharkd -a tcp:127.0.0.1:4446 -C myprofile\\n\");\n+\n+\tfprintf(output, \"\\n\");\n+\tfprintf(output, \"See the sharkd page of the Wireshark wiki for full details.\\n\");\n+\tfprintf(output, \"\\n\");\n+}\n+\n int\n sharkd_init(int argc, char **argv)\n {\n+\t/*\n+\t * The leading + ensures that getopt_long() does not permute the argv[]\n+\t * entries.\n+\t *\n+\t * We have to make sure that the first getopt_long() preserves the content\n+\t * of argv[] for the subsequent getopt_long() call.\n+\t *\n+\t * We use getopt_long() in both cases to ensure that we're using a routine\n+\t * whose permutation behavior we can control in the same fashion on all\n+\t * platforms, and so that, if we ever need to process a long argument before\n+\t * doing further initialization, we can do so.\n+\t *\n+\t * Glibc and Solaris libc document that a leading + disables permutation\n+\t * of options, regardless of whether POSIXLY_CORRECT is set or not; *BSD\n+\t * and macOS don't document it, but do so anyway.\n+\t *\n+\t * We do *not* use a leading - because the behavior of a leading - is\n+\t * platform-dependent.\n+\t */\n+\n+#define OPTSTRING \"+\" \"a:hmvC:\"\n+\n+\tstatic const char    optstring[] = OPTSTRING;\n+\n+\t// right now we don't have any long options\n+\tstatic const struct option long_options[] = {\n+\t  {\"api\", required_argument, NULL, 'a'},\n+\t  {\"help\", no_argument, NULL, 'h'},\n+\t  {\"version\", no_argument, NULL, 'v'},\n+\t  {\"config-profile\", required_argument, NULL, 'C'},\n+\t  {0, 0, 0, 0 }\n+\t};\n+\n+\tint opt;\n+\n #ifndef _WIN32\n \tpid_t pid;\n #endif\n \tsocket_handle_t fd;\n \n-\tif (argc != 2)\n+\tif (argc < 2)\n \t{\n-\t\tfprintf(stderr, \"Usage: %s <-|socket>\\n\", argv[0]);\n-\t\tfprintf(stderr, \"\\n\");\n-\n-\t\tfprintf(stderr, \"<socket> examples:\\n\");\n-#ifdef SHARKD_UNIX_SUPPORT\n-\t\tfprintf(stderr, \" - unix:/tmp/sharkd.sock - listen on unix file /tmp/sharkd.sock\\n\");\n-#endif\n-#ifdef SHARKD_TCP_SUPPORT\n-\t\tfprintf(stderr, \" - tcp:127.0.0.1:4446 - listen on TCP port 4446\\n\");\n-#endif\n-\t\tfprintf(stderr, \"\\n\");\n+\t\tprint_usage(stderr);\n \t\treturn -1;\n \t}\n \n+\t// check for classic command line\n+\tif (!strcmp(argv[1], \"-\") || argv[1][0] == 't' || argv[1][0] == 'u')\n+\t{\n+\t\tmode = SHARKD_MODE_CLASSIC_CONSOLE;\n+\n #ifndef _WIN32\n-\tsignal(SIGCHLD, SIG_IGN);\n+\t\tsignal(SIGCHLD, SIG_IGN);\n #endif\n \n-\tif (!strcmp(argv[1], \"-\"))\n-\t{\n-\t\t_use_stdinout = 1;\n+\t\tif (!strcmp(argv[1], \"-\"))\n+\t\t{\n+\t\t\tmode = SHARKD_MODE_CLASSIC_CONSOLE;\n+\t\t}\n+\t\telse\n+\t\t{\n+\t\t\tfd = socket_init(argv[1]);\n+\t\t\tif (fd == INVALID_SOCKET)\n+\t\t\t\treturn -1;\n+\t\t\t_server_fd = fd;\n+\t\t\tmode = SHARKD_MODE_CLASSIC_DAEMON;\n+\t\t}\n \t}\n \telse\n+\t\tmode = SHARKD_MODE_GOLD_CONSOLE;  // assume we are running as gold console\n+\n+\tif (mode >= SHARKD_MODE_GOLD_CONSOLE)\n \t{\n-\t\tfd = socket_init(argv[1]);\n-\t\tif (fd == INVALID_SOCKET)\n-\t\t\treturn -1;\n-\t\t_server_fd = fd;\n+\t\t/*\n+\t\t\tIn Daemon Mode, we will come through here twice; once when we start the Daemon and\n+\t\t\tonce again after we have forked the session process.  The second time through, the\n+\t\t\tsession process has already had its stdin and stdout wired up to the TCP or UNIX\n+\t\t\tsocket and so in the orignal version of sharkd the session process is invoked with\n+\t\t\tthe command line: sharkd -\n+\n+\t\t\tWhen not using the classic command line, we want to spawn the session process with\n+\t\t\tthe complete command line with all the new options but with the -a option and\n+\t\t\tparameter removed.  Invoking a second time with the -a option will cause a loop\n+\t\t\twhere we repeatedly spawn a new session process.\n+\t\t*/\n+\n+\t\tdo {\n+\t\t\tif (optind > (argc - 1))\n+\t\t\t\tbreak;\n+\n+\t\t\topt = getopt_long(argc, argv, optstring, long_options, NULL);\n+\n+\t\t\tswitch (opt) {\n+\t\t\tcase 'C':        /* Configuration Profile */\n+\t\t\t\tif (profile_exists(optarg, FALSE)) {\n+\t\t\t\t\tset_profile_name(optarg);  // In Daemon Mode, we may need to do this again in the child process\n+\t\t\t\t}\n+\t\t\t\telse {\n+\t\t\t\t\tfprintf(stderr, \"Configuration Profile \\\"%s\\\" does not exist\\n\", optarg);\n+\t\t\t\t\treturn -1;\n+\t\t\t\t}\n+\t\t\t\tbreak;\n+\n+\t\t\tcase 'a':\n+\t\t\t\tfd = socket_init(optarg);\n+\t\t\t\tif (fd == INVALID_SOCKET)\n+\t\t\t\t\treturn -1;\n+\t\t\t\t_server_fd = fd;\n+\n+\t\t\t\tfprintf(stderr, \"Sharkd listening on: %s\\n\", optarg);\n+\n+\t\t\t\tmode = SHARKD_MODE_GOLD_DAEMON;\n+\t\t\t\tbreak;\n+\n+\t\t\tcase 'h':\n+\t\t\t\tprint_usage(stderr);\n+\t\t\t\texit(0);\n+\t\t\t\tbreak;\n+\n+\t\t\tcase 'm':\n+\t\t\t\t// m is an internal-only option used when the daemon session process is created\n+\t\t\t\tmode = SHARKD_MODE_GOLD_CONSOLE;\n+\t\t\t\tbreak;\n+\n+\t\t\tcase 'v':         /* Show version and exit */\n+\t\t\t\tshow_version();\n+\t\t\t\texit(0);\n+\t\t\t\tbreak;\n+\n+\t\t\tdefault:\n+\t\t\t\tif (!optopt)\n+\t\t\t\t\tfprintf(stderr, \"This option isn't supported: %s\\n\", argv[optind]);\n+\t\t\t\tfprintf(stderr, \"Use sharkd -h for details of supported options\\n\");\n+\t\t\t\texit(0);\n+\t\t\t\tbreak;\n+\t\t\t}\n+\t\t} while (opt != -1);\n \t}\n \n-\tif (!_use_stdinout)\n+\tif (mode == SHARKD_MODE_CLASSIC_DAEMON || mode == SHARKD_MODE_GOLD_DAEMON)\n \t{\n \t\t/* all good - try to daemonize */\n #ifndef _WIN32\n@@ -217,11 +358,11 @@ sharkd_init(int argc, char **argv)\n }\n \n int\n-sharkd_loop(void)\n+sharkd_loop(int argc, char* argv[])\n {\n-\tif (_use_stdinout)\n+\tif (mode == SHARKD_MODE_CLASSIC_CONSOLE || mode == SHARKD_MODE_GOLD_CONSOLE)\n \t{\n-\t\treturn sharkd_session_main();\n+\t\treturn sharkd_session_main(mode);\n \t}\n \n \twhile (1)\n@@ -232,6 +373,7 @@ sharkd_loop(void)\n \t\tPROCESS_INFORMATION pi;\n \t\tSTARTUPINFO si;\n \t\tchar *exename;\n+\t\tchar command_line[2048];\n #endif\n \t\tsocket_handle_t fd;\n \n@@ -253,7 +395,7 @@ sharkd_loop(void)\n \t\t\tdup2(fd, 1);\n \t\t\tclose(fd);\n \n-\t\t\texit(sharkd_session_main());\n+\t\t\texit(sharkd_session_main(mode));\n \t\t}\n \n \t\tif (pid == -1)\n@@ -273,7 +415,38 @@ sharkd_loop(void)\n \n \t\texename = g_strdup_printf(\"%s\\\\%s\", get_progfile_dir(), \"sharkd.exe\");\n \n-\t\tif (!win32_create_process(exename, \"sharkd.exe -\", NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))\n+\t\t// we need to pass in all of the command line parameters except the -a parameter\n+\t\t// passing in -a at this point would could a loop, each iteration of which would generate a new session process\n+\t\tmemset(&command_line, 0, sizeof(command_line));\n+\n+\t\tif (mode <= SHARKD_MODE_CLASSIC_DAEMON)\n+\t\t{\n+\t\t\tg_strlcat(command_line, \"sharkd.exe -\", sizeof(command_line));\n+\t\t}\n+\t\telse\n+\t\t{\n+\t\t\t// The -m option used here is an internal-only option that notifies the child process that it should\n+\t\t\t// run in Gold Console mode\n+\t\t\tg_strlcat(command_line, \"sharkd.exe -m\", sizeof(command_line));\n+\n+\t\t\tfor (size_t i = 1; i < argc; i++)\n+\t\t\t{\n+\t\t\t\tif (\n+\t\t\t\t\t!g_ascii_strncasecmp(argv[i], \"-a\", (guint)strlen(argv[i]))\n+\t\t\t\t\t|| !g_ascii_strncasecmp(argv[i], \"--api\", (guint)strlen(argv[i]))\n+\t\t\t\t\t)\n+\t\t\t\t{\n+\t\t\t\t\ti++;  // skip the socket details\n+\t\t\t\t}\n+\t\t\t\telse\n+\t\t\t\t{\n+\t\t\t\t\tg_strlcat(command_line, \" \", sizeof(command_line));\n+\t\t\t\t\tg_strlcat(command_line, argv[i], sizeof(command_line));\n+\t\t\t\t}\n+\t\t\t}\n+\t\t}\n+\n+\t\tif (!win32_create_process(exename, command_line, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))\n \t\t{\n \t\t\tfprintf(stderr, \"win32_create_process(%s) failed\\n\", exename);\n \t\t}\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd_daemon.c",
+      "old_path": "sharkd_daemon.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    },
+    {
+      "diff": "@@ -80,6 +80,9 @@ struct sharkd_filter_item\n \n static GHashTable *filter_table = NULL;\n \n+static int mode;\n+gboolean extended_log = FALSE;\n+\n static json_dumper dumper = {0};\n \n static const char *\n@@ -4251,12 +4254,14 @@ sharkd_session_process(char *buf, const jsmntok_t *tokens, int count)\n }\n \n int\n-sharkd_session_main(void)\n+sharkd_session_main(int mode_setting)\n {\n \tchar buf[2 * 1024];\n \tjsmntok_t *tokens = NULL;\n \tint tokens_max = -1;\n \n+\tmode = mode_setting;\n+\n \tfprintf(stderr, \"Hello in child.\\n\");\n \n \tdumper.output_file = stdout;\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "sharkd_session.c",
+      "old_path": "sharkd_session.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "6fae825da0eb3bc534a330c0dbb1b1fc40786813",
+      "short_id": "6fae825d",
+      "created_at": "2021-02-07T14:43:57.000+00:00",
+      "parent_ids": [
+        "85de5ed784dc340ce8497bc055e3c8b78a2e7926"
+      ],
+      "title": "sharkd: Add configuration profile and other options",
+      "message": "sharkd: Add configuration profile and other options\n\nThis change adds code to allow the selection of a configuration\nprofile during sharkd start by adding a -C command line option.\nA new -a option has been added to specify the api service\nendpoint e.g. tcp:127.0.0.1:4446\n\nThe change also adds version display (-v) and help display (-h) options.\n\nThese additions have been made in a way to ensure that the original\ncommand line options still work correctly to maintain backward\ncompatibility.\n\nThe new options have been added using the getopt_long(...) function\nthat is used by tshark to simplify the addition of further command\nline options.\n\nCloses #17222\n",
+      "author_name": "Paul Offord",
+      "author_email": "paul.offord58@gmail.com",
+      "authored_date": "2021-02-07T14:43:57.000+00:00",
+      "committer_name": "Paul Offord",
+      "committer_email": "paul.offord58@gmail.com",
+      "committed_date": "2021-02-07T14:43:57.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/6fae825da0eb3bc534a330c0dbb1b1fc40786813"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 141373509,
+      "head_commit_sha": "6fae825da0eb3bc534a330c0dbb1b1fc40786813",
+      "base_commit_sha": "85de5ed784dc340ce8497bc055e3c8b78a2e7926",
+      "start_commit_sha": "f93f7d80b3706f3685151388ad930751f55881a8",
+      "created_at": "2021-02-07T14:58:30.779Z",
+      "merge_request_id": 87647513,
+      "state": "collected",
+      "real_size": "4",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,683 @@
+{
+  "id": 105397247,
+  "iid": 3444,
+  "project_id": 7898047,
+  "title": "ipsec: refactor the decryption and dissection of ESP packets",
+  "description": "# Introduction\n\nThis merge request started as a simple attempt to fix the decryption and dissection of AES-GCM encrypted ESP packages: The ipsec dissector did not strip the ICV from the decrypted payload correctly, in fact it didn't consider the ICV length at all. As a consequence, it failed to recognize the protocol type of the decrypted packet correctly (which is stored in the last byte of the decrypted payload). Most of the times it would find an invalid protocol number and simply show a raw hex dump, sometimes it would find a random protocol and dissect it as garbage.\n\nAfter a while I noticed that in order to implement full blown AES-GCM decryption support (i.e., support for AEAD ciphers with verification of the ICV) it would be necessary to refactor the somewhat convoluted ipsec dissector (`packet-ipsec.c`) implementation following the example of the isakmp dissector (`packet-isakmp.c`), which was simpler and straighforward and already had a functional AES-GCM support for IKEv2. As a side effect of the refactoring, also the dissection of the existing 'classical' encryption methods with separate authentication has improved a lot.\n\n**The following screen shots demonstrate the changes by comparing the dissector old and new dissector output. For a detailed description of the changes please read the commit messages from bottom to top.**\n\n*This is my first merge request for the Wireshark project, so please bear with me if I failed to respect some Coding Guidelines. Also, in some cases I am still a bit unsure how to react correctly to error conditions (throw exception, add tree item, add expert item, ...) in order to maximize the user experience. So I'm looking forward to your feedback and suggestions for improvement.*\n\n\n# Examples\n\nThe following packet captures can be found as [SampleCaptures in the Wireshark Wiki](https://gitlab.com/mspncp/wireshark/-/wikis/SampleCaptures).\n\n## [IPsec - Example 2:  Dissection of encrypted (and UDP-encapsulated) IKEv2 and ESP messages](https://gitlab.com/mspncp/wireshark/-/wikis/SampleCaptures#example-2-dissection-of-encrypted-and-udp-encapsulated-ikev2-and-esp-messages)\n\nThe screenshots below were created using the archive:\n\n* **ipsec_ikev2+esp_aes-gcm,aes-ctr,aes-cbc.tgz**\n\nA **VPN client** (192.168.245.131) behind a NAT device connects three times to a **VPN gateway** (172.16.15.92) using IKEv2, sends some pings through the VPN tunnel (192.168.225.0/24) to the gateway (192.168.225.1), which are returned successfully, and disconnects. The three connections differ by the AES operation modes (AES-GCM, AES-CTR, and AES-CBC, in that order) used for encrypting the IKE_AUTH and ESP messages:\n\n| Nr | Encryption                          | Authentication             |\n| -- | ------------------------------------| -------------------------- |\n|  1 | AES-GCM with 16 octet ICV [RFC4106] | NULL                       |\n|  2 | AES-CTR [RFC3686]                   | HMAC-SHA-256-128 [RFC4868] |\n|  3 | AES-CBC [RFC3602]                   | HMAC-SHA-256-128 [RFC4868] |\n\nThe entire conversation (IKE+ESP) is sent UDP-encapsulated on port 4500.\n\nThe archive contains : \n\n- **capture.pcap**: the packet capture file\n- **esp_sa**: the decryption table for the ESP SAs\n- **ikev2_decryption_table**: the decryption table for the IKEv2 SAs\n\n\nNote that to load the example with your own Wireshark copy, you either need to  replace `AES-GCM with 16 octet ICV [RFC4106]` -> `AES-GCM [RFC4106]` or patch your working copy with commit d6557271.\n\n## [IPsec - Example 1: ESP Payload Decryption and Authentication Checking Examples](https://gitlab.com/mspncp/wireshark/-/wikis/SampleCaptures#example-1-esp-payload-decryption-and-authentication-checking-examples)\n\nThose historic examples from 2006 were updated by me(*) and can be used to verify that my refactoring did not break the decryption of older ciphers. \n\n(*) _Essentially, I converted the old Ethereal SA settings into Wireshark decryption tables (`esp_sa`), otherwise they are unchanged._\n\n\n# Screen Shots\n\n## AES-GCM\n\n### old\n\n![aes-gcm-old](/uploads/523feeb3da3c3d326adcf02167a05033/aes-gcm-old.png)\n\n### new\n\n![aes-gcm-new](/uploads/709dda901e25d143d58b3093fda227f4/aes-gcm-new.png)\n\n## AES-CTR\n\n### old\n\n![aes-ctr-old](/uploads/b7405c5c78ecfb7b3488fc2cbf1b8981/aes-ctr-old.png)\n\n### new\n\n![aes-ctr-new](/uploads/40720f91f2c0af159d7ec6b906fcfca7/aes-ctr-new.png)\n\n## AES-CBC\n\n### old\n\n![aes-cbc-old](/uploads/6ac0c01ea97d1181deedb6165f12c6b1/aes-cbc-old.png)\n\n### new\n\n![aes-cbc-new](/uploads/6d4d7b68add0eb1512c41fd70fa1c5e7/aes-cbc-new.png)",
+  "state": "merged",
+  "created_at": "2021-06-22T22:37:50.447Z",
+  "updated_at": "2021-06-28T08:20:57.901Z",
+  "merged_by": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merge_user": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "merged_at": "2021-06-24T20:56:03.737Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "ipsec-refactor-esp-decryption",
+  "user_notes_count": 1,
+  "upvotes": 1,
+  "downvotes": 0,
+  "author": {
+    "id": 5551705,
+    "username": "mspncp",
+    "public_email": "",
+    "name": "Matthias St. Pierre",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/b3123d9574916986285f6ac929edb3b776525afd0b4196e61e5126867de764c6?s=80&d=identicon",
+    "web_url": "https://gitlab.com/mspncp"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 27031091,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": false,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "3ce390a8f94e211025612a9ffe04c8bd508f7766",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": null,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-06-22T22:37:50.447Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!3444",
+  "references": {
+    "short": "!3444",
+    "relative": "!3444",
+    "full": "wireshark/wireshark!3444"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/3444",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2021-06-24T20:39:28.395Z",
+  "latest_build_finished_at": "2021-06-24T20:55:59.309Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 326861590,
+    "iid": 18000,
+    "project_id": 7898047,
+    "sha": "3ce390a8f94e211025612a9ffe04c8bd508f7766",
+    "ref": "refs/merge-requests/3444/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-06-24T20:39:25.165Z",
+    "updated_at": "2021-06-24T20:55:59.317Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/326861590"
+  },
+  "head_pipeline": {
+    "id": 326861590,
+    "iid": 18000,
+    "project_id": 7898047,
+    "sha": "3ce390a8f94e211025612a9ffe04c8bd508f7766",
+    "ref": "refs/merge-requests/3444/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-06-24T20:39:25.165Z",
+    "updated_at": "2021-06-24T20:55:59.317Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/326861590",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    },
+    "started_at": "2021-06-24T20:39:28.395Z",
+    "finished_at": "2021-06-24T20:55:59.309Z",
+    "committed_at": null,
+    "duration": 990,
+    "queued_duration": 3,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/326861590",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "18f6c8b05814f9e4a5f707a71b5fd98fc3e3f3cf",
+    "head_sha": "3ce390a8f94e211025612a9ffe04c8bd508f7766",
+    "start_sha": "18f6c8b05814f9e4a5f707a71b5fd98fc3e3f3cf"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "33ddd69b8bd01089c91d0c586b4e5cee51c3eaf8",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 608595323,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5551705,
+            "username": "mspncp",
+            "public_email": "",
+            "name": "Matthias St. Pierre",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b3123d9574916986285f6ac929edb3b776525afd0b4196e61e5126867de764c6?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mspncp"
+          },
+          "created_at": "2021-06-22T23:03:38.770Z",
+          "updated_at": "2021-06-22T23:03:38.772Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "eefdab6f5d24a24979517d861fdb34a27c503b6e",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 610971111,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5551705,
+            "username": "mspncp",
+            "public_email": "",
+            "name": "Matthias St. Pierre",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b3123d9574916986285f6ac929edb3b776525afd0b4196e61e5126867de764c6?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mspncp"
+          },
+          "created_at": "2021-06-24T17:07:35.236Z",
+          "updated_at": "2021-06-24T17:07:35.238Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "0e244c1c06d5d02e1b4f5df5f095f81879e46fb2",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 610972030,
+          "type": null,
+          "body": "added 25 commits\n\n<ul><li>b7f9f884...0112c9b7 - 20 commits from branch <code>wireshark:master</code></li><li>d7247eb0 - ipsec: add encryption types for AES-GCM with 8,12,16 octet ICV</li><li>ae16430c - ipsec: rename some variables in the packet-ipsec.c</li><li>93bd8aad - ipsec: refactor the decryption and dissection of ESP packets</li><li>1b4023d1 - ipsec: implement ICV verification for AEAD ciphers</li><li>e3a7a61a - ipsec: display the encryption and authentication algorithm names</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/3444/diffs?diff_id=205884868&start_sha=b7f9f884c4e840e2a4953dfc5d90f25c25d006df)",
+          "author": {
+            "id": 5551705,
+            "username": "mspncp",
+            "public_email": "",
+            "name": "Matthias St. Pierre",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b3123d9574916986285f6ac929edb3b776525afd0b4196e61e5126867de764c6?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mspncp"
+          },
+          "created_at": "2021-06-24T17:08:25.597Z",
+          "updated_at": "2021-06-24T17:08:25.599Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "e1a5008c92bedc5ecf0479f8b450b7be95d54724",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 610975986,
+          "type": null,
+          "body": "I moved the sample captures to the Wireshark Wiki as promised and updated the description accordingly.\n\nI also rebased the MR to the tip of the master branch without further changes, since no review is in progress yet.",
+          "author": {
+            "id": 5551705,
+            "username": "mspncp",
+            "public_email": "",
+            "name": "Matthias St. Pierre",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b3123d9574916986285f6ac929edb3b776525afd0b4196e61e5126867de764c6?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mspncp"
+          },
+          "created_at": "2021-06-24T17:10:24.453Z",
+          "updated_at": "2021-06-24T17:10:40.789Z",
+          "system": false,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "f91dbace02fc96b2461ef6cb5a582cc07409a995",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 610983653,
+          "type": null,
+          "body": "changed the description",
+          "author": {
+            "id": 5551705,
+            "username": "mspncp",
+            "public_email": "",
+            "name": "Matthias St. Pierre",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b3123d9574916986285f6ac929edb3b776525afd0b4196e61e5126867de764c6?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mspncp"
+          },
+          "created_at": "2021-06-24T17:18:12.922Z",
+          "updated_at": "2021-06-24T17:18:12.924Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "febf24d6ce89d4ebdffe2e22324ef72aea6ce36d",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 611092873,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-06-24T20:38:56.489Z",
+          "updated_at": "2021-06-24T20:38:56.491Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "2ba65d211bf1fbc5e3c7f2cf0ed7988ca9f14e40",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 611092963,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 6792385,
+            "username": "AndersBroman",
+            "public_email": "",
+            "name": "AndersBroman",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/132fb48f26018ea9516aea909144af3c3a94eaf2ba477efaa9a232abe80d322c?s=80&d=identicon",
+            "web_url": "https://gitlab.com/AndersBroman"
+          },
+          "created_at": "2021-06-24T20:39:08.920Z",
+          "updated_at": "2021-06-24T20:39:08.922Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "d5c0417f036102256e689078fd2f2d7ca7200d44",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 611093061,
+          "type": null,
+          "body": "added 6 commits\n\n<ul><li>18f6c8b0 - 1 commit from branch <code>wireshark:master</code></li><li>23ef4733 - ipsec: add encryption types for AES-GCM with 8,12,16 octet ICV</li><li>c5f1fbd1 - ipsec: rename some variables in the packet-ipsec.c</li><li>70a93118 - ipsec: refactor the decryption and dissection of ESP packets</li><li>1d38a72d - ipsec: implement ICV verification for AEAD ciphers</li><li>3ce390a8 - ipsec: display the encryption and authentication algorithm names</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/3444/diffs?diff_id=205960802&start_sha=e3a7a61a96e63a2ccc624e5d7d4b701425bf9118)",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2021-06-24T20:39:24.148Z",
+          "updated_at": "2021-06-24T20:39:24.150Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "3643394337a9eecc12ddfd4ff1102ced24780fa9",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 611093087,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6629907,
+            "username": "ws-gitlab-utility",
+            "public_email": "",
+            "name": "A Wireshark GitLab Utility",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+            "web_url": "https://gitlab.com/ws-gitlab-utility"
+          },
+          "created_at": "2021-06-24T20:39:29.117Z",
+          "updated_at": "2021-06-24T20:39:29.118Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "de5d55ad4a355ca2c422b70176d1dd12fc3f7b51",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 612706768,
+          "type": null,
+          "body": "mentioned in merge request !3480",
+          "author": {
+            "id": 5551705,
+            "username": "mspncp",
+            "public_email": "",
+            "name": "Matthias St. Pierre",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/b3123d9574916986285f6ac929edb3b776525afd0b4196e61e5126867de764c6?s=80&d=identicon",
+            "web_url": "https://gitlab.com/mspncp"
+          },
+          "created_at": "2021-06-28T08:20:57.874Z",
+          "updated_at": "2021-06-28T08:20:57.875Z",
+          "system": true,
+          "noteable_id": 105397247,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 3444,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -71,6 +71,7 @@ ADD: Additional generic (non-checked) ICV length of 128, 192 and 256.\n \n #include <stdio.h>\n #include <epan/uat.h>\n+#include <wsutil/str_util.h>\n #include <wsutil/wsgcrypt.h>\n \n #include \"packet-ipsec.h\"\n@@ -89,13 +90,16 @@ static int hf_ah_sequence = -1;\n static int proto_esp = -1;\n static int hf_esp_spi = -1;\n static int hf_esp_iv = -1;\n+static int hf_esp_icv = -1;\n static int hf_esp_icv_good = -1;\n static int hf_esp_icv_bad = -1;\n static int hf_esp_sequence = -1;\n+static int hf_esp_encrypted_data = -1;\n+static int hf_esp_decrypted_data = -1;\n+static int hf_esp_contained_data = -1;\n static int hf_esp_pad = -1;\n static int hf_esp_pad_len = -1;\n static int hf_esp_protocol = -1;\n-static int hf_esp_authentication_data = -1;\n static int hf_esp_sequence_analysis_expected_sn = -1;\n static int hf_esp_sequence_analysis_previous_frame = -1;\n \n@@ -107,6 +111,7 @@ static int hf_ipcomp_cpi = -1;\n static gint ett_ah = -1;\n static gint ett_esp = -1;\n static gint ett_esp_icv = -1;\n+static gint ett_esp_decrypted_data = -1;\n static gint ett_ipcomp = -1;\n \n static expert_field ei_esp_sequence_analysis_wrong_sequence_number = EI_INIT;\n@@ -130,8 +135,11 @@ static dissector_table_t ip_dissector_table;\n /* Encryption algorithm defined in RFC 2144 */\n #define IPSEC_ENCRYPT_CAST5_CBC 7\n \n-/* Encryption algorithm defined in RFC 4106 */\n-#define IPSEC_ENCRYPT_AES_GCM 8\n+/* Encryption algorithms defined in RFC 4106 */\n+#define IPSEC_ENCRYPT_AES_GCM     8\n+#define IPSEC_ENCRYPT_AES_GCM_8   9\n+#define IPSEC_ENCRYPT_AES_GCM_12  10\n+#define IPSEC_ENCRYPT_AES_GCM_16  11\n \n /* Authentication algorithms defined in RFC 4305 */\n #define IPSEC_AUTH_NULL 0\n@@ -149,6 +157,11 @@ static dissector_table_t ip_dissector_table;\n #define IPSEC_AUTH_ANY_192BIT 11\n #define IPSEC_AUTH_ANY_256BIT 12\n \n+/* ICV types (not an RFC classification) */\n+#define ICV_TYPE_UNCHECKED 0  /* ICV is not verified */\n+#define ICV_TYPE_HMAC 1       /* ICV is verified before decryption using an HMAC */\n+#define ICV_TYPE_AEAD 2       /* ICV is verified during decryption using an AEAD cipher */\n+\n #define IPSEC_IPV6_ADDR_LEN 128\n #define IPSEC_IPV4_ADDR_LEN 32\n #define IPSEC_STRLEN_IPV6 32\n@@ -175,7 +188,57 @@ static const value_string cpi2val[] = {\n   { 0, NULL },\n };\n \n-#define NEW_ESP_DATA_SIZE       8\n+/* The length of the two fields (SPI and Sequence Number) preceding the Payload Data */\n+#define ESP_HEADER_LEN 8\n+\n+\n+static const value_string esp_encryption_type_vals[] = {\n+  { IPSEC_ENCRYPT_NULL, \"NULL\" },\n+  { IPSEC_ENCRYPT_3DES_CBC, \"TripleDES-CBC [RFC2451]\" },\n+  { IPSEC_ENCRYPT_AES_CBC, \"AES-CBC [RFC3602]\" },\n+  { IPSEC_ENCRYPT_AES_CTR, \"AES-CTR [RFC3686]\" },\n+  { IPSEC_ENCRYPT_DES_CBC, \"DES-CBC [RFC2405]\" },\n+  { IPSEC_ENCRYPT_CAST5_CBC, \"CAST5-CBC [RFC2144]\" },\n+  { IPSEC_ENCRYPT_BLOWFISH_CBC, \"BLOWFISH-CBC [RFC2451]\" },\n+  { IPSEC_ENCRYPT_TWOFISH_CBC, \"TWOFISH-CBC\" },\n+  { IPSEC_ENCRYPT_AES_GCM,    \"AES-GCM [RFC4106]\" }, /* deprecated; (no ICV length specified) */\n+  { IPSEC_ENCRYPT_AES_GCM_8,  \"AES-GCM with 8 octet ICV [RFC4106]\" },\n+  { IPSEC_ENCRYPT_AES_GCM_12, \"AES-GCM with 12 octet ICV [RFC4106]\" },\n+  { IPSEC_ENCRYPT_AES_GCM_16, \"AES-GCM with 16 octet ICV [RFC4106]\" },\n+  { 0x00, NULL }\n+};\n+\n+static const char *\n+esp_get_encr_algo_name(gint esp_encr_algo)\n+{\n+  return esp_encryption_type_vals[esp_encr_algo].strptr;\n+}\n+\n+\n+static const value_string esp_authentication_type_vals[] = {\n+  { IPSEC_AUTH_NULL, \"NULL\" },\n+  { IPSEC_AUTH_HMAC_SHA1_96, \"HMAC-SHA-1-96 [RFC2404]\" },\n+  { IPSEC_AUTH_HMAC_SHA256_96, \"HMAC-SHA-256-96 [draft-ietf-ipsec-ciph-sha-256-00]\" },\n+  { IPSEC_AUTH_HMAC_SHA256_128, \"HMAC-SHA-256-128 [RFC4868]\" },\n+  { IPSEC_AUTH_HMAC_SHA384_192, \"HMAC-SHA-384-192 [RFC4868]\" },\n+  { IPSEC_AUTH_HMAC_SHA512_256, \"HMAC-SHA-512-256 [RFC4868]\" },\n+  { IPSEC_AUTH_HMAC_MD5_96, \"HMAC-MD5-96 [RFC2403]\" },\n+  { IPSEC_AUTH_HMAC_RIPEMD160_96, \"MAC-RIPEMD-160-96 [RFC2857]\" },\n+  /*    { IPSEC_AUTH_AES_XCBC_MAC_96, \"AES-XCBC-MAC-96 [RFC3566]\" }, */\n+  { IPSEC_AUTH_ANY_64BIT, \"ANY 64 bit authentication [no checking]\" },\n+  { IPSEC_AUTH_ANY_96BIT, \"ANY 96 bit authentication [no checking]\" },\n+  { IPSEC_AUTH_ANY_128BIT, \"ANY 128 bit authentication [no checking]\" },\n+  { IPSEC_AUTH_ANY_192BIT, \"ANY 192 bit authentication [no checking]\" },\n+  { IPSEC_AUTH_ANY_256BIT, \"ANY 256 bit authentication [no checking]\" },\n+  { 0x00, NULL }\n+};\n+\n+static const char *\n+esp_get_auth_algo_name(gint esp_auth_algo)\n+{\n+  return esp_authentication_type_vals[esp_auth_algo].strptr;\n+}\n+\n \n /*-------------------------------------\n  * UAT for ESP\n@@ -430,8 +493,8 @@ void esp_sa_record_add_from_dissector(guint8 protocol, const gchar *srcIP, const\n    }\n    else {\n       /* No room left!! */\n-      fprintf(stderr, \"<IPsec/ESP Dissector> Failed to add UE as already have max (%d) configured\\n\",\n-              MAX_EXTRA_SA_RECORDS);\n+      REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Failed to add UE as already have max (%d) configured\\n\",\n+                           MAX_EXTRA_SA_RECORDS);\n       return;\n    }\n \n@@ -1223,82 +1286,11 @@ dissect_ah(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)\n   return tvb_captured_length(tvb);\n }\n \n-/*\n-Name : dissect_esp_authentication(proto_tree *tree, tvbuff_t *tvb, gint len, gint esp_auth_len, guint8 *authenticator_data_computed,\n-gboolean authentication_ok, gboolean authentication_checking_ok)\n-Description : used to print Authenticator field when linked with libgcrypt. Print the expected authenticator value\n-if requested and if it is wrong.\n-Return : void\n-Params:\n-- proto_tree *tree : the current tree\n-- tvbuff_t *tvb : the tvbuffer\n-- gint len : length of the data available in tvbuff\n-- gint esp_auth_len : size of authenticator field\n-- guint8 *authenticator_data_computed : give the authenticator computed (only needed when authentication_ok and !authentication_checking_ok\n-- gboolean authentication_ok : set to true if the authentication checking has been run successfully\n-- gboolean authentication_checking_ok : set to true if the authentication was the one expected\n-*/\n-static void\n-dissect_esp_authentication(proto_tree *tree, tvbuff_t *tvb, gint len, gint esp_auth_len, guint8 *authenticator_data_computed,\n-                           gboolean authentication_ok, gboolean authentication_checking_ok)\n-{\n-  proto_item *item;\n-  proto_tree *icv_tree;\n-  gboolean good = FALSE, bad = FALSE;\n-\n-  if(esp_auth_len == 0)\n-  {\n-    icv_tree = proto_tree_add_subtree(tree, tvb, len, 0,\n-                               ett_esp_icv, NULL, \"NULL Authentication\");\n-    good = TRUE;\n-  }\n-\n-  /* Make sure we have the auth trailer data */\n-  else if(tvb_bytes_exist(tvb, len - esp_auth_len, esp_auth_len))\n-  {\n-    if((authentication_ok) && (authentication_checking_ok))\n-    {\n-      icv_tree = proto_tree_add_subtree(tree, tvb, len - esp_auth_len, esp_auth_len,\n-                                 ett_esp_icv, NULL, \"Authentication Data [correct]\");\n-      good = TRUE;\n-    }\n-\n-    else if((authentication_ok) && (!authentication_checking_ok))\n-    {\n-      icv_tree = proto_tree_add_subtree_format(tree, tvb, len - esp_auth_len, esp_auth_len,\n-                                 ett_esp_icv, NULL, \"Authentication Data [incorrect, should be 0x%s]\", authenticator_data_computed);\n-      bad = TRUE;\n-    }\n-\n-    else\n-        icv_tree = proto_tree_add_subtree(tree, tvb, len - esp_auth_len, esp_auth_len,\n-                                    ett_esp_icv, NULL, \"Authentication Data\");\n-  }\n-  else\n-  {\n-    /* Truncated so just display what we have */\n-    icv_tree = proto_tree_add_subtree(tree, tvb, len - esp_auth_len, esp_auth_len - (len - tvb_captured_length(tvb)),\n-                               ett_esp_icv, NULL, \"Authentication Data (truncated)\");\n-    bad = TRUE;\n-  }\n-\n-  item = proto_tree_add_boolean(icv_tree, hf_esp_icv_good,\n-                                tvb, len - esp_auth_len, esp_auth_len, good);\n-  proto_item_set_generated(item);\n-\n-  item = proto_tree_add_boolean(icv_tree, hf_esp_icv_bad,\n-                                tvb, len - esp_auth_len, esp_auth_len, bad);\n-  proto_item_set_generated(item);\n-}\n-\n static int\n dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n {\n-  proto_tree *esp_tree = NULL;\n-  proto_item *ti;\n-  gint len = 0;\n-\n-  gint i;\n+  proto_tree *esp_tree = NULL, *decr_tree = NULL, *icv_tree = NULL;\n+  proto_item *item = NULL, *icv_item = NULL;\n \n   /* Packet Variables related */\n   gchar *ip_src = NULL;\n@@ -1312,45 +1304,47 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n   guint32 saved_match_uint;\n \n   gboolean null_encryption_decode_heuristic = FALSE;\n-  guint8 *decrypted_data = NULL;\n-  guint8 *authenticator_data = NULL;\n-  guint8 *esp_data = NULL;\n-  tvbuff_t *tvb_decrypted;\n+  guint8 *esp_iv = NULL;\n+  guint8 *esp_encr_data = NULL;\n+  guint8 *esp_decr_data = NULL;\n+  guint8 *esp_icv = NULL;\n+  tvbuff_t *tvb_decrypted = NULL;\n \n   /* IPSEC encryption Variables related */\n   gint protocol_typ = IPSEC_SA_UNKNOWN;\n-  gint esp_crypt_algo = IPSEC_ENCRYPT_NULL;\n+  gint esp_encr_algo = IPSEC_ENCRYPT_NULL;\n   gint esp_auth_algo = IPSEC_AUTH_NULL;\n-  gchar *esp_crypt_key = NULL;\n+  gint icv_type = ICV_TYPE_UNCHECKED;\n+  gchar *esp_encr_key = NULL;\n   gchar *esp_auth_key = NULL;\n-  guint esp_crypt_key_len = 0;\n+  guint esp_encr_key_len = 0;\n   guint esp_auth_key_len = 0;\n   gcry_cipher_hd_t *cipher_hd;\n   gboolean         *cipher_hd_created;\n \n+  gint offset = 0;\n+  gint esp_packet_len = 0;\n   gint esp_iv_len = 0;\n-  gint esp_auth_len = 0;\n-  gint decrypted_len = 0;\n+  gint esp_encr_data_len = 0;\n+  gint esp_decr_data_len = 0;\n+  gint esp_icv_len = 0;\n+  gint esp_salt_len = 0;\n   gboolean decrypt_ok = FALSE;\n   gboolean decrypt_using_libgcrypt = FALSE;\n-  gboolean authentication_check_using_hmac_libgcrypt = FALSE;\n-  gboolean authentication_ok = FALSE;\n-  gboolean authentication_checking_ok = FALSE;\n+  gboolean icv_checked = FALSE;\n+  gboolean icv_correct = FALSE;\n   gboolean sad_is_present = FALSE;\n   gint esp_pad_len = 0;\n \n \n   /* Variables for decryption and authentication checking used for libgrypt */\n-  int decrypted_len_alloc = 0;\n   gcry_md_hd_t md_hd;\n   int md_len = 0;\n   gcry_error_t err = 0;\n   int crypt_algo_libgcrypt = 0;\n   int crypt_mode_libgcrypt = 0;\n   int auth_algo_libgcrypt = 0;\n-  unsigned char *authenticator_data_computed = NULL;\n-  unsigned char *authenticator_data_computed_md;\n-\n+  gchar *esp_icv_expected = NULL; /* as readable hex string, for error messages */\n   unsigned char ctr_block[16];\n \n \n@@ -1368,12 +1362,8 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n    * populate a tree in the second pane with the status of the link layer\n    * (ie none)\n    */\n-  len = 0;\n-  encapsulated_protocol = 0;\n-  decrypt_dissect_ok = FALSE;\n-\n-  ti = proto_tree_add_item(tree, proto_esp, tvb, 0, -1, ENC_NA);\n-  esp_tree = proto_item_add_subtree(ti, ett_esp);\n+  item = proto_tree_add_item(tree, proto_esp, tvb, 0, -1, ENC_NA);\n+  esp_tree = proto_item_add_subtree(item, ett_esp);\n   proto_tree_add_item_ret_uint(esp_tree, hf_esp_spi, tvb,\n                       0, 4, ENC_BIG_ENDIAN, &spi);\n   proto_tree_add_item_ret_uint(esp_tree, hf_esp_sequence, tvb,\n@@ -1390,6 +1380,15 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n                            tvb, esp_tree, pinfo);\n   }\n \n+  esp_packet_len = tvb_reported_length(tvb);\n+\n+  /* Get length of remaining ESP packet (without the header) */\n+  esp_encr_data_len = esp_packet_len - ESP_HEADER_LEN;\n+  if (esp_encr_data_len <= 0)\n+    return tvb_captured_length(tvb);\n+\n+  offset = ESP_HEADER_LEN;\n+\n   /* The SAD is not activated */\n   if(g_esp_enable_null_encryption_decode_heuristic &&\n      !g_esp_enable_encryption_decode)\n@@ -1422,36 +1421,34 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n     */\n \n     if((sad_is_present = get_esp_sa(protocol_typ, ip_src, ip_dst, spi,\n-                                    &esp_crypt_algo, &esp_auth_algo,\n-                                    &esp_crypt_key, &esp_crypt_key_len, &esp_auth_key, &esp_auth_key_len,\n+                                    &esp_encr_algo, &esp_auth_algo,\n+                                    &esp_encr_key, &esp_encr_key_len, &esp_auth_key, &esp_auth_key_len,\n                                     &cipher_hd, &cipher_hd_created)))\n     {\n-      /* Get length of whole ESP packet. */\n-      len = tvb_reported_length(tvb);\n \n       switch(esp_auth_algo)\n       {\n       case IPSEC_AUTH_NULL:\n-        esp_auth_len = 0;\n+        esp_icv_len = 0;\n         break;\n \n       case IPSEC_AUTH_ANY_64BIT:\n-        esp_auth_len = 8;\n+        esp_icv_len = 8;\n         break;\n \n       case IPSEC_AUTH_HMAC_SHA256_128:\n       case IPSEC_AUTH_ANY_128BIT:\n-        esp_auth_len = 16;\n+        esp_icv_len = 16;\n         break;\n \n       case IPSEC_AUTH_HMAC_SHA512_256:\n       case IPSEC_AUTH_ANY_256BIT:\n-        esp_auth_len = 32;\n+        esp_icv_len = 32;\n         break;\n \n       case IPSEC_AUTH_HMAC_SHA384_192:\n       case IPSEC_AUTH_ANY_192BIT:\n-        esp_auth_len = 24;\n+        esp_icv_len = 24;\n         break;\n \n       case IPSEC_AUTH_HMAC_SHA1_96:\n@@ -1461,10 +1458,31 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n       case IPSEC_AUTH_HMAC_RIPEMD160_96:\n       case IPSEC_AUTH_ANY_96BIT:\n       default:\n-        esp_auth_len = 12;\n+        esp_icv_len = 12;\n         break;\n       }\n \n+      switch(esp_encr_algo)\n+      {\n+      case IPSEC_ENCRYPT_AES_GCM_8:\n+        esp_encr_algo = IPSEC_ENCRYPT_AES_GCM;\n+        esp_icv_len = 8;\n+        break;\n+\n+      case IPSEC_ENCRYPT_AES_GCM_12:\n+        esp_encr_algo = IPSEC_ENCRYPT_AES_GCM;\n+        esp_icv_len = 12;\n+        break;\n+\n+      case IPSEC_ENCRYPT_AES_GCM_16:\n+        esp_encr_algo = IPSEC_ENCRYPT_AES_GCM;\n+        esp_icv_len = 16;\n+        break;\n+\n+      case IPSEC_ENCRYPT_AES_GCM:\n+        esp_icv_len = 0;\n+      }\n+\n       if(g_esp_enable_authentication_check)\n       {\n         switch(esp_auth_algo)\n@@ -1479,18 +1497,15 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n             are to be used by HMAC-SHA-1-96).  A key length of\n             160-bits was chosen based on the recommendations in\n             [RFC-2104] (i.e. key lengths less than the\n-            authenticator length decrease security strength and\n-            keys longer than the authenticator length do not\n+            authentication length decrease security strength and\n+            keys longer than the authentication length do not\n             significantly increase security strength).\n           */\n           auth_algo_libgcrypt = GCRY_MD_SHA1;\n-          authentication_check_using_hmac_libgcrypt = TRUE;\n+          icv_type = ICV_TYPE_HMAC;\n           break;\n \n         case IPSEC_AUTH_NULL:\n-          authentication_check_using_hmac_libgcrypt = FALSE;\n-          authentication_checking_ok = TRUE;\n-          authentication_ok = TRUE;\n           break;\n \n           /*\n@@ -1503,17 +1518,17 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n         case IPSEC_AUTH_HMAC_SHA256_96:\n         case IPSEC_AUTH_HMAC_SHA256_128:\n           auth_algo_libgcrypt = GCRY_MD_SHA256;\n-          authentication_check_using_hmac_libgcrypt = TRUE;\n+          icv_type = ICV_TYPE_HMAC;\n           break;\n \n         case IPSEC_AUTH_HMAC_SHA384_192:\n           auth_algo_libgcrypt = GCRY_MD_SHA384;\n-          authentication_check_using_hmac_libgcrypt = TRUE;\n+          icv_type = ICV_TYPE_HMAC;\n           break;\n \n         case IPSEC_AUTH_HMAC_SHA512_256:\n           auth_algo_libgcrypt = GCRY_MD_SHA512;\n-          authentication_check_using_hmac_libgcrypt = TRUE;\n+          icv_type = ICV_TYPE_HMAC;\n           break;\n \n         case IPSEC_AUTH_HMAC_MD5_96:\n@@ -1526,24 +1541,24 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n             are to be used by HMAC-MD5-96).  A key length of\n             128-bits was chosen based on the recommendations in\n             [RFC-2104] (i.e. key lengths less than the\n-            authenticator length decrease security strength and\n-            keys longer than the authenticator length do not\n+            authentication code length decrease security strength and\n+            keys longer than the authentication code length do not\n             significantly increase security strength).\n           */\n           auth_algo_libgcrypt = GCRY_MD_MD5;\n-          authentication_check_using_hmac_libgcrypt = TRUE;\n+          icv_type = ICV_TYPE_HMAC;\n           break;\n \n         case IPSEC_AUTH_HMAC_RIPEMD160_96:\n           /*\n             RFC 2857 : HMAC-RIPEMD-160-96 produces a 160-bit\n-            authenticator value.  This 160-bit value can be\n+            authentication code.  This 160-bit value can be\n             truncated as described in RFC2104.  For use with\n             either ESP or AH, a truncated value using the first\n             96 bits MUST be supported.\n           */\n           auth_algo_libgcrypt = GCRY_MD_RMD160;\n-          authentication_check_using_hmac_libgcrypt = TRUE;\n+          icv_type = ICV_TYPE_HMAC;\n           break;\n \n         case IPSEC_AUTH_ANY_64BIT:\n@@ -1552,79 +1567,57 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n         case IPSEC_AUTH_ANY_192BIT:\n         case IPSEC_AUTH_ANY_256BIT:\n         default:\n-          authentication_ok = FALSE;\n-          authentication_check_using_hmac_libgcrypt = FALSE;\n           break;\n-\n         }\n \n-        if((authentication_check_using_hmac_libgcrypt) && (!authentication_ok))\n+        if(icv_type == ICV_TYPE_HMAC)\n         {\n-          /* Allocate Buffers for Authenticator Field  */\n-          authenticator_data = (guint8 *)wmem_alloc0(wmem_packet_scope(), esp_auth_len + 1);\n-          tvb_memcpy(tvb, authenticator_data, len - esp_auth_len, esp_auth_len);\n-\n-          esp_data = (guint8 *)wmem_alloc0(wmem_packet_scope(), len - esp_auth_len + 1);\n-          tvb_memcpy(tvb, esp_data, 0, len - esp_auth_len);\n+          /* Allocate buffer for ICV  */\n+          esp_icv = (guint8 *)tvb_memdup(wmem_packet_scope(), tvb, esp_packet_len - esp_icv_len, esp_icv_len);\n \n           err = gcry_md_open (&md_hd, auth_algo_libgcrypt, GCRY_MD_FLAG_HMAC);\n           if (err)\n           {\n-            fprintf (stderr, \"<IPsec/ESP Dissector> Error in Algorithm %s, gcry_md_open failed: %s\\n\",\n-                     gcry_md_algo_name(auth_algo_libgcrypt), gcry_strerror(err));\n-            authentication_ok = FALSE;\n+            gcry_md_close(md_hd);\n+            REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s, gcry_md_open failed: %s\\n\",\n+                                 gcry_md_algo_name(auth_algo_libgcrypt), gcry_strerror(err));\n           }\n           else\n           {\n             md_len = gcry_md_get_algo_dlen (auth_algo_libgcrypt);\n-            if (md_len < 1 || md_len < esp_auth_len)\n+            if (md_len < 1 || md_len < esp_icv_len)\n             {\n-              fprintf (stderr, \"<IPsec/ESP Dissector> Error in Algorithm %s, grcy_md_get_algo_dlen failed: %d\\n\",\n-                       gcry_md_algo_name(auth_algo_libgcrypt), md_len);\n-              authentication_ok = FALSE;\n+              gcry_md_close(md_hd);\n+              REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s, grcy_md_get_algo_dlen failed: %d\\n\",\n+                                   gcry_md_algo_name(auth_algo_libgcrypt), md_len);\n             }\n             else\n             {\n+              unsigned char *esp_icv_computed;\n+\n               gcry_md_setkey( md_hd, esp_auth_key, esp_auth_key_len );\n \n-              gcry_md_write (md_hd, esp_data, len - esp_auth_len);\n+              gcry_md_write (md_hd, tvb_get_ptr(tvb, 0, esp_packet_len - esp_icv_len), esp_packet_len - esp_icv_len);\n \n-              authenticator_data_computed_md = gcry_md_read (md_hd, auth_algo_libgcrypt);\n-              if (authenticator_data_computed_md == 0)\n+              esp_icv_computed = gcry_md_read (md_hd, auth_algo_libgcrypt);\n+              if (esp_icv_computed == 0)\n               {\n-                fprintf (stderr, \"<IPsec/ESP Dissector> Error in Algorithm %s, gcry_md_read failed\\n\",\n-                         gcry_md_algo_name(auth_algo_libgcrypt));\n-                authentication_ok = FALSE;\n+                gcry_md_close(md_hd);\n+                REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s, gcry_md_read failed\\n\",\n+                                     gcry_md_algo_name(auth_algo_libgcrypt));\n               }\n-              else\n-              {\n-                if(memcmp (authenticator_data_computed_md, authenticator_data, esp_auth_len))\n-                {\n-                  /* XXX - just use bytes_to_str() or is string too big? */\n-                  unsigned char authenticator_data_computed_car[3];\n-                  authenticator_data_computed = (guint8 *)wmem_alloc(wmem_packet_scope(), esp_auth_len * 2 + 1);\n-                  for (i = 0; i < esp_auth_len; i++)\n-                  {\n-                    g_snprintf((char *)authenticator_data_computed_car, 3,\n-                               \"%02X\", authenticator_data_computed_md[i] & 0xFF);\n-                    authenticator_data_computed[i*2] = authenticator_data_computed_car[0];\n-                    authenticator_data_computed[i*2 + 1] = authenticator_data_computed_car[1];\n-                  }\n-\n-                  authenticator_data_computed[esp_auth_len * 2] ='\\0';\n \n-                  authentication_ok = TRUE;\n-                  authentication_checking_ok = FALSE;\n-                }\n-                else\n-                {\n-                  authentication_ok = TRUE;\n-                  authentication_checking_ok = TRUE;\n-                }\n+              if(memcmp (esp_icv_computed, esp_icv, esp_icv_len) == 0) {\n+                icv_checked = TRUE;\n+                icv_correct = TRUE;\n+              } else {\n+                icv_checked = TRUE;\n+                icv_correct = FALSE;\n+                esp_icv_expected = bytes_to_str(wmem_packet_scope(), esp_icv_computed, esp_icv_len);\n               }\n             }\n \n-            gcry_md_close (md_hd);\n+            gcry_md_close(md_hd);\n           }\n         }\n       }\n@@ -1634,7 +1627,7 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n         /* Deactivation of the Heuristic to decrypt using the NULL encryption algorithm since the packet is matching a SA */\n         null_encryption_decode_heuristic = FALSE;\n \n-        switch(esp_crypt_algo)\n+        switch(esp_encr_algo)\n         {\n         case IPSEC_ENCRYPT_3DES_CBC :\n           /* RFC 2451 says :\n@@ -1652,27 +1645,16 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n           crypt_algo_libgcrypt = GCRY_CIPHER_3DES;\n           crypt_mode_libgcrypt = GCRY_CIPHER_MODE_CBC;\n \n-          decrypted_len = len - 8;\n-\n-          if (decrypted_len <= 0)\n-            decrypt_ok = FALSE;\n-          else\n+          if (esp_encr_key_len != gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt))\n           {\n-            if(decrypted_len % esp_iv_len  == 0)\n-              decrypted_len_alloc = decrypted_len;\n-            else\n-              decrypted_len_alloc = (decrypted_len / esp_iv_len) * esp_iv_len + esp_iv_len;\n-\n-            if (esp_crypt_key_len != gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt))\n-            {\n-              fprintf (stderr, \"<ESP Preferences> Error in Encryption Algorithm 3DES-CBC : Bad Keylen (got %u Bits, need %lu)\\n\",\n-                       esp_crypt_key_len * 8,\n-                       (unsigned long) gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt) * 8);\n+              REPORT_DISSECTOR_BUG(\"<ESP Preferences> Error in Encryption Algorithm 3DES-CBC : Bad Keylen (got %u Bits, need %lu)\\n\",\n+                                   esp_encr_key_len * 8,\n+                                   (unsigned long) gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt) * 8);\n               decrypt_ok = FALSE;\n-            }\n-            else\n-              decrypt_using_libgcrypt = TRUE;\n           }\n+          else\n+            decrypt_using_libgcrypt = TRUE;\n+\n           break;\n \n         case IPSEC_ENCRYPT_AES_CBC :\n@@ -1687,40 +1669,29 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n           esp_iv_len = 16;\n           crypt_mode_libgcrypt = GCRY_CIPHER_MODE_CBC;\n \n-          decrypted_len = len - 8;\n-\n-          if (decrypted_len <= 0)\n-            decrypt_ok = FALSE;\n-          else\n+          switch(esp_encr_key_len * 8)\n           {\n-            if(decrypted_len % esp_iv_len  == 0)\n-              decrypted_len_alloc = decrypted_len;\n-            else\n-              decrypted_len_alloc = (decrypted_len / esp_iv_len) * esp_iv_len + esp_iv_len;\n+          case 128:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_AES128;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n \n-            switch(esp_crypt_key_len * 8)\n-            {\n-            case 128:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_AES128;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-\n-            case 192:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_AES192;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-\n-            case 256:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_AES256;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-\n-            default:\n-              fprintf (stderr, \"<ESP Preferences> Error in Encryption Algorithm AES-CBC : Bad Keylen (%u Bits)\\n\",\n-                       esp_crypt_key_len * 8);\n-              decrypt_ok = FALSE;\n-            }\n+          case 192:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_AES192;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n+\n+          case 256:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_AES256;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n+\n+          default:\n+            REPORT_DISSECTOR_BUG(\"<ESP Preferences> Error in Encryption Algorithm AES-CBC : Bad Keylen (%u Bits)\\n\",\n+                                 esp_encr_key_len * 8);\n+            decrypt_ok = FALSE;\n           }\n+\n           break;\n \n         case IPSEC_ENCRYPT_CAST5_CBC :\n@@ -1728,35 +1699,23 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n              The CAST-128 encryption algorithm has been designed to allow a key\n              size that can vary from 40 bits to 128 bits, in 8-bit increments\n              (that is, the allowable key sizes are 40, 48, 56, 64, ..., 112, 120,\n-             and 128 bits.\n+             and 128 bits.)\n              We support only 128 bits. */\n \n           /* Fix parameters for CAST5-CBC */\n           esp_iv_len = 8;\n           crypt_mode_libgcrypt = GCRY_CIPHER_MODE_CBC;\n \n-          decrypted_len = len - 8;\n-\n-          if (decrypted_len <= 0)\n-            decrypt_ok = FALSE;\n-          else\n+          switch(esp_encr_key_len * 8)\n           {\n-            if(decrypted_len % esp_iv_len  == 0)\n-              decrypted_len_alloc = decrypted_len;\n-            else\n-              decrypted_len_alloc = (decrypted_len / esp_iv_len) * esp_iv_len + esp_iv_len;\n-\n-            switch(esp_crypt_key_len * 8)\n-            {\n-            case 128:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_CAST5;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-            default:\n-              fprintf (stderr, \"<ESP Preferences> Error in Encryption Algorithm CAST5-CBC : Bad Keylen (%u Bits)\\n\",\n-                       esp_crypt_key_len * 8);\n-              decrypt_ok = FALSE;\n-            }\n+          case 128:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_CAST5;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n+          default:\n+            REPORT_DISSECTOR_BUG(\"<ESP Preferences> Error in Encryption Algorithm CAST5-CBC : Bad Keylen (%u Bits)\\n\",\n+                                 esp_encr_key_len * 8);\n+            decrypt_ok = FALSE;\n           }\n           break;\n \n@@ -1772,26 +1731,16 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n           esp_iv_len = 8;\n           crypt_algo_libgcrypt = GCRY_CIPHER_DES;\n           crypt_mode_libgcrypt = GCRY_CIPHER_MODE_CBC;\n-          decrypted_len = len - 8;\n \n-          if (decrypted_len <= 0)\n+          if (esp_encr_key_len != gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt))\n+          {\n+            REPORT_DISSECTOR_BUG(\"<ESP Preferences> Error in Encryption Algorithm DES-CBC : Bad Keylen (%u Bits, need %lu)\\n\",\n+                                 esp_encr_key_len * 8, (unsigned long) gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt) * 8);\n             decrypt_ok = FALSE;\n+          }\n           else\n-          {\n-            if(decrypted_len % esp_iv_len == 0)\n-              decrypted_len_alloc = decrypted_len;\n-            else\n-              decrypted_len_alloc = (decrypted_len / esp_iv_len) * esp_iv_len + esp_iv_len;\n+            decrypt_using_libgcrypt = TRUE;\n \n-            if (esp_crypt_key_len != gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt))\n-            {\n-              fprintf (stderr, \"<ESP Preferences> Error in Encryption Algorithm DES-CBC : Bad Keylen (%u Bits, need %lu)\\n\",\n-                       esp_crypt_key_len * 8, (unsigned long) gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt) * 8);\n-              decrypt_ok = FALSE;\n-            }\n-            else\n-              decrypt_using_libgcrypt = TRUE;\n-          }\n           break;\n \n         case IPSEC_ENCRYPT_AES_CTR :\n@@ -1804,44 +1753,49 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n              of 192 bits and 256 bits. The remaining 32 bits\n              will be used as nonce. */\n \n-          /* Fix parameters for AES-CTR */\n+          /* Fix parameters for AES-CTR/AES-GCM */\n           esp_iv_len = 8;\n+          /* The counter mode key includes a 4 byte nonce following the key, which is used as the salt */\n+          esp_salt_len = 4;\n+          esp_encr_key_len -= esp_salt_len;\n+\n+#ifdef HAVE_LIBGCRYPT_AEAD\n+          crypt_mode_libgcrypt =\n+            (esp_encr_algo == IPSEC_ENCRYPT_AES_CTR) ? GCRY_CIPHER_MODE_CTR : GCRY_CIPHER_MODE_GCM;\n+#else\n           crypt_mode_libgcrypt = GCRY_CIPHER_MODE_CTR;\n+#endif\n+          switch(esp_encr_key_len * 8)\n+          {\n+          case 128:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_AES128;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n+\n+          case 192:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_AES192;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n \n-          decrypted_len = len - 8;\n+          case 256:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_AES256;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n \n-          if (decrypted_len <= 0)\n+          default:\n+            REPORT_DISSECTOR_BUG(\"<ESP Preferences> Error in Encryption Algorithm %s : Bad Keylen (%u Bits)\\n\",\n+                                 (esp_encr_algo == IPSEC_ENCRYPT_AES_CTR)  ? \"AES-CTR\" : \"AES-GCM\",\n+                                 esp_encr_key_len * 8);\n             decrypt_ok = FALSE;\n-          else\n-          {\n-            if(decrypted_len % esp_iv_len  == 0)\n-              decrypted_len_alloc = decrypted_len;\n-            else\n-              decrypted_len_alloc = (decrypted_len / esp_iv_len) * esp_iv_len + esp_iv_len;\n+          }\n \n-            switch(esp_crypt_key_len * 8)\n-            {\n-            case 160:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_AES128;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-\n-            case 224:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_AES192;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-\n-            case 288:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_AES256;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-\n-            default:\n-              fprintf (stderr, \"<ESP Preferences> Error in Encryption Algorithm AES-CTR / AES-GCM : Bad Keylen (%u Bits)\\n\",\n-                       esp_crypt_key_len * 8);\n-              decrypt_ok = FALSE;\n+          if (esp_encr_algo == IPSEC_ENCRYPT_AES_GCM) {\n+            if (esp_auth_algo != IPSEC_AUTH_NULL) {\n+              REPORT_DISSECTOR_BUG(\"<ESP Preferences> Error: AES-GCM encryption can only be used with NULL authentication\\n\");\n             }\n+            icv_type = ICV_TYPE_AEAD;\n           }\n+\n           break;\n \n         case IPSEC_ENCRYPT_TWOFISH_CBC :\n@@ -1855,34 +1809,22 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n           esp_iv_len = 16;\n           crypt_mode_libgcrypt = GCRY_CIPHER_MODE_CBC;\n \n-          decrypted_len = len - 8;\n-\n-          if (decrypted_len <= 0)\n-            decrypt_ok = FALSE;\n-          else\n+          switch(esp_encr_key_len * 8)\n           {\n-            if(decrypted_len % esp_iv_len  == 0)\n-              decrypted_len_alloc = decrypted_len;\n-            else\n-              decrypted_len_alloc = (decrypted_len / esp_iv_len) * esp_iv_len + esp_iv_len;\n+          case 128:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_TWOFISH128;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n \n-            switch(esp_crypt_key_len * 8)\n-            {\n-            case 128:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_TWOFISH128;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-\n-            case 256:\n-              crypt_algo_libgcrypt = GCRY_CIPHER_TWOFISH;\n-              decrypt_using_libgcrypt = TRUE;\n-              break;\n-\n-            default:\n-              fprintf (stderr, \"<ESP Preferences> Error in Encryption Algorithm TWOFISH-CBC : Bad Keylen (%u Bits)\\n\",\n-                       esp_crypt_key_len * 8);\n-              decrypt_ok = FALSE;\n-            }\n+          case 256:\n+            crypt_algo_libgcrypt = GCRY_CIPHER_TWOFISH;\n+            decrypt_using_libgcrypt = TRUE;\n+            break;\n+\n+          default:\n+            REPORT_DISSECTOR_BUG(\"<ESP Preferences> Error in Encryption Algorithm TWOFISH-CBC : Bad Keylen (%u Bits)\\n\",\n+                                 esp_encr_key_len * 8);\n+            decrypt_ok = FALSE;\n           }\n \n           break;\n@@ -1901,81 +1843,126 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n           crypt_algo_libgcrypt = GCRY_CIPHER_BLOWFISH;\n           crypt_mode_libgcrypt = GCRY_CIPHER_MODE_CBC;\n \n-          decrypted_len = len - 8;\n-\n-          if (decrypted_len <= 0)\n+          if (esp_encr_key_len != gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt))\n+          {\n+            REPORT_DISSECTOR_BUG(\"<ESP Preferences> Error in Encryption Algorithm BLOWFISH-CBC : Bad Keylen (%u Bits, need %lu)\\n\",\n+                                 esp_encr_key_len * 8, (unsigned long) gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt) * 8);\n             decrypt_ok = FALSE;\n+          }\n           else\n-          {\n-            if(decrypted_len % esp_iv_len  == 0)\n-              decrypted_len_alloc = decrypted_len;\n-            else\n-              decrypted_len_alloc = (decrypted_len / esp_iv_len) * esp_iv_len + esp_iv_len;\n+            decrypt_using_libgcrypt = TRUE;\n \n-            if (esp_crypt_key_len != gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt))\n-            {\n-              fprintf (stderr, \"<ESP Preferences> Error in Encryption Algorithm BLOWFISH-CBC : Bad Keylen (%u Bits, need %lu)\\n\",\n-                       esp_crypt_key_len * 8, (unsigned long) gcry_cipher_get_algo_keylen (crypt_algo_libgcrypt) * 8);\n-              decrypt_ok = FALSE;\n-            }\n-            else\n-              decrypt_using_libgcrypt = TRUE;\n-          }\n           break;\n \n         case IPSEC_ENCRYPT_NULL :\n         default :\n           /* Fix parameters */\n           esp_iv_len = 0;\n-          decrypted_len = len - 8;\n \n-          if (decrypted_len <= 0)\n-            decrypt_ok = FALSE;\n-          else\n-          {\n-            /* Allocate Buffers for Encrypted and Decrypted data  */\n-            decrypted_data = (guint8 *)wmem_alloc(wmem_packet_scope(), decrypted_len + 1);\n-            tvb_memcpy(tvb, decrypted_data, NEW_ESP_DATA_SIZE, decrypted_len);\n+          /* Allocate buffer for decrypted data  */\n+          esp_decr_data = (guint8 *)wmem_alloc(wmem_packet_scope(), esp_encr_data_len);\n+          esp_decr_data_len = esp_encr_data_len;\n+\n+          tvb_memcpy(tvb, esp_decr_data, ESP_HEADER_LEN, esp_encr_data_len);\n+\n+          decrypt_ok = TRUE;\n \n-            decrypt_ok = TRUE;\n-          }\n           break;\n         }\n \n+        esp_encr_data_len -= (esp_iv_len + esp_icv_len);\n+\n+       /*\n+        * Zero or negative length of encrypted data shows that the user specified\n+        * wrong encryption algorithm and/or authentication algorithm.\n+        */\n+       if (esp_encr_data_len <= 0) {\n+         return esp_packet_len;\n+       }\n+\n+       /*\n+        * Add the IV to the tree and store it in a packet scope buffer for later decryption\n+        * if the specified encryption algorithm uses IV.\n+        */\n+        if (esp_iv_len) {\n+          proto_item *iv_item;\n+\n+          tvb_ensure_bytes_exist(tvb, offset, esp_iv_len);\n+\n+          iv_item = proto_tree_add_item(esp_tree, hf_esp_iv, tvb, offset, esp_iv_len, ENC_NA);\n+            proto_item_append_text(iv_item, \" (%d bytes)\", esp_iv_len);\n+            esp_iv = (guchar *)tvb_memdup(wmem_packet_scope(), tvb, offset, esp_iv_len);\n+\n+          offset += esp_iv_len;\n+        }\n+\n+\n+        /*\n+         * Add the encrypted portion to the tree and store it in a packet scope buffer for later decryption.\n+         */\n+        if (esp_encr_data_len) {\n+          proto_item *encr_data_item;\n+\n+          encr_data_item = proto_tree_add_item(esp_tree, hf_esp_encrypted_data, tvb, offset, esp_encr_data_len, ENC_NA);\n+          proto_item_append_text(encr_data_item, \" (%d bytes) <%s>\",\n+                                 esp_encr_data_len,\n+                                 esp_get_encr_algo_name(esp_encr_algo));\n+\n+          esp_encr_data = (guchar *)tvb_memdup(wmem_packet_scope(), tvb, offset, esp_encr_data_len);\n+          offset += esp_encr_data_len;\n+        }\n+\n+\n+        /*\n+         * Add the ICV (Integrity Check Value) to the tree before decryption to ensure\n+         * the ICV be displayed even if the decryption fails.\n+         */\n+\n+        if (esp_icv_len) {\n+          icv_item = proto_tree_add_item(esp_tree, hf_esp_icv, tvb, offset, esp_icv_len, ENC_NA);\n+          proto_item_append_text(icv_item, \" (%d bytes) <%s>\",\n+                                 esp_icv_len,\n+                                 icv_type == ICV_TYPE_AEAD ?\n+                                 esp_get_encr_algo_name(esp_encr_algo) :\n+                                 esp_get_auth_algo_name(esp_auth_algo));\n+\n+        }\n+\n         if (decrypt_using_libgcrypt)\n         {\n-          /* Allocate Buffers for Encrypted and Decrypted data  */\n-          decrypted_data = (guint8 *)wmem_alloc(wmem_packet_scope(), decrypted_len_alloc + esp_iv_len);\n-          tvb_memcpy(tvb, decrypted_data, NEW_ESP_DATA_SIZE, decrypted_len);\n+          /*\n+           * Confirm encrypted data length is multiple of block size.\n+           */\n+          if (esp_encr_data_len % esp_iv_len != 0) {\n+            return esp_packet_len;\n+          }\n+\n+          /*\n+           * Allocate buffer for decrypted data.\n+           */\n+          esp_decr_data = (guchar*)wmem_alloc(pinfo->pool, esp_encr_data_len);\n+          esp_decr_data_len = esp_encr_data_len;\n+\n+          tvb_memcpy(tvb, esp_decr_data, ESP_HEADER_LEN,  esp_encr_data_len);\n \n           /* (Lazily) create the cipher_hd */\n           if (!(*cipher_hd_created)) {\n             err = gcry_cipher_open(cipher_hd, crypt_algo_libgcrypt, crypt_mode_libgcrypt, 0);\n-            if (err)\n-            {\n-              fprintf(stderr, \"<IPsec/ESP Dissector> Error in Algorithm %s Mode %d, grcy_open_cipher failed: %s\\n\",\n-                      gcry_cipher_algo_name(crypt_algo_libgcrypt), crypt_mode_libgcrypt, gcry_strerror(err));\n+            if (err) {\n+              REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s Mode %d, grcy_open_cipher failed: %s\\n\",\n+                                   gcry_cipher_algo_name(crypt_algo_libgcrypt), crypt_mode_libgcrypt, gcry_strerror(err));\n             }\n             else\n             {\n               /* OK, set the key */\n               if (*cipher_hd_created == FALSE)\n               {\n-                if (crypt_mode_libgcrypt == GCRY_CIPHER_MODE_CTR)\n-                {\n-                  /* Counter mode key includes a 4 byte, (32 bit), nonce following the key */\n-                  err = gcry_cipher_setkey(*cipher_hd, esp_crypt_key, esp_crypt_key_len - 4);\n-                }\n-                else\n-                {\n-                  err = gcry_cipher_setkey(*cipher_hd, esp_crypt_key, esp_crypt_key_len);\n-                }\n+                err = gcry_cipher_setkey(*cipher_hd, esp_encr_key, esp_encr_key_len);\n \n-                if (err)\n-                {\n-                  fprintf(stderr, \"<IPsec/ESP Dissector> Error in Algorithm %s Mode %d, gcry_cipher_setkey(key_len=%u) failed: %s\\n\",\n-                          gcry_cipher_algo_name(crypt_algo_libgcrypt), crypt_mode_libgcrypt, esp_crypt_key_len, gcry_strerror(err));\n+                if (err) {\n                   gcry_cipher_close(*cipher_hd);\n+                  REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s Mode %d, gcry_cipher_setkey(key_len=%u) failed: %s\\n\",\n+                                       gcry_cipher_algo_name(crypt_algo_libgcrypt), crypt_mode_libgcrypt, esp_encr_key_len, gcry_strerror(err));\n                 }\n               }\n \n@@ -1985,44 +1972,105 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n           }\n \n           /* Now try to decrypt */\n-          if (crypt_mode_libgcrypt == GCRY_CIPHER_MODE_CTR)\n+          if (esp_encr_algo == IPSEC_ENCRYPT_AES_CTR || esp_encr_algo == IPSEC_ENCRYPT_AES_GCM)\n           {\n+            unsigned int  ctr_block_size = sizeof(ctr_block);\n+\n             /* Set CTR first */\n-            memset(ctr_block, 0, 16);\n-            memcpy(ctr_block, esp_crypt_key + esp_crypt_key_len - 4, 4);\n-            memcpy(ctr_block + 4, decrypted_data, 8);\n-            ctr_block[15] = 1;\n-            if (esp_crypt_algo == IPSEC_ENCRYPT_AES_GCM) {\n-              ctr_block[15]++;\n-            }\n-            err = gcry_cipher_setctr(*cipher_hd, ctr_block, 16);\n-            if (!err)\n-            {\n-              err = gcry_cipher_decrypt(*cipher_hd, decrypted_data + esp_iv_len, decrypted_len_alloc, NULL, 0);\n+            memset(ctr_block, 0, ctr_block_size);\n+            memcpy(ctr_block, esp_encr_key + esp_encr_key_len, esp_salt_len);\n+            memcpy(ctr_block + esp_salt_len, esp_iv, esp_iv_len);\n+\n+            if (crypt_mode_libgcrypt == GCRY_CIPHER_MODE_CTR) {\n+              ctr_block[ctr_block_size-1] = 1;\n+              if (esp_encr_algo == IPSEC_ENCRYPT_AES_GCM) {\n+                /* AES-CTR is used as fallback for AES-GCM (only) if gcrypt does not have AEAD ciphers.\n+                 * The extra increment is necessary because AES-GCM reserves counter 0 for the final\n+                 * step to create the authentication tag and starts encryption with counter 1.\n+                 */\n+                ctr_block[ctr_block_size-1]++;\n+              }\n+              err = gcry_cipher_setctr(*cipher_hd, ctr_block, 16);\n+            } else {\n+              err = gcry_cipher_setiv(*cipher_hd, ctr_block, esp_salt_len + esp_iv_len);\n             }\n           }\n           else\n           {\n-            err = gcry_cipher_decrypt(*cipher_hd, decrypted_data, decrypted_len_alloc + esp_iv_len, NULL, 0);\n+            err = gcry_cipher_setiv(*cipher_hd, esp_iv, esp_iv_len);\n+          }\n+\n+          if (err) {\n+            gcry_cipher_close(*cipher_hd);\n+            REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s Mode %d, gcry_cipher_set%s() failed: %s\\n\",\n+                                 gcry_cipher_algo_name(crypt_algo_libgcrypt), crypt_mode_libgcrypt,\n+                                 (crypt_mode_libgcrypt == GCRY_CIPHER_MODE_CTR) ? \"ctr\" : \"iv\",\n+                                 gcry_strerror(err));\n+          }\n+\n+\n+#ifdef HAVE_LIBGCRYPT_AEAD\n+          if (icv_type == ICV_TYPE_AEAD) {\n+            /* Allocate buffer for ICV  */\n+            esp_icv = (guint8 *)tvb_memdup(wmem_packet_scope(), tvb, esp_packet_len - esp_icv_len, esp_icv_len);\n+\n+            err = gcry_cipher_authenticate(*cipher_hd, tvb_get_ptr(tvb, 0, ESP_HEADER_LEN), ESP_HEADER_LEN);\n+\n+            if (err) {\n+              gcry_cipher_close(*cipher_hd);\n+              REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s Mode %d, gcry_cipher_authenticate() failed: %s\\n\",\n+                                   gcry_cipher_algo_name(crypt_algo_libgcrypt), crypt_mode_libgcrypt, gcry_strerror(err));\n+            }\n+          }\n+#endif\n+\n+          if (!err)\n+          {\n+            err = gcry_cipher_decrypt(*cipher_hd, esp_decr_data, esp_decr_data_len, esp_encr_data, esp_encr_data_len);\n           }\n \n           if (err)\n           {\n-            fprintf(stderr, \"<IPsec/ESP Dissector> Error in Algorithm %s, Mode %d, gcry_cipher_decrypt failed: %s\\n\",\n-                    gcry_cipher_algo_name(crypt_algo_libgcrypt), crypt_mode_libgcrypt, gcry_strerror(err));\n+            REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s, Mode %d, gcry_cipher_decrypt failed: %s\\n\",\n+                                 gcry_cipher_algo_name(crypt_algo_libgcrypt), crypt_mode_libgcrypt, gcry_strerror(err));\n             gcry_cipher_close(*cipher_hd);\n             decrypt_ok = FALSE;\n           }\n           else\n           {\n-            /* Copy back the Authentication which was not encrypted */\n-            if(decrypted_len >= esp_auth_len)\n-            {\n-              tvb_memcpy(tvb, decrypted_data+decrypted_len-esp_auth_len, (gint)(NEW_ESP_DATA_SIZE+decrypted_len-esp_auth_len), esp_auth_len);\n-            }\n-\n             /* Decryption has finished */\n             decrypt_ok = TRUE;\n+\n+#ifdef HAVE_LIBGCRYPT_AEAD\n+            if (icv_type == ICV_TYPE_AEAD) {\n+              guchar *esp_icv_computed;\n+              gint tag_len;\n+\n+              tag_len = (gint)gcry_cipher_get_algo_blklen(crypt_algo_libgcrypt);\n+\n+              if (tag_len < esp_icv_len) {\n+                fprintf (stderr, \"<IPsec/ESP Dissector> Error in Algorithm %s, tag length (%d) is less than icv length (%d)\\n\",\n+                         gcry_md_algo_name(crypt_algo_libgcrypt), tag_len, esp_icv_len);\n+              }\n+\n+              esp_icv_computed = (guchar *)wmem_alloc(wmem_packet_scope(), tag_len);\n+              err = gcry_cipher_gettag(*cipher_hd, esp_icv_computed, tag_len);\n+              if (err) {\n+                gcry_cipher_close(*cipher_hd);\n+                REPORT_DISSECTOR_BUG(\"<IPsec/ESP Dissector> Error in Algorithm %s:  gcry_cipher_gettag failed: %s\",\n+                                     gcry_md_algo_name(crypt_algo_libgcrypt), gcry_strerror(err));\n+              }\n+\n+              if (memcmp(esp_icv_computed, esp_icv, esp_icv_len) == 0) {\n+                  icv_checked = TRUE;\n+                  icv_correct = TRUE;\n+              } else {\n+                icv_checked = TRUE;\n+                icv_correct = FALSE;\n+                esp_icv_expected = bytes_to_str(wmem_packet_scope(), esp_icv_computed, esp_icv_len);\n+              }\n+            }\n+#endif\n           }\n         }\n       }\n@@ -2033,41 +2081,48 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n       null_encryption_decode_heuristic = TRUE;\n     }\n \n-    if(decrypt_ok && (decrypted_len > esp_iv_len))\n+    if(decrypt_ok)\n     {\n-      tvb_decrypted = tvb_new_child_real_data(tvb, (guint8 *)wmem_memdup(pinfo->pool, decrypted_data+sizeof(guint8)*esp_iv_len,\n-                                                                      decrypted_len - esp_iv_len),\n-                                              decrypted_len - esp_iv_len, decrypted_len - esp_iv_len);\n+      tvb_decrypted = tvb_new_child_real_data(tvb, (guint8 *)wmem_memdup(pinfo->pool, esp_decr_data, esp_decr_data_len),\n+                                              esp_decr_data_len, esp_decr_data_len);\n \n       add_new_data_source(pinfo, tvb_decrypted, \"Decrypted Data\");\n+      item = proto_tree_add_item(esp_tree, hf_esp_decrypted_data, tvb_decrypted, 0, esp_decr_data_len, ENC_NA);\n+      proto_item_append_text(item, \" (%d byte%s)\", esp_decr_data_len, plurality(esp_decr_data_len, \"\", \"s\"));\n \n-      if(tvb_bytes_exist(tvb, 8, esp_iv_len))\n-      {\n-        if(esp_iv_len > 0)\n-          proto_tree_add_item(esp_tree, hf_esp_iv, tvb, 8, esp_iv_len, ENC_NA);\n-      }\n-      else\n-      {\n-          proto_tree_add_bytes_format(esp_tree, hf_esp_iv, tvb, 8, -1, NULL, \"IV (truncated)\");\n-      }\n+      decr_tree = proto_item_add_subtree(item, ett_esp_decrypted_data);\n \n       /* Make sure the packet is not truncated before the fields\n        * we need to read to determine the encapsulated protocol */\n-      if(tvb_bytes_exist(tvb_decrypted, decrypted_len - esp_iv_len - esp_auth_len - 2, 2))\n+      if(tvb_bytes_exist(tvb_decrypted, esp_decr_data_len - 2, 2))\n       {\n-        esp_pad_len = tvb_get_guint8(tvb_decrypted, decrypted_len - esp_iv_len - esp_auth_len - 2);\n+        gint esp_contained_data_len;\n+\n+        esp_pad_len = tvb_get_guint8(tvb_decrypted, esp_decr_data_len - 2);\n+        esp_contained_data_len = esp_decr_data_len - esp_pad_len - 2;\n \n-        if(decrypted_len - esp_iv_len - esp_auth_len - esp_pad_len - 2 >= 0)\n+        if(esp_contained_data_len > 0)\n         {\n+          item = proto_tree_add_item(decr_tree, hf_esp_contained_data, tvb_decrypted, 0, esp_contained_data_len, ENC_NA);\n+          proto_item_append_text(item, \" (%d byte%s)\", esp_contained_data_len, plurality(esp_contained_data_len, \"\", \"s\"));\n+\n           /* Get the encapsulated protocol */\n-          encapsulated_protocol = tvb_get_guint8(tvb_decrypted, decrypted_len - esp_iv_len - esp_auth_len - 1);\n+          encapsulated_protocol = tvb_get_guint8(tvb_decrypted, esp_decr_data_len - 1);\n \n           dissector_handle = dissector_get_uint_handle(ip_dissector_table, encapsulated_protocol);\n           if (dissector_handle) {\n+            /*\n+             * Recursively dissect the decrypted frame\n+             *\n+             * Note that the dissection restarts at the top level 'tree' here, not\n+             * at 'decr_tree', which is hidden inside the ESP subtree. This has\n+             * the effect that the protocol layers of the decrypted packet show up\n+             * in the protocol stack of the Packet Details Pane immediately below\n+             * the ESP layer, which is more intuitive and practical for the user.\n+             */\n             saved_match_uint  = pinfo->match_uint;\n             pinfo->match_uint = encapsulated_protocol;\n-            next_tvb = tvb_new_subset_length(tvb_decrypted, 0,\n-                                      decrypted_len - esp_auth_len - esp_pad_len - esp_iv_len - 2);\n+            next_tvb = tvb_new_subset_length(tvb_decrypted, 0, esp_contained_data_len);\n             export_ipsec_pdu(dissector_handle, pinfo, next_tvb);\n             call_dissector(dissector_handle, next_tvb, pinfo, tree);\n             pinfo->match_uint = saved_match_uint;\n@@ -2078,45 +2133,31 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n \n       if(decrypt_dissect_ok)\n       {\n-        if(esp_tree)\n+        if(decr_tree)\n         {\n           if(esp_pad_len !=0)\n-            proto_tree_add_item(esp_tree, hf_esp_pad,\n+            proto_tree_add_item(decr_tree, hf_esp_pad,\n                                 tvb_decrypted,\n-                                decrypted_len - esp_iv_len - esp_auth_len - 2 - esp_pad_len,\n+                                esp_decr_data_len - esp_pad_len - 2,\n                                 esp_pad_len, ENC_NA);\n \n-          proto_tree_add_uint(esp_tree, hf_esp_pad_len, tvb_decrypted,\n-                              decrypted_len - esp_iv_len - esp_auth_len - 2, 1,\n+          proto_tree_add_uint(decr_tree, hf_esp_pad_len, tvb_decrypted,\n+                              esp_decr_data_len - 2, 1,\n                               esp_pad_len);\n \n-          proto_tree_add_uint_format(esp_tree, hf_esp_protocol, tvb_decrypted,\n-                                     decrypted_len - esp_iv_len - esp_auth_len - 1, 1,\n+          proto_tree_add_uint_format(decr_tree, hf_esp_protocol, tvb_decrypted,\n+                                     esp_decr_data_len - 1, 1,\n                                      encapsulated_protocol,\n                                      \"Next header: %s (0x%02x)\",\n                                      ipprotostr(encapsulated_protocol), encapsulated_protocol);\n-\n-          dissect_esp_authentication(esp_tree,\n-                                     tvb_decrypted,\n-                                     decrypted_len - esp_iv_len,\n-                                     esp_auth_len,\n-                                     authenticator_data_computed,\n-                                     authentication_ok,\n-                                     authentication_checking_ok );\n         }\n       }\n       else\n       {\n         next_tvb = tvb_new_subset_length(tvb_decrypted, 0,\n-                                  decrypted_len - esp_iv_len - esp_auth_len);\n+                                  esp_decr_data_len);\n         export_ipsec_pdu(data_handle, pinfo, next_tvb);\n-        call_dissector(data_handle, next_tvb, pinfo, esp_tree);\n-\n-        dissect_esp_authentication(esp_tree,\n-                                     tvb_decrypted,\n-                                     decrypted_len - esp_iv_len, esp_auth_len,\n-                                     authenticator_data_computed, authentication_ok,\n-                                     authentication_checking_ok );\n+        call_dissector(data_handle, next_tvb, pinfo, decr_tree);\n       }\n     }\n   }\n@@ -2126,34 +2167,28 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n   */\n   if(!g_esp_enable_encryption_decode && g_esp_enable_authentication_check && sad_is_present)\n   {\n-    next_tvb = tvb_new_subset_length_caplen(tvb, 8, len - 8 - esp_auth_len, -1);\n+    next_tvb = tvb_new_subset_length_caplen(tvb, ESP_HEADER_LEN, esp_packet_len - ESP_HEADER_LEN - esp_icv_len, -1);\n     export_ipsec_pdu(data_handle, pinfo, next_tvb);\n     call_dissector(data_handle, next_tvb, pinfo, esp_tree);\n-\n-    dissect_esp_authentication(esp_tree, tvb, len ,\n-                                 esp_auth_len, authenticator_data_computed,\n-                                 authentication_ok, authentication_checking_ok );\n   }\n-\n   /* The packet does not belong to a security association and the field g_esp_enable_null_encryption_decode_heuristic is set */\n   else if(null_encryption_decode_heuristic)\n   {\n     if(g_esp_enable_null_encryption_decode_heuristic)\n     {\n-      /* Get length of whole ESP packet. */\n-      len = tvb_reported_length(tvb);\n-\n       /* Make sure the packet is not truncated before the fields\n-       * we need to read to determine the encapsulated protocol */\n-      if(tvb_bytes_exist(tvb, len - 14, 2))\n+       * we need to read to determine the encapsulated protocol.\n+       * (Note: we assume an ICV of 12 byte length.)\n+       */\n+      if(tvb_bytes_exist(tvb, esp_packet_len - 14, 2))\n       {\n-        esp_pad_len = tvb_get_guint8(tvb, len - 14);\n-        encapsulated_protocol = tvb_get_guint8(tvb, len - 13);\n+        esp_pad_len = tvb_get_guint8(tvb, esp_packet_len - 14);\n+        encapsulated_protocol = tvb_get_guint8(tvb, esp_packet_len - 13);\n         dissector_handle = dissector_get_uint_handle(ip_dissector_table, encapsulated_protocol);\n         if (dissector_handle) {\n           saved_match_uint  = pinfo->match_uint;\n           pinfo->match_uint = encapsulated_protocol;\n-          next_tvb = tvb_new_subset_length(tvb, 8, len - 8 - 14 - esp_pad_len);\n+          next_tvb = tvb_new_subset_length(tvb, ESP_HEADER_LEN, esp_packet_len - ESP_HEADER_LEN - 14 - esp_pad_len);\n           export_ipsec_pdu(dissector_handle, pinfo, next_tvb);\n           call_dissector(dissector_handle, next_tvb, pinfo, tree);\n           pinfo->match_uint = saved_match_uint;\n@@ -2164,32 +2199,48 @@ dissect_esp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)\n \n     if(decrypt_dissect_ok)\n     {\n-      if(esp_tree)\n+      if(decr_tree)\n       {\n-        proto_tree_add_uint(esp_tree, hf_esp_pad_len, tvb,\n-                            len - 14, 1,\n+        proto_tree_add_uint(decr_tree, hf_esp_pad_len, tvb,\n+                            esp_decr_data_len-2, 1,\n                             esp_pad_len);\n \n-        proto_tree_add_uint_format(esp_tree, hf_esp_protocol, tvb,\n-                                   len - 13, 1,\n+        proto_tree_add_uint_format(decr_tree, hf_esp_protocol, tvb,\n+                                   esp_decr_data_len-2, 1,\n                                    encapsulated_protocol,\n                                    \"Next header: %s (0x%02x)\",\n                                    ipprotostr(encapsulated_protocol), encapsulated_protocol);\n+      }\n+    }\n+  }\n \n-        /* Make sure we have the auth trailer data */\n-        if(tvb_bytes_exist(tvb, len - 12, 12))\n-        {\n-          proto_tree_add_item(esp_tree, hf_esp_authentication_data, tvb, len - 12, 12, ENC_NA);\n-        }\n-        else\n-        {\n-          /* Truncated so just display what we have */\n-          proto_tree_add_bytes_format(esp_tree, hf_esp_authentication_data, tvb, len - 12, 12 - (len - tvb_captured_length(tvb)),\n-                              NULL, \"Authentication Data (truncated)\");\n-        }\n+  if(icv_item != NULL) {\n+\n+    gboolean good = FALSE, bad = FALSE;\n+\n+    icv_tree = proto_item_add_subtree(icv_item, ett_esp_icv);\n+\n+    if(icv_checked) {\n+      if (icv_correct) {\n+        proto_item_append_text(icv_item, \" [correct]\");\n+        good = TRUE;\n+      } else {\n+        proto_item_append_text(icv_item, \" [incorrect, should be %s]\", esp_icv_expected);\n+        bad = TRUE;\n       }\n+    } else {\n+      proto_item_append_text(icv_item, \" [unchecked]\");\n     }\n+\n+    item = proto_tree_add_boolean(icv_tree, hf_esp_icv_good,\n+                                  tvb, offset, esp_icv_len, good);\n+    proto_item_set_generated(item);\n+\n+    item = proto_tree_add_boolean(icv_tree, hf_esp_icv_bad,\n+                                  tvb, offset, esp_icv_len, bad);\n+    proto_item_set_generated(item);\n   }\n+\n   return tvb_captured_length(tvb);\n }\n \n@@ -2252,7 +2303,7 @@ dissect_ipcomp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dissec\n         pinfo->match_uint = saved_match_uint;\n     }\n \n-\treturn tvb_captured_length(tvb);\n+        return tvb_captured_length(tvb);\n }\n \n static void ipsec_cleanup_protocol(void)\n@@ -2309,13 +2360,21 @@ proto_register_ipsec(void)\n     { &hf_esp_protocol,\n       { \"ESP Next Header\", \"esp.protocol\", FT_UINT8, BASE_HEX, NULL, 0x0,\n         \"IP Encapsulating Security Payload Next Header\", HFILL }},\n-    { &hf_esp_authentication_data,\n-      { \"Authentication Data\", \"esp.authentication_data\", FT_BYTES, BASE_NONE, NULL, 0x0,\n-        NULL, HFILL }},\n     { &hf_esp_iv,\n       { \"ESP IV\", \"esp.iv\", FT_BYTES, BASE_NONE, NULL, 0x0,\n-        \"IP Encapsulating Security Payload\", HFILL }},\n-\n+        \"IP Encapsulating Security Payload Initialization Vector\", HFILL }},\n+    { &hf_esp_encrypted_data,\n+      { \"ESP Encrypted Data\", \"esp.encrypted_data\", FT_BYTES, BASE_NONE, NULL, 0x0,\n+        \"IP Encapsulating Security Payload Encrypted Data\", HFILL }},\n+    { &hf_esp_decrypted_data,\n+      { \"ESP Decrypted Data\", \"esp.decrypted_data\", FT_BYTES, BASE_NONE, NULL, 0x0,\n+        \"IP Encapsulating Security Payload Decrypted Data\", HFILL }},\n+    { &hf_esp_contained_data,\n+      { \"ESP Contained Data\", \"esp.contained_data\", FT_BYTES, BASE_NONE, NULL, 0x0,\n+        \"IP Encapsulating Security Payload Contained Data\", HFILL }},\n+    { &hf_esp_icv,\n+      { \"ESP ICV\", \"esp.icv\", FT_BYTES, BASE_NONE, NULL, 0x0,\n+        \"IP Encapsulating Security Payload Integrity Check Value\", HFILL }},\n     { &hf_esp_icv_good,\n       { \"Good\", \"esp.icv_good\", FT_BOOLEAN, BASE_NONE,  NULL, 0x0,\n         \"True: ICV matches packet content; False: doesn't match content or not checked\", HFILL }},\n@@ -2346,6 +2405,7 @@ proto_register_ipsec(void)\n     &ett_ah,\n     &ett_esp,\n     &ett_esp_icv,\n+    &ett_esp_decrypted_data,\n     &ett_ipcomp,\n   };\n \n@@ -2359,37 +2419,6 @@ proto_register_ipsec(void)\n     { 0x00, NULL }\n   };\n \n-  static const value_string esp_encryption_type_vals[] = {\n-    { IPSEC_ENCRYPT_NULL, \"NULL\" },\n-    { IPSEC_ENCRYPT_3DES_CBC, \"TripleDES-CBC [RFC2451]\" },\n-    { IPSEC_ENCRYPT_AES_CBC, \"AES-CBC [RFC3602]\" },\n-    { IPSEC_ENCRYPT_AES_CTR, \"AES-CTR [RFC3686]\" },\n-    { IPSEC_ENCRYPT_DES_CBC, \"DES-CBC [RFC2405]\" },\n-    { IPSEC_ENCRYPT_CAST5_CBC, \"CAST5-CBC [RFC2144]\" },\n-    { IPSEC_ENCRYPT_BLOWFISH_CBC, \"BLOWFISH-CBC [RFC2451]\" },\n-    { IPSEC_ENCRYPT_TWOFISH_CBC, \"TWOFISH-CBC\" },\n-    { IPSEC_ENCRYPT_AES_GCM, \"AES-GCM [RFC4106]\" },\n-    { 0x00, NULL }\n-  };\n-\n-  static const value_string esp_authentication_type_vals[] = {\n-    { IPSEC_AUTH_NULL, \"NULL\" },\n-    { IPSEC_AUTH_HMAC_SHA1_96, \"HMAC-SHA-1-96 [RFC2404]\" },\n-    { IPSEC_AUTH_HMAC_SHA256_96, \"HMAC-SHA-256-96 [draft-ietf-ipsec-ciph-sha-256-00]\" },\n-    { IPSEC_AUTH_HMAC_SHA256_128, \"HMAC-SHA-256-128 [RFC4868]\" },\n-    { IPSEC_AUTH_HMAC_SHA384_192, \"HMAC-SHA-384-192 [RFC4868]\" },\n-    { IPSEC_AUTH_HMAC_SHA512_256, \"HMAC-SHA-512-256 [RFC4868]\" },\n-    { IPSEC_AUTH_HMAC_MD5_96, \"HMAC-MD5-96 [RFC2403]\" },\n-    { IPSEC_AUTH_HMAC_RIPEMD160_96, \"MAC-RIPEMD-160-96 [RFC2857]\" },\n-/*    { IPSEC_AUTH_AES_XCBC_MAC_96, \"AES-XCBC-MAC-96 [RFC3566]\" }, */\n-    { IPSEC_AUTH_ANY_64BIT, \"ANY 64 bit authentication [no checking]\" },\n-    { IPSEC_AUTH_ANY_96BIT, \"ANY 96 bit authentication [no checking]\" },\n-    { IPSEC_AUTH_ANY_128BIT, \"ANY 128 bit authentication [no checking]\" },\n-    { IPSEC_AUTH_ANY_192BIT, \"ANY 192 bit authentication [no checking]\" },\n-    { IPSEC_AUTH_ANY_256BIT, \"ANY 256 bit authentication [no checking]\" },\n-    { 0x00, NULL }\n-  };\n-\n   static uat_field_t esp_uat_flds[] = {\n       UAT_FLD_VS(uat_esp_sa_records, protocol, \"Protocol\", esp_proto_type_vals, \"Protocol used\"),\n       UAT_FLD_CSTRING(uat_esp_sa_records, srcIP, \"Src IP\", \"Source Address\"),\n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/dissectors/packet-ipsec.c",
+      "old_path": "epan/dissectors/packet-ipsec.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "3ce390a8f94e211025612a9ffe04c8bd508f7766",
+      "short_id": "3ce390a8",
+      "created_at": "2021-06-24T20:39:20.000+00:00",
+      "parent_ids": [
+        "1d38a72db34d691a666d7c5bdabec5f3fb535c34"
+      ],
+      "title": "ipsec: display the encryption and authentication algorithm names",
+      "message": "ipsec: display the encryption and authentication algorithm names\n",
+      "author_name": "Dr. Matthias St. Pierre",
+      "author_email": "matthias.st.pierre@ncp-e.com",
+      "authored_date": "2021-06-22T22:53:10.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-06-24T20:39:20.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/3ce390a8f94e211025612a9ffe04c8bd508f7766"
+    },
+    {
+      "id": "1d38a72db34d691a666d7c5bdabec5f3fb535c34",
+      "short_id": "1d38a72d",
+      "created_at": "2021-06-24T20:39:20.000+00:00",
+      "parent_ids": [
+        "70a93118d658d44725858eb961858bd9caba17d8"
+      ],
+      "title": "ipsec: implement ICV verification for AEAD ciphers",
+      "message": "ipsec: implement ICV verification for AEAD ciphers\n\nAfter all the previous refactoring, the ICV verification for AEAD\nciphers is rather straightforward.\n\nCurrently, the only supported AEAD cipher is AES-GCM.\n",
+      "author_name": "Dr. Matthias St. Pierre",
+      "author_email": "matthias.st.pierre@ncp-e.com",
+      "authored_date": "2021-06-22T21:12:04.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-06-24T20:39:20.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/1d38a72db34d691a666d7c5bdabec5f3fb535c34"
+    },
+    {
+      "id": "70a93118d658d44725858eb961858bd9caba17d8",
+      "short_id": "70a93118",
+      "created_at": "2021-06-24T20:39:20.000+00:00",
+      "parent_ids": [
+        "c5f1fbd1fc32eea5fb3ea1762d20632a96c0162f"
+      ],
+      "title": "ipsec: refactor the decryption and dissection of ESP packets",
+      "message": "ipsec: refactor the decryption and dissection of ESP packets\n\nAdding full support for AEAD ciphers like AES-GCM (including the\nverification of the ICV) turned out to be difficult with the\ncurrent implementation of the ipsec dissector, because it does not\nseparate the dissection and decryption steps well enough and has\ntoo many special cases depending on the crypto algorithms.\n\nFrom a dissector's viewpoint there shouldn't be much difference\nbetween an authenticated encryption method and a combination of\na classical encryption method with an authentication method.\nWhat matters is how the data is structured, so much how it is\ncalculated.\n\n       HEADER || IV || ENCRYPTED DATA || ICV      (Frame Data)\n                               |\n                               v\n                       DECRYPTED DATA             (Decrypted Data)\n\nThis commit tries to refactor the implementation with the goal to\nminimize the differences between the different crypto operations,\nin particular their operation modes (like AES-CBC,AES-CTR,AES-GCM).\nIt follows the example of the isakmp dissector for IKEv2 packets,\nwhich already has a functional AES-GCM support.\n\nThe most significant changes are:\n\n- Display the IV and ICV as part of the original Frame Data, not\n  as part of the Decrypted Data.\n\n  - Display the location of the encrypted data, together with\n    information about encryption and authentication algorithms.\n\n  - Use gcry_cipher_setiv() to set the IV for AES-CBC instead of\n    copying the IV into the decryption buffer as a prefix which\n    subsequently gets discarded.\n\n  - Don't copy the ICV into the decryption buffer where it gets\n    \"decrypted\" accidentally and needs to be restored afterwards.\n\n- Strip the nonce from the encryption key for AES-GCM and AES-CTR\n  at an early stage, to reduce special treatment for those modes\n  due to the different key lengths.\n\n- Add some missing dissection tree items to get full coverage\n  of all bytes in the Frame Data and Decrypted Data.\n\n- Don't report dissector bugs to stderr. Instead, use the\n  REPORT_DISSECTOR_BUG() macro which will raise an exception.\n  (If the WIRESHARK_ABORT_ON_DISSECTOR_BUG environment variable\n  is set, the program will call abort() instead, to make it easier\n  to get a stack trace.)\n\nWith these changes, AES-GCM encrypted payloads now get dissected\ncorrectly after decryption, provided the ICV length is specified\ncorrectly. The ICV verification is still missing, it will be added\nin a followup commit.\n",
+      "author_name": "Dr. Matthias St. Pierre",
+      "author_email": "matthias.st.pierre@ncp-e.com",
+      "authored_date": "2021-06-19T23:34:51.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-06-24T20:39:20.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/70a93118d658d44725858eb961858bd9caba17d8"
+    },
+    {
+      "id": "c5f1fbd1fc32eea5fb3ea1762d20632a96c0162f",
+      "short_id": "c5f1fbd1",
+      "created_at": "2021-06-24T20:39:20.000+00:00",
+      "parent_ids": [
+        "23ef47336cedf7b49e925f7f90ce255f5793caac"
+      ],
+      "title": "ipsec: rename some variables in the packet-ipsec.c",
+      "message": "ipsec: rename some variables in the packet-ipsec.c\n\nThe renamings serve the purpose to improve the readability of the\ncode and make it more consistent with the names in packet-isakmp.c.\nThey are part of the refactoring but where split off into a\nseparate commit in order to reduce the diff noise in the following\ncommit, which contains the important changes of the refactoring.\n",
+      "author_name": "Dr. Matthias St. Pierre",
+      "author_email": "matthias.st.pierre@ncp-e.com",
+      "authored_date": "2021-06-19T17:43:42.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-06-24T20:39:20.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/c5f1fbd1fc32eea5fb3ea1762d20632a96c0162f"
+    },
+    {
+      "id": "23ef47336cedf7b49e925f7f90ce255f5793caac",
+      "short_id": "23ef4733",
+      "created_at": "2021-06-24T20:39:20.000+00:00",
+      "parent_ids": [
+        "18f6c8b05814f9e4a5f707a71b5fd98fc3e3f3cf"
+      ],
+      "title": "ipsec: add encryption types for AES-GCM with 8,12,16 octet ICV",
+      "message": "ipsec: add encryption types for AES-GCM with 8,12,16 octet ICV\n\nThe current \"AES-GCM\" encryption type in the `esp_sa` uat file does\nnot specify an ICV length, contrary to the `ikev2_decryption_table`.\nThe ICV does not get stripped from the encrypted data before\ndecrypting and dissecting it, whence the protocol type of the\ndecrypted frame is looked up at the wrong location. In most cases,\nan invalid protocol number is found and the dissection stops, in\nother cases the wrong protocol is dissected, showing garbage.\n\nThis commit adds the following new encryption types\n\n  IPSEC_ENCRYPT_AES_GCM_8:  \"AES-GCM with 8 octet ICV [RFC4106]\"\n  IPSEC_ENCRYPT_AES_GCM_12: \"AES-GCM with 12 octet ICV [RFC4106]\"\n  IPSEC_ENCRYPT_AES_GCM_16: \"AES-GCM with 16 octet ICV [RFC4106]\"\n\nwhich are currently mapped to IPSEC_ENCRYPT_AES_GCM. In other words,\nthe new entries load without errors but the ICV is ignored.\nThe rationale is to have an unchanged reference implementation for\ntesting which does not bail out on the new uat encryption types.\n",
+      "author_name": "Dr. Matthias St. Pierre",
+      "author_email": "matthias.st.pierre@ncp-e.com",
+      "authored_date": "2021-06-19T16:57:42.000+02:00",
+      "committer_name": "Wireshark GitLab Utility",
+      "committer_email": "gerald+gitlab-utility@wireshark.org",
+      "committed_date": "2021-06-24T20:39:20.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/23ef47336cedf7b49e925f7f90ce255f5793caac"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 205960802,
+      "head_commit_sha": "3ce390a8f94e211025612a9ffe04c8bd508f7766",
+      "base_commit_sha": "18f6c8b05814f9e4a5f707a71b5fd98fc3e3f3cf",
+      "start_commit_sha": "18f6c8b05814f9e4a5f707a71b5fd98fc3e3f3cf",
+      "created_at": "2021-06-24T20:39:23.614Z",
+      "merge_request_id": 105397247,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 205884868,
+      "head_commit_sha": "e3a7a61a96e63a2ccc624e5d7d4b701425bf9118",
+      "base_commit_sha": "0112c9b7354541313bdd5b896f52a77d3978d46e",
+      "start_commit_sha": "0112c9b7354541313bdd5b896f52a77d3978d46e",
+      "created_at": "2021-06-24T17:08:25.031Z",
+      "merge_request_id": 105397247,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 204680100,
+      "head_commit_sha": "b7f9f884c4e840e2a4953dfc5d90f25c25d006df",
+      "base_commit_sha": "f62138c0d571535f289ab330156e75ebd38b40f8",
+      "start_commit_sha": "4609bc4ad526707bb301acb2f4ecdf51762cd533",
+      "created_at": "2021-06-22T22:37:51.613Z",
+      "merge_request_id": 105397247,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}

@@ -1,0 +1,386 @@
+{
+  "id": 94436683,
+  "iid": 2600,
+  "project_id": 7898047,
+  "title": "wslua_utils: fix a memory leak",
+  "description": "To reproduce the issue (example taken from internal tests):\n```\n.wireshark/wireshark-master/run/tshark -r ./wireshark/test/captures/empty.pcap -X lua_script:./wireshark/test/lua/util.lua\n[...]\n\n=================================================================\n\n==63755==ERROR: LeakSanitizer: detected memory leaks\n\nDirect leak of 243 byte(s) in 14 object(s) allocated from:\n    #0 0x7f0463f12bc8 in __interceptor_malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cc:144\n    #1 0x7f0446376e98 in g_malloc (/lib/x86_64-linux-gnu/libglib-2.0.so.0+0x57e98)\n    #2 0x7f0446391153 in g_strdup (/lib/x86_64-linux-gnu/libglib-2.0.so.0+0x72153)\n    #3 0x7f04542be7cd in wslua_set_preference /home/ivan/svnrepos/wireshark/epan/wslua/wslua_util.c:214\n    #4 0x7f04451d1ec1  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xcec1)\n    #5 0x7f04451d2245  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xd245)\n    #6 0x7f04451d17d3  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xc7d3)\n    #7 0x7f04451d24e2  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xd4e2)\n    #8 0x7f04451ce32a in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.2.so.0+0x932a)\n    #9 0x7f04451e1cba  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0x1ccba)\n    #10 0x7f04451d1ec1  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xcec1)\n    #11 0x7f04451ddd46  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0x18d46)\n    #12 0x7f04451d227f  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xd27f)\n    #13 0x7f04451d17d3  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xc7d3)\n    #14 0x7f04451d24e2  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xd4e2)\n    #15 0x7f04451ce32a in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.2.so.0+0x932a)\n    #16 0x7f04542c873a in lua_load_script /home/ivan/svnrepos/wireshark/epan/wslua/init_wslua.c:548\n    #17 0x7f04542c88c0 in lua_load_plugin_script /home/ivan/svnrepos/wireshark/epan/wslua/init_wslua.c:599\n    #18 0x7f04542c98e6 in wslua_init /home/ivan/svnrepos/wireshark/epan/wslua/init_wslua.c:1034\n    #19 0x7f0450e88904 in epan_init /home/ivan/svnrepos/wireshark/epan/epan.c:295\n    #20 0x563f3275affc in main /home/ivan/svnrepos/wireshark/tshark.c:981\n    #21 0x7f04456980b2 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x270b2)\n    #22 0x563f32756cdd in _start (/home/ivan/svnrepos/wireshark/wireshark-master/run/tshark+0x154cdd)\n\nDirect leak of 22 byte(s) in 1 object(s) allocated from:\n    #0 0x7f0463f12bc8 in __interceptor_malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cc:144\n    #1 0x7f0446376e98 in g_malloc (/lib/x86_64-linux-gnu/libglib-2.0.so.0+0x57e98)\n    #2 0x7f0446391153 in g_strdup (/lib/x86_64-linux-gnu/libglib-2.0.so.0+0x72153)\n    #3 0x7f04542be28a in wslua_get_preference /home/ivan/svnrepos/wireshark/epan/wslua/wslua_util.c:134\n    #4 0x7f04451d1ec1  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xcec1)\n    #5 0x7f04451d2245  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xd245)\n    #6 0x7f04451d17d3  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xc7d3)\n    #7 0x7f04451d24e2  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xd4e2)\n    #8 0x7f04451ce32a in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.2.so.0+0x932a)\n    #9 0x7f04451e1cba  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0x1ccba)\n    #10 0x7f04451d1ec1  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xcec1)\n    #11 0x7f04451ddd46  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0x18d46)\n    #12 0x7f04451d227f  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xd27f)\n    #13 0x7f04451d17d3  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xc7d3)\n    #14 0x7f04451d24e2  (/lib/x86_64-linux-gnu/liblua5.2.so.0+0xd4e2)\n    #15 0x7f04451ce32a in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.2.so.0+0x932a)\n    #16 0x7f04542c873a in lua_load_script /home/ivan/svnrepos/wireshark/epan/wslua/init_wslua.c:548\n    #17 0x7f04542c88c0 in lua_load_plugin_script /home/ivan/svnrepos/wireshark/epan/wslua/init_wslua.c:599\n    #18 0x7f04542c98e6 in wslua_init /home/ivan/svnrepos/wireshark/epan/wslua/init_wslua.c:1034\n    #19 0x7f0450e88904 in epan_init /home/ivan/svnrepos/wireshark/epan/epan.c:295\n    #20 0x563f3275affc in main /home/ivan/svnrepos/wireshark/tshark.c:981\n    #21 0x7f04456980b2 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x270b2)\n    #22 0x563f32756cdd in _start (/home/ivan/svnrepos/wireshark/wireshark-master/run/tshark+0x154cdd)\n\nSUMMARY: AddressSanitizer: 265 byte(s) leaked in 15 allocation(s).\n```",
+  "state": "merged",
+  "created_at": "2021-04-02T09:22:54.843Z",
+  "updated_at": "2021-04-04T16:22:48.566Z",
+  "merged_by": {
+    "id": 6496125,
+    "username": "desowin",
+    "public_email": "",
+    "name": "Tomasz Moń",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+    "web_url": "https://gitlab.com/desowin"
+  },
+  "merge_user": {
+    "id": 6496125,
+    "username": "desowin",
+    "public_email": "",
+    "name": "Tomasz Moń",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+    "web_url": "https://gitlab.com/desowin"
+  },
+  "merged_at": "2021-04-04T16:22:48.597Z",
+  "closed_by": null,
+  "closed_at": null,
+  "target_branch": "master",
+  "source_branch": "tests-leaks",
+  "user_notes_count": 0,
+  "upvotes": 0,
+  "downvotes": 0,
+  "author": {
+    "id": 6875072,
+    "username": "IvanNardi",
+    "public_email": "",
+    "name": "Ivan Nardi",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://secure.gravatar.com/avatar/d4707801b74ca8478d56b09acecfa8671e536be3815713358ed72bab52474738?s=80&d=identicon",
+    "web_url": "https://gitlab.com/IvanNardi"
+  },
+  "assignees": [
+    {
+      "id": 6629907,
+      "username": "ws-gitlab-utility",
+      "public_email": "",
+      "name": "A Wireshark GitLab Utility",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+      "web_url": "https://gitlab.com/ws-gitlab-utility"
+    }
+  ],
+  "assignee": {
+    "id": 6629907,
+    "username": "ws-gitlab-utility",
+    "public_email": "",
+    "name": "A Wireshark GitLab Utility",
+    "state": "active",
+    "locked": false,
+    "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/6629907/avatar.png?v=1789948828",
+    "web_url": "https://gitlab.com/ws-gitlab-utility"
+  },
+  "reviewers": [],
+  "source_project_id": 20828506,
+  "target_project_id": 7898047,
+  "labels": [],
+  "draft": false,
+  "imported": false,
+  "imported_from": "none",
+  "work_in_progress": false,
+  "milestone": null,
+  "merge_when_pipeline_succeeds": true,
+  "merge_status": "can_be_merged",
+  "detailed_merge_status": "not_open",
+  "merge_after": null,
+  "sha": "a97506d16669dfc4c58eac5a3cca798a3946d082",
+  "merge_commit_sha": null,
+  "squash_commit_sha": null,
+  "discussion_locked": null,
+  "should_remove_source_branch": true,
+  "force_remove_source_branch": true,
+  "prepared_at": "2021-04-02T09:22:54.843Z",
+  "allow_collaboration": true,
+  "allow_maintainer_to_push": true,
+  "reference": "!2600",
+  "references": {
+    "short": "!2600",
+    "relative": "!2600",
+    "full": "wireshark/wireshark!2600"
+  },
+  "web_url": "https://gitlab.com/wireshark/wireshark/-/merge_requests/2600",
+  "time_stats": {
+    "time_estimate": 0,
+    "total_time_spent": 0,
+    "human_time_estimate": null,
+    "human_total_time_spent": null
+  },
+  "squash": false,
+  "squash_on_merge": false,
+  "task_completion_status": {
+    "count": 0,
+    "completed_count": 0
+  },
+  "has_conflicts": false,
+  "blocking_discussions_resolved": true,
+  "approvals_before_merge": null,
+  "subscribed": false,
+  "changes_count": "1",
+  "latest_build_started_at": "2021-04-04T16:05:38.291Z",
+  "latest_build_finished_at": "2021-04-04T16:22:47.671Z",
+  "first_deployed_to_production_at": null,
+  "pipeline": {
+    "id": 281242284,
+    "iid": 15282,
+    "project_id": 7898047,
+    "sha": "a97506d16669dfc4c58eac5a3cca798a3946d082",
+    "ref": "refs/merge-requests/2600/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-04-04T16:05:37.596Z",
+    "updated_at": "2021-04-04T16:22:47.678Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/281242284"
+  },
+  "head_pipeline": {
+    "id": 281242284,
+    "iid": 15282,
+    "project_id": 7898047,
+    "sha": "a97506d16669dfc4c58eac5a3cca798a3946d082",
+    "ref": "refs/merge-requests/2600/head",
+    "status": "success",
+    "source": "merge_request_event",
+    "created_at": "2021-04-04T16:05:37.596Z",
+    "updated_at": "2021-04-04T16:22:47.678Z",
+    "web_url": "https://gitlab.com/wireshark/wireshark/-/pipelines/281242284",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "tag": false,
+    "yaml_errors": null,
+    "user": {
+      "id": 6496125,
+      "username": "desowin",
+      "public_email": "",
+      "name": "Tomasz Moń",
+      "state": "active",
+      "locked": false,
+      "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+      "web_url": "https://gitlab.com/desowin"
+    },
+    "started_at": "2021-04-04T16:05:38.291Z",
+    "finished_at": "2021-04-04T16:22:47.671Z",
+    "committed_at": null,
+    "duration": 1029,
+    "queued_duration": null,
+    "coverage": null,
+    "detailed_status": {
+      "icon": "status_success",
+      "text": "Passed",
+      "label": "passed",
+      "group": "success",
+      "tooltip": "passed",
+      "has_details": true,
+      "details_path": "/wireshark/wireshark/-/pipelines/281242284",
+      "illustration": null,
+      "favicon": "/assets/ci_favicons/favicon_status_success-8451333011eee8ce9f2ab25dc487fe24a8758c694827a582f17f42b0a90446a2.png"
+    },
+    "archived": true
+  },
+  "diff_refs": {
+    "base_sha": "1dbd022c6bf25e764324a37048bfa783d45d56c0",
+    "head_sha": "a97506d16669dfc4c58eac5a3cca798a3946d082",
+    "start_sha": "1dbd022c6bf25e764324a37048bfa783d45d56c0"
+  },
+  "merge_error": null,
+  "first_contribution": false,
+  "user": {
+    "can_merge": false
+  },
+  "discussions_data": [
+    {
+      "id": "98dd1403b473f46e79946bb69d198d6882cbafbe",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 544521336,
+          "type": null,
+          "body": "assigned to @ws-gitlab-utility",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2021-04-04T16:05:14.195Z",
+          "updated_at": "2021-04-04T16:05:14.198Z",
+          "system": true,
+          "noteable_id": 94436683,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2600,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "a4a3bad53378cb2e80d91cdf5e349f10b85597cc",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 544521359,
+          "type": null,
+          "body": "approved this merge request",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2021-04-04T16:05:27.067Z",
+          "updated_at": "2021-04-04T16:05:27.070Z",
+          "system": true,
+          "noteable_id": 94436683,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2600,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "00baacbc9d8ef6492eba487936a67afaf6a744be",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 544521371,
+          "type": null,
+          "body": "added 10 commits\n\n<ul><li>88ed95ce...1dbd022c - 9 commits from branch <code>wireshark:master</code></li><li>a97506d1 - wslua_utils: fix a memory leak</li></ul>\n\n[Compare with previous version](/wireshark/wireshark/-/merge_requests/2600/diffs?diff_id=166825829&start_sha=88ed95ce60e9689f3c8212a7ae0043cba5a9359a)",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2021-04-04T16:05:38.160Z",
+          "updated_at": "2021-04-04T16:05:38.162Z",
+          "system": true,
+          "noteable_id": 94436683,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2600,
+          "commands_changes": {}
+        }
+      ]
+    },
+    {
+      "id": "db812fa182149c9db57b9086232c0adde1b875ab",
+      "individual_note": true,
+      "resolvable": false,
+      "notes": [
+        {
+          "id": 544521949,
+          "type": null,
+          "body": "enabled an automatic merge when the pipeline for a97506d16669dfc4c58eac5a3cca798a3946d082 succeeds",
+          "author": {
+            "id": 6496125,
+            "username": "desowin",
+            "public_email": "",
+            "name": "Tomasz Moń",
+            "state": "active",
+            "locked": false,
+            "avatar_url": "https://secure.gravatar.com/avatar/e423f0a8da1eede7f89748e5142d6915e4a636399964d35d888ed95ca85e2b50?s=80&d=identicon",
+            "web_url": "https://gitlab.com/desowin"
+          },
+          "created_at": "2021-04-04T16:11:04.745Z",
+          "updated_at": "2021-04-04T16:11:04.747Z",
+          "system": true,
+          "noteable_id": 94436683,
+          "noteable_type": "MergeRequest",
+          "project_id": 7898047,
+          "resolvable": false,
+          "confidential": false,
+          "internal": false,
+          "imported": false,
+          "imported_from": "none",
+          "noteable_iid": 2600,
+          "commands_changes": {}
+        }
+      ]
+    }
+  ],
+  "changes_data": [
+    {
+      "diff": "@@ -142,6 +142,7 @@ WSLUA_FUNCTION wslua_get_preference(lua_State *L) {\n         module_t *module = prefs_find_module(module_name);\n         pref = prefs_find_preference(module, preference_name);\n     }\n+    g_free (module_name);\n \n     if (pref) {\n         switch (prefs_get_type(pref)) {\n@@ -200,7 +201,6 @@ WSLUA_FUNCTION wslua_get_preference(lua_State *L) {\n         lua_pushnil(L);\n     }\n \n-    g_free (module_name);\n     WSLUA_RETURN(1); /* The preference value, or nil if not found. */\n }\n \n@@ -223,6 +223,7 @@ WSLUA_FUNCTION wslua_set_preference(lua_State *L) {\n         module = prefs_find_module(module_name);\n         pref = prefs_find_preference(module, preference_name);\n     }\n+    g_free (module_name);\n \n     if (pref) {\n         unsigned int changed = 0;\n@@ -287,7 +288,6 @@ WSLUA_FUNCTION wslua_set_preference(lua_State *L) {\n         lua_pushnil(L);\n     }\n \n-    g_free(module_name);\n     WSLUA_RETURN(1); /* true if changed, false if unchanged or nil if not found. */\n }\n \n",
+      "collapsed": false,
+      "too_large": false,
+      "new_path": "epan/wslua/wslua_util.c",
+      "old_path": "epan/wslua/wslua_util.c",
+      "a_mode": "100644",
+      "b_mode": "100644",
+      "new_file": false,
+      "renamed_file": false,
+      "deleted_file": false,
+      "generated_file": null
+    }
+  ],
+  "commits_data": [
+    {
+      "id": "a97506d16669dfc4c58eac5a3cca798a3946d082",
+      "short_id": "a97506d1",
+      "created_at": "2021-04-04T16:05:30.000+00:00",
+      "parent_ids": [
+        "1dbd022c6bf25e764324a37048bfa783d45d56c0"
+      ],
+      "title": "wslua_utils: fix a memory leak",
+      "message": "wslua_utils: fix a memory leak\n",
+      "author_name": "Nardi Ivan",
+      "author_email": "nardi.ivan@gmail.com",
+      "authored_date": "2021-04-02T11:16:24.000+02:00",
+      "committer_name": "Tomasz Moń",
+      "committer_email": "desowin@gmail.com",
+      "committed_date": "2021-04-04T16:05:30.000+00:00",
+      "trailers": {},
+      "extended_trailers": {},
+      "web_url": "https://gitlab.com/wireshark/wireshark/-/commit/a97506d16669dfc4c58eac5a3cca798a3946d082"
+    }
+  ],
+  "diff_versions_data": [
+    {
+      "id": 166825829,
+      "head_commit_sha": "a97506d16669dfc4c58eac5a3cca798a3946d082",
+      "base_commit_sha": "1dbd022c6bf25e764324a37048bfa783d45d56c0",
+      "start_commit_sha": "1dbd022c6bf25e764324a37048bfa783d45d56c0",
+      "created_at": "2021-04-04T16:05:35.511Z",
+      "merge_request_id": 94436683,
+      "state": "collected",
+      "real_size": "1",
+      "patch_id_sha": null
+    },
+    {
+      "id": 166389504,
+      "head_commit_sha": "88ed95ce60e9689f3c8212a7ae0043cba5a9359a",
+      "base_commit_sha": "c01dd585c76a27573d34fb3d70c2da180587ba12",
+      "start_commit_sha": "c01dd585c76a27573d34fb3d70c2da180587ba12",
+      "created_at": "2021-04-02T09:22:55.722Z",
+      "merge_request_id": 94436683,
+      "state": "without_files",
+      "real_size": "1",
+      "patch_id_sha": null
+    }
+  ]
+}
